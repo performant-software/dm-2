@@ -4783,6 +4783,16 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
+openseadragon-paperjs-overlay@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/openseadragon-paperjs-overlay/-/openseadragon-paperjs-overlay-0.1.2.tgz#e8afa3d2b5a02f558f41f4ce8e5e56712ed0eb0d"
+  dependencies:
+    openseadragon "^2.0.0"
+
+openseadragon@^2.0.0, openseadragon@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/openseadragon/-/openseadragon-2.3.1.tgz#efdcfee19d8b3c46d00d7f7dda787c7057f68364"
+
 opn@5.2.0, opn@^5.1.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/opn/-/opn-5.2.0.tgz#71fdf934d6827d676cecbea1531f95d354641225"
@@ -4886,6 +4896,10 @@ package-json@^4.0.0:
 pako@~1.0.5:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.6.tgz#0101211baa70c4bca4a0f63f2206e97b7dfaf258"
+
+paper@^0.11.5:
+  version "0.11.5"
+  resolved "https://registry.yarnpkg.com/paper/-/paper-0.11.5.tgz#d662de67bce8218c287bfe17586d099d2cc48040"
 
 param-case@2.1.x:
   version "2.1.1"
