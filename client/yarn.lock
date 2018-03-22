@@ -5446,7 +5446,7 @@ prop-types@^15.5.10, prop-types@^15.6.0:
     loose-envify "^1.3.1"
     object-assign "^4.1.1"
 
-prosemirror-commands@^1.0.0:
+prosemirror-commands@^1.0.0, prosemirror-commands@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/prosemirror-commands/-/prosemirror-commands-1.0.5.tgz#224835d3cf31deaf72ac800c1d2b3d6fa2c81ff9"
   dependencies:
@@ -5506,7 +5506,7 @@ prosemirror-keymap@^1.0.0:
     prosemirror-state "^1.0.0"
     w3c-keyname "^1.1.8"
 
-prosemirror-menu@^1.0.0:
+prosemirror-menu@^1.0.0, prosemirror-menu@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/prosemirror-menu/-/prosemirror-menu-1.0.4.tgz#23d0179944c5d0777f6fa30f1ec5919b5967ad1f"
   dependencies:
