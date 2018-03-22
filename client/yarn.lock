@@ -1328,6 +1328,12 @@ caniuse-lite@^1.0.30000748, caniuse-lite@^1.0.30000792:
   version "1.0.30000814"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30000814.tgz#73eb6925ac2e54d495218f1ea0007da3940e488b"
 
+canvas@1.6.x:
+  version "1.6.9"
+  resolved "https://registry.yarnpkg.com/canvas/-/canvas-1.6.9.tgz#e3f95cec7b16bf2d6f3fc725c02d940d3258f69b"
+  dependencies:
+    nan "^2.4.0"
+
 capture-stack-trace@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/capture-stack-trace/-/capture-stack-trace-1.0.0.tgz#4a6fa07399c26bba47f0b2496b4d0fb408c5550d"
@@ -2628,6 +2634,14 @@ extsprintf@1.3.0:
 extsprintf@^1.2.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.4.0.tgz#e2689f8f356fad62cca65a3a91c5df5f9551692f"
+
+fabric@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/fabric/-/fabric-2.2.2.tgz#6e92c4d01a4b4674d1fdaba92611814e84e2594b"
+  optionalDependencies:
+    canvas "1.6.x"
+    jsdom "9.x.x"
+    xmldom "0.1.x"
 
 fast-deep-equal@^1.0.0:
   version "1.1.0"
@@ -4043,7 +4057,7 @@ jsbn@~0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/jsbn/-/jsbn-0.1.1.tgz#a5e654c2e5a2deb5f201d96cefbca80c0ef2f513"
 
-jsdom@^9.12.0:
+jsdom@9.x.x, jsdom@^9.12.0:
   version "9.12.0"
   resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-9.12.0.tgz#e8c546fffcb06c00d4833ca84410fed7f8a097d4"
   dependencies:
@@ -4546,6 +4560,10 @@ nan@^2.3.0:
   version "2.9.2"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.9.2.tgz#f564d75f5f8f36a6d9456cca7a6c4fe488ab7866"
 
+nan@^2.4.0:
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
+
 nanomatch@^1.2.9:
   version "1.2.9"
   resolved "https://registry.yarnpkg.com/nanomatch/-/nanomatch-1.2.9.tgz#879f7150cb2dab7a471259066c104eee6e0fa7c2"
@@ -4792,15 +4810,12 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-openseadragon-paperjs-overlay@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/openseadragon-paperjs-overlay/-/openseadragon-paperjs-overlay-0.1.2.tgz#e8afa3d2b5a02f558f41f4ce8e5e56712ed0eb0d"
-  dependencies:
-    openseadragon "^2.0.0"
+openseadragon-fabricjs-overlay@../../OpenseadragonFabricjsOverlay:
+  version "0.2.0"
 
-openseadragon@^2.0.0, openseadragon@^2.3.1:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/openseadragon/-/openseadragon-2.3.1.tgz#efdcfee19d8b3c46d00d7f7dda787c7057f68364"
+openseadragon@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/openseadragon/-/openseadragon-2.3.0.tgz#899fe3de543ff51d7e16dbbb83fffa0720a3b211"
 
 opn@5.2.0:
   version "5.2.0"
@@ -4911,10 +4926,6 @@ package-json@^4.0.0:
 pako@~1.0.5:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.6.tgz#0101211baa70c4bca4a0f63f2206e97b7dfaf258"
-
-paper@^0.11.5:
-  version "0.11.5"
-  resolved "https://registry.yarnpkg.com/paper/-/paper-0.11.5.tgz#d662de67bce8218c287bfe17586d099d2cc48040"
 
 param-case@2.1.x:
   version "2.1.1"
@@ -7253,6 +7264,10 @@ xml-char-classes@^1.0.0:
 xml-name-validator@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/xml-name-validator/-/xml-name-validator-2.0.1.tgz#4d8b8f1eccd3419aa362061becef515e1e559635"
+
+xmldom@0.1.x:
+  version "0.1.27"
+  resolved "https://registry.yarnpkg.com/xmldom/-/xmldom-0.1.27.tgz#d501f97b3bdb403af8ef9ecc20573187aadac0e9"
 
 xtend@^4.0.0:
   version "4.0.1"

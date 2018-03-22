@@ -8,24 +8,29 @@ import {addListNodes} from 'prosemirror-schema-list';
 import {exampleSetup} from 'prosemirror-example-setup';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
+const dmHighlightSpec = {
+  toDOM() { return ['span', {class: 'dm-highlight', style: 'background: red;', 'data-highlight-id': 'dm_text_highlight_1', onmouseover: "window.setFocusHighlight('dm_text_highlight_1')"}, 0]; }
+}
+
 const dmSchema = new Schema({
   nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
-  marks: schema.spec.marks
+  marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
 });
 
-export default class RichTextEditor extends Component {
+export default class TextResource extends Component {
   state: {editorState: EditorState};
 
-  constructor(props: RichTextEditorProps) {
+  constructor(props: TextResourceProps) {
     super(props);
+    var myMark = dmSchema.mark('highlight');
     this.state = {
       editorState: EditorState.create({
-        doc: schema.node("doc", null, [
-          schema.node("paragraph", null, [schema.text("One.")]),
-          schema.node("horizontal_rule"),
-          schema.node("paragraph", null, [schema.text("Two!")])
+        doc: dmSchema.node('doc', null, [
+          dmSchema.node('paragraph', null, [dmSchema.text('One.', myMark)]),
+          dmSchema.node('horizontal_rule'),
+          dmSchema.node('paragraph', null, [dmSchema.text('Two!')])
         ]),
-        plugins: exampleSetup({schema: dmSchema})
+        plugins: exampleSetup({schema: dmSchema}),
       })
     };
   }

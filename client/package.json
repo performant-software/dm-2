@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "openseadragon": "^2.3.1",
-    "openseadragon-paperjs-overlay": "^0.1.2",
-    "paper": "^0.11.5",
+    "fabric": "^2.2.2",
+    "openseadragon": "2.3.0",
+    "openseadragon-fabricjs-overlay": "../../OpenseadragonFabricjsOverlay",
     "prosemirror-example-setup": "^1.0.1",
     "prosemirror-model": "^1.2.0",
     "prosemirror-schema-basic": "^1.0.0",
@@ -21,5 +21,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "devDependencies": {
+    "eslint-config-react-app": "^2.1.0"
   }
 }
