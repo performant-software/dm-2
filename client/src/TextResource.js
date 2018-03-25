@@ -7,7 +7,7 @@ import {Schema} from 'prosemirror-model';
 import {addListNodes} from 'prosemirror-schema-list';
 import {exampleSetup, buildMenuItems} from 'prosemirror-example-setup';
 import {toggleMark} from 'prosemirror-commands';
-import {icons, MenuItem} from 'prosemirror-menu';
+import {MenuItem} from 'prosemirror-menu';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
 const dmHighlightSpec = {
@@ -63,12 +63,13 @@ export default class TextResource extends Component {
         doc: dmSchema.node('doc', null, [
           dmSchema.node('paragraph', null, [dmSchema.text('One.', myMark)]),
           dmSchema.node('horizontal_rule'),
-          dmSchema.node('paragraph', null, [dmSchema.text('Two!')])
+          dmSchema.node('paragraph', null, [dmSchema.text('Two! Here is some longer text, et cetera et cetera')]),
+          dmSchema.node('paragraph', null, [dmSchema.text('Third paragraph hello hello hello')])
         ]),
         plugins: exampleSetup({
           schema: dmSchema,
           menuContent: dmMenuContent
-        }),
+        })
       })
     };
   }

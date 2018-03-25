@@ -34,7 +34,7 @@ export default class AnnotationPopup extends Component {
     }) : [];
 
     return (
-      <div style={{ position: 'absolute', top: '200px', left: '360px', background: 'white', width: '300px', minHeight: '300px', boxShadow: '5px 2px 5px #CCC', border: '1px solid black', padding: '10px' }}>
+      <div style={{ position: 'absolute', top: '200px', left: '360px', background: 'white', width: '300px', minHeight: '300px', boxShadow: '5px 2px 5px rgba(0, 0, 0, 0.2)', border: '1px solid black', padding: '10px' }}>
         <div style={{ position: 'absolute', top: '5px', right: '10px', cursor: 'pointer' }} onMouseDown={this.props.closeHandler}>x</div>
         <h3 style={{ margin: '0 0 10px 0' }}>Annotations</h3>
         <AnnotationList items={linksTo} listHeader='Links to:' noneText='Links to none' />

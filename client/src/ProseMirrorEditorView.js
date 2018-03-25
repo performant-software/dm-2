@@ -2,7 +2,7 @@
 
 import React, {Component} from 'react';
 import {EditorState} from 'prosemirror-state';
-import {EditorView} from 'prosemirror-view';
+import {EditorView, Decoration, DecorationSet} from 'prosemirror-view';
 
 /**
  * This wraps ProseMirror's EditorView into React component.
@@ -27,6 +27,11 @@ export default class ProseMirrorEditorView extends Component {
       this._editorView = new EditorView(element, {
         state: this.props.editorState,
         dispatchTransaction: this.dispatchTransaction,
+        decorations: function(editorState) {
+          return DecorationSet.create(editorState.doc, [
+            Decoration.inline(13, 17, {style: "background: yellow"}, {inclusiveStart: true, inclusiveEnd: true})
+          ]);
+        }
       });
     }
   };
