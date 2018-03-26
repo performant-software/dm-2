@@ -2,12 +2,13 @@
 
 import React, {Component} from 'react';
 import {schema} from 'prosemirror-schema-basic';
-import {EditorState} from 'prosemirror-state';
+import {EditorState, Plugin} from 'prosemirror-state';
 import {Schema} from 'prosemirror-model';
 import {addListNodes} from 'prosemirror-schema-list';
 import {exampleSetup, buildMenuItems} from 'prosemirror-example-setup';
 import {toggleMark} from 'prosemirror-commands';
 import {MenuItem} from 'prosemirror-menu';
+import {Decoration, DecorationSet} from 'prosemirror-view';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
 const dmHighlightSpec = {
@@ -17,6 +18,26 @@ const dmHighlightSpec = {
 const dmSchema = new Schema({
   nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
   marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
+});
+
+const dmPlugin = new Plugin({
+  state: {
+    init(_, {doc}) {
+      let highlights = [];
+      for (let pos = 1; pos < doc.content.size; pos += 4) {
+        highlights.push(Decoration.inline(pos - 1, pos + 1, {style: "background: yellow"}, {inclusiveStart: true, inclusiveEnd: true}));
+      }
+      return DecorationSet.create(doc, highlights);
+    },
+    apply(tr, set) {
+      return set.map(tr.mapping, tr.doc);
+    }
+  },
+  props: {
+    decorations(state) {
+      return dmPlugin.getState(state);
+    }
+  }
 });
 
 export default class TextResource extends Component {
@@ -69,7 +90,7 @@ export default class TextResource extends Component {
         plugins: exampleSetup({
           schema: dmSchema,
           menuContent: dmMenuContent
-        })
+        }).concat(dmPlugin)
       })
     };
   }

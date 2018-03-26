@@ -24,14 +24,10 @@ export default class ProseMirrorEditorView extends Component {
 
   _createEditorView = (element: ?HTMLElement) => {
     if (element != null) {
+
       this._editorView = new EditorView(element, {
         state: this.props.editorState,
-        dispatchTransaction: this.dispatchTransaction,
-        decorations: function(editorState) {
-          return DecorationSet.create(editorState.doc, [
-            Decoration.inline(13, 17, {style: "background: yellow"}, {inclusiveStart: true, inclusiveEnd: true})
-          ]);
-        }
+        dispatchTransaction: this.dispatchTransaction
       });
     }
   };
