@@ -27,7 +27,8 @@ export default function(state = initialState, action) {
                 links: [
                   {
                     resourceId: 'dm_resource_4',
-                    highlightId: 'dm_text_highlight_2'
+                    highlightId: 'dm_text_highlight_2',
+                    excerpt: 'longer'
                   }
                 ]
               }
@@ -56,7 +57,8 @@ export default function(state = initialState, action) {
                 links: [
                   {
                     resourceId: 'dm_resource_1',
-                    highlightId: 'dm_text_highlight_1'
+                    highlightId: 'dm_text_highlight_1',
+                    excerpt: 'longer'
                   }
                 ]
               }

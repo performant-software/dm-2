@@ -5,7 +5,12 @@ const AnnotationList = function(props) {
     return (
       <ul>
         {props.items.map(function(item) {
-          return <li key={item.id}>{item.resourceName}</li>
+          return <li key={item.id}>
+            {item.excerpt &&
+              <span><span style={{ background: 'yellow' }}>{item.excerpt}</span> in </span>
+            }
+            {item.resourceName}
+          </li>
         })}
       </ul>
     );
@@ -34,14 +39,15 @@ export default class AnnotationPopup extends Component {
     const items = target.links && target.links.length > 0 ? target.links.map(function(link) {
       return {
         id: link.resourceId + (link.highlightId ? link.highlightId : ''),
-        resourceName: resources[link.resourceId].title
+        resourceName: resources[link.resourceId].title,
+        excerpt: link.excerpt
       };
     }) : [];
 
     return (
       <div style={{ position: 'absolute', top: '200px', left: '360px', background: 'white', width: '300px', minHeight: '300px', boxShadow: '5px 2px 5px rgba(0, 0, 0, 0.2)', border: '1px solid black', padding: '10px' }}>
         <div style={{ position: 'absolute', top: '5px', right: '10px', cursor: 'pointer' }} onMouseDown={this.props.closeHandler}>x</div>
-        <h3 style={{ margin: '0 0 10px 0' }}>Annotations</h3>
+        <h3 style={{ margin: '0 0 10px 0' }}>Links</h3>
         <AnnotationList items={items} />
       </div>
     );

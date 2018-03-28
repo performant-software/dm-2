@@ -15,21 +15,17 @@ import { MenuItem } from 'prosemirror-menu';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
-const dmHighlightSpec = {
-  toDOM() { return ['span', {class: 'dm-highlight', style: 'background: red;', 'data-highlight-id': 'dm_text_highlight_1', onmouseover: "window.setFocusHighlight('dm_resource_1', 'dm_text_highlight_1')"}, 0]; }
-}
+// const dmHighlightSpec = {
+//   toDOM() { return ['span', {class: 'dm-highlight', style: 'background: red;', 'data-highlight-id': 'dm_text_highlight_1', onmouseover: "window.setFocusHighlight('dm_resource_1', 'dm_text_highlight_1')"}, 0]; }
+// }
 
 const dmSchema = new Schema({
   nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
-  marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
+  // marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
 });
 
 class TextResource extends Component {
   // state: {editorState: EditorState};
-
-  componentWillReceiveProps(nextProps) {
-    console.log('text editor componentWillReceiveProps');
-  }
 
   cmdItem(cmd, options) {
     let passedOptions = {
@@ -127,8 +123,6 @@ class TextResource extends Component {
   }
 
   render() {
-    console.log('text resource render');
-
     const editorState = this.props.editorStates[this.props.resourceId];
     if (!editorState) return null;
     return (
