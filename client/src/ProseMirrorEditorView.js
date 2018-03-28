@@ -1,8 +1,8 @@
 // adapted from https://discuss.prosemirror.net/t/using-with-react/904
 
-import React, {Component} from 'react';
-import {EditorState} from 'prosemirror-state';
-import {EditorView, Decoration, DecorationSet} from 'prosemirror-view';
+import React, { Component } from 'react';
+import { EditorState } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
 
 /**
  * This wraps ProseMirror's EditorView into React component.
@@ -29,6 +29,7 @@ export default class ProseMirrorEditorView extends Component {
         state: this.props.editorState,
         dispatchTransaction: this.dispatchTransaction
       });
+
     }
   };
 
@@ -65,7 +66,7 @@ export default class ProseMirrorEditorView extends Component {
   }
 
   shouldComponentUpdate() {
-    // Note that EditorView manages its DOM itself so we'd ratrher don't mess
+    // Note that EditorView manages its DOM itself so we'd rather not mess
     // with it.
     return false;
   }

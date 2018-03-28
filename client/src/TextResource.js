@@ -1,18 +1,21 @@
 // adapted from https://discuss.prosemirror.net/t/using-with-react/904
 
-import React, {Component} from 'react';
-import {schema} from 'prosemirror-schema-basic';
-import {EditorState, Plugin} from 'prosemirror-state';
-import {Schema} from 'prosemirror-model';
-import {addListNodes} from 'prosemirror-schema-list';
-import {exampleSetup, buildMenuItems} from 'prosemirror-example-setup';
-import {toggleMark} from 'prosemirror-commands';
-import {MenuItem} from 'prosemirror-menu';
-import {Decoration, DecorationSet} from 'prosemirror-view';
+import React, { Component } from 'react';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { updateEditorState } from './modules/textEditor';
+import { schema } from 'prosemirror-schema-basic';
+import { EditorState, Plugin, TextSelection } from 'prosemirror-state';
+import { Schema } from 'prosemirror-model';
+import { addListNodes } from 'prosemirror-schema-list';
+import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
+import { toggleMark } from 'prosemirror-commands';
+import { MenuItem } from 'prosemirror-menu';
+import { Decoration, DecorationSet } from 'prosemirror-view';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
 const dmHighlightSpec = {
-  toDOM() { return ['span', {class: 'dm-highlight', style: 'background: red;', 'data-highlight-id': 'dm_text_highlight_1', onmouseover: "window.setFocusHighlight('dm_text_highlight_1')"}, 0]; }
+  toDOM() { return ['span', {class: 'dm-highlight', style: 'background: red;', 'data-highlight-id': 'dm_text_highlight_1', onmouseover: "window.setFocusHighlight('dm_resource_1', 'dm_text_highlight_1')"}, 0]; }
 }
 
 const dmSchema = new Schema({
@@ -20,32 +23,37 @@ const dmSchema = new Schema({
   marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
 });
 
-const dmPlugin = new Plugin({
-  state: {
-    init(_, {doc}) {
-      let highlights = [];
-      for (let pos = 1; pos < doc.content.size; pos += 4) {
-        highlights.push(Decoration.inline(pos - 1, pos + 1, {style: "background: yellow"}, {inclusiveStart: true, inclusiveEnd: true}));
-      }
-      return DecorationSet.create(doc, highlights);
-    },
-    apply(tr, set) {
-      return set.map(tr.mapping, tr.doc);
-    }
-  },
-  props: {
-    decorations(state) {
-      return dmPlugin.getState(state);
-    }
-  }
-});
-
-export default class TextResource extends Component {
+class TextResource extends Component {
   state: {editorState: EditorState};
 
 
   constructor(props: TextResourceProps) {
     super(props);
+
+    const {highlights, resourceId} = this.props;
+
+    const dmPlugin = new Plugin({
+      state: {
+        init(_, {doc}) {
+          // let highlights = [];
+          // for (let pos = 1; pos < doc.content.size; pos += 4) {
+          //   highlights.push(Decoration.inline(pos - 1, pos + 1, {style: "background: yellow"}, {inclusiveStart: true, inclusiveEnd: true}));
+          // }
+          const highlightKeys = Object.keys(highlights);
+          const highlightDecorations = highlightKeys.map(highlightId => Decoration.inline(highlights[highlightId].target.from, highlights[highlightId].target.to, {style: 'background: yellow', onmouseover: `window.setFocusHighlight('${resourceId}', '${highlightId}')` }, {inclusiveStart: true, inclusiveEnd: true}));
+          return DecorationSet.create(doc, highlightDecorations);
+        },
+        apply(tr, set) {
+          return set.map(tr.mapping, tr.doc);
+        }
+      },
+      props: {
+        decorations(state) {
+          return dmPlugin.getState(state);
+        }
+      }
+    });
+
     var myMark = dmSchema.mark('highlight');
 
     function cmdItem(cmd, options) {
@@ -79,33 +87,36 @@ export default class TextResource extends Component {
     const dmMenuContent = buildMenuItems(dmSchema).fullMenu;
     dmMenuContent.push([toggleHighlight]);
 
-    this.state = {
-      editorState: EditorState.create({
-        doc: dmSchema.node('doc', null, [
-          dmSchema.node('paragraph', null, [dmSchema.text('One.', myMark)]),
-          dmSchema.node('horizontal_rule'),
-          dmSchema.node('paragraph', null, [dmSchema.text('Two! Here is some longer text, et cetera et cetera')]),
-          dmSchema.node('paragraph', null, [dmSchema.text('Third paragraph hello hello hello')])
-        ]),
-        plugins: exampleSetup({
-          schema: dmSchema,
-          menuContent: dmMenuContent
-        }).concat(dmPlugin)
-      })
-    };
+    const dmDoc = dmSchema.nodeFromJSON(JSON.parse(this.props.content));
+
+    this.props.updateEditorState(resourceId, EditorState.create({
+      // doc: dmSchema.node('doc', null, [
+      //   dmSchema.node('paragraph', null, [dmSchema.text('One.', myMark)]),
+      //   dmSchema.node('horizontal_rule'),
+      //   dmSchema.node('paragraph', null, [dmSchema.text('Two! Here is some longer text, et cetera et cetera')]),
+      //   dmSchema.node('paragraph', null, [dmSchema.text('Third paragraph hello hello hello')])
+      // ]),
+      doc: dmDoc,
+      selection: TextSelection.create(dmDoc, 0),
+      plugins: exampleSetup({
+        schema: dmSchema,
+        menuContent: dmMenuContent
+      }).concat(dmPlugin)
+    }));
   }
 
   dispatchTransaction = (tx: any) => {
-    const editorState = this.state.editorState.apply(tx);
-    this.setState({editorState});
+    const editorState = this.props.editorStates[this.props.resourceId].apply(tx);
+    this.props.updateEditorState(this.props.resourceId, editorState);
   };
 
   onEditorState = (editorState: EditorState) => {
-    this.setState({editorState});
+    this.props.updateEditorState(this.props.resourceId, editorState);
   };
 
   render() {
-    const {editorState} = this.state;
+    const editorState = this.props.editorStates[this.props.resourceId];
+    if (!editorState) return null;
     return (
       <div>
         <div className="editorview-wrapper">
@@ -119,3 +130,16 @@ export default class TextResource extends Component {
     );
   }
 }
+
+const mapStateToProps = state => ({
+  editorStates: state.textEditor.editorStates
+});
+
+const mapDispatchToProps = dispatch => bindActionCreators({
+  updateEditorState
+}, dispatch);
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(TextResource);

@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "fabric": "^2.2.2",
+    "history": "^4.7.2",
     "openseadragon": "2.3.0",
     "openseadragon-fabricjs-overlay": "../../OpenseadragonFabricjsOverlay",
     "prosemirror-commands": "^1.0.5",
@@ -16,7 +17,13 @@
     "prosemirror-view": "^1.2.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
-    "react-scripts-openseadragon": "0.0.3"
+    "react-redux": "^5.0.7",
+    "react-router-dom": "^4.2.2",
+    "react-router-redux": "^5.0.0-alpha.9",
+    "react-scripts-openseadragon": "0.0.3",
+    "redux": "^3.7.2",
+    "redux-devtools-extension": "^2.13.2",
+    "redux-thunk": "^2.2.0"
   },
   "scripts": {
     "start": "react-scripts start",

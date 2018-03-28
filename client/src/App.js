@@ -1,4 +1,9 @@
 import React, { Component } from 'react';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { loadProject } from './modules/project';
+import { openDummyResources } from './modules/resourceGrid';
+import { selectTarget, clearSelection } from './modules/annotationViewer';
 import ResourceViewer from './ResourceViewer';
 import AnnotationPopup from './AnnotationPopup';
 import 'prosemirror-view/style/prosemirror.css';
@@ -6,56 +11,46 @@ import 'prosemirror-menu/style/menu.css';
 import 'prosemirror-example-setup/style/style.css';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      focusHighlightId: null,
-      highlights: {
-        dm_text_highlight_1: {
-          linksTo: [
-            'dm_canvas_highlight_red'
-          ],
-          referencedBy: [
-            'dm_canvas_highlight_blue'
-          ],
-          resourceName: 'A Text Resource'
-        },
-        dm_canvas_highlight_blue: {
-          linksTo: [
-            'dm_text_highlight_1'
-          ],
-          resourceName: 'A Canvas Resource'
-        },
-        dm_canvas_highlight_red: {
-          referencedBy: [
-            'dm_text_highlight_1'
-          ],
-          resourceName: 'Another Canvas Resource'
-        }
-      }
-    };
-  }
-
-  setFocusHighlight(highlightId) {
-    if (highlightId !== null && this.state.focusHighlightId !== null) return;
-    this.setState({ focusHighlightId: highlightId });
+  setFocusHighlight(resourceId, highlightId) {
+    const resource = this.props.openResources.find(resource => resource.id === resourceId);
+    const target = resource && highlightId ? resource.highlights[highlightId] : resource;
+    if (target) {
+      this.props.selectTarget(target);      
+    }
   }
 
   componentDidMount() {
     window.setFocusHighlight = this.setFocusHighlight.bind(this);
+    this.props.loadProject();
+    this.props.openDummyResources();
   }
 
   render() {
-    const {focusHighlightId, highlights} = this.state;
     return (
       <div style={{ margin: '15px', display: 'grid', gridTemplateRows: '500px 500px', gridTemplateColumns: '1fr 1fr', gridGap: '20px' }}>
-        <ResourceViewer resourceName='A Text Resource' resourceType='text' />
-        <ResourceViewer resourceName='A Canvas Resource' resourceType='canvas' debugColor='blue' />
-        <ResourceViewer resourceName='Another Canvas Resource' resourceType='canvas' debugColor='red' />
-        <AnnotationPopup highlightId={focusHighlightId} closeHandler={this.setFocusHighlight.bind(this, null)} highlights={highlights} />
+        {this.props.openResources.map(resource => (
+          <ResourceViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} resourceType={resource.type} content={resource.content} highlights={resource.highlights} debugColor='blue' />
+        ))}
+        <AnnotationPopup target={this.props.selectedTarget} resources={this.props.allResources} closeHandler={this.props.clearSelection} />
       </div>
     );
   }
 }
 
-export default App;
+const mapStateToProps = state => ({
+  allResources: state.project.resources,
+  openResources: state.resourceGrid.openResources,
+  selectedTarget: state.annotationViewer.selectedTarget
+});
+
+const mapDispatchToProps = dispatch => bindActionCreators({
+  loadProject,
+  openDummyResources,
+  selectTarget,
+  clearSelection
+}, dispatch);
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App);
