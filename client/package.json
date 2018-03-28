@@ -6,7 +6,7 @@
     "fabric": "^2.2.2",
     "history": "^4.7.2",
     "openseadragon": "2.3.0",
-    "openseadragon-fabricjs-overlay": "../../OpenseadragonFabricjsOverlay",
+    "openseadragon-fabricjs-overlay": "https://github.com/performant-software/OpenseadragonFabricjsOverlay.git",
     "prosemirror-commands": "^1.0.5",
     "prosemirror-example-setup": "^1.0.1",
     "prosemirror-menu": "^1.0.4",
