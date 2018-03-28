@@ -5,6 +5,7 @@ import CanvasResource from './CanvasResource';
 const ResourceInner = function(props) {
   switch (props.resourceType) {
     case 'text':
+      console.log('resource viewer (text) inner render');
       return <TextResource {...props} />;
     case 'canvas':
       return <CanvasResource {...props} />;
@@ -15,6 +16,7 @@ const ResourceInner = function(props) {
 
 export default class ResourceViewer extends Component {
   render() {
+    console.log('resource viewer render');
     return (
       <div style={{ border: '1px solid black', height: '480', padding: '10px' }}>
         <h3 style={{ margin: '0 0 10px 0' }}>{this.props.resourceName}</h3>

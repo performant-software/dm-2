@@ -15,7 +15,7 @@ class App extends Component {
     const resource = this.props.openResources.find(resource => resource.id === resourceId);
     const target = resource && highlightId ? resource.highlights[highlightId] : resource;
     if (target) {
-      this.props.selectTarget(target);      
+      this.props.selectTarget(target);
     }
   }
 

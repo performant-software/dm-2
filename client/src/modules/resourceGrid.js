@@ -3,6 +3,7 @@ import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE} from './project';
 export const DEFAULT_LAYOUT = 'default';
 export const OPEN_RESOURCES = 'resource_grid/OPEN_RESOURCES';
 export const CLEAR_RESOURCES = 'resource_grid/CLEAR_RESOURCES';
+export const ADD_HIGHLIGHT = 'resource_grid/ADD_HIGHLIGHT';
 
 const initialState = {
   layout: DEFAULT_LAYOUT,
@@ -19,7 +20,7 @@ export default function(state = initialState, action) {
             id: 'dm_resource_1',
             title: 'A Text Resource in the Store',
             type: TEXT_RESOURCE_TYPE,
-            content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","marks":[{"type":"highlight"}],"text":"One."}]},{"type":"horizontal_rule"},{"type":"paragraph","content":[{"type":"text","text":"Two! Here is some longer text, et cetera et cetera"}]},{"type":"paragraph","content":[{"type":"text","text":"Third paragraph hello hello hello"}]}]}',
+            content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"One."}]},{"type":"horizontal_rule"},{"type":"paragraph","content":[{"type":"text","text":"Two! Here is some longer text, et cetera et cetera"}]},{"type":"paragraph","content":[{"type":"text","text":"Third paragraph hello hello hello"}]}]}',
             highlights: {
               'dm_text_highlight_1': {
                 target: {from: 13, to: 17},
@@ -48,7 +49,7 @@ export default function(state = initialState, action) {
             id: 'dm_resource_4',
             title: 'One Last Redux Text Resource',
             type: TEXT_RESOURCE_TYPE,
-            content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","marks":[{"type":"highlight"}],"text":"One."}]},{"type":"horizontal_rule"},{"type":"paragraph","content":[{"type":"text","text":"Two! Here is some longer text, et cetera et cetera"}]},{"type":"paragraph","content":[{"type":"text","text":"Third paragraph hello hello hello"}]}]}',
+            content: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"One."}]},{"type":"horizontal_rule"},{"type":"paragraph","content":[{"type":"text","text":"Two! Here is some longer text, et cetera et cetera"}]},{"type":"paragraph","content":[{"type":"text","text":"Third paragraph hello hello hello"}]}]}',
             highlights: {
               'dm_text_highlight_2': {
                 target: {from: 26, to: 32},
@@ -70,6 +71,23 @@ export default function(state = initialState, action) {
         openResources: []
       };
 
+    case ADD_HIGHLIGHT:
+      let resourceIndex = state.openResources.findIndex(resource => resource.id === action.resourceId);
+      let updatedOpenResources = state.openResources.slice(0);
+      if (resourceIndex >= 0) {
+        let updatedResource = Object.assign(updatedOpenResources[resourceIndex], {});
+        updatedResource.highlights[`dm_new_highlight_${Date.now()}`] = {
+          target: action.highlightTarget,
+          links: []
+        };
+        updatedOpenResources.splice(resourceIndex, 1, updatedResource);
+      }
+      console.log(updatedOpenResources);
+      return {
+        ...state,
+        openResources: updatedOpenResources
+      }
+
     default:
       return state;
   }
@@ -87,6 +105,16 @@ export function closeAllResources() {
   return function(dispatch) {
     dispatch({
       type: CLEAR_RESOURCES
+    });
+  }
+}
+
+export function addHighlight(resourceId, highlightTarget) {
+  return function(dispatch) {
+    dispatch({
+      type: ADD_HIGHLIGHT,
+      resourceId,
+      highlightTarget
     });
   }
 }
