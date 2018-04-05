@@ -10,80 +10,89 @@ import { EditorState, Plugin, TextSelection } from 'prosemirror-state';
 import { Schema } from 'prosemirror-model';
 import { addListNodes } from 'prosemirror-schema-list';
 import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
-// import { toggleMark } from 'prosemirror-commands';
+import { toggleMark } from 'prosemirror-commands';
 import { MenuItem } from 'prosemirror-menu';
-import { Decoration, DecorationSet } from 'prosemirror-view';
+// import { Decoration, DecorationSet } from 'prosemirror-view';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
-
-// const dmHighlightSpec = {
-//   toDOM() { return ['span', {class: 'dm-highlight', style: 'background: red;', 'data-highlight-id': 'dm_text_highlight_1', onmouseover: "window.setFocusHighlight('dm_resource_1', 'dm_text_highlight_1')"}, 0]; }
-// }
-
-const dmSchema = new Schema({
-  nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
-  // marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
-});
 
 class TextResource extends Component {
   // state: {editorState: EditorState};
 
-  cmdItem(cmd, options) {
-    let passedOptions = {
-      label: options.title,
-      run: cmd
-    }
-    for (let prop in options) passedOptions[prop] = options[prop]
-    if ((!options.enable || options.enable === true) && !options.select)
-      passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
-
-    return new MenuItem(passedOptions)
-  }
-
-  setHighlight(pm, apply) {
-    if (!apply) return true;
-    let {empty, from, to} = pm.selection;
-    if (empty) return true;
-    this.props.addHighlight(this.props.resourceId, {from, to});
-    return true;
-  }
+  // setHighlight(pm, apply) {
+  //   if (!apply) return true;
+  //   let {empty, from, to} = pm.selection;
+  //   if (empty) return true;
+  //   this.props.addHighlight(this.props.resourceId, {from, to});
+  //   return true;
+  // }
 
   constructor(props: TextResourceProps) {
     super(props);
 
     const {highlights, resourceId} = this.props;
 
-    const dmPlugin = new Plugin({
-      state: {
-        init(_, {doc}) {
-          const highlightKeys = Object.keys(highlights);
-          const highlightDecorations = highlightKeys.map(highlightId => Decoration.inline(highlights[highlightId].target.from, highlights[highlightId].target.to, {style: 'background: yellow', onmouseover: `window.setFocusHighlight('${resourceId}', '${highlightId}')` }, {inclusiveStart: true, inclusiveEnd: true}));
-          return DecorationSet.create(doc, highlightDecorations);
-        },
-        apply(tr, set) {
-          return set.map(tr.mapping, tr.doc);
-        }
+    // const dmPlugin = new Plugin({
+    //   state: {
+    //     init(_, {doc}) {
+    //       const highlightKeys = Object.keys(highlights);
+    //       const highlightDecorations = highlightKeys.map(highlightId => Decoration.inline(highlights[highlightId].target.from, highlights[highlightId].target.to, {style: 'background: yellow', onmouseover: `window.setFocusHighlight('${resourceId}', '${highlightId}')` }, {inclusiveStart: true, inclusiveEnd: true}));
+    //       return DecorationSet.create(doc, highlightDecorations);
+    //     },
+    //     apply(tr, set) {
+    //       return set.map(tr.mapping, tr.doc);
+    //     }
+    //   },
+    //   props: {
+    //     decorations(state) {
+    //       return dmPlugin.getState(state);
+    //     }
+    //   }
+    // });
+
+    const dmHighlightSpec = {
+      attrs: {highlightId: {default: 'dm_new_highlight'}},
+      toDOM(mark) {
+        const properties = {class: 'dm-highlight', style: 'background: red;', onclick: `window.setFocusHighlight('${resourceId}', '${mark.attrs.highlightId}')`};
+        properties['data-highlight-id'] = mark.attrs.highlightId;
+        return ['span', properties, 0];
       },
-      props: {
-        decorations(state) {
-          return dmPlugin.getState(state);
-        }
-      }
+      parseDOM: [{tag: 'span.dm-highlight', getAttrs(dom) {
+        return {
+          highlightId: dom.getAttribute('data-highlight-id')
+        };
+      }}]
+    }
+
+    const dmSchema = new Schema({
+      nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
+      marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
     });
 
-    // function markActive(state, type) {
-    //   let {from, $from, to, empty} = state.selection
-    //   if (empty) return type.isInSet(state.storedMarks || $from.marks())
-    //   else return state.doc.rangeHasMark(from, to, type)
-    // }
-    // function markItem(markType, options) {
-    //   let passedOptions = {
-    //     active(state) { return markActive(state, markType) },
-    //     enable: true
-    //   }
-    //   for (let prop in options) passedOptions[prop] = options[prop]
-    //   return cmdItem(toggleMark(markType), passedOptions)
-    // }
-    const toggleHighlight = this.cmdItem(this.setHighlight.bind(this), {
+    function cmdItem(cmd, options) {
+      let passedOptions = {
+        label: options.title,
+        run: cmd
+      }
+      for (let prop in options) passedOptions[prop] = options[prop]
+      if ((!options.enable || options.enable === true) && !options.select)
+        passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
+
+      return new MenuItem(passedOptions)
+    }
+    function markActive(state, type) {
+      let {from, $from, to, empty} = state.selection
+      if (empty) return type.isInSet(state.storedMarks || $from.marks())
+      else return state.doc.rangeHasMark(from, to, type)
+    }
+    function markItem(markType, options) {
+      let passedOptions = {
+        active(state) { return markActive(state, markType) },
+        enable: true
+      }
+      for (let prop in options) passedOptions[prop] = options[prop]
+      return cmdItem((state, dispatch) => {return toggleMark(markType, {highlightId: `dm_text_highlight_${Date.now()}`}).call(null, state, dispatch);}, passedOptions)
+    }
+    const toggleHighlight = markItem(dmSchema.marks.highlight, {
       title: 'Toggle highlight',
       icon: {
         width: 60, height: 60,
@@ -109,11 +118,12 @@ class TextResource extends Component {
       plugins: exampleSetup({
         schema: dmSchema,
         menuContent: dmMenuContent
-      }).concat(dmPlugin)
+      })//.concat(dmPlugin)
     }));
   }
 
   dispatchTransaction = (tx: any) => {
+    console.log('TextResource dispatchTransaction');
     const editorState = this.props.editorStates[this.props.resourceId].apply(tx);
     this.props.updateEditorState(this.props.resourceId, editorState);
   }

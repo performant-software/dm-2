@@ -36,6 +36,8 @@ export default class ProseMirrorEditorView extends Component {
   dispatchTransaction = (tx: any) => {
     // In case EditorView makes any modification to a state we funnel those
     // modifications up to the parent and apply to the EditorView itself.
+    // console.log(JSON.stringify(tx.doc.toJSON()));
+    console.log(tx);
     const editorState = this.props.editorState.apply(tx);
     if (this._editorView != null) {
       this._editorView.updateState(editorState);

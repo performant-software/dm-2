@@ -5,7 +5,7 @@ import CanvasResource from './CanvasResource';
 const ResourceInner = function(props) {
   switch (props.resourceType) {
     case 'text':
-      return <TextResource {...props} key={`${props.key}-${Date.now()}`} />;
+      return <TextResource {...props} />;
     case 'canvas':
       return <CanvasResource {...props} />;
     default:
