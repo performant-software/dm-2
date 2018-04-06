@@ -16,38 +16,11 @@ import { MenuItem } from 'prosemirror-menu';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
 class TextResource extends Component {
-  // state: {editorState: EditorState};
-
-  // setHighlight(pm, apply) {
-  //   if (!apply) return true;
-  //   let {empty, from, to} = pm.selection;
-  //   if (empty) return true;
-  //   this.props.addHighlight(this.props.resourceId, {from, to});
-  //   return true;
-  // }
 
   constructor(props: TextResourceProps) {
     super(props);
 
     const {highlights, resourceId} = this.props;
-
-    // const dmPlugin = new Plugin({
-    //   state: {
-    //     init(_, {doc}) {
-    //       const highlightKeys = Object.keys(highlights);
-    //       const highlightDecorations = highlightKeys.map(highlightId => Decoration.inline(highlights[highlightId].target.from, highlights[highlightId].target.to, {style: 'background: yellow', onmouseover: `window.setFocusHighlight('${resourceId}', '${highlightId}')` }, {inclusiveStart: true, inclusiveEnd: true}));
-    //       return DecorationSet.create(doc, highlightDecorations);
-    //     },
-    //     apply(tr, set) {
-    //       return set.map(tr.mapping, tr.doc);
-    //     }
-    //   },
-    //   props: {
-    //     decorations(state) {
-    //       return dmPlugin.getState(state);
-    //     }
-    //   }
-    // });
 
     const dmHighlightSpec = {
       attrs: {highlightId: {default: 'dm_new_highlight'}},
@@ -107,29 +80,34 @@ class TextResource extends Component {
     const dmDoc = dmSchema.nodeFromJSON(JSON.parse(this.props.content));
 
     this.props.updateEditorState(resourceId, EditorState.create({
-      // doc: dmSchema.node('doc', null, [
-      //   dmSchema.node('paragraph', null, [dmSchema.text('One.', myMark)]),
-      //   dmSchema.node('horizontal_rule'),
-      //   dmSchema.node('paragraph', null, [dmSchema.text('Two! Here is some longer text, et cetera et cetera')]),
-      //   dmSchema.node('paragraph', null, [dmSchema.text('Third paragraph hello hello hello')])
-      // ]),
       doc: dmDoc,
       selection: TextSelection.create(dmDoc, 0),
       plugins: exampleSetup({
         schema: dmSchema,
         menuContent: dmMenuContent
-      })//.concat(dmPlugin)
+      })
     }));
   }
 
-  dispatchTransaction = (tx: any) => {
-    console.log('TextResource dispatchTransaction');
-    const editorState = this.props.editorStates[this.props.resourceId].apply(tx);
-    this.props.updateEditorState(this.props.resourceId, editorState);
-  }
+  // dispatchTransaction = (tx: any) => {
+  //   const editorState = this.props.editorStates[this.props.resourceId].apply(tx);
+  //   this.props.updateEditorState(this.props.resourceId, editorState);
+  // }
 
   onEditorState = (editorState: EditorState) => {
     this.props.updateEditorState(this.props.resourceId, editorState);
+  }
+
+  processAndConfirmTransaction = (tx, callback) => {
+    console.log(tx);
+    const { steps } = tx;
+    steps.forEach(step => {
+      if (step.constructor.name === 'AddMarkStep') {
+        const { highlightId } = step.mark.attrs;
+        this.props.addHighlight(this.props.resourceId, highlightId, highlightId);
+      }
+    });
+    callback(tx);
   }
 
   render() {
@@ -142,6 +120,7 @@ class TextResource extends Component {
             ref={this.onEditorView}
             editorState={editorState}
             onEditorState={this.onEditorState}
+            processAndConfirmTransaction={this.processAndConfirmTransaction}
           />
         </div>
       </div>

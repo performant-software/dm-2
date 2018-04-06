@@ -84,7 +84,7 @@ export default function(state = initialState, action) {
       let updatedOpenResources = state.openResources.slice(0);
       if (resourceIndex >= 0) {
         let updatedResource = Object.assign(updatedOpenResources[resourceIndex], {});
-        updatedResource.highlights[`dm_new_highlight_${Date.now()}`] = {
+        updatedResource.highlights[action.highlightId] = {
           target: action.highlightTarget,
           links: []
         };
@@ -117,11 +117,12 @@ export function closeAllResources() {
   }
 }
 
-export function addHighlight(resourceId, highlightTarget) {
+export function addHighlight(resourceId, highlightId, highlightTarget) {
   return function(dispatch) {
     dispatch({
       type: ADD_HIGHLIGHT,
       resourceId,
+      highlightId,
       highlightTarget
     });
   }
