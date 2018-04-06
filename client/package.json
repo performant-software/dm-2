@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "fabric": "^2.2.2",
+    "canvas": "^1.6.10",
     "history": "^4.7.2",
     "openseadragon": "2.3.0",
     "openseadragon-fabricjs-overlay": "https://github.com/performant-software/OpenseadragonFabricjsOverlay.git",
@@ -23,7 +23,8 @@
     "react-scripts-openseadragon": "0.0.3",
     "redux": "^3.7.2",
     "redux-devtools-extension": "^2.13.2",
-    "redux-thunk": "^2.2.0"
+    "redux-thunk": "^2.2.0",
+    "xmldom": "^0.1.27"
   },
   "scripts": {
     "start": "react-scripts start",

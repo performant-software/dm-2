@@ -1,7 +1,7 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import OpenSeadragon from 'openseadragon';
+import { fabric } from 'openseadragon-fabricjs-overlay/fabric/fabric.adapted.js';
 import 'openseadragon-fabricjs-overlay';
-import { fabric } from 'fabric';
 
 export default class CanvasResourceViewer extends Component {
   shouldComponentUpdate(nextProps, nextState) {
@@ -50,6 +50,7 @@ export default class CanvasResourceViewer extends Component {
   }
 
   renderShapes(color, overlay) {
+    // const svgString = '<svg><rect x="-150" y="-150" rx="0" ry="0" width="300" height="300" style="stroke: rgb(0,0,255); stroke-width: 5; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-opacity: 0; fill-rule: nonzero; opacity: 1;" transform="translate(1002.5 1152.5)"/></svg>';
     let rect = new fabric.Rect({
       left: 850,
       top: 1000,
@@ -62,6 +63,12 @@ export default class CanvasResourceViewer extends Component {
       highlightId: 'dm_canvas_highlight_' + color
     });
     overlay.fabricCanvas().add(rect);
+    // fabric.loadSVGFromString(svgString, function(objects, options) {
+    //   console.log(objects);
+    //   var obj = fabric.util.groupSVGElements(objects, options);
+    //   overlay.fabricCanvas().add(obj).renderAll();
+    // });
+    // console.log(rect.toSVG());
   }
 
   render() {
