@@ -43,7 +43,12 @@ export default function(state = initialState, action) {
             title: 'A Canvas Resource in the Store',
             type: CANVAS_RESOURCE_TYPE,
             content: '{"Image":{"xmlns":"http://schemas.microsoft.com/deepzoom/2008","Url":"http://openseadragon.github.io/example-images/highsmith/highsmith_files/","Format":"jpg","Overlap":"2","TileSize":"256","Size":{"Height":"9221","Width":"7026"}}}',
-            highlights: {}
+            highlights: {
+              'dm_canvas_highlight_1523143914946': {
+                target: '{"type":"rect","originX":"left","originY":"top","left":850,"top":1000,"width":300,"height":300,"fill":"transparent","stroke":"blue","strokeWidth":5,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"rx":0,"ry":0}',
+                links: []
+              }
+            }
           },
           {
             id: 'dm_resource_3',

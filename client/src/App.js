@@ -29,7 +29,7 @@ class App extends Component {
     return (
       <div style={{ margin: '15px', display: 'grid', gridTemplateRows: '500px 500px', gridTemplateColumns: '1fr 1fr', gridGap: '20px' }}>
         {this.props.openResources.map(resource => (
-          <ResourceViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} resourceType={resource.type} content={resource.content} highlights={resource.highlights} debugColor='blue' />
+          <ResourceViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} resourceType={resource.type} content={resource.content} highlights={resource.highlights} />
         ))}
         <AnnotationPopup target={this.props.selectedTarget} resources={this.props.allResources} closeHandler={this.props.clearSelection} />
       </div>
