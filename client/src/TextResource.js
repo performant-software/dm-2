@@ -77,7 +77,7 @@ class TextResource extends Component {
     const dmMenuContent = buildMenuItems(dmSchema).fullMenu;
     dmMenuContent.push([toggleHighlight]);
 
-    const dmDoc = dmSchema.nodeFromJSON(JSON.parse(this.props.content));
+    const dmDoc = dmSchema.nodeFromJSON(this.props.content);
 
     this.props.updateEditorState(resourceId, EditorState.create({
       doc: dmDoc,

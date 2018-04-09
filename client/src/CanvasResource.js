@@ -14,7 +14,7 @@ class CanvasResource extends Component {
   componentDidMount() {
     const {content, highlights} = this.props;
 
-    const tileSource = JSON.parse(content);
+    const tileSource = content;
     const viewer = OpenSeadragon({
       id: `openseadragon-${this.props.resourceName}`,
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',

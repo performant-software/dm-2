@@ -10,10 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180408225612) do
+ActiveRecord::Schema.define(version: 20180409001325) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "highlights", force: :cascade do |t|
+    t.string "uid"
+    t.string "target"
+    t.bigint "resource_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["resource_id"], name: "index_highlights_on_resource_id"
+  end
 
   create_table "projects", force: :cascade do |t|
     t.string "title"
@@ -23,6 +32,18 @@ ActiveRecord::Schema.define(version: 20180408225612) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["owner_id"], name: "index_projects_on_owner_id"
+  end
+
+  create_table "resources", force: :cascade do |t|
+    t.string "title"
+    t.string "resource_type"
+    t.jsonb "content"
+    t.bigint "project_id"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_resources_on_created_by_id"
+    t.index ["project_id"], name: "index_resources_on_project_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -55,4 +76,6 @@ ActiveRecord::Schema.define(version: 20180408225612) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  add_foreign_key "highlights", "resources"
+  add_foreign_key "resources", "projects"
 end
