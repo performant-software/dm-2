@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  created_by: one
+  linkable_a: 
+  linkable_b: one
+
+two:
+  created_by: two
+  linkable_a: 
+  linkable_b: two
