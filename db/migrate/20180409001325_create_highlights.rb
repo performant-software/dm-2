@@ -3,7 +3,7 @@ class CreateHighlights < ActiveRecord::Migration[5.1]
     create_table :highlights do |t|
       t.string :uid
       t.string :target
-      t.references :resource, foreign_key: true
+      t.references :document, foreign_key: true
 
       t.timestamps
     end
