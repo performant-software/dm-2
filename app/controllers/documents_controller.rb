@@ -10,7 +10,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1
   def show
-    render json: @document
+    render json: @document, include: ['project', 'created_by', 'highlights', 'highlights.links_to', 'links_to']
   end
 
   # POST /documents

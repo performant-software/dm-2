@@ -8,12 +8,6 @@ class Linkable < ApplicationRecord
   has_many :a_linked_documents, through: :a_links, source: :linkable_b, source_type: 'Document'
   has_many :b_linked_documents, through: :b_links, source: :linkable_a, source_type: 'Document'
 
-  def structurally_incompatible_values_for_or(other)
-    Relation::SINGLE_VALUE_METHODS.reject { |m| send("#{m}_value") == other.send("#{m}_value") } +
-      (Relation::MULTI_VALUE_METHODS - [:eager_load, :references, :extending]).reject { |m| send("#{m}_values") == other.send("#{m}_values") } +
-      (Relation::CLAUSE_METHODS - [:having, :where]).reject { |m| send("#{m}_clause") == other.send("#{m}_clause") }
-  end
-
   def links
     self.a_links.or self.b_links
   end
