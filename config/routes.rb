@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :document_folders
   resources :documents
   resources :links
   resources :highlights
