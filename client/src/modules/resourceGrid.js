@@ -28,6 +28,7 @@ export default function(state = initialState, action) {
                   {
                     resourceId: 'dm_resource_4',
                     highlightId: 'dm_text_highlight_1522476879313',
+                    documentTitle: 'One Last Redux Text Resource',
                     excerpt: 'Third'
                   }
                 ]
@@ -69,6 +70,7 @@ export default function(state = initialState, action) {
                   {
                     resourceId: 'dm_resource_1',
                     highlightId: 'dm_text_highlight_1522476560480',
+                    documentTitle: 'A Text Resource in the Store',
                     excerpt: 'cetera'
                   }
                 ]

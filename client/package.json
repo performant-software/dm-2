@@ -5,6 +5,7 @@
   "dependencies": {
     "canvas": "^1.6.10",
     "history": "^4.7.2",
+    "material-ui": "^0.20.0",
     "openseadragon": "2.3.0",
     "openseadragon-fabricjs-overlay": "https://github.com/performant-software/OpenseadragonFabricjsOverlay.git",
     "prosemirror-commands": "^1.0.5",
@@ -21,6 +22,7 @@
     "react-router-dom": "^4.2.2",
     "react-router-redux": "^5.0.0-alpha.9",
     "react-scripts-openseadragon": "0.0.3",
+    "react-split-pane": "^0.1.77",
     "redux": "^3.7.2",
     "redux-devtools-extension": "^2.13.2",
     "redux-thunk": "^2.2.0",

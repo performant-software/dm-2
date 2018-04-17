@@ -45,7 +45,7 @@ export default class AnnotationPopup extends Component {
         id: link.resourceId + (link.highlightId ? link.highlightId : ''),
         resourceId: link.resourceId,
         highlightId: link.highlightId,
-        resourceName: resources[link.resourceId].title,
+        resourceName: link.documentTitle,
         excerpt: link.excerpt
       };
     }) : [];

@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
-import { Route} from 'react-router-dom';
+import { Route } from 'react-router-dom';
+import darkBaseTheme from 'material-ui/styles/baseThemes/darkBaseTheme';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
+import { grey900 } from 'material-ui/styles/colors';
 import Home from './Home';
 import Project from './Project';
 import 'prosemirror-view/style/prosemirror.css';
@@ -9,12 +13,19 @@ import 'prosemirror-example-setup/style/style.css';
 export default class App extends Component {
   render() {
     return (
-      <div>
-        <main>
-          <Route exact path='/' component={Home} />
-          <Route exact path='/project' component={Project} />
-        </main>
-      </div>
+      <MuiThemeProvider muiTheme={getMuiTheme({
+        ...darkBaseTheme,
+        palette: {
+          primary1Color: grey900
+        }
+      })}>
+        <div>
+          <main>
+            <Route exact path='/' component={Home} />
+            <Route exact path='/project' component={Project} />
+          </main>
+        </div>
+      </MuiThemeProvider>
     );
   }
 }
