@@ -1,18 +1,18 @@
 import React, {Component} from 'react';
+import { ResizableBox } from 'react-resizable';
+import Paper from 'material-ui/Paper';
+import Subheader from 'material-ui/Subheader';
+import Divider from 'material-ui/Divider';
+import IconButton from 'material-ui/IconButton';
+import Close from 'material-ui/svg-icons/navigation/close';
+import LinkableSummary from './LinkableSummary';
+import LinkableList from './LinkableList';
+import 'react-resizable/css/styles.css';
 
 const AnnotationList = function(props) {
   if (props.items && props.items.length > 0) {
     return (
-      <ul>
-        {props.items.map(function(item) {
-          return <li key={item.id} onClick={() => props.handleClick(item.resourceId, item.highlightId)} >
-            {item.excerpt &&
-              <span><span style={{ background: 'yellow' }}>{item.excerpt}</span> in </span>
-            }
-            {item.resourceName}
-          </li>
-        })}
-      </ul>
+      <LinkableList items={props.items} />
     );
   }
   else {
@@ -27,35 +27,44 @@ export default class AnnotationPopup extends Component {
 
   render() {
     const {target, resources} = this.props;
-    // const {highlights, highlightId} = this.props;
     if (target === null) return null;
 
-    // const links = highlights[highlightId].linksTo;
-    // const refs = highlights[highlightId].referencedBy;
-
-    // const linksTo = links && links.length > 0 ? links.map(function(linkId) {
-    //   return {id: linkId, resourceName: highlights[linkId].resourceName};
-    // }) : [];
-    // const referencedBy = refs && refs.length > 0 ? refs.map(function(refId) {
-    //   return {id: refId, resourceName: highlights[refId].resourceName};
-    // }) : [];
+    console.log(target);
+    const targetItem = {
+      id: 'target',
+      title: target.resourceName,
+      excerpt: target.excerpt,
+      documentKind: target.documentKind
+    };
 
     const items = target.links && target.links.length > 0 ? target.links.map(function(link) {
       return {
         id: link.resourceId + (link.highlightId ? link.highlightId : ''),
-        resourceId: link.resourceId,
-        highlightId: link.highlightId,
-        resourceName: link.documentTitle,
+        // resourceId: link.resourceId,
+        // highlightId: link.highlightId,
+        title: link.documentTitle,
+        documentKind: link.documentKind,
         excerpt: link.excerpt
       };
     }) : [];
 
     return (
-      <div style={{ position: 'absolute', top: '200px', left: '360px', background: 'white', width: '300px', minHeight: '300px', boxShadow: '5px 2px 5px rgba(0, 0, 0, 0.2)', border: '1px solid black', padding: '10px' }}>
-        <div style={{ position: 'absolute', top: '5px', right: '10px', cursor: 'pointer' }} onMouseDown={this.props.closeHandler}>x</div>
-        <h3 style={{ margin: '0 0 10px 0' }}>Links</h3>
-        <AnnotationList items={items} handleClick={this.linkClicked} />
-      </div>
+      <Paper style={{ position: 'absolute', top: '200px', left: '360px', zIndex: '99'}} zDepth={4}>
+        <ResizableBox width={300} height={300} minConstraints={[200, 120]} maxConstraints={[500, 800]}>
+          <IconButton
+            style={{ position: 'absolute', top: '0', right: '0'}}
+            iconStyle={{width: '16px', height: '16px'}}
+            onClick={this.props.closeHandler}
+          >
+            <Close />
+          </IconButton>
+          <Subheader>Edit Annotation</Subheader>
+          <Divider />
+          <LinkableSummary item={targetItem} isDraggable={true} />
+          <Subheader>Links to:</Subheader>
+          <AnnotationList items={items} handleClick={this.linkClicked} />
+        </ResizableBox>
+      </Paper>
     );
   }
 }

@@ -19,24 +19,24 @@ export default function(state = initialState, action) {
           {
             id: 'dm_resource_1',
             title: 'A Text Resource in the Store',
-            type: TEXT_RESOURCE_TYPE
+            documentKind: TEXT_RESOURCE_TYPE
           },
           {
             id: 'dm_resource_2',
             title: 'A Canvas Resource in the Store',
-            type: CANVAS_RESOURCE_TYPE,
-            thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Dendrocygna_bicolor_wilhelma.jpg/200px-Dendrocygna_bicolor_wilhelma.jpg'
+            documentKind: CANVAS_RESOURCE_TYPE,
+            thumbnailUrl: '/DummyCanvasThumbnail.png'
           },
           {
             id: 'dm_resource_3',
             title: 'Another Canvas Resource from Redux',
-            type: CANVAS_RESOURCE_TYPE,
-            thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Dendrocygna_bicolor_wilhelma.jpg/200px-Dendrocygna_bicolor_wilhelma.jpg'
+            documentKind: CANVAS_RESOURCE_TYPE,
+            thumbnailUrl: '/DummyCanvasThumbnail.png'
           },
           {
             id: 'dm_resource_4',
             title: 'One Last Redux Text Resource',
-            type: TEXT_RESOURCE_TYPE
+            documentKind: TEXT_RESOURCE_TYPE
           }
         ]
       };

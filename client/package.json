@@ -19,6 +19,7 @@
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.7",
+    "react-resizable": "^1.7.5",
     "react-router-dom": "^4.2.2",
     "react-router-redux": "^5.0.0-alpha.9",
     "react-scripts-openseadragon": "0.0.3",
@@ -36,5 +37,6 @@
   },
   "devDependencies": {
     "eslint-config-react-app": "^2.1.0"
-  }
+  },
+  "proxy": "http://localhost:3001"
 }

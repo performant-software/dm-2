@@ -15,6 +15,8 @@ class Project extends Component {
     const resource = this.props.openResources.find(resource => resource.id === resourceId);
     const target = resource && highlightId ? resource.highlights[highlightId] : resource;
     if (target) {
+      target.resourceName = resource.title;
+      target.documentKind = resource.documentKind;
       this.props.selectTarget(target);
     }
   }
@@ -33,7 +35,7 @@ class Project extends Component {
           <ProjectSidebar contentsChildren={this.props.contentsChildren} />
           <div style={{ margin: '80px 16px 16px 16px', display: 'grid', gridTemplateRows: '500px 500px', gridTemplateColumns: '1fr 1fr', gridGap: '20px' }}>
             {this.props.openResources.map(resource => (
-              <ResourceViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} resourceType={resource.type} content={resource.content} highlights={resource.highlights} />
+              <ResourceViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} documentKind={resource.documentKind} content={resource.content} highlights={resource.highlights} />
             ))}
             <AnnotationPopup target={this.props.selectedTarget} closeHandler={this.props.clearSelection} />
           </div>

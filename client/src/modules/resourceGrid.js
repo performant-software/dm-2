@@ -19,14 +19,16 @@ export default function(state = initialState, action) {
           {
             id: 'dm_resource_1',
             title: 'A Text Resource in the Store',
-            type: TEXT_RESOURCE_TYPE,
+            documentKind: TEXT_RESOURCE_TYPE,
             content: {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"One."}]},{"type":"horizontal_rule"},{"type":"paragraph","content":[{"type":"text","text":"Two! Here is some longer text, et cetera et "},{"type":"text","marks":[{"type":"highlight","attrs":{"highlightId":"dm_text_highlight_1522476560480"}}],"text":"cetera"}]},{"type":"paragraph","content":[{"type":"text","text":"Third "},{"type":"text","marks":[{"type":"highlight","attrs":{"highlightId":"dm_text_highlight_1522476566058"}}],"text":"paragraph"},{"type":"text","text":" hello hello hello"}]}]},
             highlights: {
               'dm_text_highlight_1522476560480': {
                 target: 'dm_text_highlight_1522476560480',
+                excerpt: 'cetera',
                 links: [
                   {
                     resourceId: 'dm_resource_4',
+                    documentKind: 'text',
                     highlightId: 'dm_text_highlight_1522476879313',
                     documentTitle: 'One Last Redux Text Resource',
                     excerpt: 'Third'
@@ -42,7 +44,7 @@ export default function(state = initialState, action) {
           {
             id: 'dm_resource_2',
             title: 'A Canvas Resource in the Store',
-            type: CANVAS_RESOURCE_TYPE,
+            documentKind: CANVAS_RESOURCE_TYPE,
             content: {"Image":{"xmlns":"http://schemas.microsoft.com/deepzoom/2008","Url":"http://openseadragon.github.io/example-images/highsmith/highsmith_files/","Format":"jpg","Overlap":"2","TileSize":"256","Size":{"Height":"9221","Width":"7026"}}},
             highlights: {
               'dm_canvas_highlight_1523143914946': {
@@ -54,21 +56,23 @@ export default function(state = initialState, action) {
           {
             id: 'dm_resource_3',
             title: 'Another Canvas Resource from Redux',
-            type: CANVAS_RESOURCE_TYPE,
+            documentKind: CANVAS_RESOURCE_TYPE,
             content: {"Image":{"xmlns":"http://schemas.microsoft.com/deepzoom/2008","Url":"http://openseadragon.github.io/example-images/highsmith/highsmith_files/","Format":"jpg","Overlap":"2","TileSize":"256","Size":{"Height":"9221","Width":"7026"}}},
             highlights: {}
           },
           {
             id: 'dm_resource_4',
             title: 'One Last Redux Text Resource',
-            type: TEXT_RESOURCE_TYPE,
+            documentKind: TEXT_RESOURCE_TYPE,
             content: {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Text! Here is some longer text, et cetera et cetera"}]},{"type":"paragraph","content":[{"type":"text","marks":[{"type":"highlight","attrs":{"highlightId":"dm_text_highlight_1522476879313"}}],"text":"Third"},{"type":"text","text":" paragraph hello hello hello"}]}]},
             highlights: {
               'dm_text_highlight_1522476879313': {
                 target: 'dm_text_highlight_1522476879313',
+                excerpt: 'Third',
                 links: [
                   {
                     resourceId: 'dm_resource_1',
+                    documentKind: 'text',
                     highlightId: 'dm_text_highlight_1522476560480',
                     documentTitle: 'A Text Resource in the Store',
                     excerpt: 'cetera'

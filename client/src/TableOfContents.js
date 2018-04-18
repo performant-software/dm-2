@@ -1,22 +1,18 @@
 import React, { Component } from 'react';
-import RaisedButton from 'material-ui/RaisedButton';
-import { List, ListItem } from 'material-ui/List';
+import FlatButton from 'material-ui/FlatButton';
 import AddCircle from 'material-ui/svg-icons/content/add-circle';
+import LinkableList from './LinkableList';
 
 export default class TableOfContents extends Component {
   render() {
     return (
       <div>
-        <RaisedButton
+        <FlatButton
           label='Add New Document'
           icon={<AddCircle />}
           style={{margin: 'auto'}}
         />
-        <List>
-          {this.props.contentsChildren.map(item => (
-            <ListItem primaryText={item.title} key={item.id} />
-          ))}
-        </List>
+        <LinkableList items={this.props.contentsChildren} allDraggable={true} />
       </div>
     );
   }

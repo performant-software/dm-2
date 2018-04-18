@@ -4,7 +4,7 @@ import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 
 const ResourceInner = function(props) {
-  switch (props.resourceType) {
+  switch (props.documentKind) {
     case 'text':
       return <TextResource {...props} />;
     case 'canvas':

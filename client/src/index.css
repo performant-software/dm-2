@@ -49,8 +49,8 @@ body {
   border-right: 5px solid rgba(0, 0, 0, 0.5);
 }
 
-.Pane2.vertical {
-  overflow-y: scroll;
+.SplitPane.vertical {
+  height: auto !important;
 }
 
 .ProseMirror-menubar {
