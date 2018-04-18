@@ -6,7 +6,7 @@ export default class LinkableList extends Component {
   render() {
     const { items, allDraggable } = this.props;
     return (
-      <List>
+      <List style={{paddingTop: '0'}}>
         {items.map(item => (
           <LinkableSummary item={item} key={item.id} isDraggable={allDraggable} />
         ))}

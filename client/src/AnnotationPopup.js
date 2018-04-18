@@ -61,7 +61,7 @@ export default class AnnotationPopup extends Component {
           <Subheader>Edit Annotation</Subheader>
           <Divider />
           <LinkableSummary item={targetItem} isDraggable={true} />
-          <Subheader>Links to:</Subheader>
+          <Subheader style={{lineHeight: '32px'}}>Links to:</Subheader>
           <AnnotationList items={items} handleClick={this.linkClicked} />
         </ResizableBox>
       </Paper>
