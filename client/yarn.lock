@@ -5454,9 +5454,9 @@ react-router@^4.2.0:
     prop-types "^15.5.4"
     warning "^3.0.0"
 
-react-scripts-openseadragon@0.0.6:
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/react-scripts-openseadragon/-/react-scripts-openseadragon-0.0.6.tgz#eef038f137606f4da582d5ca3d497edeb8307b72"
+react-scripts-openseadragon@0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/react-scripts-openseadragon/-/react-scripts-openseadragon-0.0.7.tgz#1a29368044f577d74f19b03c339cd49e820dc070"
   dependencies:
     autoprefixer "7.1.6"
     babel-core "6.26.0"
