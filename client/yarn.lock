@@ -1152,7 +1152,7 @@ babel-plugin-jest-hoist@^22.4.3:
   version "22.4.3"
   resolved "https://registry.yarnpkg.com/babel-plugin-jest-hoist/-/babel-plugin-jest-hoist-22.4.3.tgz#7d8bcccadc2667f96a0dcc6afe1891875ee6c14a"
 
-babel-plugin-named-asset-import@^0.1.0:
+babel-plugin-named-asset-import@^1.0.0-next.b2fd8db8:
   version "1.0.0-next.b2fd8db8"
   resolved "https://registry.yarnpkg.com/babel-plugin-named-asset-import/-/babel-plugin-named-asset-import-1.0.0-next.b2fd8db8.tgz#bd32f356288cbab326196b5f75547bc0dedf540a"
 
@@ -6931,9 +6931,9 @@ react-router@^4.2.0:
     prop-types "^15.5.4"
     warning "^3.0.0"
 
-react-scripts-openseadragon@0.0.9:
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/react-scripts-openseadragon/-/react-scripts-openseadragon-0.0.9.tgz#eab54d28e9b450b77de6de5761ddafc28fe1774b"
+react-scripts-openseadragon@0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/react-scripts-openseadragon/-/react-scripts-openseadragon-0.0.10.tgz#2f81764a8baa2e149eade8447abfbd6db48e5fc0"
   dependencies:
     "@babel/core" "7.0.0-beta.44"
     "@babel/runtime" "7.0.0-beta.44"
@@ -6942,7 +6942,7 @@ react-scripts-openseadragon@0.0.9:
     babel-eslint "8.2.2"
     babel-jest "22.1.0"
     babel-loader "8.0.0-beta.0"
-    babel-plugin-named-asset-import "^0.1.0"
+    babel-plugin-named-asset-import "^1.0.0-next.b2fd8db8"
     babel-preset-react-app "^3.1.1"
     case-sensitive-paths-webpack-plugin "2.1.1"
     chalk "2.3.0"

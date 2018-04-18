@@ -23,7 +23,7 @@
     "react-resizable": "^1.7.5",
     "react-router-dom": "^4.2.2",
     "react-router-redux": "^5.0.0-alpha.9",
-    "react-scripts-openseadragon": "0.0.9",
+    "react-scripts-openseadragon": "0.0.10",
     "react-split-pane": "^0.1.77",
     "redux": "^3.7.2",
     "redux-devtools-extension": "^2.13.2",
