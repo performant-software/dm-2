@@ -4886,9 +4886,9 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-"openseadragon-fabricjs-overlay@https://github.com/performant-software/OpenseadragonFabricjsOverlay.git":
+"openseadragon-fabricjs-overlay@git://github.com/performant-software/OpenseadragonFabricjsOverlay.git":
   version "0.2.0"
-  resolved "https://github.com/performant-software/OpenseadragonFabricjsOverlay.git#235bc194d6222b7ebec58beb3e91c67672be2c32"
+  resolved "git://github.com/performant-software/OpenseadragonFabricjsOverlay.git#235bc194d6222b7ebec58beb3e91c67672be2c32"
 
 openseadragon@2.3.0:
   version "2.3.0"
