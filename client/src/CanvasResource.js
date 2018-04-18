@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { addHighlight } from './modules/resourceGrid';
 import OpenSeadragon from 'openseadragon';
-import { fabric } from 'openseadragon-fabricjs-overlay/fabric/fabric.adapted.js';
+import { fabric } from './fabricAdapted';//'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
 import 'openseadragon-fabricjs-overlay';
 
 class CanvasResource extends Component {
