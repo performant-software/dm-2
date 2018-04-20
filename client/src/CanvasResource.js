@@ -2,17 +2,18 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { addHighlight } from './modules/resourceGrid';
+import { setCanvasHighlightColor, toggleCanvasColorPicker } from './modules/canvasEditor';
 import OpenSeadragon from 'openseadragon';
 import { fabric } from './fabricAdapted';//'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
 import 'openseadragon-fabricjs-overlay';
+import { yellow500 } from 'material-ui/styles/colors';
+import HighlightColorSelect from './HighlightColorSelect';
 
 class CanvasResource extends Component {
-  shouldComponentUpdate(nextProps, nextState) {
-    return false;
-  }
-
   componentDidMount() {
-    const {content, highlights} = this.props;
+    const {content, highlights, resourceId, setCanvasHighlightColor} = this.props;
+
+    setCanvasHighlightColor(resourceId, yellow500);
 
     const tileSource = content;
     const viewer = OpenSeadragon({
@@ -44,30 +45,10 @@ class CanvasResource extends Component {
 
   renderHighlights(overlay, highlights) {
     const { resourceId } = this.props;
-    // const svgString = '<svg><rect x="-150" y="-150" rx="0" ry="0" width="300" height="300" style="stroke: rgb(0,0,255); stroke-width: 5; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-opacity: 0; fill-rule: nonzero; opacity: 1;" transform="translate(1002.5 1152.5)"/></svg>';
-    // const jsonString = '{"objects":[{"type":"rect","originX":"left","originY":"top","left":850,"top":1000,"width":300,"height":300,"fill":"transparent","stroke":"blue","strokeWidth":5,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"rx":0,"ry":0}]}';
-    // let rect = new fabric.Rect({
-    //   left: 850,
-    //   top: 1000,
-    //   stroke: color,
-    //   strokeWidth: 5,
-    //   fill: 'transparent',
-    //   width: 300,
-    //   height: 300,
-    //   selectable: true,
-    //   highlightId: 'dm_canvas_highlight_' + color
-    // });
-    // overlay.fabricCanvas().add(rect);
-    // fabric.loadSVGFromString(svgString, function(objects, options) {
-    //   console.log(objects);
-    //   var obj = fabric.util.groupSVGElements(objects, options);
-    //   overlay.fabricCanvas().add(obj).renderAll();
-    // });
     for (const highlightId in highlights) {
       const highlight = highlights[highlightId];
       const jsonString = `{"objects":[${highlight.target}]}`;
       overlay.fabricCanvas().loadFromJSON(jsonString, null, (o, object) => {
-        console.log(object);
         object.on('mousedown', () => {
           window.setFocusHighlight(resourceId, highlightId);
         });
@@ -77,11 +58,11 @@ class CanvasResource extends Component {
 
   rectClick() {
     const highlightId = `dm_canvas_highlight_${Date.now()}`;
-    const { resourceId } = this.props;
+    const { resourceId, highlightColors } = this.props;
     let rect = new fabric.Rect({
       left: 650,
       top: 700,
-      stroke: 'red',
+      stroke: highlightColors[resourceId],
       strokeWidth: 5,
       fill: 'transparent',
       width: 300,
@@ -98,10 +79,18 @@ class CanvasResource extends Component {
   }
 
   render() {
+    const { resourceId, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor } = this.props;
+
     return (
       <div>
         <div>
-          <button onClick={this.rectClick.bind(this)} style={{ marginBottom: '10px' }}>Rectangle</button>
+          <HighlightColorSelect
+            highlightColor={highlightColors[resourceId]}
+            displayColorPicker={displayColorPickers[resourceId]}
+            setHighlightColor={(color) => {setCanvasHighlightColor(resourceId, color);}}
+            toggleColorPicker={() => {toggleCanvasColorPicker(resourceId);}}
+          />
+          <button onClick={this.rectClick.bind(this)} style={{ marginBottom: '10px', verticalAlign: 'top' }}>Rectangle</button>
         </div>
         <div id={`openseadragon-${this.props.resourceName}`} style={{ height: '400px' }}></div>
       </div>
@@ -110,10 +99,14 @@ class CanvasResource extends Component {
 }
 
 const mapStateToProps = state => ({
+  highlightColors: state.canvasEditor.highlightColors,
+  displayColorPickers: state.canvasEditor.displayColorPickers
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
-  addHighlight
+  addHighlight,
+  setCanvasHighlightColor,
+  toggleCanvasColorPicker
 }, dispatch);
 
 export default connect(

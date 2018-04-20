@@ -5,6 +5,7 @@ import Subheader from 'material-ui/Subheader';
 import Divider from 'material-ui/Divider';
 import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
+import { grey400 } from 'material-ui/styles/colors';
 import LinkableSummary from './LinkableSummary';
 import LinkableList from './LinkableList';
 import 'react-resizable/css/styles.css';
@@ -16,7 +17,7 @@ const AnnotationList = function(props) {
     );
   }
   else {
-    return <p style={{ color: '#CCC' }}>No links</p>;
+    return <Subheader style={{color: grey400}}>No links</Subheader>;
   }
 }
 
@@ -26,14 +27,15 @@ export default class AnnotationPopup extends Component {
   }
 
   render() {
-    const {target, resources} = this.props;
+    const { target } = this.props;
     if (target === null) return null;
 
-    console.log(target);
     const targetItem = {
       id: 'target',
       title: target.resourceName,
       excerpt: target.excerpt,
+      thumbnailUrl: target.thumbnailUrl,
+      color: target.color,
       documentKind: target.documentKind
     };
 
