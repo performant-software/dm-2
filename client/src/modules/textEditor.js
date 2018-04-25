@@ -7,7 +7,9 @@ export const TOGGLE_COLOR_PICKER = 'textEditor/TOGGLE_COLOR_PICKER';
 const initialState = {
   editorStates: {},
   highlightColors: {},
-  displayColorPickers: {}
+  displayColorPickers: {},
+  loading: false,
+  errored: false
 };
 
 export default function(state = initialState, action) {

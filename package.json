@@ -1,11 +1,12 @@
 {
   "name": "digital-mappa-2",
   "engines": {
-    "node": "6.3.1"
+    "node": "9.3.0",
+    "yarn": "1.5.1"
   },
   "scripts": {
-    "build": "cd client && npm install && npm run build && cd ..",
+    "build": "cd client && yarn install && yarn build && cd ..",
     "deploy": "cp -a client/build/. public/",
-    "postinstall": "npm run build && npm run deploy && echo 'Built client (front end) application.'"
+    "postinstall": "yarn build && yarn deploy && echo 'Built client (front end) application.'"
   }
 }

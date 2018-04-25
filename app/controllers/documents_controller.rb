@@ -10,7 +10,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1
   def show
-    render json: @document, include: ['project', 'created_by', 'highlights', 'highlights.links_to', 'links_to']
+    render json: @document, include: ['project_id', 'created_by', 'highlights', 'highlights.links_to', 'links_to']
   end
 
   # POST /documents
@@ -46,6 +46,6 @@ class DocumentsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def document_params
-      params.require(:document).permit(:project_id, :created_by_id, :title, :document_kind, :project)
+      params.require(:document).permit(:project_id, :created_by_id, :title, :document_kind, :parent_id, :parent_type, content: {})
     end
 end

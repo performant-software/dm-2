@@ -36,7 +36,7 @@ export default class AnnotationPopup extends Component {
       excerpt: target.excerpt,
       thumbnailUrl: target.thumbnailUrl,
       color: target.color,
-      documentKind: target.documentKind
+      document_kind: target.document_kind
     };
 
     const items = target.links && target.links.length > 0 ? target.links.map(function(link) {
@@ -45,7 +45,7 @@ export default class AnnotationPopup extends Component {
         // resourceId: link.resourceId,
         // highlightId: link.highlightId,
         title: link.documentTitle,
-        documentKind: link.documentKind,
+        document_kind: link.document_kind,
         excerpt: link.excerpt
       };
     }) : [];
