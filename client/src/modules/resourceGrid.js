@@ -25,6 +25,7 @@ export default function(state = initialState, action) {
               'dm_text_highlight_1522476560480': {
                 target: 'dm_text_highlight_1522476560480',
                 excerpt: 'cetera',
+                color: '#FFEB3B',
                 links: [
                   {
                     resourceId: 'dm_resource_4',
@@ -37,6 +38,8 @@ export default function(state = initialState, action) {
               },
               'dm_text_highlight_1522476566058': {
                 target: 'dm_text_highlight_1522476566058',
+                excerpt: 'paragraph',
+                color: '#F44336',
                 links: []
               }
             }
@@ -48,7 +51,9 @@ export default function(state = initialState, action) {
             content: {"Image":{"xmlns":"http://schemas.microsoft.com/deepzoom/2008","Url":"http://openseadragon.github.io/example-images/highsmith/highsmith_files/","Format":"jpg","Overlap":"2","TileSize":"256","Size":{"Height":"9221","Width":"7026"}}},
             highlights: {
               'dm_canvas_highlight_1523143914946': {
-                target: '{"type":"rect","originX":"left","originY":"top","left":850,"top":1000,"width":300,"height":300,"fill":"transparent","stroke":"blue","strokeWidth":5,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"rx":0,"ry":0}',
+                target: '{"type":"rect","originX":"left","originY":"top","left":850,"top":1000,"width":300,"height":300,"fill":"transparent","stroke":"#2196F3","strokeWidth":5,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"rx":0,"ry":0}',
+                color: '#2196F3',
+                thumbnailUrl: '/DummyCanvasThumbnail.png',
                 links: []
               }
             }
@@ -69,6 +74,7 @@ export default function(state = initialState, action) {
               'dm_text_highlight_1522476879313': {
                 target: 'dm_text_highlight_1522476879313',
                 excerpt: 'Third',
+                color: '#FFEB3B',
                 links: [
                   {
                     resourceId: 'dm_resource_1',
@@ -97,11 +103,11 @@ export default function(state = initialState, action) {
         let updatedResource = Object.assign(updatedOpenResources[resourceIndex], {});
         updatedResource.highlights[action.highlightId] = {
           target: action.highlightTarget,
+          color: action.color,
           links: []
         };
         updatedOpenResources.splice(resourceIndex, 1, updatedResource);
       }
-      console.log(updatedOpenResources);
       return {
         ...state,
         openResources: updatedOpenResources
@@ -128,13 +134,14 @@ export function closeAllResources() {
   }
 }
 
-export function addHighlight(resourceId, highlightId, highlightTarget) {
+export function addHighlight(resourceId, highlightId, highlightTarget, color) {
   return function(dispatch) {
     dispatch({
       type: ADD_HIGHLIGHT,
       resourceId,
       highlightId,
-      highlightTarget
+      highlightTarget,
+      color
     });
   }
 }

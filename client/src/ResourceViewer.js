@@ -17,8 +17,8 @@ const ResourceInner = function(props) {
 export default class ResourceViewer extends Component {
   render() {
     return (
-      <Paper style={{ height: '480', padding: '10px' }} zDepth={2}>
-        <h3 style={{ margin: '0 0 10px 0' }}>{this.props.resourceName}</h3>
+      <Paper style={{ height: '480', padding: '10px', backgroundColor: this.props.documentKind === 'canvas' ? '#000' : '#FFF' }} zDepth={2}>
+        <h3 style={{ margin: '0 0 10px 0', color: this.props.documentKind === 'canvas' ? '#FFF' : '#000' }}>{this.props.resourceName}</h3>
         <ResourceInner {...this.props} />
       </Paper>
     )

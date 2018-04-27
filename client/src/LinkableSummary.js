@@ -7,10 +7,10 @@ import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE} from './modules/project';
 
 export default class LinkableSummary extends Component {
   render() {
-    const { title, excerpt, documentKind, id, thumbnailUrl } = this.props.item;
+    const { title, excerpt, documentKind, id, thumbnailUrl, color } = this.props.item;
     let primaryText = title;
     if (documentKind === TEXT_RESOURCE_TYPE && excerpt && excerpt.length > 0)
-      primaryText = <div><span style={{ background: 'yellow' }}>{excerpt}</span> in {primaryText}</div>;
+      primaryText = <div><span style={{ background: color || 'yellow' }}>{excerpt}</span> in {primaryText}</div>;
     return (
       <ListItem
         primaryText={primaryText}
@@ -19,8 +19,11 @@ export default class LinkableSummary extends Component {
             src={documentKind === CANVAS_RESOURCE_TYPE ? thumbnailUrl : null}
             icon={documentKind === TEXT_RESOURCE_TYPE ? <TextFields /> : null}
             style={this.props.isDraggable ? {
-              left: '8px'
-            } : null}
+              left: '8px',
+              borderRadius: '0'
+            } : {
+              borderRadius: '0'
+            }}
           />
         }
         style={this.props.isDraggable ? {
