@@ -3,7 +3,6 @@ import { push, replace } from 'react-router-redux';
 export const TEXT_RESOURCE_TYPE = 'text';
 export const CANVAS_RESOURCE_TYPE = 'canvas';
 export const LOAD_PROJECT = 'project/LOAD_PROJECT';
-export const LOAD_DUMMY_PROJECT = 'project/LOAD_DUMMY_PROJECT';
 export const GET_SUCCESS = 'project/GET_SUCCESS';
 export const GET_ERRORED = 'project/GET_ERRORED';
 export const CLEAR_PROJECT = 'project/CLEAR_PROJECT';
@@ -13,13 +12,16 @@ export const POST_ERRORED = 'project/POST_ERRORED';
 export const UPDATE_PROJECT = 'project/UPDATE_PROJECT';
 export const PATCH_SUCCESS = 'project/PATCH_SUCCESS';
 export const PATCH_ERRORED = 'project/PATCH_ERRORED';
+export const OPEN_DOCUMENT_POPOVER = 'project/OPEN_DOCUMENT_POPOVER';
+export const CLOSE_DOCUMENT_POPOVER = 'project/CLOSE_DOCUMENT_POPOVER';
 
 const initialState = {
   id: null,
   title: 'No project selected',
   contentsChildren: [],
   loading: false,
-  errored: false
+  errored: false,
+  documentPopoverOpenFor: null
 };
 
 export default function(state = initialState, action) {
@@ -29,36 +31,6 @@ export default function(state = initialState, action) {
         ...state,
         title: action.title || state.title,
         loading: true
-      };
-
-    case LOAD_DUMMY_PROJECT:
-      return {
-        id: 'dm_project_1',
-        title: 'My DM 2.0 Project',
-        contentsChildren: [
-          {
-            id: 'dm_resource_1',
-            title: 'A Text Resource in the Store',
-            document_kind: TEXT_RESOURCE_TYPE
-          },
-          {
-            id: 'dm_resource_2',
-            title: 'A Canvas Resource in the Store',
-            document_kind: CANVAS_RESOURCE_TYPE,
-            thumbnailUrl: '/DummyCanvasThumbnail.png'
-          },
-          {
-            id: 'dm_resource_3',
-            title: 'Another Canvas Resource from Redux',
-            document_kind: CANVAS_RESOURCE_TYPE,
-            thumbnailUrl: '/DummyCanvasThumbnail.png'
-          },
-          {
-            id: 'dm_resource_4',
-            title: 'One Last Redux Text Resource',
-            document_kind: TEXT_RESOURCE_TYPE
-          }
-        ]
       };
 
     case CLEAR_PROJECT:
@@ -97,17 +69,21 @@ export default function(state = initialState, action) {
         errored: true
       };
 
+    case OPEN_DOCUMENT_POPOVER:
+      return {
+        ...state,
+        documentPopoverOpenFor: action.target
+      };
+
+    case CLOSE_DOCUMENT_POPOVER:
+      return {
+        ...state,
+        documentPopoverOpenFor: null
+      };
+
     default:
       return state;
   }
-}
-
-export function loadDummyProject() {
-  return function(dispatch) {
-    dispatch({
-      type: LOAD_DUMMY_PROJECT
-    });
-  };
 }
 
 export function clearProject() {
@@ -211,4 +187,21 @@ export function updateProject(projectId, attributes) {
       type: PATCH_ERRORED
     }));
   };
+}
+
+export function openDocumentPopover(target) {
+  return function(dispatch) {
+    dispatch({
+      type: OPEN_DOCUMENT_POPOVER,
+      target
+    });
+  }
+}
+
+export function closeDocumentPopover() {
+  return function(dispatch) {
+    dispatch({
+      type:CLOSE_DOCUMENT_POPOVER
+    });
+  }
 }

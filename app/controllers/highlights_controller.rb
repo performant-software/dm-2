@@ -38,6 +38,24 @@ class HighlightsController < ApplicationController
     @highlight.destroy
   end
 
+  def duplicate
+    highlight_entries = params[:highlights]
+    new_document_id = params[:document_id]
+
+    new_highlights = highlight_entries.collect{ |entry|
+      highlight = Highlight.where(uid: entry[:highlightUid], document_id: entry[:documentId]).first
+      new_attributes = highlight.attributes.merge({'uid' => entry[:newHighlightUid], 'document_id' => new_document_id})
+      new_attributes.delete('id')
+      new_highlight = Highlight.create new_attributes
+      highlight.links_to.each do |linkable|
+        new_highlight.add_link_to(linkable)
+      end
+      new_highlight
+    }
+
+    render json: new_highlights
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_highlight

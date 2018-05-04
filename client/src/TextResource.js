@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
-import { addHighlight, updateDocument } from './modules/documentGrid';
+import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 import { schema } from 'prosemirror-schema-basic';
 import { EditorState, Plugin, TextSelection } from 'prosemirror-state';
 import { Schema, DOMSerializer } from 'prosemirror-model';
@@ -12,7 +12,7 @@ import { addListNodes } from 'prosemirror-schema-list';
 import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
 import { toggleMark } from 'prosemirror-commands';
 import { MenuItem } from 'prosemirror-menu';
-import { AddMarkStep } from 'prosemirror-transform';
+import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
 import { yellow500 } from 'material-ui/styles/colors';
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -22,20 +22,24 @@ class TextResource extends Component {
   constructor(props: TextResourceProps) {
     super(props);
 
-    const {resourceId, setTextHighlightColor} = this.props;
+    const {document_id, setTextHighlightColor} = this.props;
     this.highlight_map = this.props.highlight_map;
+    this.highlightsToDuplicate = [];
 
     const dmHighlightSpec = {
-      attrs: {highlightId: {default: 'dm_new_highlight'}},
+      attrs: {highlightUid: {default: 'dm_new_highlight'}, documentId: {default: null}, tempColor: {default: null}},
       toDOM: function(mark) {
-        const color = this.highlight_map[mark.attrs.highlightId] ? this.highlight_map[mark.attrs.highlightId].color : this.props.highlightColors[this.props.resourceId];
-        const properties = {class: 'dm-highlight', style: `background: ${color};`, onclick: `window.setFocusHighlight('${resourceId}', '${mark.attrs.highlightId}')`};
-        properties['data-highlight-id'] = mark.attrs.highlightId;
+        const color = this.highlight_map[mark.attrs.highlightUid] ? this.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[this.props.document_id]);
+        const properties = {class: 'dm-highlight', style: `background: ${color};`, onclick: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`};
+        properties['data-highlight-uid'] = mark.attrs.highlightUid;
+        properties['data-document-id'] = mark.attrs.documentId;
         return ['span', properties, 0];
       }.bind(this),
       parseDOM: [{tag: 'span.dm-highlight', getAttrs(dom) {
         return {
-          highlightId: dom.getAttribute('data-highlight-id')
+          highlightUid: dom.getAttribute('data-highlight-uid'),
+          documentId: dom.getAttribute('data-document-id'),
+          tempColor: dom.style.background
         };
       }}]
     }
@@ -68,7 +72,7 @@ class TextResource extends Component {
         enable: true
       }
       for (let prop in options) passedOptions[prop] = options[prop]
-      return cmdItem((state, dispatch) => {return toggleMark(markType, {highlightId: `dm_text_highlight_${Date.now()}`}).call(null, state, dispatch);}, passedOptions)
+      return cmdItem((state, dispatch) => {return toggleMark(markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id}).call(null, state, dispatch);}, passedOptions)
     }
 
     const toggleHighlight = markItem(dmSchema.marks.highlight, {
@@ -85,7 +89,7 @@ class TextResource extends Component {
 
     const dmDoc = dmSchema.nodeFromJSON(this.props.content);
 
-    this.props.updateEditorState(resourceId, EditorState.create({
+    this.props.updateEditorState(document_id, EditorState.create({
       doc: dmDoc,
       selection: TextSelection.create(dmDoc, 0),
       plugins: exampleSetup({
@@ -94,7 +98,7 @@ class TextResource extends Component {
       })
     }));
 
-    setTextHighlightColor(resourceId, yellow500);
+    setTextHighlightColor(document_id, yellow500);
 
     this.scheduledContentUpdate = null;
   }
@@ -104,24 +108,126 @@ class TextResource extends Component {
   }
 
   onEditorState = (editorState: EditorState) => {
-    this.props.updateEditorState(this.props.resourceId, editorState);
+    this.props.updateEditorState(this.props.document_id, editorState);
+  }
+
+  collectHighlights(startNode, from, to) {
+    let highlights = [];
+    startNode.nodesBetween(from, to, node => {
+      node.marks.forEach(mark => {
+        if (mark.type === this.schema.marks.highlight)
+          highlights.push(mark);
+      });
+    });
+    return highlights;
+  }
+
+  createHighlight = (mark, slice, serializer) => {
+    const { document_id, highlightColors } = this.props;
+    const { highlightUid } = mark.attrs;
+    let div = document.createElement('div');
+    div.appendChild(serializer.serializeFragment(slice.content));
+    this.props.addHighlight(document_id, highlightUid, highlightUid, highlightColors[document_id], div.textContent);
+  }
+
+  handlePaste = (view, event, slice) => {
+    // process highlights that entered via copy and paste
+    let pastedMarks = [];
+    slice.content.descendants(node => {
+      node.marks.forEach(mark => {
+        if (mark.type === this.schema.marks.highlight) pastedMarks.push(mark);
+      });
+    });
+    pastedMarks.forEach((mark, index) => {
+      let markEntry = Object.assign({}, mark.attrs);
+      mark.attrs['highlightUid'] = markEntry['newHighlightUid'] = `dm_text_highlight_${Date.now()}_${index}`;
+      mark.attrs['documentId'] = this.props.document_id;
+      this.highlightsToDuplicate.push(markEntry);
+    });
   }
 
   processAndConfirmTransaction = (tx, callback) => {
+    let postponeCallback = false;
+    let postContentChanges = true;
     const serializer = DOMSerializer.fromSchema(this.schema);
-    if (tx.before.content !== tx.doc.content)
-      this.scheduleContentUpdate(tx.doc.content);
     const { steps } = tx;
-    const { resourceId, highlightColors } = this.props;
+    const { document_id, highlightColors } = this.props;
+    let highlightsToDuplicate = [];
+    let alteredHighlights = [];
     steps.forEach(step => {
-      if (step instanceof AddMarkStep) {
-        const { highlightId } = step.mark.attrs;
-        let div = document.createElement('div');
-        div.appendChild(serializer.serializeFragment(tx.curSelection.content().content));
-        this.props.addHighlight(resourceId, highlightId, highlightId, highlightColors[resourceId], div.textContent);
+      // save new highlight
+      if (step instanceof AddMarkStep && step.mark.type === this.schema.marks.highlight) {
+        this.createHighlight(step.mark, tx.curSelection.content(), serializer);
+      }
+      // process highlights that have been removed or altered by a text content change or a mark toggle
+      else if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === 'highlight')) {
+        // TODO: handle case where the space between two highlights is eliminated
+        // pad the range where we look for effected highlights in order to accommodate edge cases with cursor at beginning or end of highlight
+        let from = Math.max(step.from - 1, 0), to = step.to;
+        if (step.to - step.from < 1) {
+          let resolvedFrom = tx.doc.resolve(step.from);
+          if (resolvedFrom.parentOffset < 1) {
+            to += 1;
+          }
+        }
+        const effectedMarks = this.collectHighlights(this.props.editorStates[this.props.document_id].doc, from, to);
+        const additionTo = step.to + (tx.doc.nodeSize - tx.before.nodeSize);
+        const possibleNewMarks = this.collectHighlights(tx.doc, step.from, additionTo);
+        possibleNewMarks.forEach(mark => {
+          if (!effectedMarks.includes(mark) && !this.highlightsToDuplicate.map(item => item.newHighlightUid).includes(mark.attrs.highlightUid)) {
+            this.createHighlight(mark, tx.doc.slice(step.from, additionTo), serializer);
+          }
+        });
+        if (effectedMarks.length > 0) {
+          let removedMarks = effectedMarks.slice(0);
+          tx.doc.descendants(node => {
+            node.marks.forEach(mark => {
+              if (mark.type === this.schema.marks.highlight) {
+                const effectedIndex = effectedMarks.indexOf(mark);
+                if (effectedIndex >= 0) {
+                  if (this.props.highlight_map[mark.attrs.highlightUid] && serializer.serializeNode(node).textContent !== this.props.highlight_map[mark.attrs.highlightUid].excerpt) {
+                    alteredHighlights.push({
+                      id: this.props.highlight_map[mark.attrs.highlightUid].id,
+                      excerpt: serializer.serializeNode(node).textContent
+                    });
+                  }
+                  removedMarks.splice(effectedIndex, 1); // the mark remains, so exclude it from the list of removed marks
+                }
+              }
+            });
+          });
+          if (removedMarks.length > 0) {
+            postponeCallback = true;
+            postContentChanges = false;
+            this.props.openDeleteDialog(
+              'Removing highlight' + (removedMarks.length > 1 ? 's' : ''),
+              'Deleting the selected text will destroy ' + (removedMarks.length > 1 ? (removedMarks.length) + ' highlights and their ' : 'a highlight and its ') + 'links.',
+              'Destroy ' + (removedMarks.length > 1 ? (removedMarks.length) + ' highlights' : 'highlight'),
+              {
+                transaction: tx,
+                document_id,
+                highlights: removedMarks.map(mark => this.props.highlight_map[mark.attrs.highlightUid]),
+                highlightsToDuplicate: this.highlightsToDuplicate.slice(0),
+                alteredHighlights
+              },
+              TEXT_HIGHLIGHT_DELETE
+            );
+          }
+        }
       }
     });
-    callback(tx);
+    if (postContentChanges && tx.before.content !== tx.doc.content)
+      this.scheduleContentUpdate(tx.doc.content);
+    if (!postponeCallback) {
+      if (this.highlightsToDuplicate.length > 0) {
+        this.props.duplicateHighlights(this.highlightsToDuplicate, document_id);
+      }
+      alteredHighlights.forEach(highlight => {
+        this.props.updateHighlight(highlight.id, {excerpt: highlight.excerpt});
+      });
+      callback(tx);
+    }
+    this.highlightsToDuplicate = [];
   }
 
   scheduleContentUpdate(content) {
@@ -129,28 +235,28 @@ class TextResource extends Component {
     if (this.scheduledContentUpdate)
       window.clearTimeout(this.scheduledContentUpdate);
     this.scheduledContentUpdate = window.setTimeout(function() {
-      console.log('updating content');
-      this.props.updateDocument(this.props.resourceId, {content: {type: 'doc', content}});
+      this.props.updateDocument(this.props.document_id, {content: {type: 'doc', content}});
     }.bind(this), delay);
   }
 
   render() {
-    const { resourceId, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker } = this.props;
-    const editorState = editorStates[resourceId];
+    const { document_id, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker } = this.props;
+    const editorState = editorStates[document_id];
     if (!editorState) return null;
     return (
       <div className="editorview-wrapper">
         <HighlightColorSelect
-          highlightColor={highlightColors[resourceId]}
-          displayColorPicker={displayColorPickers[resourceId]}
-          setHighlightColor={(color) => {setTextHighlightColor(resourceId, color);}}
-          toggleColorPicker={() => {toggleTextColorPicker(resourceId);}}
+          highlightColor={highlightColors[document_id]}
+          displayColorPicker={displayColorPickers[document_id]}
+          setHighlightColor={(color) => {setTextHighlightColor(document_id, color);}}
+          toggleColorPicker={() => {toggleTextColorPicker(document_id);}}
         />
         <ProseMirrorEditorView
           ref={this.onEditorView}
           editorState={editorState}
           onEditorState={this.onEditorState}
           processAndConfirmTransaction={this.processAndConfirmTransaction}
+          handlePaste={this.handlePaste}
         />
       </div>
     );
@@ -166,9 +272,12 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateEditorState,
   addHighlight,
+  updateHighlight,
+  duplicateHighlights,
   setTextHighlightColor,
   toggleTextColorPicker,
-  updateDocument
+  updateDocument,
+  openDeleteDialog
 }, dispatch);
 
 export default connect(

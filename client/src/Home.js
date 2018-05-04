@@ -25,14 +25,6 @@ class Home extends Component {
         <Navigation title='DM 2.0' isHome={true} isLoading={this.props.loading} />
         <Paper style={{ minWidth: '300px', maxWidth: '60%', maxHeight: '72%', margin: '112px auto 32px auto', overflowY: 'scroll' }} zDepth={2}>
           <List style={{ padding: '0' }}>
-            <ListItem
-              primaryText='Dummy Project'
-              secondaryText='A sample project with documents and highlight_map set in the redux store rather than retrieved from the API. Contains two text documents and two canvas documents.'
-              secondaryTextLines={2}
-              onClick={() => {this.props.projectClick('project')}}
-              style={{padding: '12px'}}
-              key='dummy-project'
-            />
             {this.props.projects.map(project => (
               <ListItem
                 primaryText={project.title}

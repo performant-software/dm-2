@@ -27,7 +27,8 @@ export default class ProseMirrorEditorView extends Component {
 
       this._editorView = new EditorView(element, {
         state: this.props.editorState,
-        dispatchTransaction: this.dispatchTransaction
+        dispatchTransaction: this.dispatchTransaction,
+        handlePaste: this.props.handlePaste
       });
 
     }

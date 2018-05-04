@@ -1,13 +1,9 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import FlatButton from 'material-ui/FlatButton';
-import AddCircle from 'material-ui/svg-icons/content/add-circle';
-import Popover from 'material-ui/Popover';
-import Menu from 'material-ui/Menu';
-import MenuItem from 'material-ui/MenuItem';
-import { openDocumentPopover, closeDocumentPopover } from './modules/tableOfContents';
+import { openDocumentPopover, closeDocumentPopover } from './modules/project';
 import { createTextDocument } from './modules/documentGrid';
+import AddDocumentButton from './AddDocumentButton';
 import LinkableList from './LinkableList';
 
 class TableOfContents extends Component {
@@ -20,28 +16,7 @@ class TableOfContents extends Component {
   render() {
     return (
       <div>
-        <FlatButton
-          label='Add New Document'
-          icon={<AddCircle />}
-          style={{margin: 'auto'}}
-          onClick={this.props.openDocumentPopover}
-          id='addNewDocumentButton'
-        />
-        <Popover
-          open={this.props.documentPopoverOpen}
-          anchorEl={document.getElementById('addNewDocumentButton')}
-          anchorOrigin={{horizontal: 'right', vertical: 'top'}}
-          targetOrigin={{horizontal: 'left', vertical: 'top'}}
-          onRequestClose={this.props.closeDocumentPopover}
-         >
-          <Menu>
-            <MenuItem primaryText='Text' onClick={() => {
-              this.props.createTextDocument(this.props.projectId, 'Project');
-              this.props.closeDocumentPopover();
-            }} />
-            <MenuItem primaryText='Image' />
-          </Menu>
-        </Popover>
+        <AddDocumentButton label='Add New Document' documentPopoverOpen={this.props.documentPopoverOpen} openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} closeDocumentPopover={this.props.closeDocumentPopover} textClick={() => {this.props.createTextDocument(this.props.projectId, 'Project');}} idString='tableOfContents' />
         <LinkableList items={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} allDraggable={true} />
       </div>
     );
@@ -49,9 +24,8 @@ class TableOfContents extends Component {
 }
 
 const mapStateToProps = state => ({
-  documentPopoverOpen: state.tableOfContents.documentPopoverOpen,
-  projectId: state.project.id,
-  openDocumentIds: state.documentGrid.openDocuments.map(document => document.id.toString())
+  documentPopoverOpen: state.project.documentPopoverOpenFor === 'tableOfContents',
+  projectId: state.project.id
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
