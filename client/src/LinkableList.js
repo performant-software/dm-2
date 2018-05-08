@@ -8,7 +8,7 @@ export default class LinkableList extends Component {
     return (
       <List style={{paddingTop: '0'}}>
         {items.map(item => (
-          <LinkableSummary item={item} key={item.id} isDraggable={allDraggable} />
+          <LinkableSummary item={item} key={`${item.document_kind || 'folder'}-${item.id}`} isDraggable={allDraggable} isOpen={this.props.openDocumentIds && this.props.openDocumentIds.includes(item.id.toString())} />
         ))}
       </List>
     );

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { addHighlight } from './modules/resourceGrid';
+import { addHighlight } from './modules/documentGrid';
 import { setCanvasHighlightColor, toggleCanvasColorPicker } from './modules/canvasEditor';
 import OpenSeadragon from 'openseadragon';
 import { fabric } from './fabricAdapted';//'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
@@ -11,7 +11,7 @@ import HighlightColorSelect from './HighlightColorSelect';
 
 class CanvasResource extends Component {
   componentDidMount() {
-    const {content, highlights, resourceId, setCanvasHighlightColor} = this.props;
+    const {content, highlight_map, resourceId, setCanvasHighlightColor} = this.props;
 
     setCanvasHighlightColor(resourceId, yellow500);
 
@@ -31,7 +31,7 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     });
-    this.renderHighlights(this.overlay, highlights);
+    this.renderHighlights(this.overlay, highlight_map);
     overlay.fabricCanvas().on('mouse:move', function(options) {
       if (options.target && options.target.highlightId) {
         window.setFocusHighlight(options.target.highlightId);
@@ -43,10 +43,10 @@ class CanvasResource extends Component {
     };
   }
 
-  renderHighlights(overlay, highlights) {
+  renderHighlights(overlay, highlight_map) {
     const { resourceId } = this.props;
-    for (const highlightId in highlights) {
-      const highlight = highlights[highlightId];
+    for (const highlightId in highlight_map) {
+      const highlight = highlight_map[highlightId];
       const jsonString = `{"objects":[${highlight.target}]}`;
       overlay.fabricCanvas().loadFromJSON(jsonString, null, (o, object) => {
         object.on('mousedown', () => {

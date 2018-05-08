@@ -22,7 +22,7 @@ export default class App extends Component {
         <div>
           <main>
             <Route exact path='/' component={Home} />
-            <Route exact path='/project' component={Project} />
+            <Route path='/:slug' component={Project} />
           </main>
         </div>
       </MuiThemeProvider>

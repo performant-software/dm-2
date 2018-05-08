@@ -4,10 +4,10 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
-import { addHighlight } from './modules/resourceGrid';
+import { addHighlight, updateDocument } from './modules/documentGrid';
 import { schema } from 'prosemirror-schema-basic';
 import { EditorState, Plugin, TextSelection } from 'prosemirror-state';
-import { Schema } from 'prosemirror-model';
+import { Schema, DOMSerializer } from 'prosemirror-model';
 import { addListNodes } from 'prosemirror-schema-list';
 import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
 import { toggleMark } from 'prosemirror-commands';
@@ -23,12 +23,12 @@ class TextResource extends Component {
     super(props);
 
     const {resourceId, setTextHighlightColor} = this.props;
-    this.highlights = this.props.highlights;
+    this.highlight_map = this.props.highlight_map;
 
     const dmHighlightSpec = {
       attrs: {highlightId: {default: 'dm_new_highlight'}},
       toDOM: function(mark) {
-        const color = this.highlights[mark.attrs.highlightId] ? this.highlights[mark.attrs.highlightId].color : yellow500;
+        const color = this.highlight_map[mark.attrs.highlightId] ? this.highlight_map[mark.attrs.highlightId].color : this.props.highlightColors[this.props.resourceId];
         const properties = {class: 'dm-highlight', style: `background: ${color};`, onclick: `window.setFocusHighlight('${resourceId}', '${mark.attrs.highlightId}')`};
         properties['data-highlight-id'] = mark.attrs.highlightId;
         return ['span', properties, 0];
@@ -44,6 +44,7 @@ class TextResource extends Component {
       nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
       marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
     });
+    this.schema = dmSchema;
 
     function cmdItem(cmd, options) {
       let passedOptions = {
@@ -94,10 +95,12 @@ class TextResource extends Component {
     }));
 
     setTextHighlightColor(resourceId, yellow500);
+
+    this.scheduledContentUpdate = null;
   }
 
   componentWillReceiveProps(props) {
-    this.highlights = props.highlights;
+    this.highlight_map = props.highlight_map;
   }
 
   onEditorState = (editorState: EditorState) => {
@@ -105,15 +108,30 @@ class TextResource extends Component {
   }
 
   processAndConfirmTransaction = (tx, callback) => {
+    const serializer = DOMSerializer.fromSchema(this.schema);
+    if (tx.before.content !== tx.doc.content)
+      this.scheduleContentUpdate(tx.doc.content);
     const { steps } = tx;
     const { resourceId, highlightColors } = this.props;
     steps.forEach(step => {
       if (step instanceof AddMarkStep) {
         const { highlightId } = step.mark.attrs;
-        this.props.addHighlight(resourceId, highlightId, highlightId, highlightColors[resourceId]);
+        let div = document.createElement('div');
+        div.appendChild(serializer.serializeFragment(tx.curSelection.content().content));
+        this.props.addHighlight(resourceId, highlightId, highlightId, highlightColors[resourceId], div.textContent);
       }
     });
     callback(tx);
+  }
+
+  scheduleContentUpdate(content) {
+    const delay = 1000; // milliseconds
+    if (this.scheduledContentUpdate)
+      window.clearTimeout(this.scheduledContentUpdate);
+    this.scheduledContentUpdate = window.setTimeout(function() {
+      console.log('updating content');
+      this.props.updateDocument(this.props.resourceId, {content: {type: 'doc', content}});
+    }.bind(this), delay);
   }
 
   render() {
@@ -121,21 +139,19 @@ class TextResource extends Component {
     const editorState = editorStates[resourceId];
     if (!editorState) return null;
     return (
-      <div>
-        <div className="editorview-wrapper">
-          <HighlightColorSelect
-            highlightColor={highlightColors[resourceId]}
-            displayColorPicker={displayColorPickers[resourceId]}
-            setHighlightColor={(color) => {setTextHighlightColor(resourceId, color);}}
-            toggleColorPicker={() => {toggleTextColorPicker(resourceId);}}
-          />
-          <ProseMirrorEditorView
-            ref={this.onEditorView}
-            editorState={editorState}
-            onEditorState={this.onEditorState}
-            processAndConfirmTransaction={this.processAndConfirmTransaction}
-          />
-        </div>
+      <div className="editorview-wrapper">
+        <HighlightColorSelect
+          highlightColor={highlightColors[resourceId]}
+          displayColorPicker={displayColorPickers[resourceId]}
+          setHighlightColor={(color) => {setTextHighlightColor(resourceId, color);}}
+          toggleColorPicker={() => {toggleTextColorPicker(resourceId);}}
+        />
+        <ProseMirrorEditorView
+          ref={this.onEditorView}
+          editorState={editorState}
+          onEditorState={this.onEditorState}
+          processAndConfirmTransaction={this.processAndConfirmTransaction}
+        />
       </div>
     );
   }
@@ -151,7 +167,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateEditorState,
   addHighlight,
   setTextHighlightColor,
-  toggleTextColorPicker
+  toggleTextColorPicker,
+  updateDocument
 }, dispatch);
 
 export default connect(

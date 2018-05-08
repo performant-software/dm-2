@@ -2,40 +2,47 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import SplitPane from 'react-split-pane';
-import { loadProject } from './modules/project';
-import { openDummyResources } from './modules/resourceGrid';
+import { loadProject, loadDummyProject, updateProject } from './modules/project';
+import { openDummyResources } from './modules/documentGrid';
 import { selectTarget, clearSelection } from './modules/annotationViewer';
 import Navigation from './Navigation';
 import ProjectSidebar from './ProjectSidebar';
-import ResourceViewer from './ResourceViewer';
+import DocumentViewer from './DocumentViewer';
 import AnnotationPopup from './AnnotationPopup';
 
 class Project extends Component {
   setFocusHighlight(resourceId, highlightId) {
-    const resource = this.props.openResources.find(resource => resource.id === resourceId);
-    const target = resource && highlightId ? resource.highlights[highlightId] : resource;
+    console.log(resourceId + ' - ' + highlightId);
+    const resource = this.props.openDocuments.find(resource => resource.id.toString() === resourceId.toString());
+    console.log(this.props.openDocuments);
+    const target = resource && highlightId ? resource.highlight_map[highlightId] : resource;
     if (target) {
       target.resourceName = resource.title;
-      target.documentKind = resource.documentKind;
+      target.document_kind = resource.document_kind;
       this.props.selectTarget(target);
     }
   }
 
   componentDidMount() {
     window.setFocusHighlight = this.setFocusHighlight.bind(this);
-    this.props.loadProject();
-    this.props.openDummyResources();
+    if (this.props.match.params.slug === 'project') {
+      this.props.loadDummyProject();
+      this.props.openDummyResources();
+    }
+    else if (this.props.match.params.slug !== 'new') {
+      this.props.loadProject(this.props.match.params.slug, this.props.projectTitle)
+    }
   }
 
   render() {
     return (
       <div>
-        <Navigation title='Dummy Project' />
+        <Navigation title={this.props.title} inputId={this.props.projectId} onTitleChange={(event, newValue) => {this.props.updateProject(this.props.projectId, {title: newValue});}} isLoading={this.props.loading} />
         <SplitPane split='vertical' minSize={250} maxSize={600} defaultSize={350}>
           <ProjectSidebar contentsChildren={this.props.contentsChildren} />
           <div style={{ margin: '80px 16px 16px 16px', display: 'grid', gridTemplateRows: '500px 500px', gridTemplateColumns: '1fr 1fr', gridGap: '20px' }}>
-            {this.props.openResources.map(resource => (
-              <ResourceViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} documentKind={resource.documentKind} content={resource.content} highlights={resource.highlights} />
+            {this.props.openDocuments.map(resource => (
+              <DocumentViewer key={resource.id} resourceId={resource.id} resourceName={resource.title} document_kind={resource.document_kind} content={resource.content} highlight_map={resource.highlight_map} />
             ))}
             <AnnotationPopup target={this.props.selectedTarget} closeHandler={this.props.clearSelection} />
           </div>
@@ -46,13 +53,19 @@ class Project extends Component {
 }
 
 const mapStateToProps = state => ({
+  projectId: state.project.id,
+  title: state.project.title,
+  loading: state.project.loading,
+  errored: state.project.errored,
   contentsChildren: state.project.contentsChildren,
-  openResources: state.resourceGrid.openResources,
+  openDocuments: state.documentGrid.openDocuments,
   selectedTarget: state.annotationViewer.selectedTarget
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
   loadProject,
+  loadDummyProject,
+  updateProject,
   openDummyResources,
   selectTarget,
   clearSelection

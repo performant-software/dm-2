@@ -56,3 +56,12 @@ body {
 .ProseMirror-menubar {
   min-height: 48px !important;
 }
+
+.ProseMirror {
+  height: 380px;
+  overflow-y: scroll;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
