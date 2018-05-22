@@ -46,6 +46,6 @@ class LinksController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def link_params
-      params.require(:link).permit(:created_by_id, :linkable_a, :linkable_b_id)
+      params.require(:link).permit(:created_by_id, :linkable_a_id, :linkable_a_type, :linkable_b_id, :linkable_b_type)
     end
 end

@@ -11,9 +11,9 @@ import HighlightColorSelect from './HighlightColorSelect';
 
 class CanvasResource extends Component {
   componentDidMount() {
-    const {content, highlight_map, resourceId, setCanvasHighlightColor} = this.props;
+    const {content, highlight_map, document_id, setCanvasHighlightColor} = this.props;
 
-    setCanvasHighlightColor(resourceId, yellow500);
+    setCanvasHighlightColor(document_id, yellow500);
 
     const tileSource = content;
     const viewer = OpenSeadragon({
@@ -33,8 +33,8 @@ class CanvasResource extends Component {
     });
     this.renderHighlights(this.overlay, highlight_map);
     overlay.fabricCanvas().on('mouse:move', function(options) {
-      if (options.target && options.target.highlightId) {
-        window.setFocusHighlight(options.target.highlightId);
+      if (options.target && options.target.highlight_id) {
+        window.setFocusHighlight(options.target.highlight_id);
       }
     })
     window.onresize = function() {
@@ -44,51 +44,51 @@ class CanvasResource extends Component {
   }
 
   renderHighlights(overlay, highlight_map) {
-    const { resourceId } = this.props;
-    for (const highlightId in highlight_map) {
-      const highlight = highlight_map[highlightId];
+    const { document_id } = this.props;
+    for (const highlight_id in highlight_map) {
+      const highlight = highlight_map[highlight_id];
       const jsonString = `{"objects":[${highlight.target}]}`;
       overlay.fabricCanvas().loadFromJSON(jsonString, null, (o, object) => {
         object.on('mousedown', () => {
-          window.setFocusHighlight(resourceId, highlightId);
+          window.setFocusHighlight(document_id, highlight_id);
         });
       });
     }
   }
 
   rectClick() {
-    const highlightId = `dm_canvas_highlight_${Date.now()}`;
-    const { resourceId, highlightColors } = this.props;
+    const highlight_id = `dm_canvas_highlight_${Date.now()}`;
+    const { document_id, highlightColors } = this.props;
     let rect = new fabric.Rect({
       left: 650,
       top: 700,
-      stroke: highlightColors[resourceId],
+      stroke: highlightColors[document_id],
       strokeWidth: 5,
       fill: 'transparent',
       width: 300,
       height: 300,
       selectable: true,
-      highlightId: 'dm_canvas_highlight_new'
+      highlight_id: 'dm_canvas_highlight_new'
     });
     this.overlay.fabricCanvas().add(rect);
     this.overlay.fabricCanvas().setActiveObject(rect);
-    this.props.addHighlight(resourceId, highlightId, JSON.stringify(rect.toJSON()));
+    this.props.addHighlight(document_id, highlight_id, JSON.stringify(rect.toJSON()));
     rect.on('mousedown', () => {
-      window.setFocusHighlight(resourceId, highlightId);
+      window.setFocusHighlight(document_id, highlight_id);
     });
   }
 
   render() {
-    const { resourceId, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor } = this.props;
+    const { document_id, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor } = this.props;
 
     return (
       <div>
         <div>
           <HighlightColorSelect
-            highlightColor={highlightColors[resourceId]}
-            displayColorPicker={displayColorPickers[resourceId]}
-            setHighlightColor={(color) => {setCanvasHighlightColor(resourceId, color);}}
-            toggleColorPicker={() => {toggleCanvasColorPicker(resourceId);}}
+            highlightColor={highlightColors[document_id]}
+            displayColorPicker={displayColorPickers[document_id]}
+            setHighlightColor={(color) => {setCanvasHighlightColor(document_id, color);}}
+            toggleColorPicker={() => {toggleCanvasColorPicker(document_id);}}
           />
           <button onClick={this.rectClick.bind(this)} style={{ marginBottom: '10px', verticalAlign: 'top' }}>Rectangle</button>
         </div>

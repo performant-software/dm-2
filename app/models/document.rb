@@ -1,5 +1,5 @@
 class Document < Linkable
-  belongs_to :project
+  belongs_to :project, touch: true
   belongs_to :created_by, class_name: 'User', optional: true
   belongs_to :parent, polymorphic: true, optional: true
   has_many :highlights, dependent: :destroy
@@ -8,7 +8,19 @@ class Document < Linkable
     self.id
   end
 
+  def document_title
+    self.title
+  end
+
   def highlight_id
+    nil
+  end
+
+  def excerpt
+    nil
+  end
+
+  def color
     nil
   end
 

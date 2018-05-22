@@ -6,6 +6,8 @@ Rails.application.routes.draw do
   resources :projects
   mount_devise_token_auth_for 'User', at: 'auth'
 
+  post '/highlights/duplicate' => 'highlights#duplicate'
+
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?
   end
