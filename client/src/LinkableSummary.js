@@ -19,17 +19,16 @@ class Summary extends Component {
   }
 
   render() {
-    const { document_title, excerpt, document_kind, document_id, thumbnailUrl, color } = this.props.item;
+    const { document_title, excerpt, document_kind, document_id, thumbnail_url, color } = this.props.item;
     let primaryText = document_title;
-    if (this.props.isDragging) primaryText += '!!!';
-    if (document_kind === TEXT_RESOURCE_TYPE && excerpt && excerpt.length > 0)
+    if (excerpt && excerpt.length > 0)
       primaryText = <div><span style={{ background: color || 'yellow' }}>{excerpt}</span> in {primaryText}</div>;
     return (
       <ListItem
         primaryText={primaryText}
         leftAvatar={
           <Avatar
-            src={document_kind === CANVAS_RESOURCE_TYPE ? thumbnailUrl : null}
+            src={document_kind === CANVAS_RESOURCE_TYPE ? thumbnail_url : null}
             icon={document_kind === TEXT_RESOURCE_TYPE ? <TextFields /> : null}
             style={this.props.isDraggable ? {
               left: '8px',

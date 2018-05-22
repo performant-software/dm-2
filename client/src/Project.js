@@ -60,7 +60,7 @@ class Project extends Component {
           >
             <div style={{ margin: '80px 16px 16px 16px', display: 'grid', gridTemplateRows: '500px 500px', gridTemplateColumns: '1fr 1fr', gridGap: '20px' }}>
               {this.props.openDocuments.map(document => (
-                <DocumentViewer key={document.id} document_id={document.id} resourceName={document.title} document_kind={document.document_kind} content={document.content} highlight_map={document.highlight_map} linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} />
+                <DocumentViewer key={document.id} document_id={document.id} resourceName={document.title} document_kind={document.document_kind} content={document.content} highlight_map={document.highlight_map} image_thumbnail_urls={document.image_thumbnail_urls} image_urls={document.image_urls} linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} />
               ))}
             </div>
             <LinkInspectorPopupLayer targets={this.props.selectedTargets} closeHandler={this.props.closeTarget} mouseDownHandler={this.props.promoteTarget} openDocumentIds={this.props.openDocumentIds} />

@@ -7,6 +7,7 @@ class Linkable < ApplicationRecord
   has_many :b_linked_highlights, through: :b_links, source: :linkable_a, source_type: 'Highlight'
   has_many :a_linked_documents, through: :a_links, source: :linkable_b, source_type: 'Document'
   has_many :b_linked_documents, through: :b_links, source: :linkable_a, source_type: 'Document'
+  has_one_attached :thumbnail
 
   def links
     self.a_links.or self.b_links
@@ -21,5 +22,9 @@ class Linkable < ApplicationRecord
     unless self.links_to.include? linked #TODO: make more efficient, e.g. by validating uniqueness
       link = Link.create(linkable_a: self, linkable_b: linked)
     end
+  end
+
+  def thumbnail_url
+    self.thumbnail.attached? ? url_for(self.thumbnail) : nil
   end
 end

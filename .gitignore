@@ -12,5 +12,7 @@
 /tmp/*
 !/log/.keep
 !/tmp/.keep
+/storage/*
+.env
 
 .byebug_history
