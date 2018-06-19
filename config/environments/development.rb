@@ -51,6 +51,17 @@ Rails.application.configure do
   # Use an evented file watcher to asynchronously detect changes in source code,
   # routes, locales, etc. This feature depends on the listen gem.
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
+  # Enable cross origin requests for authentication in development API/SPA setup
+  config.middleware.use Rack::Cors do
+    allow do
+      origins '*'
+      resource '*',
+        headers: :any,
+        expose: ['access-token', 'expiry', 'token-type', 'uid', 'client'],
+        methods: [:get, :post, :options, :delete, :put]
+    end
+  end
 end
 
 Rails.application.routes.default_url_options[:host] = 'localhost:3001'

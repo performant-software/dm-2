@@ -30,6 +30,7 @@ gem 'active_model_serializers'
 gem 'bootsnap', require: false
 gem 'image_processing', '~> 1.2'
 gem 'aws-sdk-s3', require: false
+gem 'rack-cors', :require => 'rack/cors'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

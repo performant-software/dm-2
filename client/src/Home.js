@@ -28,7 +28,7 @@ class Home extends Component {
             {this.props.projects.map(project => (
               <ListItem
                 primaryText={project.title}
-                secondaryText='Project description will go here.'
+                secondaryText={project.description}
                 secondaryTextLines={2}
                 onClick={() => this.props.projectClick(project.id)}
                 style={{padding: '16px'}}
@@ -36,15 +36,17 @@ class Home extends Component {
               />
             ))}
           </List>
-          <div style={{position: 'sticky', bottom: '0', background: '#FFF', borderRadius: '2px'}}>
-            <Divider />
-            <FlatButton
-              label='New project'
-              fullWidth={true} icon={<AddCircle />}
-              style={{padding: '12px 0', height: 'auto'}}
-              onClick={this.props.newProject}
-            />
-          </div>
+          {this.props.currentUser.isSignedIn && this.props.currentUser.attributes.approved &&
+            <div style={{position: 'sticky', bottom: '0', background: '#FFF', borderRadius: '2px'}}>
+              <Divider />
+              <FlatButton
+                label='New project'
+                fullWidth={true} icon={<AddCircle />}
+                style={{padding: '12px 0', height: 'auto'}}
+                onClick={this.props.newProject}
+              />
+            </div>
+          }
         </Paper>
       </div>
     );
@@ -53,7 +55,9 @@ class Home extends Component {
 
 const mapStateToProps = state => ({
   projects: state.home.projects,
-  loading: state.home.loading
+  loading: state.home.loading,
+  currentUser: state.reduxTokenAuth.currentUser,
+  reduxTokenAuth: state.reduxTokenAuth
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({

@@ -34,6 +34,7 @@
     "redux": "^3.7.2",
     "redux-devtools-extension": "^2.13.2",
     "redux-thunk": "^2.2.0",
+    "redux-token-auth": "^0.19.0",
     "xmldom": "^0.1.27"
   },
   "scripts": {

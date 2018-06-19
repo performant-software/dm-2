@@ -13,4 +13,8 @@ class Highlight < Linkable
   def document_kind
     self.document ? self.document.document_kind : 'unknown'
   end
+
+  def project
+    self.document ? self.document.project : nil
+  end
 end

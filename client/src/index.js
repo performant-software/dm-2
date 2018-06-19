@@ -3,9 +3,12 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { ConnectedRouter } from 'react-router-redux';
 import store, { history } from './store';
+import { verifyCredentials } from './modules/redux-token-auth-config';
 import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
+
+verifyCredentials(store);
 
 ReactDOM.render(
   <Provider store={store}>

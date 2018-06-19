@@ -6,7 +6,15 @@ import rootReducer from './modules';
 
 export const history = createHistory();
 
-const initialState = {};
+const initialState = {
+  reduxTokenAuth: {
+    currentUser: {
+      isLoading: false,
+      isSignedIn: false,
+      attributes: {}
+    }
+  }
+};
 const enhancers = [];
 const middleware = [
   thunk,

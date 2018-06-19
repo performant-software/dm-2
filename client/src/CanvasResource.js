@@ -83,7 +83,8 @@ class CanvasResource extends Component {
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       tileSources,
       sequenceMode: true,
-      gestureSettingsMouse: { clickToZoom: false }
+      gestureSettingsMouse: { clickToZoom: false },
+      showNavigator: true
     });
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: 2000});
 
@@ -217,6 +218,10 @@ class CanvasResource extends Component {
         }
         object.strokeWidth = strokeWidth / zoom;
         object.dirty = true;
+        object.selectable = this.props.writeEnabled;
+        if (!this.props.writeEnabled) {
+          object.hoverCursor = 'default';
+        }
       });
     });
   }
@@ -257,6 +262,7 @@ class CanvasResource extends Component {
       lockSkewingX: true,
       lockSkewingY: true,
       lockUniScaling: true,
+      hasControls: false,
       _isMarker: true
     });
     this.createHighlight(marker, 'Marker highlight');
@@ -404,7 +410,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, image_urls, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument } = this.props;
+    const { document_id, image_urls, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument, writeEnabled } = this.props;
     const mode = addTileSourceMode[document_id];
 
     this.highlight_map = this.props.highlight_map;
@@ -444,46 +450,48 @@ class CanvasResource extends Component {
     return (
       <div>
         <div style={{ display: mode ? 'none' : 'initial' }}>
-          <div style={{ display: 'flex' }}>
-            <HighlightColorSelect
-              highlightColor={highlightColors[document_id]}
-              displayColorPicker={displayColorPickers[document_id]}
-              setHighlightColor={(color) => {
-                setCanvasHighlightColor(document_id, color);
-                if (this.overlay) {
-                  this.overlay.fabricCanvas().freeDrawingBrush.color = color;
-                }
-              }}
-              toggleColorPicker={() => {toggleCanvasColorPicker(document_id);}}
-            />
-            <IconButton tooltip='Add rectangular highlight' onClick={this.rectClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
-              <CropSquare />
-            </IconButton>
-            <IconButton tooltip='Add circular highlight' onClick={this.circleClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
-              <PanoramaFishEye />
-            </IconButton>
-            <IconButton tooltip='Add marker highlight' onClick={this.markerClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
-              <Place />
-            </IconButton>
-            <IconButton tooltip={isPencilMode[document_id] ? 'End free drawing' : 'Start free drawing'} onClick={this.pencilClick.bind(this)} style={isPencilMode[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
-              <Edit />
-            </IconButton>
-            <IconButton tooltip={linesInProgress[document_id] ? 'End line drawing' : 'Start line drawing'} onClick={this.lineClick.bind(this)} style={linesInProgress[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
-              <ShowChart />
-            </IconButton>
-            <IconButton tooltip={'Delete selected highlight'} onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
-              <DeleteForever />
-            </IconButton>
-            <IconButton tooltip='Add more layers to image' onClick={() => {setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);}} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
-              <AddToPhotos />
-            </IconButton>
-          </div>
+          {writeEnabled &&
+            <div style={{ display: 'flex' }}>
+              <HighlightColorSelect
+                highlightColor={highlightColors[document_id]}
+                displayColorPicker={displayColorPickers[document_id]}
+                setHighlightColor={(color) => {
+                  setCanvasHighlightColor(document_id, color);
+                  if (this.overlay) {
+                    this.overlay.fabricCanvas().freeDrawingBrush.color = color;
+                  }
+                }}
+                toggleColorPicker={() => {toggleCanvasColorPicker(document_id);}}
+              />
+              <IconButton tooltip='Add rectangular highlight' onClick={this.rectClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
+                <CropSquare />
+              </IconButton>
+              <IconButton tooltip='Add circular highlight' onClick={this.circleClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
+                <PanoramaFishEye />
+              </IconButton>
+              <IconButton tooltip='Add marker highlight' onClick={this.markerClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
+                <Place />
+              </IconButton>
+              <IconButton tooltip={isPencilMode[document_id] ? 'End free drawing' : 'Start free drawing'} onClick={this.pencilClick.bind(this)} style={isPencilMode[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+                <Edit />
+              </IconButton>
+              <IconButton tooltip={linesInProgress[document_id] ? 'End line drawing' : 'Start line drawing'} onClick={this.lineClick.bind(this)} style={linesInProgress[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+                <ShowChart />
+              </IconButton>
+              <IconButton tooltip={'Delete selected highlight'} onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+                <DeleteForever />
+              </IconButton>
+              <IconButton tooltip='Add more layers to image' onClick={() => {setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);}} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+                <AddToPhotos />
+              </IconButton>
+            </div>
+          }
           <div style={{ width: '100%', display: 'flex' }}>
             <Slider axis='y' step={0.1} style={{ height: '360px' }} value={this.props.zoomControls[document_id] || 0} onChange={this.zoomControlChange.bind(this)} />
             <div id={this.osdId} style={{ height: '400px', flexGrow: 1 }}></div>
           </div>
         </div>
-        <div style={{ display: mode ? 'initial' : 'none' }}>
+        <div style={{ display: mode && writeEnabled ? 'initial' : 'none' }}>
           <SelectField
             style={{ color: 'white' }}
             labelStyle={{ color: 'white' }}

@@ -206,7 +206,15 @@ export function openDocument(documentId, documentPosition) {
       type: OPEN_DOCUMENT
     });
 
-    fetch(`/documents/${documentId}`)
+    fetch(`/documents/${documentId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
     .then(response => {
       if (!response.ok) {
         throw Error(response.statusText);
@@ -245,7 +253,12 @@ export function addHighlight(document_id, highlight_id, highlightTarget, color, 
     fetch('/highlights', {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({
@@ -291,6 +304,13 @@ export function deleteHighlights(highlights = []) {
     highlights.forEach(highlight => {
       if (highlight && highlight.id) {
         fetch(`/highlights/${highlight.id}`, {
+          headers: {
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
           method: 'DELETE'
         })
         .then(response => {
@@ -337,7 +357,12 @@ export function updateHighlight(id, attributes) {
     fetch(`/highlights/${id}`, {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'PATCH',
       body: JSON.stringify(attributes)
@@ -378,7 +403,12 @@ export function duplicateHighlights(highlights, document_id) {
     fetch('/highlights/duplicate', {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({
@@ -416,7 +446,12 @@ export function createTextDocument(parentId, parentType, callback) {
     fetch('/documents', {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({
@@ -476,7 +511,12 @@ export function updateDocument(documentId, attributes, options) {
     fetch(`/documents/${documentId}`, {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'PATCH',
       body: JSON.stringify(attributes)
@@ -523,7 +563,12 @@ export function setDocumentThumbnail(documentId, image_url) {
     fetch(`/documents/${documentId}/set_thumbnail`, {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({
@@ -570,7 +615,12 @@ export function setHighlightThumbnail(highlightId, image_url, coords, svg_string
     fetch(`/highlights/${highlightId}/set_thumbnail`, {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({
@@ -615,7 +665,12 @@ export function createCanvasDocument(parentId, parentType, callback) {
     fetch('/documents', {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({
@@ -681,7 +736,14 @@ export function deleteDocument(documentId) {
     });
 
     fetch(`/documents/${documentId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
     })
     .then(response => {
       if (!response.ok) {

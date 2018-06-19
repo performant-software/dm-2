@@ -44,7 +44,7 @@ class DocumentViewer extends Component {
           </IconButton>
           <TextField
             id={`text-document-title-${this.props.document_id}`}
-            style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px' }}
+            style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
             inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
             defaultValue={this.props.resourceName}
             underlineShow={false}
@@ -54,17 +54,20 @@ class DocumentViewer extends Component {
                 this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
               }, this.titleChangeDelayMs);
             }}
+            disabled={!this.props.writeEnabled}
           />
-          <IconButton tooltip='Delete document' onClick={() => {this.props.deleteDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
-            <DeleteForever color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
-          </IconButton>
+          {this.props.writeEnabled &&
+            <IconButton tooltip='Delete document' onClick={() => {this.props.deleteDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
+              <DeleteForever color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+            </IconButton>
+          }
           <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
             <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
           </IconButton>
         </div>
         <DocumentInner {...this.props} />
       </Paper>
-    )
+    );
   }
 }
 

@@ -8,13 +8,13 @@ export default class ProjectSidebar extends Component {
     if (this.props.sidebarTarget) {
       return (
         <div style={{backgroundColor: yellow50, height: '100%', paddingTop: '72px'}}>
-          <SidebarLinkInspectorContainer target={this.props.sidebarTarget} openDocumentIds={this.props.openDocumentIds} />
+          <SidebarLinkInspectorContainer target={this.props.sidebarTarget} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
         </div>
       );
     }
     return (
       <div style={{backgroundColor: 'white', height: '100%', paddingTop: '72px'}}>
-        <TableOfContents contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} />
+        <TableOfContents contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
       </div>
     );
   }

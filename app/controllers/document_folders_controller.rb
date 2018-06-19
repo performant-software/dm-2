@@ -1,12 +1,7 @@
 class DocumentFoldersController < ApplicationController
   before_action :set_document_folder, only: [:show, :update, :destroy]
 
-  # GET /document_folders
-  def index
-    @document_folders = DocumentFolder.all
-
-    render json: @document_folders
-  end
+  #TODO: validate permissions for (recursively determined?) containing project
 
   # GET /document_folders/1
   def show

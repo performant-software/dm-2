@@ -1,11 +1,13 @@
 class DocumentsController < ApplicationController
   before_action :set_document, only: [:show, :update, :destroy, :add_images, :set_thumbnail]
-
-  # GET /documents
-  def index
-    @documents = Document.all
-
-    render json: @documents
+  before_action only: [:create] do
+    @project = Project.find(params[:project_id])
+  end
+  before_action only: [:show] do
+    validate_user_read(@project)
+  end
+  before_action only: [:create, :update, :destroy, :set_thumbnail] do
+    validate_user_write(@project)
   end
 
   # GET /documents/1
@@ -15,7 +17,7 @@ class DocumentsController < ApplicationController
 
   # POST /documents
   def create
-    @document = Document.new(document_params)
+    @document = Document.new(new_document_params)
 
     if @document.save
       render json: @document, status: :created, location: @document
@@ -58,10 +60,15 @@ class DocumentsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_document
       @document = Document.find(params[:id])
+      @project = @document.project
     end
 
     # Only allow a trusted parameter "white list" through.
-    def document_params
+    def new_document_params
       params.require(:document).permit(:project_id, :created_by_id, :title, :document_kind, :parent_id, :parent_type, :images => [], :content => {})
+    end
+
+    def document_params
+      params.require(:document).permit(:title, :document_kind, :parent_id, :parent_type, :images => [], :content => {})
     end
 end
