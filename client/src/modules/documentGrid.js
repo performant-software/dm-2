@@ -1,13 +1,16 @@
 import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
 import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeTarget} from './annotationViewer';
 import {updateEditorState} from './textEditor';
+import {setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE} from './canvasEditor';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
+export const CANVAS_HIGHLIGHT_DELETE = 'CANVAS_HIGHLIGHT_DELETE';
 export const OPEN_DOCUMENT = 'document_grid/OPEN_DOCUMENT';
 export const OPEN_DOCUMENT_SUCCESS = 'document_grid/OPEN_DOCUMENT_SUCCESS';
 export const OPEN_DOCUMENT_ERRORED = 'document_grid/OPEN_DOCUMENT_ERRORED';
 export const CLOSE_DOCUMENT = 'document_grid/CLOSE_DOCUMENT';
+export const REPLACE_DOCUMENT = 'document_grid/REPLACE_DOCUMENT';
 export const CLEAR_RESOURCES = 'document_grid/CLEAR_RESOURCES';
 export const ADD_HIGHLIGHT = 'document_grid/ADD_HIGHLIGHT';
 export const ADD_HIGHLIGHT_SUCCESS = 'document_grid/ADD_HIGHLIGHT_SUCCESS';
@@ -32,6 +35,9 @@ export const DELETE_SUCCESS = 'document_grid/DELETE_SUCCESS';
 export const DELETE_ERRORED = 'document_grid/DELETE_ERRORED';
 export const OPEN_DELETE_DIALOG = 'document_grid/OPEN_DELETE_DIALOG';
 export const CLOSE_DELETE_DIALOG = 'document_grid/CLOSE_DELETE_DIALOG';
+export const ADD_IMAGE_TO_DOCUMENT = 'document_grid/ADD_IMAGE_TO_DOCUMENT';
+export const ADD_IMAGE_SUCCESS = 'document_grid/ADD_IMAGE_SUCCESS';
+export const ADD_IMAGE_ERRORED = 'document_grid/ADD_IMAGE_ERRORED';
 
 const initialState = {
   layout: DEFAULT_LAYOUT,
@@ -62,16 +68,12 @@ export default function(state = initialState, action) {
       }
 
     case OPEN_DOCUMENT_SUCCESS:
+    case REPLACE_DOCUMENT:
     case POST_SUCCESS:
       let openDocumentsCopy = state.openDocuments.slice(0);
       let documentPresentIndex = state.openDocuments.findIndex(resource => resource.id.toString() === action.document.id.toString());
-      // if (documentPresentIndex !== action.documentPosition) {
-      //   if (documentPresentIndex >= 0) {
-      //     openDocumentsCopy.splice(documentPresentIndex, 1);
-      //   }
-      if (documentPresentIndex < 0) { // for now, just keep an already-open document in place
-        openDocumentsCopy.splice(action.documentPosition, 0, action.document);
-      }
+      let positionToSplice = documentPresentIndex >= 0 ? documentPresentIndex : action.documentPosition;
+      openDocumentsCopy.splice(positionToSplice, documentPresentIndex >= 0 ? 1 : 0, action.document);
       return {
         ...state,
         openDocuments: openDocumentsCopy,
@@ -91,6 +93,18 @@ export default function(state = initialState, action) {
         loading: false,
         errored: true
       }
+
+    case PATCH_SUCCESS:
+      let preReplaceDocumentsCopy = state.openDocuments.slice(0);
+      state.openDocuments.forEach((document, index) => {
+        if (+document.id === +action.document.id)
+          preReplaceDocumentsCopy.splice(index, 1, action.document);
+      });
+      return {
+        ...state,
+        loading: false,
+        openDocuments: preReplaceDocumentsCopy
+      };
 
     case CLOSE_DOCUMENT:
     case DELETE_SUCCESS:
@@ -222,7 +236,7 @@ export function closeAllResources() {
   };
 }
 
-export function addHighlight(document_id, highlight_id, highlightTarget, color, excerpt) {
+export function addHighlight(document_id, highlight_id, highlightTarget, color, excerpt, callback) {
   return function(dispatch) {
     dispatch({
       type: ADD_HIGHLIGHT
@@ -249,15 +263,23 @@ export function addHighlight(document_id, highlight_id, highlightTarget, color, 
       return response;
     })
     .then(response => response.json())
-    .then(savedHighlight => dispatch({
-      type: ADD_HIGHLIGHT_SUCCESS,
-      document_id,
-      highlight_id,
-      highlightTarget,
-      color,
-      excerpt,
-      id: savedHighlight.id
-    }))
+    .then(savedHighlight => {
+      dispatch({
+        type: ADD_HIGHLIGHT_SUCCESS,
+        document_id,
+        highlight_id,
+        highlightTarget,
+        color,
+        excerpt,
+        id: savedHighlight.id
+      });
+      return savedHighlight
+    })
+    .then(savedHighlight => {
+      if (callback) {
+        callback(savedHighlight);
+      }
+    })
     .catch(() => dispatch({
       type: ADD_HIGHLIGHT_ERRORED
     }));
@@ -463,10 +485,13 @@ export function updateDocument(documentId, attributes, options) {
       if (!response.ok) {
         throw Error(response.statusText);
       }
+      return response;
     })
-    .then(() => {
+    .then(response => response.json())
+    .then(document => {
       dispatch({
-        type: PATCH_SUCCESS
+        type: PATCH_SUCCESS,
+        document
       });
       if (options && options.refreshLists) {
         if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
@@ -489,11 +514,162 @@ export function updateDocument(documentId, attributes, options) {
   }
 }
 
+export function setDocumentThumbnail(documentId, image_url) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: UPDATE_DOCUMENT
+    });
+
+    fetch(`/documents/${documentId}/set_thumbnail`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        image_url
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      dispatch({
+        type: PATCH_SUCCESS,
+        document
+      });
+      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
+        dispatch(loadProject(getState().project.id));
+      }
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
+          dispatch(refreshTarget(index));
+        }
+      });
+    })
+    .catch(() => dispatch({
+      type: PATCH_ERRORED
+    }));
+  }
+}
+
+export function setHighlightThumbnail(highlightId, image_url, coords, svg_string) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: UPDATE_HIGHLIGHT
+    });
+
+    fetch(`/highlights/${highlightId}/set_thumbnail`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        image_url,
+        coords,
+        svg_string
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(highlight => {
+      dispatch({
+        type: UPDATE_HIGHLIGHT_SUCCESS
+      });
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && ((+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id) || sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false))) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if ((+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) || target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
+          dispatch(refreshTarget(index));
+        }
+      });
+    })
+    .catch(() => dispatch({
+      type: UPDATE_HIGHLIGHT_ERRORED
+    }));
+  }
+}
+
+export function createCanvasDocument(parentId, parentType, callback) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: NEW_DOCUMENT
+    });
+
+    fetch('/documents', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'Untitled Document',
+        project_id: getState().project.id,
+        document_kind: CANVAS_RESOURCE_TYPE,
+        content: { tileSources: [] },
+        parent_id: parentId,
+        parent_type: parentType
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      dispatch({
+        type: POST_SUCCESS,
+        document,
+        documentPosition: getState().documentGrid.openDocuments.length
+      });
+      dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
+      if (parentType === 'Project') // refresh project if document has been added to its table of contents
+        dispatch(loadProject(getState().project.id));
+      return document;
+    })
+    .then(document => {
+      if (callback) {
+        callback(document);
+      }
+    })
+    .catch(() => dispatch({
+      type: POST_ERRORED
+    }));
+  }
+}
+
 export function closeDocument(documentId) {
   return function(dispatch) {
     dispatch({
       type: CLOSE_DOCUMENT,
       documentId
+    });
+  };
+}
+
+export function replaceDocument(document) {
+  return function(dispatch) {
+    dispatch({
+      type: REPLACE_DOCUMENT,
+      document
     });
   };
 }
@@ -548,9 +724,9 @@ export function closeDeleteDialog() {
 
 export function confirmDeleteDialog() {
   return function(dispatch, getState) {
+    const payload = getState().documentGrid.deleteDialogPayload;
     switch (getState().documentGrid.deleteDialogKind) {
       case TEXT_HIGHLIGHT_DELETE:
-        const payload = getState().documentGrid.deleteDialogPayload;
         const { editorStates } = getState().textEditor;
         if (payload.transaction && payload.document_id) {
           const newState = editorStates[payload.document_id].apply(payload.transaction);
@@ -563,8 +739,42 @@ export function confirmDeleteDialog() {
           });
         }
 
+      case CANVAS_HIGHLIGHT_DELETE:
+        dispatch(deleteHighlights(payload.highlights));
+        if (payload.canvas) {
+          payload.fabricObjects.forEach(object => {
+            payload.canvas.remove(object);
+          });
+        }
+
       default:
         dispatch(closeDeleteDialog());
     }
   }
 }
+
+// export function addImageToDocument(document_id, image) {
+//   return function(dispatch) {
+//     dispatch({
+//       type: ADD_IMAGE_TO_DOCUMENT
+//     });
+//
+//     fetch(`/documents/${document_id}/add_image`, {
+//       headers: {
+//         'Accept': 'application/json',
+//         'Content-Type': 'application/json'
+//       },
+//       method: 'POST',
+//       body: JSON.stringify({
+//         images: [image]
+//       })
+//     })
+//     .then(response => {
+//       if (!response.ok) {
+//         throw Error(response.statusText);
+//       }
+//       return response;
+//     })
+//     .then(response)
+//   }
+// }

@@ -29,7 +29,10 @@ export default class AddDocumentButton extends Component {
               this.props.textClick();
               this.props.closeDocumentPopover();
             }} />
-            <MenuItem primaryText='Image' />
+            <MenuItem primaryText='Image' onClick={() => {
+              this.props.imageClick();
+              this.props.closeDocumentPopover();
+            }} />
           </Menu>
         </Popover>
       </div>
