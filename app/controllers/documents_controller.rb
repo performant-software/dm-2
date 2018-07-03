@@ -69,6 +69,6 @@ class DocumentsController < ApplicationController
     end
 
     def document_params
-      params.require(:document).permit(:title, :document_kind, :parent_id, :parent_type, :images => [], :content => {})
+      params.require(:document).permit(:title, :document_kind, :parent_id, :parent_type, :buoyancy, :images => [], :content => {})
     end
 end

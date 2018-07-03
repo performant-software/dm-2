@@ -60,11 +60,12 @@ class CanvasResource extends Component {
   }
 
   componentDidMount() {
-    const {content, highlight_map, document_id, setCanvasHighlightColor, updateHighlight, addHighlight, highlightColors, setHighlightThumbnail} = this.props;
+    const {content, highlight_map, document_id, timeOpened, setCanvasHighlightColor, updateHighlight, addHighlight, highlightColors, setHighlightThumbnail} = this.props;
     this.highlight_map = highlight_map;
 
     const initialColor = yellow500;
-    setCanvasHighlightColor(document_id, initialColor);
+    const key = `${document_id}-${timeOpened}`;
+    setCanvasHighlightColor(key, initialColor);
     let tileSources = [];
     if (content && content.tileSources) tileSources = content.tileSources;
 
@@ -127,9 +128,9 @@ class CanvasResource extends Component {
 
     overlay.fabricCanvas().on('mouse:over', event => {
       if (event.target && event.target._highlightUid) {
-        this.highlightFocusTimeout = window.setTimeout(() => {
+        // this.highlightFocusTimeout = window.setTimeout(() => {
           window.setFocusHighlight(document_id, event.target._highlightUid);
-        }, 1000);
+        // }, 1000);
       }
     });
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
@@ -172,10 +173,6 @@ class CanvasResource extends Component {
           updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
           setHighlightThumbnail(highlight_id, this.imageUrlForThumbnail, event.target.aCoords, event.target.toSVG());
         }
-        // console.log(event.target);
-        // console.log(event.target.toSVG());
-        // console.log(this.overlay.fabricCanvas());
-        // console.log(this.overlay.fabricCanvas().getWidth() + ' x ' + this.overlay.fabricCanvas().getHeight());
       }
     });
     // process paths created with pencil tool
@@ -198,8 +195,8 @@ class CanvasResource extends Component {
   }
 
   clearFocusHighlightTimeout(event) {
-    if (this.highlightFocusTimeout)
-      window.clearTimeout(this.highlightFocusTimeout);
+    if (window.highlightFocusTimeout)
+      window.clearTimeout(window.highlightFocusTimeout);
   }
 
   renderHighlights(overlay, highlight_map) {
@@ -321,7 +318,6 @@ class CanvasResource extends Component {
   }
 
   deleteHighlightClick() {
-    console.log('delete click');
     const selectedObject = this.overlay.fabricCanvas().getActiveObject();
     let selectedObjects = [];
     if (selectedObject) selectedObjects.push(selectedObject);
@@ -410,8 +406,9 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, image_urls, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument, writeEnabled } = this.props;
+    const { document_id, timeOpened, image_urls, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
     const mode = addTileSourceMode[document_id];
+    const key = `${document_id}-${timeOpened}`;
 
     this.highlight_map = this.props.highlight_map;
 
@@ -429,39 +426,26 @@ class CanvasResource extends Component {
     const iconBackdropStyleSpaced = Object.assign({}, iconBackdropStyle);
     iconBackdropStyleSpaced.marginLeft = '12px';
 
-    // const topMenuButtonStyle = {
-    //   height: 'auto',
-    //   lineHeight: '16px'
-    // };
-    // const topMenuOverlayStyle = {
-    //   height: 'auto'
-    // };
-    // const topMenuLabelStyle = {
-    //   verticalAlign: 'top',
-    //   fontSize: '11px',
-    //   lineHeight: '16px',
-    //   padding: '0px 6px'
-    // };
     const iconStyle = {
       width: '18px',
       height: '18px'
     }
 
     return (
-      <div>
-        <div style={{ display: mode ? 'none' : 'initial' }}>
+      <div style={{ flexGrow: '1', display: 'flex', flexGrow: '1', padding: '10px' }}>
+        <div style={{ display: (mode || !globalCanvasDisplay) ? 'none' : 'flex', flexDirection: 'column', width: '100%' }}>
           {writeEnabled &&
             <div style={{ display: 'flex' }}>
               <HighlightColorSelect
-                highlightColor={highlightColors[document_id]}
-                displayColorPicker={displayColorPickers[document_id]}
+                highlightColor={highlightColors[key]}
+                displayColorPicker={displayColorPickers[key]}
                 setHighlightColor={(color) => {
-                  setCanvasHighlightColor(document_id, color);
+                  setCanvasHighlightColor(key, color);
                   if (this.overlay) {
                     this.overlay.fabricCanvas().freeDrawingBrush.color = color;
                   }
                 }}
-                toggleColorPicker={() => {toggleCanvasColorPicker(document_id);}}
+                toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
               <IconButton tooltip='Add rectangular highlight' onClick={this.rectClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
                 <CropSquare />
@@ -486,9 +470,9 @@ class CanvasResource extends Component {
               </IconButton>
             </div>
           }
-          <div style={{ width: '100%', display: 'flex' }}>
-            <Slider axis='y' step={0.1} style={{ height: '360px' }} value={this.props.zoomControls[document_id] || 0} onChange={this.zoomControlChange.bind(this)} />
-            <div id={this.osdId} style={{ height: '400px', flexGrow: 1 }}></div>
+          <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
+            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.1} value={this.props.zoomControls[document_id] || 0} onChange={this.zoomControlChange.bind(this)} />
+            <div id={this.osdId} style={{ flexGrow: 1 }}></div>
           </div>
         </div>
         <div style={{ display: mode && writeEnabled ? 'initial' : 'none' }}>
@@ -580,7 +564,8 @@ const mapStateToProps = state => ({
   addTileSourceMode: state.canvasEditor.addTileSourceMode,
   isPencilMode: state.canvasEditor.isPencilMode,
   linesInProgress: state.canvasEditor.linesInProgress,
-  zoomControls: state.canvasEditor.zoomControls
+  zoomControls: state.canvasEditor.zoomControls,
+  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({

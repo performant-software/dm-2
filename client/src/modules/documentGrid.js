@@ -1,12 +1,14 @@
 import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
 import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeTarget} from './annotationViewer';
 import {updateEditorState} from './textEditor';
+import {deleteFolder} from './folders';
 import {setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE} from './canvasEditor';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
 export const CANVAS_HIGHLIGHT_DELETE = 'CANVAS_HIGHLIGHT_DELETE';
 export const DOCUMENT_DELETE = 'DOCUMENT_DELETE';
+export const FOLDER_DELETE = 'FOLDER_DELETE';
 export const OPEN_DOCUMENT = 'document_grid/OPEN_DOCUMENT';
 export const OPEN_DOCUMENT_SUCCESS = 'document_grid/OPEN_DOCUMENT_SUCCESS';
 export const OPEN_DOCUMENT_ERRORED = 'document_grid/OPEN_DOCUMENT_ERRORED';
@@ -39,6 +41,15 @@ export const CLOSE_DELETE_DIALOG = 'document_grid/CLOSE_DELETE_DIALOG';
 export const ADD_IMAGE_TO_DOCUMENT = 'document_grid/ADD_IMAGE_TO_DOCUMENT';
 export const ADD_IMAGE_SUCCESS = 'document_grid/ADD_IMAGE_SUCCESS';
 export const ADD_IMAGE_ERRORED = 'document_grid/ADD_IMAGE_ERRORED';
+export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
+export const MOVE_DOCUMENT = 'document_grid/MOVE_DOCUMENT';
+
+export const layoutOptions = [
+  { rows: 1, cols: 1, description: '1 x 1' },
+  { rows: 1, cols: 2, description: '1 x 2' },
+  { rows: 2, cols: 2, description: '2 x 2' },
+  { rows: 3, cols: 3, description: '3 x 3' }
+];
 
 const initialState = {
   layout: DEFAULT_LAYOUT,
@@ -50,7 +61,8 @@ const initialState = {
   deleteDialogBody: 'Are you sure you want to delete this item?',
   deleteDialogSubmit: 'Delete',
   deleteDialogPayload: null,
-  deleteDialogKind: null
+  deleteDialogKind: null,
+  currentLayout: 1
 };
 
 export default function(state = initialState, action) {
@@ -72,9 +84,12 @@ export default function(state = initialState, action) {
     case REPLACE_DOCUMENT:
     case POST_SUCCESS:
       let openDocumentsCopy = state.openDocuments.slice(0);
-      let documentPresentIndex = state.openDocuments.findIndex(resource => resource.id.toString() === action.document.id.toString());
-      let positionToSplice = documentPresentIndex >= 0 ? documentPresentIndex : action.documentPosition;
-      openDocumentsCopy.splice(positionToSplice, documentPresentIndex >= 0 ? 1 : 0, action.document);
+      state.openDocuments.forEach((document, index) => {
+        if (+document.id === +action.document.id)
+          openDocumentsCopy.splice(index, 1, Object.assign({timeOpened: document.timeOpened}, action.document));
+      });
+      let positionToSplice = action.documentPosition;
+      openDocumentsCopy.splice(positionToSplice, 0, Object.assign({timeOpened: Date.now()}, action.document));
       return {
         ...state,
         openDocuments: openDocumentsCopy,
@@ -98,8 +113,10 @@ export default function(state = initialState, action) {
     case PATCH_SUCCESS:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
-        if (+document.id === +action.document.id)
-          preReplaceDocumentsCopy.splice(index, 1, action.document);
+        if (+document.id === +action.document.id) {
+          const { timeOpened } = document;
+          preReplaceDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
+        }
       });
       return {
         ...state,
@@ -193,7 +210,23 @@ export default function(state = initialState, action) {
         deleteDialogSubmit: initialState.deleteDialogSubmit,
         deleteDialogPayload: initialState.deleteDialogPayload,
         deleteDialogKind: initialState.deleteDialogKind
-      }
+      };
+
+    case SET_CURRENT_LAYOUT:
+      return {
+        ...state,
+        currentLayout: action.index
+      };
+
+    case MOVE_DOCUMENT:
+      let draggedDocument = state.openDocuments[action.dragIndex];
+      let openDocumentsMoveCopy = state.openDocuments.slice(0);
+      openDocumentsMoveCopy.splice(action.dragIndex, 1);
+      openDocumentsMoveCopy.splice(action.moveIndex, 0, draggedDocument);
+      return {
+        ...state,
+        openDocuments: openDocumentsMoveCopy
+      };
 
     default:
       return state;
@@ -509,7 +542,7 @@ export function updateDocument(documentId, attributes, options) {
       type: UPDATE_DOCUMENT
     });
 
-    fetch(`/documents/${documentId}`, {
+    return fetch(`/documents/${documentId}`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -818,9 +851,33 @@ export function confirmDeleteDialog() {
         dispatch(deleteDocument(payload.documentId));
         dispatch(closeDeleteDialog());
         break;
-        
+
+      case FOLDER_DELETE:
+        dispatch(deleteFolder(payload.folderId, payload.parentType, payload.parentId));
+        dispatch(closeDeleteDialog());
+        break;
+
       default:
         dispatch(closeDeleteDialog());
     }
   }
+}
+
+export function setCurrentLayout(event, index) {
+  return function(dispatch) {
+    dispatch({
+      type: SET_CURRENT_LAYOUT,
+      index
+    });
+  };
+}
+
+export function moveDocument(dragIndex, moveIndex) {
+  return function(dispatch) {
+    dispatch({
+      type: MOVE_DOCUMENT,
+      dragIndex,
+      moveIndex
+    });
+  };
 }

@@ -26,7 +26,7 @@ class ProjectsController < ApplicationController
 
   # GET /projects/1
   def show
-    render json: @project, include: ['user_project_permissions', 'user_project_permissions.user', 'contents_children', 'can_admin'], scope_name: :current_user #meta_object: { current_user_can_admin: true }, meta_key: :meta_object
+    render json: @project, include: ['user_project_permissions', 'user_project_permissions.user', 'contents_children', 'can_admin'], scope_name: :current_user
     # serialized_data = ProjectSerializer.new(@project, root: false)
     # render json: { project: serialized_data, current_user_can_admin: true }
   end

@@ -38,4 +38,8 @@ class Document < Linkable
   def image_thumbnail_urls
     self.images.collect { |image| url_for image.variant(thumbnail: '80x80') }
   end
+
+  def descendant_folder_ids
+    nil
+  end
 end

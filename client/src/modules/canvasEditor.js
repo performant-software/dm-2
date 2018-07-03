@@ -5,6 +5,7 @@ export const SET_ADD_TILE_SOURCE_MODE = 'canvasEditor/SET_ADD_TILE_SOURCE_MODE';
 export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
 export const SET_LINE_IN_PROGRESS = 'canvasEditor/SET_LINE_IN_PROGRESS';
 export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
+export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
@@ -15,7 +16,8 @@ const initialState = {
   addTileSourceMode: {},
   isPencilMode: {},
   linesInProgress: {},
-  zoomControls: {}
+  zoomControls: {},
+  globalCanvasDisplay: true
 };
 
 export default function(state = initialState, action) {
@@ -74,6 +76,12 @@ export default function(state = initialState, action) {
       return {
         ...state,
         zoomControls: updatedZoomControls
+      };
+
+    case SET_GLOBAL_CANVAS_DISPLAY:
+      return {
+        ...state,
+        globalCanvasDisplay: action.value
       };
 
     default:
@@ -140,6 +148,15 @@ export function setZoomControl(editorKey, zoomValue) {
       type: SET_ZOOM_CONTROL,
       editorKey,
       zoomValue
+    });
+  }
+}
+
+export function setGlobalCanvasDisplay(value) {
+  return function(dispatch) {
+    dispatch({
+      type: SET_GLOBAL_CANVAS_DISPLAY,
+      value
     });
   }
 }

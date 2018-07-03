@@ -94,6 +94,7 @@ export function setTextHighlightColor(editorKey, highlightColor) {
 
 export function toggleTextColorPicker(editorKey) {
   return function(dispatch) {
+    console.log(editorKey);
     dispatch({
       type: TOGGLE_COLOR_PICKER,
       editorKey

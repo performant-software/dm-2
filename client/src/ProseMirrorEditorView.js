@@ -39,11 +39,13 @@ export default class ProseMirrorEditorView extends Component {
     // In case EditorView makes any modification to a state we funnel those
     // modifications up to the parent and apply to the EditorView itself.
     this.props.processAndConfirmTransaction(tx, function(tx) {
+      this.props.setGlobalCanvasDisplay(false);
       const editorState = this.props.editorState.apply(tx);
       if (this._editorView != null) {
         this._editorView.updateState(editorState);
       }
       this.props.onEditorState(editorState);
+      this.props.setGlobalCanvasDisplay(true);
     }.bind(this));
   };
 
@@ -78,6 +80,6 @@ export default class ProseMirrorEditorView extends Component {
   render() {
     // Render just an empty div which is then used as a container for an
     // EditorView instance.
-    return <div ref={this._createEditorView} />;
+    return <div ref={this._createEditorView} style={{ flexGrow: '1', overflowY: 'scroll' }} />;
   }
 }

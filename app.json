@@ -2,7 +2,7 @@
   "name": "dm-2",
   "description": "",
   "scripts": {
-    "postdeploy": "rake db:migrate"
+    "postdeploy": "bundle exec rake db:migrate"
   },
   "env": {
     "LANG": {
