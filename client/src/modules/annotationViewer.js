@@ -29,6 +29,8 @@ export default function(state = initialState, action) {
       };
 
     case SELECT_LOAD_SUCCESS:
+      console.log('select_load_success');
+      console.log(action);
       let preUpdateTargetsCopy = state.selectedTargets.slice(0);
       let toUpdateIndex = -1;
       if (action.target.highlight_id) {
@@ -154,7 +156,15 @@ export function selectTarget(target) {
     });
 
     const targetUrl = target.highlight_id ? `/highlights/${target.highlight_id}` : `/documents/${target.document_id}`;
-    fetch(targetUrl)
+    fetch(targetUrl, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
     .then(response => {
       if (!response.ok) {
         throw Error(response.statusText);
@@ -167,9 +177,9 @@ export function selectTarget(target) {
       loadedTarget,
       target
     }))
-    .catch(() => dispatch({
-      type: SELECT_LOAD_ERRORED
-    }));
+    // .catch(() => dispatch({
+    //   type: SELECT_LOAD_ERRORED
+    // }));
   }
 }
 
@@ -184,7 +194,15 @@ export function refreshTarget(index) {
     if (existingTarget) {
       const targetUrl = existingTarget.highlight_id ? `/highlights/${existingTarget.highlight_id}` : `/documents/${existingTarget.document_id}`;
 
-      fetch(targetUrl)
+      fetch(targetUrl, {
+        headers: {
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
+        }
+      })
       .then(response => {
         if (!response.ok) {
           throw Error(response.statusText);
@@ -213,7 +231,15 @@ export function selectSidebarTarget(target) {
     });
 
     const targetUrl = target.highlight_id ? `/highlights/${target.highlight_id}` : `/documents/${target.document_id}`;
-    fetch(targetUrl)
+    fetch(targetUrl, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
     .then(response => {
       if (!response.ok) {
         throw Error(response.statusText);
@@ -278,7 +304,12 @@ export function addLink(origin, linked) {
     fetch('/links', {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'POST',
       body: JSON.stringify({

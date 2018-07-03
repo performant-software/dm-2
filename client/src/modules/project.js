@@ -2,6 +2,10 @@ import { push, replace } from 'react-router-redux';
 
 export const TEXT_RESOURCE_TYPE = 'text';
 export const CANVAS_RESOURCE_TYPE = 'canvas';
+export const READ_PERMISSION = 'read';
+export const WRITE_PERMISSION = 'write';
+export const ADMIN_PERMISSION = 'admin';
+
 export const LOAD_PROJECT = 'project/LOAD_PROJECT';
 export const GET_SUCCESS = 'project/GET_SUCCESS';
 export const GET_ERRORED = 'project/GET_ERRORED';
@@ -12,16 +16,41 @@ export const POST_ERRORED = 'project/POST_ERRORED';
 export const UPDATE_PROJECT = 'project/UPDATE_PROJECT';
 export const PATCH_SUCCESS = 'project/PATCH_SUCCESS';
 export const PATCH_ERRORED = 'project/PATCH_ERRORED';
+export const DELETE_PROJECT = 'project/DELETE_PROJECT';
+export const DELETE_SUCCESS = 'project/DELETE_SUCCESS';
+export const DELETE_ERRORED = 'project/DELETE_ERRORED';
 export const OPEN_DOCUMENT_POPOVER = 'project/OPEN_DOCUMENT_POPOVER';
 export const CLOSE_DOCUMENT_POPOVER = 'project/CLOSE_DOCUMENT_POPOVER';
+export const SETTINGS_SHOWN = 'project/SETTINGS_SHOWN';
+export const SETTINGS_HIDDEN = 'project/SETTINGS_HIDDEN';
+export const USERS_LOADING = 'project/USERS_LOADING';
+export const LOAD_ALL_USERS_ERRORED = 'project/LOAD_ALL_USERS_ERRORED';
+export const LOAD_ALL_USERS_SUCCESS = 'project/LOAD_ALL_USERS_SUCCESS';
+export const NEW_PERMISSION_LEVEL_CHANGE = 'project/NEW_PERMISSION_LEVEL_CHANGE';
+export const NEW_PERMISSION_USER_CHANGE = 'project/NEW_PERMISSION_USER_CHANGE';
+export const CREATE_PERMISSION_LOADING = 'project/CREATE_PERMISSION_LOADING';
+export const CREATE_PERMISSION_ERRORED = 'project/CREATE_PERMISSION_ERRORED';
+export const CREATE_PERMISSION_SUCCESS = 'project/CREATE_PERMISSION_SUCCESS';
+export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
 
 const initialState = {
   id: null,
   title: 'No project selected',
+  description: '',
   contentsChildren: [],
+  userProjectPermissions: [],
+  public: false,
+  currentUserPermissions: {},
   loading: false,
   errored: false,
-  documentPopoverOpenFor: null
+  documentPopoverOpenFor: null,
+  settingsShown: false,
+  allUsers: [],
+  usersLoading: false,
+  usersErrored: false,
+  newPermissionUser: null,
+  newPermissionLevel: READ_PERMISSION,
+  deleteConfirmed: false
 };
 
 export default function(state = initialState, action) {
@@ -33,6 +62,7 @@ export default function(state = initialState, action) {
         loading: true
       };
 
+    case DELETE_SUCCESS:
     case CLEAR_PROJECT:
       return initialState;
 
@@ -44,6 +74,7 @@ export default function(state = initialState, action) {
       };
 
     case UPDATE_PROJECT:
+    case DELETE_PROJECT:
       return {
         ...state,
         loading: true
@@ -57,12 +88,18 @@ export default function(state = initialState, action) {
         loading: false,
         id: action.projectId,
         title: action.projectTitle,
-        contentsChildren: action.contentsChildren || []
+        description: action.projectDescription,
+        userProjectPermissions: action.userProjectPermissions || [],
+        contentsChildren: action.contentsChildren || [],
+        public: action.public,
+        currentUserPermissions: action.currentUserPermissions
       };
 
     case GET_ERRORED:
     case POST_ERRORED:
     case PATCH_ERRORED:
+    case DELETE_ERRORED:
+      console.log('project error');
       return {
         ...state,
         loading: false,
@@ -79,6 +116,69 @@ export default function(state = initialState, action) {
       return {
         ...state,
         documentPopoverOpenFor: null
+      };
+
+    case SETTINGS_SHOWN:
+      return {
+        ...state,
+        settingsShown: true
+      };
+
+    case SETTINGS_HIDDEN:
+      return {
+        ...state,
+        settingsShown: false
+      };
+
+    case CREATE_PERMISSION_LOADING:
+    case USERS_LOADING:
+      return {
+        ...state,
+        usersLoading: true,
+        usersErrored: false
+      };
+
+    case CREATE_PERMISSION_ERRORED:
+    case LOAD_ALL_USERS_ERRORED:
+      console.log('project settings error');
+      return {
+        ...state,
+        usersErrored: true,
+        usersLoading: false
+      }
+
+    case LOAD_ALL_USERS_SUCCESS:
+      return {
+        ...state,
+        allUsers: action.allUsers,
+        usersLoading: false,
+        usersErrored: false
+      };
+
+    case NEW_PERMISSION_USER_CHANGE:
+      return {
+        ...state,
+        newPermissionUser: action.user
+      };
+
+    case NEW_PERMISSION_LEVEL_CHANGE:
+      return {
+        ...state,
+        newPermissionLevel: action.level
+      };
+
+    case CREATE_PERMISSION_SUCCESS:
+      return {
+        ...state,
+        usersLoading: false,
+        usersErrored: false,
+        newPermissionUser: null
+      };
+
+    case TOGGLE_DELETE_CONFIRMATION:
+      return {
+        ...state,
+        deleteConfirmed: !state.deleteConfirmed
       };
 
     default:
@@ -100,7 +200,15 @@ export function loadProject(projectId, title) {
       type: LOAD_PROJECT
     });
 
-    fetch(`projects/${projectId}`)
+    fetch(`projects/${projectId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
     .then(response => {
       if (!response.ok) {
         throw Error(response.statusText);
@@ -108,11 +216,18 @@ export function loadProject(projectId, title) {
       return response;
     })
     .then(response => response.json())
+    .then(project => {
+      return project;
+    })
     .then(project => dispatch({
       type: GET_SUCCESS,
       projectId: project.id,
       projectTitle: project.title,
-      contentsChildren: project['contents_children']
+      projectDescription: project.description,
+      contentsChildren: project['contents_children'],
+      userProjectPermissions: project['user_project_permissions'],
+      public: project.public,
+      currentUserPermissions: project['current_user_permissions']
     }))
     .catch(() => dispatch({
       type: GET_ERRORED
@@ -129,6 +244,11 @@ export function newProject() {
 
     fetch('/projects', {
       headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
@@ -148,7 +268,10 @@ export function newProject() {
       dispatch({
         type: POST_SUCCESS,
         projectId: project.id,
-        projectTitle: project.title
+        projectTitle: project.title,
+        userProjectPermissions: project['user_project_permissions'],
+        public: project.public,
+        currentUserPermissions: project['current_user_permissions']
       });
       dispatch(replace(`/${project.id}`));
     })
@@ -167,7 +290,12 @@ export function updateProject(projectId, attributes) {
     fetch(`/projects/${projectId}`, {
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
       },
       method: 'PATCH',
       body: JSON.stringify(attributes)
@@ -176,13 +304,21 @@ export function updateProject(projectId, attributes) {
       if (!response.ok) {
         throw Error(response.statusText);
       }
+      return response;
     })
     .then(response => response.json())
-    .then(project => dispatch({
-      type: PATCH_SUCCESS,
-      projectId: project.id,
-      projectTitle: project.title
-    }))
+    .then(project => {
+      dispatch({
+        type: PATCH_SUCCESS,
+        projectId: project.id,
+        projectTitle: project.title,
+        projectDescription: project.description,
+        contentsChildren: project['contents_children'],
+        userProjectPermissions: project['user_project_permissions'],
+        public: project.public,
+        currentUserPermissions: project['current_user_permissions']
+      });
+    })
     .catch(() => dispatch({
       type: PATCH_ERRORED
     }));
@@ -195,13 +331,242 @@ export function openDocumentPopover(target) {
       type: OPEN_DOCUMENT_POPOVER,
       target
     });
-  }
+  };
 }
 
 export function closeDocumentPopover() {
   return function(dispatch) {
     dispatch({
-      type:CLOSE_DOCUMENT_POPOVER
+      type: CLOSE_DOCUMENT_POPOVER
     });
+  };
+}
+
+export function showSettings() {
+  return function(dispatch) {
+    dispatch({
+      type: SETTINGS_SHOWN
+    });
+    dispatch(loadAllUsers());
+  };
+}
+
+export function hideSettings() {
+  return function(dispatch) {
+    dispatch({
+      type: SETTINGS_HIDDEN
+    });
+  };
+}
+
+export function loadAllUsers() {
+  return function(dispatch) {
+    dispatch({
+      type: USERS_LOADING
+    });
+
+    fetch(`/users`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(users => dispatch({
+      type: LOAD_ALL_USERS_SUCCESS,
+      allUsers: users
+    }))
+    .catch(() => dispatch({
+      type: LOAD_ALL_USERS_ERRORED
+    }));
+  };
+}
+
+export function setNewPermissionUser(user) {
+  return function(dispatch) {
+    dispatch({
+      type: NEW_PERMISSION_USER_CHANGE,
+      user
+    });
+  };
+}
+
+export function setNewPermissionLevel(level) {
+  return function(dispatch) {
+    dispatch({
+      type: NEW_PERMISSION_LEVEL_CHANGE,
+      level
+    });
+  };
+}
+
+export function createNewPermission() {
+  return function(dispatch, getState) {
+    const projectId = getState().project.id;
+    const userId = getState().project.newPermissionUser;
+    const permissionLevel = getState().project.newPermissionLevel;
+
+    if (userId !== null) {
+      dispatch({
+        type: CREATE_PERMISSION_LOADING
+      });
+
+      fetch('/user_project_permissions', {
+        headers: {
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid'),
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: projectId,
+          user_id: userId,
+          permission: permissionLevel
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+      })
+      .then(() => {
+        dispatch({
+          type: CREATE_PERMISSION_SUCCESS
+        });
+        dispatch(loadProject(projectId));
+      })
+      .catch(() => dispatch({
+        type: CREATE_PERMISSION_ERRORED
+      }));
+    }
+  }
+}
+
+export function deletePermission(id) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: CREATE_PERMISSION_LOADING
+    });
+
+    fetch(`/user_project_permissions/${id}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+    })
+    .then(() => {
+      dispatch({
+        type: CREATE_PERMISSION_SUCCESS
+      });
+      dispatch(loadProject(getState().project.id));
+    })
+    .catch(() => dispatch({
+      type: CREATE_PERMISSION_ERRORED
+    }));
+  }
+}
+
+export function updatePermission(id, permissionLevel) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: CREATE_PERMISSION_LOADING
+    });
+
+    fetch(`/user_project_permissions/${id}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        permission: permissionLevel
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+    })
+    .then(() => {
+      dispatch({
+        type: CREATE_PERMISSION_SUCCESS
+      });
+      dispatch(loadProject(getState().project.id));
+    })
+    .catch(() => dispatch({
+      type: CREATE_PERMISSION_ERRORED
+    }));
+  }
+}
+
+export function toggleDeleteConfirmation() {
+  return function(dispatch) {
+    dispatch({
+      type: TOGGLE_DELETE_CONFIRMATION
+    });
+  }
+}
+
+export function deleteProject(projectId) {
+  return function(dispatch) {
+    dispatch({
+      type: DELETE_PROJECT
+    });
+
+    fetch(`/projects/${projectId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+    })
+    .then(() => {
+      dispatch({
+        type: DELETE_SUCCESS
+      });
+      dispatch(push('/'));
+    })
+    .catch(() => dispatch({
+      type: DELETE_ERRORED
+    }));
   }
 }

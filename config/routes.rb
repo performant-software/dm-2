@@ -1,11 +1,18 @@
 Rails.application.routes.draw do
-  resources :document_folders
-  resources :documents
-  resources :links
-  resources :highlights
+  resources :user_project_permissions, except: :index
+  resources :document_folders, except: :index
+  resources :documents, except: :index
+  resources :links, except: [:index, :update]
+  resources :highlights, except: :index
   resources :projects
-  mount_devise_token_auth_for 'User', at: 'auth'
+  mount_devise_token_auth_for 'User', at: '/auth'
 
+  get '/users' => 'users#index'
+  get '/users/index'
+  get '/users/update'
+  get '/users/list_admin' => 'users#list_admin'
+  patch '/users/:id' => 'users#admin_update'
+  delete '/users/:id' => 'users#destroy'
   post '/highlights/duplicate' => 'highlights#duplicate'
   post '/highlights/:id/set_thumbnail' => 'highlights#set_thumbnail'
   post '/documents/:id/set_thumbnail' => 'documents#set_thumbnail'

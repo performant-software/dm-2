@@ -16,8 +16,10 @@ class TableOfContents extends Component {
   render() {
     return (
       <div>
-        <AddDocumentButton label='Add New Document' documentPopoverOpen={this.props.documentPopoverOpen} openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} closeDocumentPopover={this.props.closeDocumentPopover} textClick={() => {this.props.createTextDocument(this.props.projectId, 'Project');}} imageClick={() => {this.props.createCanvasDocument(this.props.projectId, 'Project');}} idString='tableOfContents' />
-        <LinkableList items={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} allDraggable={true} />
+        {this.props.writeEnabled &&
+          <AddDocumentButton label='Add New Document' documentPopoverOpen={this.props.documentPopoverOpen} openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} closeDocumentPopover={this.props.closeDocumentPopover} textClick={() => {this.props.createTextDocument(this.props.projectId, 'Project');}} imageClick={() => {this.props.createCanvasDocument(this.props.projectId, 'Project');}} idString='tableOfContents' />
+        }
+        <LinkableList items={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} allDraggable={this.props.writeEnabled} />
       </div>
     );
   }

@@ -62,7 +62,10 @@ const LinkArea = props => {
   if (props.loading) {
     return <CircularProgress color={grey400} style={{margin: '16px'}} />;
   }
-  return <LinkDropTarget {...props} />;
+  if (props.writeEnabled) {
+    return <LinkDropTarget {...props} />;
+  }
+  return <LinkList {...props} />;
 }
 
 class LinkInspector extends Component {
@@ -76,21 +79,24 @@ class LinkInspector extends Component {
 
     return (
       <div style={{ marginBottom: '8px' }}>
-        <LinkableSummary item={target} isDraggable={true} isOpen={this.props.openDocumentIds && this.props.openDocumentIds.includes(target.document_id.toString())} />
+        <LinkableSummary item={target} isDraggable={this.props.writeEnabled} isOpen={this.props.openDocumentIds && this.props.openDocumentIds.includes(target.document_id.toString())} />
         <Subheader style={{lineHeight: '32px'}}>Links to:</Subheader>
-        <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} />
-        <AddDocumentButton
-          label='Add New Linked Document'
-          documentPopoverOpen={this.props.documentPopoverOpenFor === this.props.id}
-          openDocumentPopover={() => {this.props.openDocumentPopover(this.props.id)}}
-          closeDocumentPopover={this.props.closeDocumentPopover}
-          textClick={() => {
-            this.props.createTextDocumentWithLink({
-              linkable_id: target.highlight_id || target.document_id,
-              linkable_type: target.highlight_id ? 'Highlight' : 'Document'
-            });
-          }}
-          idString={this.props.id} />
+        <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
+        {this.props.writeEnabled &&
+          <AddDocumentButton
+            label='Add New Linked Document'
+            documentPopoverOpen={this.props.documentPopoverOpenFor === this.props.id}
+            openDocumentPopover={() => {this.props.openDocumentPopover(this.props.id)}}
+            closeDocumentPopover={this.props.closeDocumentPopover}
+            textClick={() => {
+              this.props.createTextDocumentWithLink({
+                linkable_id: target.highlight_id || target.document_id,
+                linkable_type: target.highlight_id ? 'Highlight' : 'Document'
+              });
+            }}
+            idString={this.props.id}
+          />
+        }
       </div>
     );
   }

@@ -4,12 +4,13 @@ import { connect } from 'react-redux';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import SplitPane from 'react-split-pane';
-import { loadProject, updateProject, mouseMove } from './modules/project';
+import { loadProject, updateProject, mouseMove, showSettings, hideSettings } from './modules/project';
 import { selectTarget, closeTarget, promoteTarget } from './modules/annotationViewer';
 import { closeDeleteDialog, confirmDeleteDialog } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import Navigation from './Navigation';
+import ProjectSettingsDialog from './ProjectSettingsDialog';
 import ProjectSidebar from './ProjectSidebar';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
@@ -50,9 +51,16 @@ class Project extends Component {
   render() {
     return (
       <div>
-        <Navigation title={this.props.title} inputId={this.props.projectId} onTitleChange={(event, newValue) => {this.props.updateProject(this.props.projectId, {title: newValue});}} isLoading={this.props.loading} />
+        <Navigation
+          title={this.props.title}
+          inputId={this.props.projectId}
+          onTitleChange={(event, newValue) => {this.props.updateProject(this.props.projectId, {title: newValue});}}
+          isLoading={this.props.loading}
+          showSettings={this.props.adminEnabled}
+          settingsClick={this.props.showSettings}
+        />
         <SplitPane split='vertical' minSize={250} maxSize={600} defaultSize={this.sidebarWidth} onChange={size => {this.sidebarWidth = size;}}>
-          <ProjectSidebar sidebarTarget={this.props.sidebarTarget} contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} />
+          <ProjectSidebar sidebarTarget={this.props.sidebarTarget} contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
           <div
             style={{ height: '100%' }}
             ref={el => {this.mainContainer = el;}}
@@ -60,10 +68,10 @@ class Project extends Component {
           >
             <div style={{ margin: '80px 16px 16px 16px', display: 'grid', gridTemplateRows: '500px 500px', gridTemplateColumns: '1fr 1fr', gridGap: '20px' }}>
               {this.props.openDocuments.map(document => (
-                <DocumentViewer key={document.id} document_id={document.id} resourceName={document.title} document_kind={document.document_kind} content={document.content} highlight_map={document.highlight_map} image_thumbnail_urls={document.image_thumbnail_urls} image_urls={document.image_urls} linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} />
+                <DocumentViewer key={document.id} document_id={document.id} resourceName={document.title} document_kind={document.document_kind} content={document.content} highlight_map={document.highlight_map} image_thumbnail_urls={document.image_thumbnail_urls} image_urls={document.image_urls} linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} writeEnabled={this.props.writeEnabled} />
               ))}
             </div>
-            <LinkInspectorPopupLayer targets={this.props.selectedTargets} closeHandler={this.props.closeTarget} mouseDownHandler={this.props.promoteTarget} openDocumentIds={this.props.openDocumentIds} />
+            <LinkInspectorPopupLayer targets={this.props.selectedTargets} closeHandler={this.props.closeTarget} mouseDownHandler={this.props.promoteTarget} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
           </div>
         </SplitPane>
         <Dialog
@@ -77,17 +85,22 @@ class Project extends Component {
         >
           {this.props.deleteDialogBody}
         </Dialog>
+        <ProjectSettingsDialog />
       </div>
     );
   }
 }
 
 const mapStateToProps = state => ({
+  currentUser: state.reduxTokenAuth.currentUser,
+  writeEnabled: state.project.currentUserPermissions.write,
+  adminEnabled: state.project.currentUserPermissions.admin,
   projectId: state.project.id,
   title: state.project.title,
   loading: state.project.loading,
   errored: state.project.errored,
   contentsChildren: state.project.contentsChildren,
+  adminUsers: state.project.adminUsers,
   openDocuments: state.documentGrid.openDocuments,
   openDocumentIds: state.documentGrid.openDocuments.map(document => document.id.toString()),
   selectedTargets: state.annotationViewer.selectedTargets,
@@ -105,7 +118,9 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   closeTarget,
   promoteTarget,
   closeDeleteDialog,
-  confirmDeleteDialog
+  confirmDeleteDialog,
+  showSettings,
+  hideSettings
 }, dispatch);
 
 export default connect(

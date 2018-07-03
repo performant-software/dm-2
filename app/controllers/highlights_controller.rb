@@ -3,12 +3,17 @@ require 'mini_magick'
 class HighlightsController < ApplicationController
   before_action :set_highlight, only: [:show, :update, :destroy, :set_thumbnail]
 
-  # GET /highlights
-  def index
-    @highlights = Highlight.all
-
-    render json: @highlights
+  before_action only: [:create] do
+    document = Document.find(params[:document_id])
+    @project = document.project
   end
+  before_action only: [:show] do
+    validate_user_read(@project)
+  end
+  before_action only: [:create, :update, :destroy, :set_thumbnail] do
+    validate_user_write(@project)
+  end
+
 
   # GET /highlights/1
   def show
@@ -108,6 +113,7 @@ class HighlightsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_highlight
       @highlight = Highlight.find(params[:id])
+      @project = @highlight.project
     end
 
     # Only allow a trusted parameter "white list" through.

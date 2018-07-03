@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import { routerReducer } from 'react-router-redux';
+import { reduxTokenAuthReducer } from 'redux-token-auth';
 import home from './home';
 import project from './project';
 import documentGrid from './documentGrid';
@@ -9,6 +10,7 @@ import canvasEditor from './canvasEditor';
 
 export default combineReducers({
   routing: routerReducer,
+  reduxTokenAuth: reduxTokenAuthReducer,
   home,
   project,
   documentGrid,
