@@ -7,7 +7,7 @@ import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import Link from 'material-ui/svg-icons/content/link';
-import { updateDocument, closeDocument, deleteDocument } from './modules/documentGrid';
+import { updateDocument, closeDocument, openDeleteDialog, DOCUMENT_DELETE } from './modules/documentGrid';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 
@@ -57,7 +57,20 @@ class DocumentViewer extends Component {
             disabled={!this.props.writeEnabled}
           />
           {this.props.writeEnabled &&
-            <IconButton tooltip='Delete document' onClick={() => {this.props.deleteDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
+            <IconButton
+              tooltip='Delete document'
+              onClick={() => {
+                this.props.openDeleteDialog(
+                  'Destroying "' + this.props.resourceName + '"',
+                  'Deleting this document will destroy all its associated highlights and links, as well as the content of the document itself.',
+                  'Destroy document',
+                  { documentId: this.props.document_id },
+                  DOCUMENT_DELETE
+                );
+              }}
+              style={buttonStyle}
+              iconStyle={iconStyle}
+            >
               <DeleteForever color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
           }
@@ -74,7 +87,7 @@ class DocumentViewer extends Component {
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
-  deleteDocument
+  openDeleteDialog
 }, dispatch);
 
 export default connect(
