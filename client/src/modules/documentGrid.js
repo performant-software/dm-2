@@ -6,6 +6,7 @@ import {setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLO
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
 export const CANVAS_HIGHLIGHT_DELETE = 'CANVAS_HIGHLIGHT_DELETE';
+export const DOCUMENT_DELETE = 'DOCUMENT_DELETE';
 export const OPEN_DOCUMENT = 'document_grid/OPEN_DOCUMENT';
 export const OPEN_DOCUMENT_SUCCESS = 'document_grid/OPEN_DOCUMENT_SUCCESS';
 export const OPEN_DOCUMENT_ERRORED = 'document_grid/OPEN_DOCUMENT_ERRORED';
@@ -800,6 +801,8 @@ export function confirmDeleteDialog() {
             dispatch(updateHighlight(highlight.id, {excerpt: highlight.excerpt}));
           });
         }
+        dispatch(closeDeleteDialog());
+        break;
 
       case CANVAS_HIGHLIGHT_DELETE:
         dispatch(deleteHighlights(payload.highlights));
@@ -808,35 +811,16 @@ export function confirmDeleteDialog() {
             payload.canvas.remove(object);
           });
         }
+        dispatch(closeDeleteDialog());
+        break;
 
+      case DOCUMENT_DELETE:
+        dispatch(deleteDocument(payload.documentId));
+        dispatch(closeDeleteDialog());
+        break;
+        
       default:
         dispatch(closeDeleteDialog());
     }
   }
 }
-
-// export function addImageToDocument(document_id, image) {
-//   return function(dispatch) {
-//     dispatch({
-//       type: ADD_IMAGE_TO_DOCUMENT
-//     });
-//
-//     fetch(`/documents/${document_id}/add_image`, {
-//       headers: {
-//         'Accept': 'application/json',
-//         'Content-Type': 'application/json'
-//       },
-//       method: 'POST',
-//       body: JSON.stringify({
-//         images: [image]
-//       })
-//     })
-//     .then(response => {
-//       if (!response.ok) {
-//         throw Error(response.statusText);
-//       }
-//       return response;
-//     })
-//     .then(response)
-//   }
-// }

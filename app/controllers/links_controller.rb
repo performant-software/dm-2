@@ -6,7 +6,7 @@ class LinksController < ApplicationController
     if linkable_a_type == 'Document'
       @project = Document.find(params[:linkable_a_id]).project
     elsif linkable_b_type == 'Document'
-      @project = Document.find(params[:linkable_b_type]).project
+      @project = Document.find(params[:linkable_b_id]).project
     elsif linkable_a_type == 'Highlight'
       @project = Highlight.find(params[:linkable_a_id]).project
     end
