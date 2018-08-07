@@ -60,11 +60,11 @@ class CanvasResource extends Component {
   }
 
   componentDidMount() {
-    const {content, highlight_map, document_id, timeOpened, setCanvasHighlightColor, updateHighlight, addHighlight, highlightColors, setHighlightThumbnail} = this.props;
+    const {content, highlight_map, document_id, setCanvasHighlightColor, updateHighlight, addHighlight, highlightColors, setHighlightThumbnail} = this.props;
     this.highlight_map = highlight_map;
 
     const initialColor = yellow500;
-    const key = `${document_id}-${timeOpened}`;
+    const key = this.getInstanceKey();
     setCanvasHighlightColor(key, initialColor);
     let tileSources = [];
     if (content && content.tileSources) tileSources = content.tileSources;
@@ -145,7 +145,7 @@ class CanvasResource extends Component {
           this.tempPolyline = new fabric.Polyline(newLineInProgress, {
             fill: 'transparent',
             selectable: false,
-            stroke: this.props.highlightColors[document_id],
+            stroke: this.props.highlightColors[key],
             strokeWidth: strokeWidth / overlay.fabricCanvas().getZoom()
           });
         }
@@ -156,7 +156,7 @@ class CanvasResource extends Component {
             left: pointer.x - radius,
             top: pointer.y - radius,
             selectable: false,
-            fill: this.props.highlightColors[document_id],
+            fill: this.props.highlightColors[key],
             stroke: 'transparent',
             _isMarker: true
           });
@@ -245,7 +245,7 @@ class CanvasResource extends Component {
   }
 
   markerClick() {
-    let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.props.document_id]);
+    let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
     let marker = new fabric.Circle({
       radius: markerRadius / this.overlay.fabricCanvas().getZoom(),
@@ -308,13 +308,14 @@ class CanvasResource extends Component {
   createHighlight(fabricObject, excerpt) {
     const highlightUid = `dm_canvas_highlight_${Date.now()}`;
     const { document_id, highlightColors } = this.props;
+    const instanceKey = this.getInstanceKey();
     fabricObject['_highlightUid'] = highlightUid;
-    fabricObject.stroke = highlightColors[document_id];
+    fabricObject.stroke = highlightColors[instanceKey];
     fabricObject.strokeWidth = strokeWidth / this.overlay.fabricCanvas().getZoom();
     fabricObject.selectable = true;
     this.overlay.fabricCanvas().add(fabricObject);
     this.overlay.fabricCanvas().setActiveObject(fabricObject);
-    this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[document_id], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
+    this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[instanceKey], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
   }
 
   deleteHighlightClick() {
@@ -405,10 +406,15 @@ class CanvasResource extends Component {
     }
   }
 
+  getInstanceKey() {
+    const { document_id, timeOpened } = this.props;
+    return `${document_id}-${timeOpened}`;
+  }
+
   render() {
-    const { document_id, timeOpened, image_urls, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
+    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
     const mode = addTileSourceMode[document_id];
-    const key = `${document_id}-${timeOpened}`;
+    const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
 
