@@ -60,7 +60,7 @@ class CanvasResource extends Component {
   }
 
   componentDidMount() {
-    const {content, highlight_map, document_id, setCanvasHighlightColor, updateHighlight, addHighlight, highlightColors, setHighlightThumbnail} = this.props;
+    const {content, highlight_map, document_id, setCanvasHighlightColor, updateHighlight, addHighlight, setHighlightThumbnail} = this.props;
     this.highlight_map = highlight_map;
 
     const initialColor = yellow500;
@@ -200,7 +200,6 @@ class CanvasResource extends Component {
   }
 
   renderHighlights(overlay, highlight_map) {
-    const { document_id } = this.props;
     const jsonBlob = {objects: []};
     for (const highlightUid in highlight_map) {
       const highlight = highlight_map[highlightUid];
