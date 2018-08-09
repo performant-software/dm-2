@@ -82,11 +82,13 @@ class CanvasResource extends Component {
     const viewer = OpenSeadragon({
       id: this.osdId,
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
+      showNavigationControl: false,
       tileSources,
       sequenceMode: true,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true
     });
+    //viewer.fullPageButton.removeAllHandlers();
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: 2000});
 
     viewer.addHandler('update-viewport', () => {
