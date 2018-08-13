@@ -88,7 +88,7 @@ class CanvasResource extends Component {
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true
     });
-    //viewer.fullPageButton.removeAllHandlers();
+
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: 2000});
 
     viewer.addHandler('update-viewport', () => {
@@ -212,6 +212,7 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().loadFromJSON(jsonString, () => {
       overlay.fabricCanvas().forEachObject(object => {
         if (object._isMarker) {
+          object.hasControls = false; // removes ability to reshape markers
           object.radius = markerRadius / zoom;
         }
         object.strokeWidth = strokeWidth / zoom;
