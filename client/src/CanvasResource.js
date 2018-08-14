@@ -48,9 +48,7 @@ tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: '
 const strokeWidth = 2.0;
 const markerRadius = 8.0;
 
-var isMarkerMode = false;
-var isRectMode = false;
-var isCircleMode = false;
+
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -61,6 +59,9 @@ class CanvasResource extends Component {
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.imageUrlForThumbnail = null;
+    this.isMarkerMode = false;
+    this.isRectMode = false;
+    this.isCircleMode = false;
   }
 
   componentDidMount() {
@@ -129,15 +130,14 @@ class CanvasResource extends Component {
     //   }
     // });
 
-    overlay.fabricCanvas().on('mouse:down', function(o) {
+    overlay.fabricCanvas().on('mouse:down', (o) => {
       var pointerCoords = overlay.fabricCanvas().getPointer(o.e);
 
-      if(isMarkerMode){
-        console.log(pointerCoords.x);
+      if(this.isMarkerMode){
         this.markerClickHelper(pointerCoords);
-      } else if (isRectMode) {
+      } else if (this.isRectMode) {
         this.rectClickHelper(pointerCoords);
-      } else if (isCircleMode) {
+      } else if (this.isCircleMode) {
         this.circleClickHelper(pointerCoords);
       } else {
         console.log("mode not selected");
@@ -245,60 +245,147 @@ class CanvasResource extends Component {
   }
 
   rectClick() {
-    if(isRectMode) {
-      isRectMode = false;
+    if(this.isRectMode) {
+      this.isRectMode = false;
+      this.osdViewer.setMouseNavEnabled(true); //allow image to be moved if no longer drawing shapes
     } else {
-      isRectMode = true;
+      //turn off other modes
+      // turn off line mode
+      if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+      // turn off pencil mode
+      this.overlay.fabricCanvas().isDrawingMode = false;
+      this.props.setIsPencilMode(this.props.document_id, false);
+
+      this.isCircleMode = false;
+      this.isMarkerMode = false;
+
+      this.isRectMode = true;
+
+      this.osdViewer.setMouseNavEnabled(false);
     }
   }
 
-  //WORK IN PROGRESS
+  //WORK IN PROGRESS - Issue with highlights not staying unless moved
   rectClickHelper(pCoords) {
     let rect = new fabric.Rect({
       left: pCoords.x,
       top: pCoords.y,
-      width: 300,  //once get current mouse location, change these next two lines
-      height: 300,
+      width: 20,
+      height: 20,
       fill: 'transparent'
     });
     this.createHighlight(rect, 'Rectangular highlight');
+
+    var mouse;
+    var isDown = true;
+    this.overlay.fabricCanvas().on('mouse:move', (o) => {
+      if(isDown) {
+        mouse = this.overlay.fabricCanvas().getPointer(o.e);
+
+        if(mouse.x < pCoords.x) {
+          rect.set({left: mouse.x });
+        }
+        if(mouse.y < pCoords.y) {
+          rect.set({top: mouse.y });
+        }
+
+        rect.set({width: Math.abs(pCoords.x - mouse.x) });
+        rect.set({height: Math.abs(pCoords.y - mouse.y) });
+
+        this.overlay.fabricCanvas().renderAll();
+
+      }
+    });
+
+    this.overlay.fabricCanvas().on('mouse:up', (o) => {
+      isDown = false;
+    })
+
   }
 
   circleClick() {
-    if(isCircleMode) {
-      isCircleMode = false;
+    if(this.isCircleMode) {
+      this.isCircleMode = false;
+      this.osdViewer.setMouseNavEnabled(true);
     } else {
-      isCircleMode = true;
+      //turn off other modes
+      // turn off line mode
+      if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+      // turn off pencil mode
+      this.overlay.fabricCanvas().isDrawingMode = false;
+      this.props.setIsPencilMode(this.props.document_id, false);
+
+      this.isMarkerMode = false;
+      this.isRectMode = false;
+
+      this.osdViewer.setMouseNavEnabled(false);
+
+      this.isCircleMode = true;
     }
   }
 
-  // WORK IN PROGRESS
+  // WORK IN PROGRESS - same issue as rectangles
   circleClickHelper(pCoords) {
     let circle = new fabric.Circle({
-      radius: 150, //once get current mouse location, change this
+      radius: 15,
       left: pCoords.x,
       top: pCoords.y,
-      fill: 'transparent'
+      fill: 'transparent',
+      originX: 'center', originY: 'center' // when circle is resized, the center remains constant
     });
     this.createHighlight(circle, 'Circular highlight');
+
+    var mouse;
+    var isDown = true;
+    this.overlay.fabricCanvas().on('mouse:move', (o) => {
+      if(isDown) {
+        mouse = this.overlay.fabricCanvas().getPointer(o.e);
+
+        if( Math.abs(mouse.x - pCoords.x) > Math.abs(mouse.y - pCoords.y) ) {
+          circle.set({radius: Math.abs( mouse.x - pCoords.x ) });
+        } else {
+          circle.set({radius: Math.abs( mouse.y - pCoords.y ) });
+        }
+
+        this.overlay.fabricCanvas().renderAll();
+      }
+    });
+
+    this.overlay.fabricCanvas().on('mouse:up', (o) => {
+      isDown = false;
+    });
+
   }
 
   markerClick() {
-    if(isMarkerMode){
-      isMarkerMode = false;
+    if(this.isMarkerMode){
+      this.isMarkerMode = false;
     } else {
-      isMarkerMode = true;
+      //turn off other modes
+      // turn off line mode if turning on pencil mode
+      if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+      // turn off pencil mode if turning on line mode
+      this.overlay.fabricCanvas().isDrawingMode = false;
+      this.osdViewer.setMouseNavEnabled(true);
+      this.props.setIsPencilMode(this.props.document_id, false);
+
+      this.isCircleMode = false;
+      this.isRectMode = false;
+
+
+      this.isMarkerMode = true;
     }
   }
 
+//DONE
   markerClickHelper(pCoords) {
-    console.log("got here " + pCoords.x + " " + pCoords.y);
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
+    var rad = markerRadius / this.overlay.fabricCanvas().getZoom();
     let marker = new fabric.Circle({
-      radius: markerRadius / this.overlay.fabricCanvas().getZoom(),
-      left: pCoords.x,
-      top: pCoords.y,
+      radius: rad,
+      left: pCoords.x - rad, //offset to put marker at center of click
+      top: pCoords.y - rad,
       fill: markerFill.toRgba(),
       lockScalingX: true,
       lockScalingY: true,
@@ -321,6 +408,11 @@ class CanvasResource extends Component {
 
     // turn off line mode if turning on pencil mode
     if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+
+    //turn off other modes
+    this.isMarkerMode = false;
+    this.isCircleMode = false;
+    this.isRectMode = false;
   }
 
   endLineMode() {
@@ -347,6 +439,11 @@ class CanvasResource extends Component {
       this.overlay.fabricCanvas().isDrawingMode = false;
       this.osdViewer.setMouseNavEnabled(true);
       this.props.setIsPencilMode(this.props.document_id, false);
+
+      //turn off other modes
+      this.isMarkerMode = false;
+      this.isCircleMode = false;
+      this.isRectMode = false;
 
       this.overlay.fabricCanvas().defaultCursor = 'crosshair';
       this.props.setLineInProgress(this.props.document_id, []);
@@ -501,13 +598,13 @@ class CanvasResource extends Component {
                 }}
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
-              <IconButton tooltip='Add rectangular highlight' onClick={this.rectClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip={this.isRectMode ? 'End rectangular highlight' : 'Add rectangular highlight'} onClick={this.rectClick.bind(this)} style={this.isRectMode ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <CropSquare />
               </IconButton>
-              <IconButton tooltip='Add circular highlight' onClick={this.circleClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip={this.isCircleMode ? 'End circular highlight' : 'Add circular highlight'} onClick={this.circleClick.bind(this)} style={this.isCircleMode ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <PanoramaFishEye />
               </IconButton>
-              <IconButton tooltip='Add marker highlight' onClick={this.markerClick.bind(this)} style={iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip={this.isMarkerMode ? 'End marker highlight' : 'Add marker highlight'} onClick={this.markerClick.bind(this)} style={this.isMarkerMode ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <Place />
               </IconButton>
               <IconButton tooltip={isPencilMode[document_id] ? 'End free drawing' : 'Start free drawing'} onClick={this.pencilClick.bind(this)} style={isPencilMode[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
