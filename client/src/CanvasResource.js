@@ -48,6 +48,10 @@ tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: '
 const strokeWidth = 2.0;
 const markerRadius = 8.0;
 
+var isMarkerMode = false;
+var isRectMode = false;
+var isCircleMode = false;
+
 class CanvasResource extends Component {
   constructor(props) {
     super(props);
@@ -124,6 +128,21 @@ class CanvasResource extends Component {
     //     window.setFocusHighlight(options.target.highlightUid);
     //   }
     // });
+
+    overlay.fabricCanvas().on('mouse:down', function(o) {
+      var pointerCoords = overlay.fabricCanvas().getPointer(o.e);
+
+      if(isMarkerMode){
+        console.log(pointerCoords.x);
+        this.markerClickHelper(pointerCoords);
+      } else if (isRectMode) {
+        this.rectClickHelper(pointerCoords);
+      } else if (isCircleMode) {
+        this.circleClickHelper(pointerCoords);
+      } else {
+        console.log("mode not selected");
+      }
+    });
 
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
     overlay.fabricCanvas().freeDrawingBrush.width = strokeWidth / overlay.fabricCanvas().getZoom();
@@ -226,10 +245,19 @@ class CanvasResource extends Component {
   }
 
   rectClick() {
+    if(isRectMode) {
+      isRectMode = false;
+    } else {
+      isRectMode = true;
+    }
+  }
+
+  //WORK IN PROGRESS
+  rectClickHelper(pCoords) {
     let rect = new fabric.Rect({
-      left: 650,
-      top: 700,
-      width: 300,
+      left: pCoords.x,
+      top: pCoords.y,
+      width: 300,  //once get current mouse location, change these next two lines
       height: 300,
       fill: 'transparent'
     });
@@ -237,22 +265,40 @@ class CanvasResource extends Component {
   }
 
   circleClick() {
+    if(isCircleMode) {
+      isCircleMode = false;
+    } else {
+      isCircleMode = true;
+    }
+  }
+
+  // WORK IN PROGRESS
+  circleClickHelper(pCoords) {
     let circle = new fabric.Circle({
-      radius: 150,
-      left: 700,
-      top: 700,
+      radius: 150, //once get current mouse location, change this
+      left: pCoords.x,
+      top: pCoords.y,
       fill: 'transparent'
     });
     this.createHighlight(circle, 'Circular highlight');
   }
 
   markerClick() {
+    if(isMarkerMode){
+      isMarkerMode = false;
+    } else {
+      isMarkerMode = true;
+    }
+  }
+
+  markerClickHelper(pCoords) {
+    console.log("got here " + pCoords.x + " " + pCoords.y);
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
     let marker = new fabric.Circle({
       radius: markerRadius / this.overlay.fabricCanvas().getZoom(),
-      left: 700,
-      top: 700,
+      left: pCoords.x,
+      top: pCoords.y,
       fill: markerFill.toRgba(),
       lockScalingX: true,
       lockScalingY: true,
