@@ -130,20 +130,6 @@ class CanvasResource extends Component {
     //   }
     // });
 
-    overlay.fabricCanvas().on('mouse:down', (o) => {
-      var pointerCoords = overlay.fabricCanvas().getPointer(o.e);
-
-      if(this.isMarkerMode){
-        this.markerClickHelper(pointerCoords);
-      } else if (this.isRectMode) {
-        this.rectClickHelper(pointerCoords);
-      } else if (this.isCircleMode) {
-        this.circleClickHelper(pointerCoords);
-      } else {
-        console.log("mode not selected");
-      }
-    });
-
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
     overlay.fabricCanvas().freeDrawingBrush.width = strokeWidth / overlay.fabricCanvas().getZoom();
 
@@ -157,6 +143,20 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
     overlay.fabricCanvas().on('mouse:down', event => {
       this.clearFocusHighlightTimeout();
+      // check if using shape draw
+      if(this.isMarkerMode) {
+        const pointerCoords = overlay.fabricCanvas().getPointer(event.e);
+        this.markerClickHelper(pointerCoords);
+      } else if (this.isRectMode) {
+        const pointerCoords = overlay.fabricCanvas().getPointer(event.e);
+        this.rectClickHelper(pointerCoords);
+
+      } else if (this.isCircleMode) {
+        const pointerCoords = overlay.fabricCanvas().getPointer(event.e);
+        this.circleClickHelper(pointerCoords);
+      }
+      //rest below here is same
+      // line drawing
       const lineInProgress = this.props.linesInProgress[document_id];
       if (lineInProgress) {
         if (this.tempPolyline) this.overlay.fabricCanvas().remove(this.tempPolyline);
