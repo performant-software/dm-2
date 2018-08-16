@@ -267,6 +267,7 @@ class CanvasResource extends Component {
 
   //WORK IN PROGRESS - Issue with highlights not staying unless moved
   rectClickHelper(pCoords) {
+    var usingRect = true;
     let rect = new fabric.Rect({
       left: pCoords.x,
       top: pCoords.y,
@@ -298,8 +299,16 @@ class CanvasResource extends Component {
     });
 
     this.overlay.fabricCanvas().on('mouse:up', (o) => {
-      isDown = false;
-    })
+      if(usingRect) {
+        isDown = false;
+        var useID = this.highlight_map[rect._highlightUid].id;
+        console.log("useID = " + useID);
+        updateHighlight( useID, {target: JSON.stringify(rect.toJSON(['_highlightUid', '_isMarker']) )} );
+        setHighlightThumbnail(useID, this.imageUrlForThumbnail, rect.aCoords, rect.toSVG());
+      }
+      usingRect = false;
+
+    });
 
   }
 
