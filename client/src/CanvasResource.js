@@ -143,17 +143,34 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
     overlay.fabricCanvas().on('mouse:down', event => {
       this.clearFocusHighlightTimeout();
+      // get pointer coordinates for drawing highlights
+      this.pointerCoords = overlay.fabricCanvas().getPointer(event.e);
       // check if using shape draw
       if(this.isMarkerMode) {
-        const pointerCoords = overlay.fabricCanvas().getPointer(event.e);
-        this.markerClickHelper(pointerCoords);
+        this.markerClickHelper(this.pointerCoords);
       } else if (this.isRectMode) {
-        const pointerCoords = overlay.fabricCanvas().getPointer(event.e);
-        this.rectClickHelper(pointerCoords);
+        this.isMouseDown = true;
+
+        this.newRect = new fabric.Rect({
+          left: this.pointerCoords.x,
+          top: this.pointerCoords.y,
+          width: 20,
+          height: 20,
+          fill: 'transparent'
+        });
+        this.createHighlight(this.newRect, 'Rectangular highlight');
 
       } else if (this.isCircleMode) {
-        const pointerCoords = overlay.fabricCanvas().getPointer(event.e);
-        this.circleClickHelper(pointerCoords);
+        this.isMouseDown = true;
+
+        this.newCircle = new fabric.Circle({
+          radius: 15,
+          left: this.pointerCoords.x,
+          top: this.pointerCoords.y,
+          fill: 'transparent',
+          originX: 'center', originY: 'center' // when circle is resized, the center remains constant
+        });
+        this.createHighlight(this.newCircle, 'Circular highlight');
       }
       //rest below here is same
       // line drawing
@@ -186,7 +203,54 @@ class CanvasResource extends Component {
         this.props.setLineInProgress(document_id, newLineInProgress);
       }
     });
-    overlay.fabricCanvas().on('mouse:up', this.clearFocusHighlightTimeout.bind(this));
+
+    overlay.fabricCanvas().on('mouse:move', (o) => {
+      // drawing a rectangle
+      if(this.isMouseDown && this.isRectMode) {
+        const mouse = this.overlay.fabricCanvas().getPointer(o.e);
+
+        if(mouse.x < this.pointerCoords.x) {
+          this.newRect.set({left: mouse.x });
+        }
+        if(mouse.y < this.pointerCoords.y) {
+          this.newRect.set({top: mouse.y });
+        }
+
+        this.newRect.set({width: Math.abs(this.pointerCoords.x - mouse.x) });
+        this.newRect.set({height: Math.abs(this.pointerCoords.y - mouse.y) });
+
+        this.overlay.fabricCanvas().renderAll();
+
+      } else if(this.isMouseDown && this.isCircleMode) {
+        //drawing a circle
+        const mouse = this.overlay.fabricCanvas().getPointer(o.e);
+
+        if( Math.abs(mouse.x - this.pointerCoords.x) > Math.abs(mouse.y - this.pointerCoords.y) ) {
+          this.newCircle.set({radius: Math.abs( mouse.x - this.pointerCoords.x ) });
+        } else {
+          this.newCircle.set({radius: Math.abs( mouse.y - this.pointerCoords.y ) });
+        }
+
+        this.overlay.fabricCanvas().renderAll();
+      }
+    });
+
+    overlay.fabricCanvas().on('mouse:up', event => {
+      this.clearFocusHighlightTimeout.bind(this);
+
+      if(this.isRectMode) {
+        this.isMouseDown = false;
+        const useID = this.highlight_map[this.newRect._highlightUid].id;
+        updateHighlight( useID, {target: JSON.stringify(this.newRect.toJSON(['_highlightUid', '_isMarker']) )} );
+        setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newRect.aCoords, this.newRect.toSVG());
+      } else if(this.isCircleMode) {
+        this.isMouseDown = false;
+        const useID = this.highlight_map[this.newCircle._highlightUid].id;
+        updateHighlight( useID, {target: JSON.stringify(this.newCircle.toJSON(['_highlightUid', '_isMarker']) )} );
+        setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newCircle.aCoords, this.newCircle.toSVG());
+      }
+
+    });
     overlay.fabricCanvas().on('object:modified', event => {
       if (event && event.target && event.target._highlightUid) {
         const highlight_id = this.highlight_map[event.target._highlightUid].id;
@@ -265,53 +329,6 @@ class CanvasResource extends Component {
     }
   }
 
-  //WORK IN PROGRESS - Issue with highlights not staying unless moved
-  rectClickHelper(pCoords) {
-    var usingRect = true;
-    let rect = new fabric.Rect({
-      left: pCoords.x,
-      top: pCoords.y,
-      width: 20,
-      height: 20,
-      fill: 'transparent'
-    });
-    this.createHighlight(rect, 'Rectangular highlight');
-
-    var mouse;
-    var isDown = true;
-    this.overlay.fabricCanvas().on('mouse:move', (o) => {
-      if(isDown) {
-        mouse = this.overlay.fabricCanvas().getPointer(o.e);
-
-        if(mouse.x < pCoords.x) {
-          rect.set({left: mouse.x });
-        }
-        if(mouse.y < pCoords.y) {
-          rect.set({top: mouse.y });
-        }
-
-        rect.set({width: Math.abs(pCoords.x - mouse.x) });
-        rect.set({height: Math.abs(pCoords.y - mouse.y) });
-
-        this.overlay.fabricCanvas().renderAll();
-
-      }
-    });
-
-    this.overlay.fabricCanvas().on('mouse:up', (o) => {
-      if(usingRect) {
-        isDown = false;
-        var useID = this.highlight_map[rect._highlightUid].id;
-        console.log("useID = " + useID);
-        updateHighlight( useID, {target: JSON.stringify(rect.toJSON(['_highlightUid', '_isMarker']) )} );
-        setHighlightThumbnail(useID, this.imageUrlForThumbnail, rect.aCoords, rect.toSVG());
-      }
-      usingRect = false;
-
-    });
-
-  }
-
   circleClick() {
     if(this.isCircleMode) {
       this.isCircleMode = false;
@@ -331,39 +348,6 @@ class CanvasResource extends Component {
 
       this.isCircleMode = true;
     }
-  }
-
-  // WORK IN PROGRESS - same issue as rectangles
-  circleClickHelper(pCoords) {
-    let circle = new fabric.Circle({
-      radius: 15,
-      left: pCoords.x,
-      top: pCoords.y,
-      fill: 'transparent',
-      originX: 'center', originY: 'center' // when circle is resized, the center remains constant
-    });
-    this.createHighlight(circle, 'Circular highlight');
-
-    var mouse;
-    var isDown = true;
-    this.overlay.fabricCanvas().on('mouse:move', (o) => {
-      if(isDown) {
-        mouse = this.overlay.fabricCanvas().getPointer(o.e);
-
-        if( Math.abs(mouse.x - pCoords.x) > Math.abs(mouse.y - pCoords.y) ) {
-          circle.set({radius: Math.abs( mouse.x - pCoords.x ) });
-        } else {
-          circle.set({radius: Math.abs( mouse.y - pCoords.y ) });
-        }
-
-        this.overlay.fabricCanvas().renderAll();
-      }
-    });
-
-    this.overlay.fabricCanvas().on('mouse:up', (o) => {
-      isDown = false;
-    });
-
   }
 
   markerClick() {
@@ -386,14 +370,13 @@ class CanvasResource extends Component {
     }
   }
 
-//DONE
   markerClickHelper(pCoords) {
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
     var rad = markerRadius / this.overlay.fabricCanvas().getZoom();
     let marker = new fabric.Circle({
       radius: rad,
-      left: pCoords.x - rad, //offset to put marker at center of click
+      left: pCoords.x - rad, // offset to put marker at center of click
       top: pCoords.y - rad,
       fill: markerFill.toRgba(),
       lockScalingX: true,
