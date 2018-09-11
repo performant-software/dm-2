@@ -194,7 +194,7 @@ class CanvasResource extends Component {
           height: 20,
           fill: 'transparent'
         });
-        this.createHighlight(this.newRect, 'Rectangular highlight');
+        this.createHighlight(this.newRect);
         break;
 
       case 'circle':
@@ -205,7 +205,7 @@ class CanvasResource extends Component {
           fill: 'transparent',
           originX: 'center', originY: 'center' // when circle is resized, the center remains constant
         });
-        this.createHighlight(this.newCircle, 'Circular highlight');
+        this.createHighlight(this.newCircle);
         break;
 
       case 'lineDraw':
@@ -279,12 +279,10 @@ class CanvasResource extends Component {
 
     this.clearFocusHighlightTimeout.bind(this);
     this.isMouseDown = false;
+    const key = this.getInstanceKey();
 
     switch(this.currentMode) {
       case 'rect': {
-        // const useID = this.highlight_map[this.newRect._highlightUid].id;
-        const key = this.getInstanceKey();
-
         this.props.addHighlight(
           this.props.document_id, 
           this.newRect._highlightUid, 
@@ -299,17 +297,24 @@ class CanvasResource extends Component {
                 this.newRect.toSVG()
               );
           });
-
-        // updateHighlight( useID, {target: JSON.stringify(this.newRect.toJSON(['_highlightUid', '_isMarker']) )} );
-        // setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newRect.aCoords, this.newRect.toSVG());
         break;
       }
       
       case 'circle': {
-        // const useID = this.highlight_map[this.newCircle._highlightUid].id;
-        // this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[instanceKey], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
-        // updateHighlight( useID, {target: JSON.stringify(this.newCircle.toJSON(['_highlightUid', '_isMarker']) )} );
-        // setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newCircle.aCoords, this.newCircle.toSVG());        
+        this.props.addHighlight(
+          this.props.document_id, 
+          this.newCircle._highlightUid, 
+          JSON.stringify(this.newCircle.toJSON(['_highlightUid', '_isMarker'])), 
+          this.props.highlightColors[key], 
+          'Circular highlight', 
+          savedHighlight => {
+              this.props.setHighlightThumbnail(
+                savedHighlight.id, 
+                this.imageUrlForThumbnail, 
+                this.newCircle.aCoords, 
+                this.newCircle.toSVG()
+              );
+          });
         break;
       }
     }
@@ -452,9 +457,9 @@ class CanvasResource extends Component {
     }
   }
 
-  createHighlight(fabricObject, excerpt) {
+  createHighlight(fabricObject) {
     const highlightUid = `dm_canvas_highlight_${Date.now()}`;
-    const { document_id, highlightColors } = this.props;
+    const { highlightColors } = this.props;
     const instanceKey = this.getInstanceKey();
     fabricObject['_highlightUid'] = highlightUid;
     fabricObject.stroke = highlightColors[instanceKey];
@@ -462,7 +467,6 @@ class CanvasResource extends Component {
     fabricObject.selectable = true;
     this.overlay.fabricCanvas().add(fabricObject);
     this.overlay.fabricCanvas().setActiveObject(fabricObject);
-    // this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[instanceKey], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
   }
 
   deleteHighlightClick() {
