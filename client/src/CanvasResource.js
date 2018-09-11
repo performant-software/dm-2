@@ -387,6 +387,12 @@ class CanvasResource extends Component {
     this.osdViewer.setMouseNavEnabled(false);
   }
 
+  colorizeClick() {
+    this.stopDrawing()
+    this.currentMode = 'colorize';
+    this.osdViewer.setMouseNavEnabled(false);  
+  }
+
   markerClickHelper(pCoords) {
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
@@ -624,6 +630,9 @@ class CanvasResource extends Component {
               </IconButton>
               <IconButton tooltip={linesInProgress[document_id] ? 'End line drawing' : 'Start line drawing'} onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <ShowChart />
+              </IconButton>
+              <IconButton tooltip='Change the color of a shape.' onClick={this.colorizeClick.bind(this)} style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+                <Colorize />
               </IconButton>
               <IconButton tooltip={'Delete selected highlight'} onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
                 <DeleteForever />
