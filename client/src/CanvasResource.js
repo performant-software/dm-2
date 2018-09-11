@@ -12,14 +12,19 @@ import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import IconButton from 'material-ui/IconButton';
+
+import PanTool from 'material-ui/svg-icons/action/pan-tool';
+import CropFree from 'material-ui/svg-icons/image/crop-free';
 import CropSquare from 'material-ui/svg-icons/image/crop-square';
 import PanoramaFishEye from 'material-ui/svg-icons/image/panorama-fish-eye';
 import Place from 'material-ui/svg-icons/maps/place';
 import Edit from 'material-ui/svg-icons/image/edit';
+import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
+
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setAddTileSourceMode, setIsPencilMode, setLineInProgress, setZoomControl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail, addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -48,20 +53,15 @@ tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: '
 const strokeWidth = 2.0;
 const markerRadius = 8.0;
 
-
-
 class CanvasResource extends Component {
   constructor(props) {
     super(props);
-
     this.osdId =`openseadragon-${this.props.document_id}-${Date.now()}`;
     this.osdViewer = null;
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.imageUrlForThumbnail = null;
-    this.isMarkerMode = false;
-    this.isRectMode = false;
-    this.isCircleMode = false;
+    this.currentMode = 'pan';
   }
 
   componentDidMount() {
@@ -133,131 +133,24 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
     overlay.fabricCanvas().freeDrawingBrush.width = strokeWidth / overlay.fabricCanvas().getZoom();
 
-    overlay.fabricCanvas().on('mouse:over', event => {
-      if (event.target && event.target._highlightUid) {
-        // this.highlightFocusTimeout = window.setTimeout(() => {
-          window.setFocusHighlight(document_id, event.target._highlightUid);
-        // }, 1000);
-      }
-    });
+    // overlay.fabricCanvas().on('mouse:dblclick', event => {
+    //   if (event.target && event.target._highlightUid) {
+    //     // this.highlightFocusTimeout = window.setTimeout(() => {
+    //       window.setFocusHighlight(document_id, event.target._highlightUid);
+    //     // }, 1000);
+    //   }
+    // });
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
-    overlay.fabricCanvas().on('mouse:down', event => {
-      this.clearFocusHighlightTimeout();
-      // get pointer coordinates for drawing highlights
-      this.pointerCoords = overlay.fabricCanvas().getPointer(event.e);
-      // check if using shape draw
-      if(this.isMarkerMode) {
-        this.markerClickHelper(this.pointerCoords);
-      } else if (this.isRectMode) {
-        this.isMouseDown = true;
-
-        this.newRect = new fabric.Rect({
-          left: this.pointerCoords.x,
-          top: this.pointerCoords.y,
-          width: 20,
-          height: 20,
-          fill: 'transparent'
-        });
-        this.createHighlight(this.newRect, 'Rectangular highlight');
-
-      } else if (this.isCircleMode) {
-        this.isMouseDown = true;
-
-        this.newCircle = new fabric.Circle({
-          radius: 15,
-          left: this.pointerCoords.x,
-          top: this.pointerCoords.y,
-          fill: 'transparent',
-          originX: 'center', originY: 'center' // when circle is resized, the center remains constant
-        });
-        this.createHighlight(this.newCircle, 'Circular highlight');
-      }
-      //rest below here is same
-      // line drawing
-      const lineInProgress = this.props.linesInProgress[document_id];
-      if (lineInProgress) {
-        if (this.tempPolyline) this.overlay.fabricCanvas().remove(this.tempPolyline);
-        const pointer = overlay.fabricCanvas().getPointer(event.e);
-        const newLineInProgress = lineInProgress.concat([{ x: pointer.x, y: pointer.y }]);
-        if (newLineInProgress.length > 1) {
-          this.tempPolyline = new fabric.Polyline(newLineInProgress, {
-            fill: 'transparent',
-            selectable: false,
-            stroke: this.props.highlightColors[key],
-            strokeWidth: strokeWidth / overlay.fabricCanvas().getZoom()
-          });
-        }
-        else {
-          let radius = markerRadius / overlay.fabricCanvas().getZoom()
-          this.tempPolyline = new fabric.Circle({
-            radius,
-            left: pointer.x - radius,
-            top: pointer.y - radius,
-            selectable: false,
-            fill: this.props.highlightColors[key],
-            stroke: 'transparent',
-            _isMarker: true
-          });
-        }
-        this.overlay.fabricCanvas().add(this.tempPolyline);
-        this.props.setLineInProgress(document_id, newLineInProgress);
-      }
-    });
-
-    overlay.fabricCanvas().on('mouse:move', (o) => {
-      // drawing a rectangle
-      if(this.isMouseDown && this.isRectMode) {
-        const mouse = this.overlay.fabricCanvas().getPointer(o.e);
-
-        if(mouse.x < this.pointerCoords.x) {
-          this.newRect.set({left: mouse.x });
-        }
-        if(mouse.y < this.pointerCoords.y) {
-          this.newRect.set({top: mouse.y });
-        }
-
-        this.newRect.set({width: Math.abs(this.pointerCoords.x - mouse.x) });
-        this.newRect.set({height: Math.abs(this.pointerCoords.y - mouse.y) });
-
-        this.overlay.fabricCanvas().renderAll();
-
-      } else if(this.isMouseDown && this.isCircleMode) {
-        //drawing a circle
-        const mouse = this.overlay.fabricCanvas().getPointer(o.e);
-
-        if( Math.abs(mouse.x - this.pointerCoords.x) > Math.abs(mouse.y - this.pointerCoords.y) ) {
-          this.newCircle.set({radius: Math.abs( mouse.x - this.pointerCoords.x ) });
-        } else {
-          this.newCircle.set({radius: Math.abs( mouse.y - this.pointerCoords.y ) });
-        }
-
-        this.overlay.fabricCanvas().renderAll();
-      }
-    });
-
-    overlay.fabricCanvas().on('mouse:up', event => {
-      this.clearFocusHighlightTimeout.bind(this);
-
-      if(this.isRectMode) {
-        this.isMouseDown = false;
-        const useID = this.highlight_map[this.newRect._highlightUid].id;
-        updateHighlight( useID, {target: JSON.stringify(this.newRect.toJSON(['_highlightUid', '_isMarker']) )} );
-        setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newRect.aCoords, this.newRect.toSVG());
-      } else if(this.isCircleMode) {
-        this.isMouseDown = false;
-        const useID = this.highlight_map[this.newCircle._highlightUid].id;
-        updateHighlight( useID, {target: JSON.stringify(this.newCircle.toJSON(['_highlightUid', '_isMarker']) )} );
-        setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newCircle.aCoords, this.newCircle.toSVG());
-      }
-
-    });
+    overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
+    overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
+    overlay.fabricCanvas().on('mouse:up', this.canvasMouseUp.bind(this) );
     overlay.fabricCanvas().on('object:modified', event => {
-      if (event && event.target && event.target._highlightUid) {
-        const highlight_id = this.highlight_map[event.target._highlightUid].id;
-        if (highlight_id && this.imageUrlForThumbnail) {
-          updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
-          setHighlightThumbnail(highlight_id, this.imageUrlForThumbnail, event.target.aCoords, event.target.toSVG());
-        }
+      if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
+          const highlight_id = this.highlight_map[event.target._highlightUid].id;
+          if (highlight_id && this.imageUrlForThumbnail) {
+            updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
+            setHighlightThumbnail(highlight_id, this.imageUrlForThumbnail, event.target.aCoords, event.target.toSVG());
+          }
       }
     });
     // process paths created with pencil tool
@@ -279,7 +172,150 @@ class CanvasResource extends Component {
     this.osdViewer = viewer;
   }
 
-  clearFocusHighlightTimeout(event) {
+  canvasMouseDown(event) {
+    
+    if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
+
+    const key = this.getInstanceKey();
+    this.isMouseDown = true;
+    this.pointerCoords = this.overlay.fabricCanvas().getPointer(event.e);
+    this.clearFocusHighlightTimeout();
+
+    switch(this.currentMode) {
+      case 'marker':
+        this.markerClickHelper(this.pointerCoords);
+        break;
+
+      case 'rect':
+        this.newRect = new fabric.Rect({
+          left: this.pointerCoords.x,
+          top: this.pointerCoords.y,
+          width: 20,
+          height: 20,
+          fill: 'transparent'
+        });
+        this.createHighlight(this.newRect, 'Rectangular highlight');
+        break;
+
+      case 'circle':
+        this.newCircle = new fabric.Circle({
+          radius: 15,
+          left: this.pointerCoords.x,
+          top: this.pointerCoords.y,
+          fill: 'transparent',
+          originX: 'center', originY: 'center' // when circle is resized, the center remains constant
+        });
+        this.createHighlight(this.newCircle, 'Circular highlight');
+        break;
+
+      case 'lineDraw':
+        const lineInProgress = this.props.linesInProgress[this.props.document_id];
+        if (lineInProgress) {
+          if (this.tempPolyline) this.overlay.fabricCanvas().remove(this.tempPolyline);
+          const pointer = this.overlay.fabricCanvas().getPointer(event.e);
+          const newLineInProgress = lineInProgress.concat([{ x: pointer.x, y: pointer.y }]);
+          if (newLineInProgress.length > 1) {
+            this.tempPolyline = new fabric.Polyline(newLineInProgress, {
+              fill: 'transparent',
+              selectable: false,
+              stroke: this.props.highlightColors[key],
+              strokeWidth: strokeWidth / this.overlay.fabricCanvas().getZoom()
+            });
+          }
+          else {
+            let radius = markerRadius / this.overlay.fabricCanvas().getZoom()
+            this.tempPolyline = new fabric.Circle({
+              radius,
+              left: pointer.x - radius,
+              top: pointer.y - radius,
+              selectable: false,
+              fill: this.props.highlightColors[key],
+              stroke: 'transparent',
+              _isMarker: true
+            });
+          }
+          this.overlay.fabricCanvas().add(this.tempPolyline);
+          this.props.setLineInProgress(this.props.document_id, newLineInProgress);
+        }
+        break;
+    }
+  }
+
+  canvasMouseMove(o) {
+    if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
+
+    if( this.isMouseDown ) {
+      const mouse = this.overlay.fabricCanvas().getPointer(o.e);
+
+      switch(this.currentMode) {
+        case 'rect':
+          if(mouse.x < this.pointerCoords.x) {
+            this.newRect.set({left: mouse.x });
+          }
+          if(mouse.y < this.pointerCoords.y) {
+            this.newRect.set({top: mouse.y });
+          }
+    
+          this.newRect.set({width: Math.abs(this.pointerCoords.x - mouse.x) });
+          this.newRect.set({height: Math.abs(this.pointerCoords.y - mouse.y) });
+    
+          this.overlay.fabricCanvas().renderAll();
+          break;
+        case 'circle':
+          if( Math.abs(mouse.x - this.pointerCoords.x) > Math.abs(mouse.y - this.pointerCoords.y) ) {
+            this.newCircle.set({radius: Math.abs( mouse.x - this.pointerCoords.x ) });
+          } else {
+            this.newCircle.set({radius: Math.abs( mouse.y - this.pointerCoords.y ) });
+          }
+    
+          this.overlay.fabricCanvas().renderAll();
+          break;
+      }  
+    }
+  }
+
+  canvasMouseUp() {
+    if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
+
+    this.clearFocusHighlightTimeout.bind(this);
+    this.isMouseDown = false;
+
+    switch(this.currentMode) {
+      case 'rect': {
+        // const useID = this.highlight_map[this.newRect._highlightUid].id;
+        const key = this.getInstanceKey();
+
+        this.props.addHighlight(
+          this.props.document_id, 
+          this.newRect._highlightUid, 
+          JSON.stringify(this.newRect.toJSON(['_highlightUid', '_isMarker'])), 
+          this.props.highlightColors[key], 
+          'Rectangular highlight', 
+          savedHighlight => {
+              this.props.setHighlightThumbnail(
+                savedHighlight.id, 
+                this.imageUrlForThumbnail, 
+                this.newRect.aCoords, 
+                this.newRect.toSVG()
+              );
+          });
+
+        // updateHighlight( useID, {target: JSON.stringify(this.newRect.toJSON(['_highlightUid', '_isMarker']) )} );
+        // setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newRect.aCoords, this.newRect.toSVG());
+        break;
+      }
+      
+      case 'circle': {
+        // const useID = this.highlight_map[this.newCircle._highlightUid].id;
+        // this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[instanceKey], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
+        // updateHighlight( useID, {target: JSON.stringify(this.newCircle.toJSON(['_highlightUid', '_isMarker']) )} );
+        // setHighlightThumbnail(useID, this.imageUrlForThumbnail, this.newCircle.aCoords, this.newCircle.toSVG());        
+        break;
+      }
+    }
+  }
+
+  clearFocusHighlightTimeout() {
     if (window.highlightFocusTimeout)
       window.clearTimeout(window.highlightFocusTimeout);
   }
@@ -308,66 +344,42 @@ class CanvasResource extends Component {
     });
   }
 
+  stopDrawing() {
+    if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+    // turn off pencil mode
+    this.overlay.fabricCanvas().isDrawingMode = false;
+    this.props.setIsPencilMode(this.props.document_id, false);
+  }
+
+  panClick() {
+    this.stopDrawing()
+    // TODO disable editing and enable highlight popup
+    this.currentMode = 'pan';
+    this.osdViewer.setMouseNavEnabled(true); 
+  }
+
+  editShapeClick() {
+    this.stopDrawing()
+    this.currentMode = 'edit';
+    this.osdViewer.setMouseNavEnabled(false);
+  }
+
   rectClick() {
-    if(this.isRectMode) {
-      this.isRectMode = false;
-      this.osdViewer.setMouseNavEnabled(true); //allow image to be moved if no longer drawing shapes
-    } else {
-      //turn off other modes
-      // turn off line mode
-      if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
-      // turn off pencil mode
-      this.overlay.fabricCanvas().isDrawingMode = false;
-      this.props.setIsPencilMode(this.props.document_id, false);
-
-      this.isCircleMode = false;
-      this.isMarkerMode = false;
-
-      this.isRectMode = true;
-
-      this.osdViewer.setMouseNavEnabled(false);
-    }
+    this.stopDrawing()
+    this.currentMode = 'rect';
+    this.osdViewer.setMouseNavEnabled(false);
   }
 
   circleClick() {
-    if(this.isCircleMode) {
-      this.isCircleMode = false;
-      this.osdViewer.setMouseNavEnabled(true);
-    } else {
-      //turn off other modes
-      // turn off line mode
-      if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
-      // turn off pencil mode
-      this.overlay.fabricCanvas().isDrawingMode = false;
-      this.props.setIsPencilMode(this.props.document_id, false);
-
-      this.isMarkerMode = false;
-      this.isRectMode = false;
-
-      this.osdViewer.setMouseNavEnabled(false);
-
-      this.isCircleMode = true;
-    }
+    this.stopDrawing()
+    this.currentMode = 'circle';
+    this.osdViewer.setMouseNavEnabled(false);
   }
 
   markerClick() {
-    if(this.isMarkerMode){
-      this.isMarkerMode = false;
-    } else {
-      //turn off other modes
-      // turn off line mode if turning on pencil mode
-      if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
-      // turn off pencil mode if turning on line mode
-      this.overlay.fabricCanvas().isDrawingMode = false;
-      this.osdViewer.setMouseNavEnabled(true);
-      this.props.setIsPencilMode(this.props.document_id, false);
-
-      this.isCircleMode = false;
-      this.isRectMode = false;
-
-
-      this.isMarkerMode = true;
-    }
+    this.stopDrawing()
+    this.currentMode = 'marker';
+    this.osdViewer.setMouseNavEnabled(false);
   }
 
   markerClickHelper(pCoords) {
@@ -393,6 +405,9 @@ class CanvasResource extends Component {
   }
 
   pencilClick() {
+    this.currentMode = 'freeDraw';
+    this.osdViewer.setMouseNavEnabled(false);
+
     const wasDrawingMode = this.overlay.fabricCanvas().isDrawingMode;
     this.osdViewer.setMouseNavEnabled(wasDrawingMode);
     this.overlay.fabricCanvas().isDrawingMode = !wasDrawingMode;
@@ -400,11 +415,6 @@ class CanvasResource extends Component {
 
     // turn off line mode if turning on pencil mode
     if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
-
-    //turn off other modes
-    this.isMarkerMode = false;
-    this.isCircleMode = false;
-    this.isRectMode = false;
   }
 
   endLineMode() {
@@ -452,7 +462,7 @@ class CanvasResource extends Component {
     fabricObject.selectable = true;
     this.overlay.fabricCanvas().add(fabricObject);
     this.overlay.fabricCanvas().setActiveObject(fabricObject);
-    this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[instanceKey], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
+    // this.props.addHighlight(document_id, highlightUid, JSON.stringify(fabricObject.toJSON(['_highlightUid', '_isMarker'])), highlightColors[instanceKey], excerpt, savedHighlight => {this.props.setHighlightThumbnail(savedHighlight.id, this.imageUrlForThumbnail, fabricObject.aCoords, fabricObject.toSVG());});
   }
 
   deleteHighlightClick() {
@@ -590,19 +600,25 @@ class CanvasResource extends Component {
                 }}
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
-              <IconButton tooltip={this.isRectMode ? 'End rectangular highlight' : 'Add rectangular highlight'} onClick={this.rectClick.bind(this)} style={this.isRectMode ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Pan the image.' onClick={this.panClick.bind(this)} style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+                <PanTool />
+              </IconButton>
+              <IconButton tooltip='Move and resize shapes.' onClick={this.editShapeClick.bind(this)} style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+                <CropFree />
+              </IconButton>
+              <IconButton tooltip='Draw rectangular shapes.' onClick={this.rectClick.bind(this)} style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <CropSquare />
               </IconButton>
-              <IconButton tooltip={this.isCircleMode ? 'End circular highlight' : 'Add circular highlight'} onClick={this.circleClick.bind(this)} style={this.isCircleMode ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Draw circular shapes.' onClick={this.circleClick.bind(this)} style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <PanoramaFishEye />
               </IconButton>
-              <IconButton tooltip={this.isMarkerMode ? 'End marker highlight' : 'Add marker highlight'} onClick={this.markerClick.bind(this)} style={this.isMarkerMode ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Add markers.' onClick={this.markerClick.bind(this)} style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <Place />
               </IconButton>
-              <IconButton tooltip={isPencilMode[document_id] ? 'End free drawing' : 'Start free drawing'} onClick={this.pencilClick.bind(this)} style={isPencilMode[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip={isPencilMode[document_id] ? 'End free drawing' : 'Start free drawing'} onClick={this.pencilClick.bind(this)} style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <Edit />
               </IconButton>
-              <IconButton tooltip={linesInProgress[document_id] ? 'End line drawing' : 'Start line drawing'} onClick={this.lineClick.bind(this)} style={linesInProgress[document_id] ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip={linesInProgress[document_id] ? 'End line drawing' : 'Start line drawing'} onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <ShowChart />
               </IconButton>
               <IconButton tooltip={'Delete selected highlight'} onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
