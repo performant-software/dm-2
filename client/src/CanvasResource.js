@@ -123,23 +123,15 @@ class CanvasResource extends Component {
       const min = this.osdViewer.viewport.getMinZoom();
       this.props.setZoomControl(document_id, Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
     });
-
-    // overlay.fabricCanvas().on('mouse:move', function(options) {
-    //   if (options.target && options.target.highlightUid) {
-    //     window.setFocusHighlight(options.target.highlightUid);
-    //   }
-    // });
-
+    
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
     overlay.fabricCanvas().freeDrawingBrush.width = strokeWidth / overlay.fabricCanvas().getZoom();
 
-    // overlay.fabricCanvas().on('mouse:dblclick', event => {
-    //   if (event.target && event.target._highlightUid) {
-    //     // this.highlightFocusTimeout = window.setTimeout(() => {
-    //       window.setFocusHighlight(document_id, event.target._highlightUid);
-    //     // }, 1000);
-    //   }
-    // });
+    overlay.fabricCanvas().on('mouse:click', event => {
+      if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
+          window.setFocusHighlight(document_id, event.target._highlightUid);
+      }
+    });
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
     overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
@@ -183,7 +175,7 @@ class CanvasResource extends Component {
 
     switch(this.currentMode) {
       case 'marker':
-        this.markerClickHelper(this.pointerCoords);
+        this.drawMarker(this.pointerCoords);
         break;
 
       case 'rect':
@@ -393,7 +385,9 @@ class CanvasResource extends Component {
     this.osdViewer.setMouseNavEnabled(false);  
   }
 
-  markerClickHelper(pCoords) {
+  drawMarker(pCoords) {
+
+    // create marker shape on canvas
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
     var rad = markerRadius / this.overlay.fabricCanvas().getZoom();
@@ -412,20 +406,32 @@ class CanvasResource extends Component {
       hasControls: false,
       _isMarker: true
     });
-    this.createHighlight(marker, 'Marker highlight');
+    this.createHighlight(marker);
+
+    // save as a highlight
+    this.props.addHighlight(
+      this.props.document_id, 
+      marker._highlightUid, 
+      JSON.stringify(marker.toJSON(['_highlightUid', '_isMarker'])), 
+      this.props.highlightColors[this.getInstanceKey()], 
+      'Marker highlight', 
+      savedHighlight => {
+          this.props.setHighlightThumbnail(
+            savedHighlight.id, 
+            this.imageUrlForThumbnail, 
+            marker.aCoords, 
+            marker.toSVG()
+          );
+    });
   }
 
   pencilClick() {
     this.currentMode = 'freeDraw';
     this.osdViewer.setMouseNavEnabled(false);
+    this.stopDrawing()
 
-    const wasDrawingMode = this.overlay.fabricCanvas().isDrawingMode;
-    this.osdViewer.setMouseNavEnabled(wasDrawingMode);
-    this.overlay.fabricCanvas().isDrawingMode = !wasDrawingMode;
-    this.props.setIsPencilMode(this.props.document_id, !wasDrawingMode);
-
-    // turn off line mode if turning on pencil mode
-    if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+    this.overlay.fabricCanvas().isDrawingMode = true;
+    this.props.setIsPencilMode(this.props.document_id, true);
   }
 
   endLineMode() {
@@ -443,24 +449,11 @@ class CanvasResource extends Component {
   }
 
   lineClick() {
-    const lineInProgress = this.props.linesInProgress[this.props.document_id];
-    if (lineInProgress) {
-      this.endLineMode();
-    }
-    else {
-      // turn off pencil mode if turning on line mode
-      this.overlay.fabricCanvas().isDrawingMode = false;
-      this.osdViewer.setMouseNavEnabled(true);
-      this.props.setIsPencilMode(this.props.document_id, false);
-
-      //turn off other modes
-      this.isMarkerMode = false;
-      this.isCircleMode = false;
-      this.isRectMode = false;
-
-      this.overlay.fabricCanvas().defaultCursor = 'crosshair';
-      this.props.setLineInProgress(this.props.document_id, []);
-    }
+    this.currentMode = 'lineDraw';
+    this.osdViewer.setMouseNavEnabled(false);
+    this.stopDrawing()
+    this.overlay.fabricCanvas().defaultCursor = 'crosshair';
+    this.props.setLineInProgress(this.props.document_id, []);
   }
 
   createHighlight(fabricObject) {
@@ -625,10 +618,10 @@ class CanvasResource extends Component {
               <IconButton tooltip='Add markers.' onClick={this.markerClick.bind(this)} style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <Place />
               </IconButton>
-              <IconButton tooltip={isPencilMode[document_id] ? 'End free drawing' : 'Start free drawing'} onClick={this.pencilClick.bind(this)} style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Enter free drawing mode.' onClick={this.pencilClick.bind(this)} style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <Edit />
               </IconButton>
-              <IconButton tooltip={linesInProgress[document_id] ? 'End line drawing' : 'Start line drawing'} onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Draw lines.' onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <ShowChart />
               </IconButton>
               <IconButton tooltip='Change the color of a shape.' onClick={this.colorizeClick.bind(this)} style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
