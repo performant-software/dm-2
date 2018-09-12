@@ -123,15 +123,18 @@ class CanvasResource extends Component {
       const min = this.osdViewer.viewport.getMinZoom();
       this.props.setZoomControl(document_id, Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
     });
-    
+
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
     overlay.fabricCanvas().freeDrawingBrush.width = strokeWidth / overlay.fabricCanvas().getZoom();
 
-    overlay.fabricCanvas().on('mouse:click', event => {
+    overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
           window.setFocusHighlight(document_id, event.target._highlightUid);
       }
     });
+    // overlay.fabricCanvas().on('mouse:dblclick', event => {
+    //   if( this.currentMode === 'lineDraw' ) this.endLineMode();
+    // });
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
     overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
@@ -156,12 +159,20 @@ class CanvasResource extends Component {
         addHighlight(document_id, highlightUid, JSON.stringify(path.toJSON(['_highlightUid', '_isMarker'])), this.overlay.fabricCanvas().freeDrawingBrush.color, 'Pencil highlight', savedHighlight => {setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());});
       }
     });
+
+    // handle window resize
     window.onresize = function() {
       overlay.resize();
       overlay.resizecanvas();
     };
 
     this.osdViewer = viewer;
+  }
+
+  objectClick(event) {
+    if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
+      window.setFocusHighlight(this.props.document_id, event.target._highlightUid);
+    }
   }
 
   canvasMouseDown(event) {
@@ -179,25 +190,25 @@ class CanvasResource extends Component {
         break;
 
       case 'rect':
-        this.newRect = new fabric.Rect({
+        this.newShape = new fabric.Rect({
           left: this.pointerCoords.x,
           top: this.pointerCoords.y,
           width: 20,
           height: 20,
           fill: 'transparent'
         });
-        this.createHighlight(this.newRect);
+        this.addShape(this.newShape);
         break;
 
       case 'circle':
-        this.newCircle = new fabric.Circle({
+        this.newShape = new fabric.Circle({
           radius: 15,
           left: this.pointerCoords.x,
           top: this.pointerCoords.y,
           fill: 'transparent',
           originX: 'center', originY: 'center' // when circle is resized, the center remains constant
         });
-        this.createHighlight(this.newCircle);
+        this.addShape(this.newShape);
         break;
 
       case 'lineDraw':
@@ -242,22 +253,22 @@ class CanvasResource extends Component {
       switch(this.currentMode) {
         case 'rect':
           if(mouse.x < this.pointerCoords.x) {
-            this.newRect.set({left: mouse.x });
+            this.newShape.set({left: mouse.x });
           }
           if(mouse.y < this.pointerCoords.y) {
-            this.newRect.set({top: mouse.y });
+            this.newShape.set({top: mouse.y });
           }
     
-          this.newRect.set({width: Math.abs(this.pointerCoords.x - mouse.x) });
-          this.newRect.set({height: Math.abs(this.pointerCoords.y - mouse.y) });
+          this.newShape.set({width: Math.abs(this.pointerCoords.x - mouse.x) });
+          this.newShape.set({height: Math.abs(this.pointerCoords.y - mouse.y) });
     
           this.overlay.fabricCanvas().renderAll();
           break;
         case 'circle':
           if( Math.abs(mouse.x - this.pointerCoords.x) > Math.abs(mouse.y - this.pointerCoords.y) ) {
-            this.newCircle.set({radius: Math.abs( mouse.x - this.pointerCoords.x ) });
+            this.newShape.set({radius: Math.abs( mouse.x - this.pointerCoords.x ) });
           } else {
-            this.newCircle.set({radius: Math.abs( mouse.y - this.pointerCoords.y ) });
+            this.newShape.set({radius: Math.abs( mouse.y - this.pointerCoords.y ) });
           }
     
           this.overlay.fabricCanvas().renderAll();
@@ -267,49 +278,28 @@ class CanvasResource extends Component {
   }
 
   canvasMouseUp() {
-    if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
+    if( this.currentMode !== 'rect' && this.currentMode !== 'circle' ) return;
 
     this.clearFocusHighlightTimeout.bind(this);
+
+    const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
-
-    switch(this.currentMode) {
-      case 'rect': {
-        this.props.addHighlight(
-          this.props.document_id, 
-          this.newRect._highlightUid, 
-          JSON.stringify(this.newRect.toJSON(['_highlightUid', '_isMarker'])), 
-          this.props.highlightColors[key], 
-          'Rectangular highlight', 
-          savedHighlight => {
-              this.props.setHighlightThumbnail(
-                savedHighlight.id, 
-                this.imageUrlForThumbnail, 
-                this.newRect.aCoords, 
-                this.newRect.toSVG()
-              );
-          });
-        break;
-      }
-      
-      case 'circle': {
-        this.props.addHighlight(
-          this.props.document_id, 
-          this.newCircle._highlightUid, 
-          JSON.stringify(this.newCircle.toJSON(['_highlightUid', '_isMarker'])), 
-          this.props.highlightColors[key], 
-          'Circular highlight', 
-          savedHighlight => {
-              this.props.setHighlightThumbnail(
-                savedHighlight.id, 
-                this.imageUrlForThumbnail, 
-                this.newCircle.aCoords, 
-                this.newCircle.toSVG()
-              );
-          });
-        break;
-      }
-    }
+        
+    this.props.addHighlight(
+      this.props.document_id, 
+      this.newShape._highlightUid, 
+      JSON.stringify(this.newShape.toJSON(['_highlightUid', '_isMarker'])), 
+      this.props.highlightColors[key], 
+      label, 
+      savedHighlight => {
+          this.props.setHighlightThumbnail(
+            savedHighlight.id, 
+            this.imageUrlForThumbnail, 
+            this.newShape.aCoords, 
+            this.newShape.toSVG()
+          );
+      });
   }
 
   clearFocusHighlightTimeout() {
@@ -333,7 +323,11 @@ class CanvasResource extends Component {
         }
         object.strokeWidth = strokeWidth / zoom;
         object.dirty = true;
-        object.selectable = this.props.writeEnabled;
+        object.lockMovementX = true;
+        object.lockMovementY = true;
+        object.hasControls = false;
+        object.perPixelTargetFind = true;
+        // object.selectable = this.props.writeEnabled;
         if (!this.props.writeEnabled) {
           object.hoverCursor = 'default';
         }
@@ -341,49 +335,6 @@ class CanvasResource extends Component {
     });
   }
 
-  stopDrawing() {
-    if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
-    // turn off pencil mode
-    this.overlay.fabricCanvas().isDrawingMode = false;
-    this.props.setIsPencilMode(this.props.document_id, false);
-  }
-
-  panClick() {
-    this.stopDrawing()
-    // TODO disable editing and enable highlight popup
-    this.currentMode = 'pan';
-    this.osdViewer.setMouseNavEnabled(true); 
-  }
-
-  editShapeClick() {
-    this.stopDrawing()
-    this.currentMode = 'edit';
-    this.osdViewer.setMouseNavEnabled(false);
-  }
-
-  rectClick() {
-    this.stopDrawing()
-    this.currentMode = 'rect';
-    this.osdViewer.setMouseNavEnabled(false);
-  }
-
-  circleClick() {
-    this.stopDrawing()
-    this.currentMode = 'circle';
-    this.osdViewer.setMouseNavEnabled(false);
-  }
-
-  markerClick() {
-    this.stopDrawing()
-    this.currentMode = 'marker';
-    this.osdViewer.setMouseNavEnabled(false);
-  }
-
-  colorizeClick() {
-    this.stopDrawing()
-    this.currentMode = 'colorize';
-    this.osdViewer.setMouseNavEnabled(false);  
-  }
 
   drawMarker(pCoords) {
 
@@ -406,7 +357,7 @@ class CanvasResource extends Component {
       hasControls: false,
       _isMarker: true
     });
-    this.createHighlight(marker);
+    this.addShape(marker);
 
     // save as a highlight
     this.props.addHighlight(
@@ -425,15 +376,6 @@ class CanvasResource extends Component {
     });
   }
 
-  pencilClick() {
-    this.currentMode = 'freeDraw';
-    this.osdViewer.setMouseNavEnabled(false);
-    this.stopDrawing()
-
-    this.overlay.fabricCanvas().isDrawingMode = true;
-    this.props.setIsPencilMode(this.props.document_id, true);
-  }
-
   endLineMode() {
     const lineInProgress = this.props.linesInProgress[this.props.document_id];
     if (this.tempPolyline) this.overlay.fabricCanvas().remove(this.tempPolyline);
@@ -442,21 +384,13 @@ class CanvasResource extends Component {
       let line = new fabric.Polyline(lineInProgress, {
         fill: 'transparent'
       });
-      this.createHighlight(line, 'Line highlight');
+      this.addShape(line, 'Line highlight');
     }
     this.overlay.fabricCanvas().defaultCursor = 'default';
     this.props.setLineInProgress(this.props.document_id, null);
   }
 
-  lineClick() {
-    this.currentMode = 'lineDraw';
-    this.osdViewer.setMouseNavEnabled(false);
-    this.stopDrawing()
-    this.overlay.fabricCanvas().defaultCursor = 'crosshair';
-    this.props.setLineInProgress(this.props.document_id, []);
-  }
-
-  createHighlight(fabricObject) {
+  addShape(fabricObject) {
     const highlightUid = `dm_canvas_highlight_${Date.now()}`;
     const { highlightColors } = this.props;
     const instanceKey = this.getInstanceKey();
@@ -466,6 +400,92 @@ class CanvasResource extends Component {
     fabricObject.selectable = true;
     this.overlay.fabricCanvas().add(fabricObject);
     this.overlay.fabricCanvas().setActiveObject(fabricObject);
+  }
+
+  lockCanvasObjects( lock ) {
+    const canvasObjects = this.overlay.fabricCanvas().getObjects();
+
+    canvasObjects.forEach( object => {
+      if( lock ) {
+        object.lockMovementX = true;
+        object.lockMovementY = true;
+        object.hasControls = false;
+      } else {
+        object.lockMovementX = false;
+        object.lockMovementY = false;
+        // TODO don't add controls to markers
+        object.hasControls = true;  
+      }
+    });
+  }
+
+  stopDrawing() {
+    if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+    // turn off pencil mode
+    this.overlay.fabricCanvas().isDrawingMode = false;
+    this.props.setIsPencilMode(this.props.document_id, false);
+  }
+
+  panClick() {
+    this.stopDrawing()
+    this.lockCanvasObjects(true);
+    // TODO disable editing and enable highlight popup
+    this.currentMode = 'pan';
+    this.osdViewer.setMouseNavEnabled(true); 
+  }
+
+  editShapeClick() {
+    this.stopDrawing()
+    this.currentMode = 'edit';
+    this.lockCanvasObjects(false);
+    this.osdViewer.setMouseNavEnabled(false);
+  }
+
+  rectClick() {
+    this.stopDrawing()
+    this.currentMode = 'rect';
+    this.lockCanvasObjects(true);
+    this.osdViewer.setMouseNavEnabled(false);
+  }
+
+  circleClick() {
+    this.stopDrawing()
+    this.currentMode = 'circle';
+    this.lockCanvasObjects(true);
+    this.osdViewer.setMouseNavEnabled(false);
+  }
+
+  markerClick() {
+    this.stopDrawing()
+    this.currentMode = 'marker';
+    this.lockCanvasObjects(true);
+    this.osdViewer.setMouseNavEnabled(false);
+  }
+
+  pencilClick() {
+    this.currentMode = 'freeDraw';
+    this.osdViewer.setMouseNavEnabled(false);
+    this.stopDrawing()
+
+    this.lockCanvasObjects(true);
+    this.overlay.fabricCanvas().isDrawingMode = true;
+    this.props.setIsPencilMode(this.props.document_id, true);
+  }
+
+  lineClick() {
+    this.currentMode = 'lineDraw';
+    this.osdViewer.setMouseNavEnabled(false);
+    this.stopDrawing()
+    this.lockCanvasObjects(true);
+    this.overlay.fabricCanvas().defaultCursor = 'crosshair';
+    this.props.setLineInProgress(this.props.document_id, []);
+  }
+
+  colorizeClick() {
+    this.stopDrawing()
+    this.currentMode = 'colorize';
+    this.lockCanvasObjects(true);
+    this.osdViewer.setMouseNavEnabled(false);  
   }
 
   deleteHighlightClick() {
