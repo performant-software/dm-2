@@ -211,6 +211,22 @@ class CanvasResource extends Component {
         this.addShape(this.newShape);
         break;
 
+      case 'colorize':
+          // select new color
+          const newColor = this.props.highlightColors[this.getInstanceKey()]
+          // get object, if one is clicked
+          const selectedObject = this.overlay.fabricCanvas().getActiveObject();
+
+          // make sure the click selected an object
+          if(selectedObject) {
+            selectedObject.set({ stroke: newColor });
+          }
+          // this deselects the highlight, which causes the color change to take place
+          //  without this line, a object that was previously selected prior to use of the tool would not change color until deselected
+          this.overlay.fabricCanvas().discardActiveObject();
+
+          break;
+
       case 'lineDraw':
         const lineInProgress = this.props.linesInProgress[this.props.document_id];
         if (lineInProgress) {
@@ -491,19 +507,6 @@ class CanvasResource extends Component {
     this.currentMode = 'colorize';
     this.lockCanvasObjects(true);
     this.osdViewer.setMouseNavEnabled(false);
-
-
-    // seems to work, but in a strange manner
-    // slow to update. look into how commands are processed
-
-    //takes a second to make the change, and then does not seem to change until highlight is moved
-
-    // select new color
-    const newColor = this.props.highlightColors[this.getInstanceKey()]
-
-    const selectedObject = this.overlay.fabricCanvas().getActiveObject();
-    selectedObject.set({ stroke: newColor });
-
   }
 
   deleteHighlightClick() {
