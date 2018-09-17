@@ -176,7 +176,7 @@ class CanvasResource extends Component {
   }
 
   canvasMouseDown(event) {
-    
+
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
     const key = this.getInstanceKey();
@@ -258,10 +258,10 @@ class CanvasResource extends Component {
           if(mouse.y < this.pointerCoords.y) {
             this.newShape.set({top: mouse.y });
           }
-    
+
           this.newShape.set({width: Math.abs(this.pointerCoords.x - mouse.x) });
           this.newShape.set({height: Math.abs(this.pointerCoords.y - mouse.y) });
-    
+
           this.overlay.fabricCanvas().renderAll();
           break;
         case 'circle':
@@ -270,10 +270,10 @@ class CanvasResource extends Component {
           } else {
             this.newShape.set({radius: Math.abs( mouse.y - this.pointerCoords.y ) });
           }
-    
+
           this.overlay.fabricCanvas().renderAll();
           break;
-      }  
+      }
     }
   }
 
@@ -285,18 +285,18 @@ class CanvasResource extends Component {
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
-        
+
     this.props.addHighlight(
-      this.props.document_id, 
-      this.newShape._highlightUid, 
-      JSON.stringify(this.newShape.toJSON(['_highlightUid', '_isMarker'])), 
-      this.props.highlightColors[key], 
-      label, 
+      this.props.document_id,
+      this.newShape._highlightUid,
+      JSON.stringify(this.newShape.toJSON(['_highlightUid', '_isMarker'])),
+      this.props.highlightColors[key],
+      label,
       savedHighlight => {
           this.props.setHighlightThumbnail(
-            savedHighlight.id, 
-            this.imageUrlForThumbnail, 
-            this.newShape.aCoords, 
+            savedHighlight.id,
+            this.imageUrlForThumbnail,
+            this.newShape.aCoords,
             this.newShape.toSVG()
           );
       });
@@ -361,16 +361,16 @@ class CanvasResource extends Component {
 
     // save as a highlight
     this.props.addHighlight(
-      this.props.document_id, 
-      marker._highlightUid, 
-      JSON.stringify(marker.toJSON(['_highlightUid', '_isMarker'])), 
-      this.props.highlightColors[this.getInstanceKey()], 
-      'Marker highlight', 
+      this.props.document_id,
+      marker._highlightUid,
+      JSON.stringify(marker.toJSON(['_highlightUid', '_isMarker'])),
+      this.props.highlightColors[this.getInstanceKey()],
+      'Marker highlight',
       savedHighlight => {
           this.props.setHighlightThumbnail(
-            savedHighlight.id, 
-            this.imageUrlForThumbnail, 
-            marker.aCoords, 
+            savedHighlight.id,
+            this.imageUrlForThumbnail,
+            marker.aCoords,
             marker.toSVG()
           );
     });
@@ -414,7 +414,12 @@ class CanvasResource extends Component {
         object.lockMovementX = false;
         object.lockMovementY = false;
         // TODO don't add controls to markers
-        object.hasControls = true;  
+        console.log(object.get('type'));
+        // if(object.get('type') != "marker")     then give controls, else not
+          // need to differentiate between marker circles and custom circles
+            //looking into adding custom properties to objects
+
+        object.hasControls = true;
       }
     });
   }
@@ -431,7 +436,7 @@ class CanvasResource extends Component {
     this.lockCanvasObjects(true);
     // TODO disable editing and enable highlight popup
     this.currentMode = 'pan';
-    this.osdViewer.setMouseNavEnabled(true); 
+    this.osdViewer.setMouseNavEnabled(true);
   }
 
   editShapeClick() {
@@ -485,7 +490,20 @@ class CanvasResource extends Component {
     this.stopDrawing()
     this.currentMode = 'colorize';
     this.lockCanvasObjects(true);
-    this.osdViewer.setMouseNavEnabled(false);  
+    this.osdViewer.setMouseNavEnabled(false);
+
+
+    // seems to work, but in a strange manner
+    // slow to update. look into how commands are processed
+
+    //takes a second to make the change, and then does not seem to change until highlight is moved
+
+    // select new color
+    const newColor = this.props.highlightColors[this.getInstanceKey()]
+
+    const selectedObject = this.overlay.fabricCanvas().getActiveObject();
+    selectedObject.set({ stroke: newColor });
+
   }
 
   deleteHighlightClick() {
