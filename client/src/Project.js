@@ -39,7 +39,7 @@ class Project extends Component {
       };
       window.highlightFocusTimeout = window.setTimeout(() => {
         this.props.selectTarget(target);
-      }, 1000);
+      }, 10);
     }
   }
 
