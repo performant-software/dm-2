@@ -129,7 +129,8 @@ class CanvasResource extends Component {
 
     overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-          window.setFocusHighlight(document_id, event.target._highlightUid);
+          console.log('selct');
+          window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
       }
     });
     // overlay.fabricCanvas().on('mouse:dblclick', event => {
@@ -140,6 +141,8 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
     overlay.fabricCanvas().on('mouse:up', this.canvasMouseUp.bind(this) );
     overlay.fabricCanvas().on('object:modified', event => {
+      console.log('mod');
+      console.log(event);
       if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
           if (highlight_id && this.imageUrlForThumbnail) {
@@ -220,10 +223,26 @@ class CanvasResource extends Component {
           // make sure the click selected an object
           if(selectedObject) {
             selectedObject.set({ stroke: newColor });
+            // this deselects the highlight, which causes the color change to take place
+            //  without this line, a object that was previously selected prior to use of the tool would not change color until deselected
+            this.overlay.fabricCanvas().discardActiveObject();
+
+            // trigger object modified to ensure highlight is saved
+            this.overlay.fabricCanvas().trigger('object:modified', {target: selectedObject});
           }
-          // this deselects the highlight, which causes the color change to take place
-          //  without this line, a object that was previously selected prior to use of the tool would not change color until deselected
-          this.overlay.fabricCanvas().discardActiveObject();
+
+          /*
+          //WIP
+          // likely replaced by trigger('object:modified')
+          // update the highlight so it persists over refreshes
+          if(selectedObject) {
+            const highlight_id = this.highlight_map[selectedObject._highlightUid].id;
+
+            if (highlight_id && this.imageUrlForThumbnail) {
+              updateHighlight(highlight_id, {target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
+              setHighlightThumbnail(highlight_id, this.imageUrlForThumbnail, selectedObject.aCoords, selectedObject.toSVG());
+            }
+          } */
 
           break;
 
@@ -430,7 +449,7 @@ class CanvasResource extends Component {
         object.lockMovementX = false;
         object.lockMovementY = false;
         // TODO don't add controls to markers
-        console.log(object.get('type'));
+
         // if(object.get('type') != "marker")     then give controls, else not
           // need to differentiate between marker circles and custom circles
             //looking into adding custom properties to objects
@@ -448,6 +467,11 @@ class CanvasResource extends Component {
   }
 
   panClick() {
+    const selectedObject = this.overlay.fabricCanvas().getActiveObject();
+    console.log(selectedObject);
+    // deselect highlight to ensure resize handles behave properly
+    this.overlay.fabricCanvas().discardActiveObject();
+
     this.stopDrawing()
     this.lockCanvasObjects(true);
     // TODO disable editing and enable highlight popup
@@ -460,6 +484,11 @@ class CanvasResource extends Component {
     this.currentMode = 'edit';
     this.lockCanvasObjects(false);
     this.osdViewer.setMouseNavEnabled(false);
+
+    const selectedObject = this.overlay.fabricCanvas().getActiveObject();
+    console.log(selectedObject);
+    // deselect highlight to ensure resize handles behave properly
+    this.overlay.fabricCanvas().discardActiveObject();
   }
 
   rectClick() {
