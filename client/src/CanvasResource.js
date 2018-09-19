@@ -141,8 +141,6 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
     overlay.fabricCanvas().on('mouse:up', this.canvasMouseUp.bind(this) );
     overlay.fabricCanvas().on('object:modified', event => {
-      console.log('mod');
-      console.log(event);
       if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
           if (highlight_id && this.imageUrlForThumbnail) {
@@ -227,23 +225,9 @@ class CanvasResource extends Component {
             //  without this line, a object that was previously selected prior to use of the tool would not change color until deselected
             this.overlay.fabricCanvas().discardActiveObject();
 
-            // trigger object modified to ensure highlight is saved
-            this.overlay.fabricCanvas().trigger('object:modified', {target: selectedObject});
-          }
-
-          /*
-          //WIP
-          // likely replaced by trigger('object:modified')
-          // update the highlight so it persists over refreshes
-          if(selectedObject) {
             const highlight_id = this.highlight_map[selectedObject._highlightUid].id;
-
-            if (highlight_id && this.imageUrlForThumbnail) {
-              updateHighlight(highlight_id, {target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
-              setHighlightThumbnail(highlight_id, this.imageUrlForThumbnail, selectedObject.aCoords, selectedObject.toSVG());
-            }
-          } */
-
+            this.props.updateHighlight(highlight_id, {target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
+          }
           break;
 
       case 'lineDraw':
