@@ -133,9 +133,6 @@ class CanvasResource extends Component {
           window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
       }
     });
-    // overlay.fabricCanvas().on('mouse:dblclick', event => {
-    //   if( this.currentMode === 'lineDraw' ) this.endLineMode();
-    // });
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
     overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
@@ -397,16 +394,25 @@ class CanvasResource extends Component {
 
   endLineMode() {
     const lineInProgress = this.props.linesInProgress[this.props.document_id];
-    if (this.tempPolyline) this.overlay.fabricCanvas().remove(this.tempPolyline);
-    this.tempPolyline = null;
-    if (lineInProgress.length > 1) {
-      let line = new fabric.Polyline(lineInProgress, {
-        fill: 'transparent'
-      });
-      this.addShape(line, 'Line highlight');
+    if( this.tempPolyline && lineInProgress ) {
+      this.addShape(this.tempPolyline);
+      this.props.addHighlight(
+        this.props.document_id,
+        this.tempPolyline._highlightUid,
+        JSON.stringify(this.tempPolyline.toJSON(['_highlightUid', '_isMarker'])),
+        this.props.highlightColors[this.getInstanceKey()],
+        'Line highlight',
+        savedHighlight => {
+            this.props.setHighlightThumbnail(
+              savedHighlight.id,
+              this.imageUrlForThumbnail,
+              this.tempPolyline.aCoords,
+              this.tempPolyline.toSVG()
+            );
+      });      
+      this.props.setLineInProgress(this.props.document_id, null);
+      this.overlay.fabricCanvas().defaultCursor = 'default';
     }
-    this.overlay.fabricCanvas().defaultCursor = 'default';
-    this.props.setLineInProgress(this.props.document_id, null);
   }
 
   addShape(fabricObject) {
