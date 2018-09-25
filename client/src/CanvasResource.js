@@ -50,8 +50,8 @@ tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'IIIF 
 tileSourceTypeLabels[IMAGE_URL_SOURCE_TYPE] = {select: 'Image URL', textField: 'External static image URL'};
 tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: 'Choose files'};
 
-const strokeWidth = 2.0;
-const markerRadius = 8.0;
+const strokeWidth = 3.0;
+const markerRadius = 4.0;
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -129,7 +129,6 @@ class CanvasResource extends Component {
 
     overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-          console.log('selct');
           window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
       }
     });
@@ -333,17 +332,14 @@ class CanvasResource extends Component {
     const zoom = overlay.fabricCanvas().getZoom();
     overlay.fabricCanvas().loadFromJSON(jsonString, () => {
       overlay.fabricCanvas().forEachObject(object => {
+        this.lockCanvasObject(object, true);
         if (object._isMarker) {
-          object.hasControls = false; // removes ability to reshape markers
           object.radius = markerRadius / zoom;
         }
         object.strokeWidth = strokeWidth / zoom;
         object.dirty = true;
-        object.lockMovementX = true;
-        object.lockMovementY = true;
-        object.hasControls = false;
         object.perPixelTargetFind = true;
-        // object.selectable = this.props.writeEnabled;
+        object.selectable = true;
         if (!this.props.writeEnabled) {
           object.hoverCursor = 'default';
         }
@@ -422,30 +418,44 @@ class CanvasResource extends Component {
     fabricObject['_highlightUid'] = highlightUid;
     fabricObject.stroke = highlightColors[instanceKey];
     fabricObject.strokeWidth = strokeWidth / this.overlay.fabricCanvas().getZoom();
+    fabricObject.perPixelTargetFind = true;
     fabricObject.selectable = true;
+    this.lockCanvasObject(fabricObject, true);
     this.overlay.fabricCanvas().add(fabricObject);
-    this.overlay.fabricCanvas().setActiveObject(fabricObject);
+  }
+
+  lockCanvasObject( object, lock ) {
+    if( lock ) {
+      object.lockScalingX = true;
+      object.lockScalingY = true;
+      object.lockRotation = true;
+      object.lockScalingFlip = true;
+      object.lockSkewingX = true;
+      object.lockSkewingY = true;
+      object.lockUniScaling = true;
+      object.lockMovementX = true;
+      object.lockMovementY = true;
+      object.hasControls = false;
+    } else {
+      if( !object._isMarker ) { 
+        object.lockScalingX = false;
+        object.lockScalingY = false;
+        object.lockRotation = false;
+        object.lockScalingFlip = false;
+        object.lockSkewingX = false;
+        object.lockSkewingY = false;
+        object.lockUniScaling = false;  
+        object.hasControls = true;
+      }
+      object.lockMovementX = false;
+      object.lockMovementY = false;
+    }
   }
 
   lockCanvasObjects( lock ) {
     const canvasObjects = this.overlay.fabricCanvas().getObjects();
-
     canvasObjects.forEach( object => {
-      if( lock ) {
-        object.lockMovementX = true;
-        object.lockMovementY = true;
-        object.hasControls = false;
-      } else {
-        object.lockMovementX = false;
-        object.lockMovementY = false;
-        // TODO don't add controls to markers
-
-        // if(object.get('type') != "marker")     then give controls, else not
-          // need to differentiate between marker circles and custom circles
-            //looking into adding custom properties to objects
-
-        object.hasControls = true;
-      }
+      this.lockCanvasObject( object, lock );
     });
   }
 
@@ -518,7 +528,6 @@ class CanvasResource extends Component {
     this.stopDrawing()
     this.lockCanvasObjects(true);
     this.overlay.fabricCanvas().defaultCursor = 'crosshair';
-    this.props.setLineInProgress(this.props.document_id, []);
   }
 
   colorizeClick() {
