@@ -25,7 +25,7 @@ import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setAddTileSourceMode, setIsPencilMode, setLineInProgress, setZoomControl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
+import { setCanvasHighlightColor, toggleCanvasColorPicker, setAddTileSourceMode, setIsPencilMode, setZoomControl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail, addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
 
@@ -176,7 +176,6 @@ class CanvasResource extends Component {
 
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
-    const key = this.getInstanceKey();
     this.isMouseDown = true;
     this.pointerCoords = this.overlay.fabricCanvas().getPointer(event.e);
     this.clearFocusHighlightTimeout();
@@ -227,34 +226,7 @@ class CanvasResource extends Component {
           break;
 
       case 'lineDraw':
-        const lineInProgress = this.props.linesInProgress[this.props.document_id];
-        if (lineInProgress) {
-          if (this.tempPolyline) this.overlay.fabricCanvas().remove(this.tempPolyline);
-          const pointer = this.overlay.fabricCanvas().getPointer(event.e);
-          const newLineInProgress = lineInProgress.concat([{ x: pointer.x, y: pointer.y }]);
-          if (newLineInProgress.length > 1) {
-            this.tempPolyline = new fabric.Polyline(newLineInProgress, {
-              fill: 'transparent',
-              selectable: false,
-              stroke: this.props.highlightColors[key],
-              strokeWidth: strokeWidth / this.overlay.fabricCanvas().getZoom()
-            });
-          }
-          else {
-            let radius = markerRadius / this.overlay.fabricCanvas().getZoom()
-            this.tempPolyline = new fabric.Circle({
-              radius,
-              left: pointer.x - radius,
-              top: pointer.y - radius,
-              selectable: false,
-              fill: this.props.highlightColors[key],
-              stroke: 'transparent',
-              _isMarker: true
-            });
-          }
-          this.overlay.fabricCanvas().add(this.tempPolyline);
-          this.props.setLineInProgress(this.props.document_id, newLineInProgress);
-        }
+        this.drawLine(this.pointerCoords);
         break;
     }
   }
@@ -295,7 +267,8 @@ class CanvasResource extends Component {
   canvasMouseUp() {
     if( this.currentMode !== 'rect' && this.currentMode !== 'circle' ) return;
 
-    this.clearFocusHighlightTimeout.bind(this);
+    // needed for new shape to respond to mouse clicks
+    this.osdViewer.forceRedraw();
 
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
@@ -347,6 +320,51 @@ class CanvasResource extends Component {
     });
   }
 
+  drawLine(pointer) {
+    const key = this.getInstanceKey();
+    const lineOptions = {
+      fill: 'transparent',
+      selectable: false,
+      stroke: this.props.highlightColors[key],
+      strokeWidth: strokeWidth / this.overlay.fabricCanvas().getZoom()
+    };
+
+    if( this.lineInProgress ) {
+      if (this.lineInProgress.radius) {
+        // if we have a circle, replace it with a line
+        const centerPoint = this.lineInProgress.getCenterPoint();
+        const oldCircle = this.lineInProgress;
+        this.lineInProgress = new fabric.Polyline(
+          [{ x: centerPoint.x, y: centerPoint.y}, { x: pointer.x, y: pointer.y }], 
+          lineOptions
+        );
+        this.overlay.fabricCanvas().remove(oldCircle);
+        this.overlay.fabricCanvas().add(this.lineInProgress);  
+      } 
+      else {
+        // otherwise, add to the line
+        const oldPolyline = this.lineInProgress;
+        const points = oldPolyline.points.concat({ x: pointer.x, y: pointer.y });
+        this.lineInProgress = new fabric.Polyline( points, lineOptions );
+        this.overlay.fabricCanvas().remove(oldPolyline);
+        this.overlay.fabricCanvas().add(this.lineInProgress);  
+      }          
+    } 
+    else {
+      // start with a circle
+      let radius = markerRadius / this.overlay.fabricCanvas().getZoom()
+      this.lineInProgress = new fabric.Circle({
+        radius,
+        left: pointer.x - radius,
+        top: pointer.y - radius,
+        selectable: false,
+        fill: this.props.highlightColors[key],
+        stroke: 'transparent',
+        _isMarker: true
+      });
+      this.overlay.fabricCanvas().add(this.lineInProgress);
+    }
+  }
 
   drawMarker(pCoords) {
 
@@ -389,26 +407,32 @@ class CanvasResource extends Component {
   }
 
   endLineMode() {
-    const lineInProgress = this.props.linesInProgress[this.props.document_id];
-    if( this.tempPolyline && lineInProgress ) {
-      this.addShape(this.tempPolyline);
-      this.props.addHighlight(
-        this.props.document_id,
-        this.tempPolyline._highlightUid,
-        JSON.stringify(this.tempPolyline.toJSON(['_highlightUid', '_isMarker'])),
-        this.props.highlightColors[this.getInstanceKey()],
-        'Line highlight',
-        savedHighlight => {
-            this.props.setHighlightThumbnail(
-              savedHighlight.id,
-              this.imageUrlForThumbnail,
-              this.tempPolyline.aCoords,
-              this.tempPolyline.toSVG()
-            );
-      });      
-      this.props.setLineInProgress(this.props.document_id, null);
-      this.overlay.fabricCanvas().defaultCursor = 'default';
-    }
+    if( !this.lineInProgress ) return;
+    const aCoords = this.lineInProgress.aCoords;
+    const svg = this.lineInProgress.toSVG();
+
+    // now act like other shapes
+    this.lineInProgress.perPixelTargetFind = true;
+    this.lineInProgress.selectable = true;
+    this.lockCanvasObject(this.lineInProgress, true);
+
+    this.props.addHighlight(
+      this.props.document_id,
+      this.lineInProgress._highlightUid,
+      JSON.stringify(this.lineInProgress.toJSON(['_highlightUid', '_isMarker'])),
+      this.props.highlightColors[this.getInstanceKey()],
+      'Line highlight',
+      savedHighlight => {
+        this.props.setHighlightThumbnail(
+          savedHighlight.id,
+          this.imageUrlForThumbnail,
+          aCoords,
+          svg
+        );
+    });      
+    this.lineInProgress = null;
+    this.overlay.fabricCanvas().defaultCursor = 'default';
+    this.osdViewer.forceRedraw();
   }
 
   addShape(fabricObject) {
@@ -460,15 +484,13 @@ class CanvasResource extends Component {
   }
 
   stopDrawing() {
-    if (this.props.linesInProgress[this.props.document_id]) this.endLineMode();
+    this.endLineMode();
     // turn off pencil mode
     this.overlay.fabricCanvas().isDrawingMode = false;
     this.props.setIsPencilMode(this.props.document_id, false);
   }
 
   panClick() {
-    const selectedObject = this.overlay.fabricCanvas().getActiveObject();
-    console.log(selectedObject);
     // deselect highlight to ensure resize handles behave properly
     this.overlay.fabricCanvas().discardActiveObject();
 
@@ -631,7 +653,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, linesInProgress, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
+    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
     const mode = addTileSourceMode[document_id];
     const key = this.getInstanceKey();
 
@@ -797,7 +819,6 @@ const mapStateToProps = state => ({
   displayColorPickers: state.canvasEditor.displayColorPickers,
   addTileSourceMode: state.canvasEditor.addTileSourceMode,
   isPencilMode: state.canvasEditor.isPencilMode,
-  linesInProgress: state.canvasEditor.linesInProgress,
   zoomControls: state.canvasEditor.zoomControls,
   globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay
 });
@@ -810,7 +831,6 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   toggleCanvasColorPicker,
   setAddTileSourceMode,
   setIsPencilMode,
-  setLineInProgress,
   setZoomControl,
   updateDocument,
   setDocumentThumbnail,

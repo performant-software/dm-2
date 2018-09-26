@@ -3,7 +3,6 @@ export const HIDE_COLOR_PICKER = 'canvasEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'canvasEditor/TOGGLE_COLOR_PICKER';
 export const SET_ADD_TILE_SOURCE_MODE = 'canvasEditor/SET_ADD_TILE_SOURCE_MODE';
 export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
-export const SET_LINE_IN_PROGRESS = 'canvasEditor/SET_LINE_IN_PROGRESS';
 export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
 export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
@@ -15,7 +14,6 @@ const initialState = {
   displayColorPickers: {},
   addTileSourceMode: {},
   isPencilMode: {},
-  linesInProgress: {},
   zoomControls: {},
   globalCanvasDisplay: true
 };
@@ -60,14 +58,6 @@ export default function(state = initialState, action) {
       return {
         ...state,
         isPencilMode: updatedPencilMode
-      };
-
-    case SET_LINE_IN_PROGRESS:
-      let updatedLinesInProgress = Object.assign({}, state.linesInProgress);
-      updatedLinesInProgress[action.editorKey] = action.lineInProgress;
-      return {
-        ...state,
-        linesInProgress: updatedLinesInProgress
       };
 
     case SET_ZOOM_CONTROL:
@@ -128,16 +118,6 @@ export function setIsPencilMode(editorKey, isPencilMode) {
       type: SET_IS_PENCIL_MODE,
       editorKey,
       isPencilMode
-    });
-  }
-}
-
-export function setLineInProgress(editorKey, lineInProgress) {
-  return function(dispatch) {
-    dispatch({
-      type: SET_LINE_IN_PROGRESS,
-      editorKey,
-      lineInProgress
     });
   }
 }
