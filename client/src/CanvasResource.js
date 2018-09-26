@@ -411,10 +411,12 @@ class CanvasResource extends Component {
     const aCoords = this.lineInProgress.aCoords;
     const svg = this.lineInProgress.toSVG();
 
-    // now act like other shapes
+    // now act like other shapes, assign a unique id
     this.lineInProgress.perPixelTargetFind = true;
     this.lineInProgress.selectable = true;
     this.lockCanvasObject(this.lineInProgress, true);
+    const highlightUid = `dm_canvas_highlight_${Date.now()}`;
+    this.lineInProgress['_highlightUid'] = highlightUid;
 
     this.props.addHighlight(
       this.props.document_id,
