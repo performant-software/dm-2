@@ -52,6 +52,7 @@ tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: '
 
 const strokeWidth = 3.0;
 const markerRadius = 4.0;
+const doubleClickTimeout = 500;
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -82,9 +83,9 @@ class CanvasResource extends Component {
         const baseUrl = firstTileSource.split('info.json')[0];
         this.imageUrlForThumbnail = baseUrl + 'full/!400,400/0/default.png';
       }
-    }
+    } 
 
-    const viewer = OpenSeadragon({
+    const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       showNavigationControl: false,
@@ -162,8 +163,6 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     };
-
-    this.osdViewer = viewer;
   }
 
   objectClick(event) {
@@ -226,7 +225,11 @@ class CanvasResource extends Component {
           break;
 
       case 'lineDraw':
-        this.drawLine(this.pointerCoords);
+        if( this.checkDoubleClick() ) {
+          this.endLineMode();
+        } else {
+          this.drawLine(this.pointerCoords);
+        }
         break;
     }
   }
@@ -318,6 +321,20 @@ class CanvasResource extends Component {
         }
       });
     });
+  }
+
+  // doing it this way because double click events are not reliably
+  // processed by osdViewer or fabric js.
+  checkDoubleClick() {
+    if( this.lastTime ) {
+      const currentTime = Date.now();
+      const elapsedTime = currentTime - this.lastTime;
+      this.lastTime = currentTime;  
+      return ( elapsedTime < doubleClickTimeout );
+    } else {
+      this.lastTime = Date.now();
+      return false;
+    }
   }
 
   drawLine(pointer) {
