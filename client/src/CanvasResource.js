@@ -237,7 +237,7 @@ class CanvasResource extends Component {
   canvasMouseMove(o) {
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
-    if( this.isMouseDown ) {
+    if( this.newShape && this.isMouseDown ) {
       const mouse = this.overlay.fabricCanvas().getPointer(o.e);
 
       switch(this.currentMode) {
@@ -276,19 +276,21 @@ class CanvasResource extends Component {
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
+    const shape = this.newShape;
+    this.newShape = null;
 
     this.props.addHighlight(
       this.props.document_id,
-      this.newShape._highlightUid,
-      JSON.stringify(this.newShape.toJSON(['_highlightUid', '_isMarker'])),
+      shape._highlightUid,
+      JSON.stringify(shape.toJSON(['_highlightUid', '_isMarker'])),
       this.props.highlightColors[key],
       label,
       savedHighlight => {
           this.props.setHighlightThumbnail(
             savedHighlight.id,
             this.imageUrlForThumbnail,
-            this.newShape.aCoords,
-            this.newShape.toSVG()
+            shape.aCoords,
+            shape.toSVG()
           );
       });
   }
