@@ -11,8 +11,12 @@ class User < ActiveRecord::Base
   scope :is_approved, -> { where(approved: true) }
   scope :is_admin, -> { where(admin: true) }
 
-  after_create :send_admin_mail
-  def send_admin_mail
+  after_create :after_user_create
+  def after_user_create
+    if User.count == 1
+      User.first.update({admin: true, approved: true})
+    end
+
     AdminMailer.new_user_waiting_for_approval(email).deliver
   end
 

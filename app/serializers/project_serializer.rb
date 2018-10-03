@@ -1,7 +1,7 @@
 class ProjectSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :public, :created_at, :updated_at, :current_user_permissions
 
-  has_many :contents_children, serializer: LinkableSerializer
+  has_many :contents_children, serializer: DocumentFolderSerializer
   has_many :user_project_permissions
   has_many :can_admin
 

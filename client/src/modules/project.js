@@ -32,6 +32,8 @@ export const CREATE_PERMISSION_LOADING = 'project/CREATE_PERMISSION_LOADING';
 export const CREATE_PERMISSION_ERRORED = 'project/CREATE_PERMISSION_ERRORED';
 export const CREATE_PERMISSION_SUCCESS = 'project/CREATE_PERMISSION_SUCCESS';
 export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
+export const SET_SIDEBAR_WIDTH = 'project/SET_SIDEBAR_WIDTH';
+export const SET_SIDEBAR_IS_DRAGGING = 'project/SET_SIDEBAR_IS_DRAGGING';
 
 const initialState = {
   id: null,
@@ -50,7 +52,9 @@ const initialState = {
   usersErrored: false,
   newPermissionUser: null,
   newPermissionLevel: READ_PERMISSION,
-  deleteConfirmed: false
+  deleteConfirmed: false,
+  sidebarWidth: 350,
+  sidebarIsDragging: false
 };
 
 export default function(state = initialState, action) {
@@ -181,6 +185,18 @@ export default function(state = initialState, action) {
         deleteConfirmed: !state.deleteConfirmed
       };
 
+    case SET_SIDEBAR_WIDTH:
+      return {
+        ...state,
+        sidebarWidth: action.width
+      };
+
+    case SET_SIDEBAR_IS_DRAGGING:
+      return {
+        ...state,
+        sidebarIsDragging: action.isDragging
+      }
+
     default:
       return state;
   }
@@ -216,9 +232,6 @@ export function loadProject(projectId, title) {
       return response;
     })
     .then(response => response.json())
-    .then(project => {
-      return project;
-    })
     .then(project => dispatch({
       type: GET_SUCCESS,
       projectId: project.id,
@@ -274,6 +287,7 @@ export function newProject() {
         currentUserPermissions: project['current_user_permissions']
       });
       dispatch(replace(`/${project.id}`));
+      dispatch(showSettings());
     })
     .catch(() => dispatch({
       type: POST_ERRORED
@@ -569,4 +583,22 @@ export function deleteProject(projectId) {
       type: DELETE_ERRORED
     }));
   }
+}
+
+export function setSidebarWidth(width) {
+  return function(dispatch) {
+    dispatch({
+      type: SET_SIDEBAR_WIDTH,
+      width
+    });
+  };
+}
+
+export function setSidebarIsDragging(isDragging) {
+  return function(dispatch) {
+    dispatch({
+      type: SET_SIDEBAR_IS_DRAGGING,
+      isDragging
+    });
+  };
 }

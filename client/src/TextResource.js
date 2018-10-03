@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
+import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 import { schema } from 'prosemirror-schema-basic';
 import { EditorState, Plugin, TextSelection } from 'prosemirror-state';
@@ -22,7 +23,7 @@ class TextResource extends Component {
   constructor(props: TextResourceProps) {
     super(props);
 
-    const {document_id, setTextHighlightColor} = this.props;
+    const {document_id, timeOpened, setTextHighlightColor} = this.props;
     this.highlight_map = this.props.highlight_map;
     this.highlightsToDuplicate = [];
 
@@ -30,7 +31,7 @@ class TextResource extends Component {
       attrs: {highlightUid: {default: 'dm_new_highlight'}, documentId: {default: null}, tempColor: {default: null}},
       toDOM: function(mark) {
         const color = this.highlight_map[mark.attrs.highlightUid] ? this.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[this.props.document_id]);
-        const properties = {class: 'dm-highlight', style: `background: ${color};`, onclick: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`};
+        const properties = {class: 'dm-highlight', style: `background: ${color};`, onmouseenter: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`, onclick: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)', onmouseout: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)'};
         properties['data-highlight-uid'] = mark.attrs.highlightUid;
         properties['data-document-id'] = mark.attrs.documentId;
         return ['span', properties, 0];
@@ -97,11 +98,12 @@ class TextResource extends Component {
       selection: TextSelection.create(dmDoc, 0),
       plugins: exampleSetup({
         schema: dmSchema,
-        menuContent: dmMenuContent
+        menuContent: dmMenuContent,
+        floatingMenu: true
       })
     }));
 
-    setTextHighlightColor(document_id, yellow500);
+    setTextHighlightColor(`${document_id}-${timeOpened}`, yellow500);
 
     this.scheduledContentUpdate = null;
   }
@@ -118,7 +120,7 @@ class TextResource extends Component {
     let highlights = [];
     startNode.nodesBetween(from, to, node => {
       node.marks.forEach(mark => {
-        if (mark.type === this.schema.marks.highlight)
+        if (mark.type.name === this.schema.marks.highlight.name)
           highlights.push(mark);
       });
     });
@@ -159,11 +161,11 @@ class TextResource extends Component {
     let alteredHighlights = [];
     steps.forEach(step => {
       // save new highlight
-      if (step instanceof AddMarkStep && step.mark.type === this.schema.marks.highlight) {
+      if (step instanceof AddMarkStep && step.mark.type.name === this.schema.marks.highlight.name) {
         this.createHighlight(step.mark, tx.curSelection.content(), serializer);
       }
       // process highlights that have been removed or altered by a text content change or a mark toggle
-      else if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === 'highlight')) {
+      else if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === this.schema.marks.highlight.name)) {
         // TODO: handle case where the space between two highlights is eliminated
         // pad the range where we look for effected highlights in order to accommodate edge cases with cursor at beginning or end of highlight
         let from = Math.max(step.from - 1, 0), to = step.to;
@@ -185,7 +187,7 @@ class TextResource extends Component {
           let removedMarks = effectedMarks.slice(0);
           tx.doc.descendants(node => {
             node.marks.forEach(mark => {
-              if (mark.type === this.schema.marks.highlight) {
+              if (mark.type.name === this.schema.marks.highlight.name) {
                 const effectedIndex = effectedMarks.indexOf(mark);
                 if (effectedIndex >= 0) {
                   if (this.props.highlight_map[mark.attrs.highlightUid] && serializer.serializeNode(node).textContent !== this.props.highlight_map[mark.attrs.highlightUid].excerpt) {
@@ -243,17 +245,18 @@ class TextResource extends Component {
   }
 
   render() {
-    const { document_id, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled } = this.props;
+    const { document_id, timeOpened, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled } = this.props;
     const editorState = editorStates[document_id];
     if (!editorState) return null;
+    const key = `${document_id}-${timeOpened}`;
     return (
-      <div className="editorview-wrapper">
+      <div className="editorview-wrapper" style={{ flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px' }}>
         {writeEnabled &&
           <HighlightColorSelect
-            highlightColor={highlightColors[document_id]}
-            displayColorPicker={displayColorPickers[document_id]}
-            setHighlightColor={(color) => {setTextHighlightColor(document_id, color);}}
-            toggleColorPicker={() => {toggleTextColorPicker(document_id);}}
+            highlightColor={highlightColors[key]}
+            displayColorPicker={displayColorPickers[key]}
+            setHighlightColor={(color) => {setTextHighlightColor(key, color);}}
+            toggleColorPicker={() => {toggleTextColorPicker(key);}}
           />
         }
         <ProseMirrorEditorView
@@ -263,6 +266,7 @@ class TextResource extends Component {
           onEditorState={this.onEditorState}
           processAndConfirmTransaction={this.processAndConfirmTransaction}
           handlePaste={this.handlePaste}
+          setGlobalCanvasDisplay={this.props.setGlobalCanvasDisplay}
         />
       </div>
     );
@@ -283,7 +287,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   setTextHighlightColor,
   toggleTextColorPicker,
   updateDocument,
-  openDeleteDialog
+  openDeleteDialog,
+  setGlobalCanvasDisplay
 }, dispatch);
 
 export default connect(

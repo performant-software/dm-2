@@ -29,8 +29,6 @@ export default function(state = initialState, action) {
       };
 
     case SELECT_LOAD_SUCCESS:
-      console.log('select_load_success');
-      console.log(action);
       let preUpdateTargetsCopy = state.selectedTargets.slice(0);
       let toUpdateIndex = -1;
       if (action.target.highlight_id) {

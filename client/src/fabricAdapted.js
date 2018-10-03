@@ -2483,38 +2483,84 @@ fabric.CommonMethods = {
    * @param {HTMLElement} element Element to get offset for
    * @return {Object} Object with "left" and "top" properties
    */
+  // function getElementOffset(element) {
+  //   var docElem,
+  //       doc = element && element.ownerDocument,
+  //       box = { left: 0, top: 0 },
+  //       offset = { left: 0, top: 0 },
+  //       scrollLeftTop,
+  //       offsetAttributes = {
+  //         borderLeftWidth: 'left',
+  //         borderTopWidth:  'top',
+  //         paddingLeft:     'left',
+  //         paddingTop:      'top'
+  //       };
+  //
+  //   if (!doc) {
+  //     return offset;
+  //   }
+  //
+  //   for (var attr in offsetAttributes) {
+  //     offset[offsetAttributes[attr]] += parseInt(getElementStyle(element, attr), 10) || 0;
+  //   }
+  //
+  //   docElem = doc.documentElement;
+  //   if ( typeof element.getBoundingClientRect !== 'undefined' ) {
+  //     box = element.getBoundingClientRect();
+  //   }
+  //
+  //   scrollLeftTop = getScrollLeftTop(element);
+  //
+  //   return {
+  //     left: box.left + scrollLeftTop.left - (docElem.clientLeft || 0) + offset.left,
+  //     top: box.top + scrollLeftTop.top - (docElem.clientTop || 0)  + offset.top
+  //   };
+  // }
   function getElementOffset(element) {
-    var docElem,
-        doc = element && element.ownerDocument,
-        box = { left: 0, top: 0 },
-        offset = { left: 0, top: 0 },
-        scrollLeftTop,
-        offsetAttributes = {
-          borderLeftWidth: 'left',
-          borderTopWidth:  'top',
-          paddingLeft:     'left',
-          paddingTop:      'top'
-        };
+      var docElem, win,
+          box = {left: 0, top: 0},
+          scrollLeft = 0,
+          scrollTop = 0,
+          doc = element && element.ownerDocument,
+          offset = {left: 0, top: 0},
+          offsetAttributes = {
+              'borderLeftWidth': 'left',
+              'borderTopWidth': 'top',
+              'paddingLeft': 'left',
+              'paddingTop': 'top'
+          };
 
-    if (!doc) {
-      return offset;
-    }
+      if (!doc) {
+          return { left: 0, top: 0 };
+      }
 
-    for (var attr in offsetAttributes) {
-      offset[offsetAttributes[attr]] += parseInt(getElementStyle(element, attr), 10) || 0;
-    }
+      for (var attr in offsetAttributes) {
+          offset[offsetAttributes[attr]] += parseInt(getElementStyle(element, attr), 10) || 0;
+      }
 
-    docElem = doc.documentElement;
-    if ( typeof element.getBoundingClientRect !== 'undefined' ) {
-      box = element.getBoundingClientRect();
-    }
+      docElem = doc.documentElement;
+      if (typeof element.getBoundingClientRect !== 'undefined') {
+          box = element.getBoundingClientRect();
+      }
 
-    scrollLeftTop = getScrollLeftTop(element);
+      if (doc !== null && doc === doc.window) {
+          win = doc;
+      }
+      else {
+          win = doc.nodeType === 9 && (doc.defaultView || doc.parentWindow);
+      }
 
-    return {
-      left: box.left + scrollLeftTop.left - (docElem.clientLeft || 0) + offset.left,
-      top: box.top + scrollLeftTop.top - (docElem.clientTop || 0)  + offset.top
-    };
+      while (element = element.parentNode) {
+          if (element === fabric.document) continue;
+
+          scrollLeft += element.scrollLeft || 0;
+          scrollTop += element.scrollTop || 0;
+      }
+
+      return {
+          left: box.left + (win.pageXOffset || docElem.scrollLeft) - (docElem.clientLeft || 0) + scrollLeft + offset.left,
+          top: box.top + (win.pageYOffset || docElem.scrollTop) - (docElem.clientTop || 0) + scrollTop + offset.top
+      };
   }
 
   /**
@@ -6465,6 +6511,8 @@ fabric.ElementsParser.prototype.checkIfDone = function() {
      * @chainable
      */
     calcOffset: function () {
+      // console.log('inner calcOffset');
+      // console.trace();
       this._offset = getElementOffset(this.lowerCanvasEl);
       return this;
     },

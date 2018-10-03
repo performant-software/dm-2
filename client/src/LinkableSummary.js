@@ -4,11 +4,12 @@ import { connect } from 'react-redux';
 import { DragSource } from 'react-dnd';
 import { ListItem } from 'material-ui/List';
 import TextFields from 'material-ui/svg-icons/editor/text-fields';
+import ArrowDown from 'material-ui/svg-icons/navigation/expand-more';
+import ArrowRight from 'material-ui/svg-icons/navigation/chevron-right';
 import Avatar from 'material-ui/Avatar';
 import { grey100, grey400, cyan100 } from 'material-ui/styles/colors';
 import { TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE } from './modules/project';
 import { openDocument } from './modules/documentGrid';
-import { selectSidebarTarget } from './modules/annotationViewer';
 
 class Summary extends Component {
   constructor(props) {
@@ -20,13 +21,9 @@ class Summary extends Component {
 
   render() {
     const { document_title, excerpt, document_kind, document_id, thumbnail_url, color } = this.props.item;
-    let primaryText = document_title;
-    if (excerpt && excerpt.length > 0)
-      primaryText = <div><span style={{ background: color || 'yellow' }}>{excerpt}</span> in {primaryText}</div>;
     return (
       <ListItem
-        primaryText={primaryText}
-        leftAvatar={
+        leftAvatar={document_kind === 'folder' ? null :
           <Avatar
             src={document_kind === CANVAS_RESOURCE_TYPE ? thumbnail_url : null}
             icon={document_kind === TEXT_RESOURCE_TYPE ? <TextFields /> : null}
@@ -38,28 +35,34 @@ class Summary extends Component {
             }}
           />
         }
+        leftIcon={document_kind === 'folder' ? (this.props.isOpen ? <ArrowDown /> : <ArrowRight />) : null}
         style={this.props.isDraggable ? {
-          border: '1px solid',
+          borderStyle: 'solid',
+          borderWidth: this.props.borderBold ? '2px' : '1px',
           borderColor: grey400,
           borderRadius: '0.5rem',
-          margin: '8px',
+          margin: '0 8px',
           backgroundColor: this.props.isOpen ? cyan100 : grey100,
-          cursor: this.props.isDragging ? '-webkit-grabbing' : '-webkit-grab'
+          cursor: this.props.isDragging ? '-webkit-grabbing' : '-webkit-grab',
+          maxWidth: `${this.props.sidebarWidth - 20}px`
         } : null}
         innerDivStyle={this.props.isDraggable ? {
           paddingLeft: '64px'
         } : null}
-        onClick={() => {
+        onClick={event => {
+          event.stopPropagation();
           window.clearTimeout(this.singleClickTimeout);
           this.singleClickTimeout = window.setTimeout(() => {
-            this.props.openDocument(document_id);
+            this.props.handleClick();
           }, this.doubleClickCutoffMs);
         }}
         onDoubleClick={() => {
           window.clearTimeout(this.singleClickTimeout);
-          this.props.selectSidebarTarget(this.props.item);
+          this.props.handleDoubleClick();
         }}
-      />
+      >
+        {this.props.children}
+      </ListItem>
     );
   }
 }
@@ -67,8 +70,13 @@ class Summary extends Component {
 const summarySource = {
   beginDrag(props) {
     return {
+      id: props.item.id,
       linkable_id: props.item.highlight_id || props.item.document_id,
-      linkable_type: props.item.highlight_id ? 'Highlight' : 'Document'
+      linkable_type: props.item.highlight_id ? 'Highlight' : 'Document',
+      isFolder: props.isFolder,
+      descendant_folder_ids: props.isFolder ? props.item.descendant_folder_ids : null,
+      existingParentId: props.item.parent_id,
+      existingParentType: props.item.parent_type
     };
   }
 };
@@ -89,7 +97,11 @@ class DraggableSummary extends Component {
     );
   }
 }
-DraggableSummary = DragSource('linkableSummary', summarySource, collect)(DraggableSummary);
+DraggableSummary = DragSource(
+  props => props.inContents ? 'contentsSummary' : 'linkableSummary',
+  summarySource,
+  collect
+)(DraggableSummary);
 
 class LinkableSummary extends Component {
   componentWillMount() {
@@ -111,12 +123,15 @@ class LinkableSummary extends Component {
   }
 }
 
+const mapStateToProps = state => ({
+  sidebarWidth: state.project.sidebarWidth
+});
+
 const mapDispatchToProps = dispatch => bindActionCreators({
-  openDocument,
-  selectSidebarTarget
+  openDocument
 }, dispatch);
 
 export default connect(
-  null,
+  mapStateToProps,
   mapDispatchToProps
 )(LinkableSummary);
