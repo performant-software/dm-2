@@ -42,9 +42,6 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "devDependencies": {
-    "eslint-config-react-app": "^2.1.0"
-  },
   "proxy": "http://localhost:3001",
   "browserslist": [
     ">0.2%",
