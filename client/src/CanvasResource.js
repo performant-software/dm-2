@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import OpenSeadragon from 'openseadragon';
-import { fabric } from './fabricAdapted';//'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
-import 'openseadragon-fabricjs-overlay';
+import OpenSeadragon from 'openseadragon-fabricjs-overlay/openseadragon/openseadragon';
+import { fabric } from 'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
+import { openSeaDragonFabricOverlay } from 'openseadragon-fabricjs-overlay/openseadragon-fabricjs-overlay';
 import ActiveStorageProvider from 'react-activestorage-provider';
 import SelectField from 'material-ui/SelectField';
 import Slider from 'material-ui/Slider';
@@ -28,6 +28,9 @@ import { yellow500, cyan100 } from 'material-ui/styles/colors';
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setAddTileSourceMode, setIsPencilMode, setZoomControl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail, addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
+
+// overlay these modules 
+openSeaDragonFabricOverlay(OpenSeadragon, fabric);
 
 // from https://stackoverflow.com/a/48343346/6126327 - show consistent stroke width regardless of object scaling
 fabric.Object.prototype._renderStroke = function(ctx) {
