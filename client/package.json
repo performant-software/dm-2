@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "engines": { 
-    "node" : "^10.6.0"
+    "yarn" : "1.7.0",
+    "node" : "10.6.0"
   },
   "dependencies": {
     "canvas": "^1.6.10",
