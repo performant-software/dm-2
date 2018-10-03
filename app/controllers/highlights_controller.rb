@@ -99,8 +99,10 @@ class HighlightsController < ApplicationController
     svg_image = MiniMagick::Image.open(svg_file.path)
 
     combined_image = base_image.composite(svg_image) do |c|
-      c.background 'none'
+      # c.background 'none'
+      c.compose "color-burn"  
     end
+    # combined_image = base_image
 
     path = combined_image.path
     io = File.open(path)

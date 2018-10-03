@@ -152,6 +152,7 @@ class CanvasResource extends Component {
         let path = event.path;
         const highlightUid = `dm_canvas_highlight_${Date.now()}`;
         path._highlightUid = highlightUid;
+        path.perPixelTargetFind = true;
         this.overlay.fabricCanvas().setActiveObject(path);
         let imageUrlForThumbnail = this.imageUrlForThumbnail;
         addHighlight(document_id, highlightUid, JSON.stringify(path.toJSON(['_highlightUid', '_isMarker'])), this.overlay.fabricCanvas().freeDrawingBrush.color, 'Pencil highlight', savedHighlight => {setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());});
@@ -276,23 +277,25 @@ class CanvasResource extends Component {
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
-    const shape = this.newShape;
-    this.newShape = null;
+    const aCoords = this.newShape.aCoords;
+    const svg = this.newShape.toSVG();
 
     this.props.addHighlight(
       this.props.document_id,
-      shape._highlightUid,
-      JSON.stringify(shape.toJSON(['_highlightUid', '_isMarker'])),
+      this.newShape._highlightUid,
+      JSON.stringify(this.newShape.toJSON(['_highlightUid', '_isMarker'])),
       this.props.highlightColors[key],
       label,
       savedHighlight => {
           this.props.setHighlightThumbnail(
             savedHighlight.id,
             this.imageUrlForThumbnail,
-            shape.aCoords,
-            shape.toSVG()
+            aCoords,
+            svg
           );
       });
+    
+    this.newShape = null;
   }
 
   clearFocusHighlightTimeout() {
