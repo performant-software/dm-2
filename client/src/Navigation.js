@@ -11,11 +11,13 @@ import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import CircularProgress from 'material-ui/CircularProgress';
 import Divider from 'material-ui/Divider';
+import DropDownMenu from 'material-ui/DropDownMenu';
 import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
 import Settings from 'material-ui/svg-icons/action/settings';
 import MoreVert from 'material-ui/svg-icons/navigation/more-vert';
 import { signOutUser } from './modules/redux-token-auth-config';
-import { load, showRegistration, showLogin, showAuthMenu, hideAuthMenu, showAdminDialog } from './modules/home';
+import { load, showRegistration, showLogin, toggleAuthMenu, hideAuthMenu, showAdminDialog } from './modules/home';
+import { setCurrentLayout, layoutOptions } from './modules/documentGrid';
 import LoginRegistrationDialog from './LoginRegistrationDialog';
 import AdminDialog from './AdminDialog';
 
@@ -72,26 +74,41 @@ class Navigation extends Component {
               <CircularProgress color={'#FFF'} style={{top: '12px', left: '18px'}}/>
             }
           </div>}
-          // title={this.props.title}
           showMenuIconButton={!this.props.isHome}
           iconElementLeft={<IconButton onClick={this.props.returnHome}><ArrowBack /></IconButton>}
           iconElementRight={
-            <FlatButton
-              style={{ minWidth: '48px' }}
-              icon={<MoreVert />}
-              label={userMenuLabel}
-              labelPosition='before'
-              onClick={event => {this.props.showAuthMenu(event.currentTarget);}}
-            />
+            <div>
+              {!this.props.isHome &&
+                <DropDownMenu
+                  value={this.props.currentLayout}
+                  onChange={this.props.setCurrentLayout}
+                  style={{ height: '42px' }}
+                  labelStyle={{ color: 'white', lineHeight: '50px', height: '30px' }}
+                  menuStyle={{ marginTop: '52px' }}
+                >
+                  {layoutOptions.map((option, index) => (
+                    <MenuItem key={index} value={index} primaryText={option.description} />
+                  ))}
+                </DropDownMenu>
+              }
+              <FlatButton
+                style={{ minWidth: '48px', color: 'white', marginTop: '6px' }}
+                icon={<MoreVert />}
+                label={userMenuLabel}
+                labelPosition='before'
+                onClick={event => {this.props.toggleAuthMenu(event.currentTarget);}}
+              />
+            </div>
           }
-          style={{position: 'fixed'}}
+          style={{position: 'fixed', top: 0, zIndex: 9999}}
         />
         <Popover
           open={this.props.authMenuShown}
           anchorEl={this.props.authMenuAnchor}
-          anchorOrigin={{horizontal: 'left', vertical: 'top'}}
-          targetOrigin={{horizontal: 'left', vertical: 'top'}}
+          anchorOrigin={{horizontal: 'right', vertical: 'top'}}
+          targetOrigin={{horizontal: 'right', vertical: 'top'}}
           onRequestClose={this.props.hideAuthMenu}
+          style={{ marginTop: '52px' }}
         >
           <Menu>
             <LoginMenuBody {...this.props} />
@@ -107,7 +124,8 @@ class Navigation extends Component {
 const mapStateToProps = state => ({
   currentUser: state.reduxTokenAuth.currentUser,
   authMenuShown: state.home.authMenuShown,
-  authMenuAnchor: state.home.authMenuAnchor
+  authMenuAnchor: state.home.authMenuAnchor,
+  currentLayout: state.documentGrid.currentLayout
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -115,10 +133,11 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   load,
   showRegistration,
   showLogin,
-  showAuthMenu,
+  toggleAuthMenu,
   hideAuthMenu,
   signOutUser,
-  showAdminDialog
+  showAdminDialog,
+  setCurrentLayout
 }, dispatch);
 
 export default connect(

@@ -5,7 +5,7 @@ import { DropTarget } from 'react-dnd';
 import Subheader from 'material-ui/Subheader';
 import CircularProgress from 'material-ui/CircularProgress';
 import { grey400 } from 'material-ui/styles/colors';
-import { addLink } from './modules/annotationViewer';
+import { addLink, selectSidebarTarget } from './modules/annotationViewer';
 import LinkableSummary from './LinkableSummary';
 import LinkableList from './LinkableList';
 import { createTextDocumentWithLink } from './modules/documentGrid';
@@ -56,7 +56,11 @@ class LinkDropTarget extends Component {
     );
   }
 }
-LinkDropTarget = DropTarget('linkableSummary', linkTarget, collect)(LinkDropTarget);
+LinkDropTarget = DropTarget(
+  ['contentsSummary', 'linkableSummary'],
+  linkTarget,
+  collect
+)(LinkDropTarget);
 
 const LinkArea = props => {
   if (props.loading) {
@@ -77,9 +81,15 @@ class LinkInspector extends Component {
       return Object.assign({id: link.document_id + (link.highlight_id ? '-' + link.highlight_id : '')}, link);
     }) : [];
 
+    let primaryText = target.document_title;
+    if (target.excerpt && target.excerpt.length > 0)
+      primaryText = <div><span style={{ background: target.color || 'yellow' }}>{target.excerpt}</span> in {primaryText}</div>;
+
     return (
       <div style={{ marginBottom: '8px' }}>
-        <LinkableSummary item={target} isDraggable={this.props.writeEnabled} isOpen={this.props.openDocumentIds && this.props.openDocumentIds.includes(target.document_id.toString())} />
+        <LinkableSummary item={target} isDraggable={this.props.writeEnabled} isOpen={this.props.openDocumentIds && this.props.openDocumentIds.includes(target.document_id.toString())} handleDoubleClick={() => {this.props.selectSidebarTarget(target);}}>
+          {primaryText}
+        </LinkableSummary>
         <Subheader style={{lineHeight: '32px'}}>Links to:</Subheader>
         <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
         {this.props.writeEnabled &&
@@ -110,7 +120,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   addLink,
   openDocumentPopover,
   closeDocumentPopover,
-  createTextDocumentWithLink
+  createTextDocumentWithLink,
+  selectSidebarTarget
 }, dispatch);
 
 export default connect(

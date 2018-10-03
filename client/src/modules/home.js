@@ -12,7 +12,7 @@ export const USER_NAME_CHANGED = 'home/USER_NAME_CHANGED';
 export const USER_PASSWORD_CHANGED = 'home/USER_PASSWORD_CHANGED';
 export const USER_PASSWORD_CONFIRMATION_CHANGED = 'home/USER_PASSWORD_CONFIRMATION_CHANGED';
 export const USER_AUTH_ERRORED = 'home/USER_AUTH_ERRORED';
-export const AUTH_MENU_SHOWN = 'home/AUTH_MENU_SHOWN';
+export const AUTH_MENU_TOGGLED = 'home/AUTH_MENU_TOGGLED';
 export const AUTH_MENU_HIDDEN = 'home/AUTH_MENU_HIDDEN';
 export const ADMIN_DIALOG_SHOWN = 'home/ADMIN_DIALOG_SHOWN';
 export const ADMIN_DIALOG_HIDDEN = 'home/ADMIN_DIALOG_HIDDEN';
@@ -157,10 +157,10 @@ export default function(state = initialState, action) {
         userAuthError: true
       };
 
-    case AUTH_MENU_SHOWN:
+    case AUTH_MENU_TOGGLED:
       return {
         ...state,
-        authMenuShown: true,
+        authMenuShown: !state.authMenuShown,
         authMenuAnchor: action.anchor
       };
 
@@ -339,10 +339,10 @@ export function userAuthErrored(error) {
   };
 }
 
-export function showAuthMenu(anchor) {
+export function toggleAuthMenu(anchor) {
   return function(dispatch) {
     dispatch({
-      type: AUTH_MENU_SHOWN,
+      type: AUTH_MENU_TOGGLED,
       anchor
     });
   };

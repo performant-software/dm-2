@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_22_192014) do
+ActiveRecord::Schema.define(version: 2018_07_25_123928) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -43,8 +43,11 @@ ActiveRecord::Schema.define(version: 2018_06_22_192014) do
     t.bigint "parent_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.float "buoyancy", default: 0.0, null: false
+    t.bigint "project_id"
     t.index ["created_by_id"], name: "index_document_folders_on_created_by_id"
     t.index ["parent_type", "parent_id"], name: "index_document_folders_on_parent_type_and_parent_id"
+    t.index ["project_id"], name: "index_document_folders_on_project_id"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -57,6 +60,7 @@ ActiveRecord::Schema.define(version: 2018_06_22_192014) do
     t.string "parent_type"
     t.bigint "parent_id"
     t.jsonb "content"
+    t.float "buoyancy", default: 0.0, null: false
     t.index ["created_by_id"], name: "index_documents_on_created_by_id"
     t.index ["parent_type", "parent_id"], name: "index_documents_on_parent_type_and_parent_id"
     t.index ["project_id"], name: "index_documents_on_project_id"
@@ -141,6 +145,7 @@ ActiveRecord::Schema.define(version: 2018_06_22_192014) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  add_foreign_key "document_folders", "projects"
   add_foreign_key "documents", "projects"
   add_foreign_key "highlights", "documents"
 end

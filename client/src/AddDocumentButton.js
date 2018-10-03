@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import FlatButton from 'material-ui/FlatButton';
-import AddCircle from 'material-ui/svg-icons/content/add-circle';
+import NoteAdd from 'material-ui/svg-icons/action/note-add';
 import Popover from 'material-ui/Popover';
 import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
@@ -12,7 +12,7 @@ export default class AddDocumentButton extends Component {
       <div>
         <FlatButton
           label={this.props.label}
-          icon={<AddCircle />}
+          icon={<NoteAdd />}
           style={{margin: 'auto'}}
           onClick={this.props.openDocumentPopover}
           id={buttonId}

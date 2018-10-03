@@ -3,8 +3,8 @@ export const HIDE_COLOR_PICKER = 'canvasEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'canvasEditor/TOGGLE_COLOR_PICKER';
 export const SET_ADD_TILE_SOURCE_MODE = 'canvasEditor/SET_ADD_TILE_SOURCE_MODE';
 export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
-export const SET_LINE_IN_PROGRESS = 'canvasEditor/SET_LINE_IN_PROGRESS';
 export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
+export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
@@ -14,8 +14,8 @@ const initialState = {
   displayColorPickers: {},
   addTileSourceMode: {},
   isPencilMode: {},
-  linesInProgress: {},
-  zoomControls: {}
+  zoomControls: {},
+  globalCanvasDisplay: true
 };
 
 export default function(state = initialState, action) {
@@ -60,20 +60,18 @@ export default function(state = initialState, action) {
         isPencilMode: updatedPencilMode
       };
 
-    case SET_LINE_IN_PROGRESS:
-      let updatedLinesInProgress = Object.assign({}, state.linesInProgress);
-      updatedLinesInProgress[action.editorKey] = action.lineInProgress;
-      return {
-        ...state,
-        linesInProgress: updatedLinesInProgress
-      };
-
     case SET_ZOOM_CONTROL:
       let updatedZoomControls = Object.assign({}, state.zoomControls);
       updatedZoomControls[action.editorKey] = action.zoomValue;
       return {
         ...state,
         zoomControls: updatedZoomControls
+      };
+
+    case SET_GLOBAL_CANVAS_DISPLAY:
+      return {
+        ...state,
+        globalCanvasDisplay: action.value
       };
 
     default:
@@ -124,22 +122,21 @@ export function setIsPencilMode(editorKey, isPencilMode) {
   }
 }
 
-export function setLineInProgress(editorKey, lineInProgress) {
-  return function(dispatch) {
-    dispatch({
-      type: SET_LINE_IN_PROGRESS,
-      editorKey,
-      lineInProgress
-    });
-  }
-}
-
 export function setZoomControl(editorKey, zoomValue) {
   return function(dispatch) {
     dispatch({
       type: SET_ZOOM_CONTROL,
       editorKey,
       zoomValue
+    });
+  }
+}
+
+export function setGlobalCanvasDisplay(value) {
+  return function(dispatch) {
+    dispatch({
+      type: SET_GLOBAL_CANVAS_DISPLAY,
+      value
     });
   }
 }

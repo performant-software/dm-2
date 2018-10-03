@@ -1,5 +1,14 @@
 class DocumentFoldersController < ApplicationController
   before_action :set_document_folder, only: [:show, :update, :destroy]
+  before_action only: [:create] do
+    @project = Project.find(params[:project_id])
+  end
+  before_action only: [:show] do
+    validate_user_read(@project)
+  end
+  before_action only: [:create, :update, :destroy, :set_thumbnail] do
+    validate_user_write(@project)
+  end
 
   #TODO: validate permissions for (recursively determined?) containing project
 
@@ -21,6 +30,10 @@ class DocumentFoldersController < ApplicationController
 
   # PATCH/PUT /document_folders/1
   def update
+    if params[:parent_type] == 'DocumentFolder' && (@document_folder.id == params[:parent_id] || @document_folder.descendant_folder_ids.include?(params[:parent_id]))
+      head :method_not_allowed
+      return false
+    end
     if @document_folder.update(document_folder_params)
       render json: @document_folder
     else
@@ -37,10 +50,11 @@ class DocumentFoldersController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_document_folder
       @document_folder = DocumentFolder.find(params[:id])
+      @project = @document_folder.project
     end
 
     # Only allow a trusted parameter "white list" through.
     def document_folder_params
-      params.require(:document_folder).permit(:title, :created_by_id, :parent_id)
+      params.require(:document_folder).permit(:project_id, :title, :created_by_id, :parent_id, :parent_type, :buoyancy)
     end
 end

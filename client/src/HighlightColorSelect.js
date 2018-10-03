@@ -5,12 +5,12 @@ import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700 } f
 export default class HighlightColorSelect extends Component {
   render() {
     return (
-      <div>
+      <div style={{zIndex: '998'}}>
         <div onClick={this.props.toggleColorPicker} style={{ padding: '2px', borderRadius: '1px', boxShadow: '0 0 0 1px rgba(0,0,0,.1)', display: 'inline-block', cursor: 'pointer', marginRight: '8px', backgroundColor: '#FFF' }}>
           <div style={{ height: '16px', width: '32px', background: this.props.highlightColor, borderRadius: '2px'}}></div>
         </div>
         {this.props.displayColorPicker &&
-          <div style={{position: 'absolute', zIndex: '99'}}>
+          <div style={{position: 'absolute'}}>
             <GithubPicker
               colors={[yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700, 'white', 'black']}
               color={this.props.highlightColor}
