@@ -5,6 +5,7 @@ git_source(:github) do |repo_name|
   "https://github.com/#{repo_name}.git"
 end
 
+ruby '2.5.1'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 5.2.0'
@@ -12,6 +13,10 @@ gem 'rails', '~> 5.2.0'
 gem 'pg', '>= 0.18', '< 2.0'
 # Use Puma as the app server
 gem 'puma', '~> 3.7'
+
+# needed for nokogiri
+gem 'pkg-config', "~> 1.1"
+
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 2.5'
 # Use Redis adapter to run Action Cable in production
@@ -21,9 +26,6 @@ gem 'puma', '~> 3.7'
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
-
-# Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
-# gem 'rack-cors'
 
 gem 'devise_token_auth'
 gem 'active_model_serializers'

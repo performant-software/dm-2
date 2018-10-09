@@ -1,8 +1,8 @@
 {
   "name": "digital-mappa-2",
-  "engines": {
-    "node": "9.3.0",
-    "yarn": "1.5.1"
+  "engines": { 
+    "node" : "10.6.0",
+    "yarn" : "1.7.0"
   },
   "scripts": {
     "build": "cd client && yarn install && yarn build && cd ..",
