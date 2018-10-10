@@ -1,28 +1,14 @@
 // adapted from https://discuss.prosemirror.net/t/using-with-react/904
 
 import React, { Component } from 'react';
-import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
 /**
  * This wraps ProseMirror's EditorView into React component.
  */
 export default class ProseMirrorEditorView extends Component {
-  props: {
-    /**
-     * EditorState instance to use.
-     */
-    editorState: EditorState,
-
-    /**
-     * Called when EditorView produces new EditorState.
-     */
-    onEditorState: EditorState => *,
-  };
-
-  _editorView: ?EditorView;
-
-  _createEditorView = (element: ?HTMLElement) => {
+  
+  _createEditorView = (element) => {
     if (element != null) {
 
       this._editorView = new EditorView(element, {
@@ -35,7 +21,7 @@ export default class ProseMirrorEditorView extends Component {
     }
   };
 
-  dispatchTransaction = (tx: any) => {
+  dispatchTransaction = (tx) => {
     // In case EditorView makes any modification to a state we funnel those
     // modifications up to the parent and apply to the EditorView itself.
     this.props.processAndConfirmTransaction(tx, function(tx) {

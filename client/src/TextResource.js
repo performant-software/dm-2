@@ -3,24 +3,27 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
-import { setGlobalCanvasDisplay } from './modules/canvasEditor';
-import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
+
+import { yellow500 } from 'material-ui/styles/colors';
+
 import { schema } from 'prosemirror-schema-basic';
-import { EditorState, Plugin, TextSelection } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { addListNodes } from 'prosemirror-schema-list';
 import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
 import { toggleMark } from 'prosemirror-commands';
 import { MenuItem } from 'prosemirror-menu';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
-import { yellow500 } from 'material-ui/styles/colors';
+
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import HighlightColorSelect from './HighlightColorSelect';
+import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
+import { setGlobalCanvasDisplay } from './modules/canvasEditor';
+import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
 class TextResource extends Component {
 
-  constructor(props: TextResourceProps) {
+  constructor(props) {
     super(props);
 
     const {document_id, timeOpened, setTextHighlightColor} = this.props;
@@ -112,7 +115,7 @@ class TextResource extends Component {
     this.highlight_map = props.highlight_map;
   }
 
-  onEditorState = (editorState: EditorState) => {
+  onEditorState = (editorState) => {
     this.props.updateEditorState(this.props.document_id, editorState);
   }
 
