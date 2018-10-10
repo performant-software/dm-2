@@ -6,14 +6,15 @@ import { connect } from 'react-redux';
 
 import { yellow500 } from 'material-ui/styles/colors';
 
-import { schema } from 'prosemirror-schema-basic';
-import { EditorState, TextSelection } from 'prosemirror-state';
 import { Schema, DOMSerializer } from 'prosemirror-model';
+import { EditorState, TextSelection } from 'prosemirror-state';
+import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
+
+import { schema } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
-import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
 import { toggleMark } from 'prosemirror-commands';
 import { MenuItem } from 'prosemirror-menu';
-import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
+import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -26,19 +27,28 @@ class TextResource extends Component {
   constructor(props) {
     super(props);
 
-    const {document_id, timeOpened, setTextHighlightColor} = this.props;
+    const {document_id, setTextHighlightColor} = this.props;
+    const instanceKey = this.getInstanceKey();
     this.highlight_map = this.props.highlight_map;
     this.highlightsToDuplicate = [];
 
+    const toDOM = function(mark) {
+      const color = this.highlight_map[mark.attrs.highlightUid] ? this.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[instanceKey]);
+      const properties = {
+        class: 'dm-highlight', 
+        style: `background: ${color};`, 
+        onmouseenter: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`, 
+        onclick: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)', 
+        onmouseout: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)'
+      };
+      properties['data-highlight-uid'] = mark.attrs.highlightUid;
+      properties['data-document-id'] = mark.attrs.documentId;
+      return ['span', properties, 0];
+    }.bind(this);
+
     const dmHighlightSpec = {
       attrs: {highlightUid: {default: 'dm_new_highlight'}, documentId: {default: null}, tempColor: {default: null}},
-      toDOM: function(mark) {
-        const color = this.highlight_map[mark.attrs.highlightUid] ? this.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[this.props.document_id]);
-        const properties = {class: 'dm-highlight', style: `background: ${color};`, onmouseenter: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`, onclick: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)', onmouseout: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)'};
-        properties['data-highlight-uid'] = mark.attrs.highlightUid;
-        properties['data-document-id'] = mark.attrs.documentId;
-        return ['span', properties, 0];
-      }.bind(this),
+      toDOM: toDOM,
       parseDOM: [{tag: 'span.dm-highlight', getAttrs(dom) {
         return {
           highlightUid: dom.getAttribute('data-highlight-uid'),
@@ -106,7 +116,7 @@ class TextResource extends Component {
       })
     }));
 
-    setTextHighlightColor(`${document_id}-${timeOpened}`, yellow500);
+    setTextHighlightColor(this.getInstanceKey(), yellow500);
 
     this.scheduledContentUpdate = null;
   }
@@ -133,9 +143,10 @@ class TextResource extends Component {
   createHighlight = (mark, slice, serializer) => {
     const { document_id, highlightColors } = this.props;
     const { highlightUid } = mark.attrs;
+    const instanceKey = this.getInstanceKey();
     let div = document.createElement('div');
     div.appendChild(serializer.serializeFragment(slice.content));
-    this.props.addHighlight(document_id, highlightUid, highlightUid, highlightColors[document_id], div.textContent);
+    this.props.addHighlight(document_id, highlightUid, highlightUid, highlightColors[instanceKey], div.textContent);
   }
 
   handlePaste = (view, event, slice) => {
@@ -159,8 +170,7 @@ class TextResource extends Component {
     let postContentChanges = true;
     const serializer = DOMSerializer.fromSchema(this.schema);
     const { steps } = tx;
-    const { document_id, highlightColors } = this.props;
-    let highlightsToDuplicate = [];
+    const { document_id } = this.props;
     let alteredHighlights = [];
     steps.forEach(step => {
       // save new highlight
@@ -247,19 +257,24 @@ class TextResource extends Component {
     }.bind(this), delay);
   }
 
+  getInstanceKey() {
+    const { document_id, timeOpened } = this.props;
+    return `${document_id}-${timeOpened}`;
+  }
+
   render() {
-    const { document_id, timeOpened, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled } = this.props;
+    const { document_id, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled } = this.props;
     const editorState = editorStates[document_id];
     if (!editorState) return null;
-    const key = `${document_id}-${timeOpened}`;
+    const instanceKey = this.getInstanceKey();
     return (
       <div className="editorview-wrapper" style={{ flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px' }}>
         {writeEnabled &&
           <HighlightColorSelect
-            highlightColor={highlightColors[key]}
-            displayColorPicker={displayColorPickers[key]}
-            setHighlightColor={(color) => {setTextHighlightColor(key, color);}}
-            toggleColorPicker={() => {toggleTextColorPicker(key);}}
+            highlightColor={highlightColors[instanceKey]}
+            displayColorPicker={displayColorPickers[instanceKey]}
+            setHighlightColor={(color) => {setTextHighlightColor(instanceKey, color);}}
+            toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
           />
         }
         <ProseMirrorEditorView
