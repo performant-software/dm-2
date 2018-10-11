@@ -37,9 +37,7 @@ class TextResource extends Component {
       const properties = {
         class: 'dm-highlight', 
         style: `background: ${color};`, 
-        onmouseenter: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`, 
-        onclick: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)', 
-        onmouseout: 'if (window.highlightFocusTimeout) window.clearTimeout(highlightFocusTimeout)'
+        onclick: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`
       };
       properties['data-highlight-uid'] = mark.attrs.highlightUid;
       properties['data-document-id'] = mark.attrs.documentId;
