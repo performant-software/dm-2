@@ -27,10 +27,21 @@ class TextResource extends Component {
   constructor(props) {
     super(props);
 
-    const {document_id, setTextHighlightColor} = this.props;
-    const instanceKey = this.getInstanceKey();
     this.highlight_map = this.props.highlight_map;
     this.highlightsToDuplicate = [];
+
+    const dmSchema = this.createSchema();
+    const dmEditorState = this.createEditorState(dmSchema);
+    this.props.updateEditorState(this.props.document_id, dmEditorState);
+    this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
+
+    this.schema = dmSchema;
+    this.scheduledContentUpdate = null;
+  }
+
+  createSchema() {
+    const { document_id } = this.props;
+    const instanceKey = this.getInstanceKey();
 
     const toDOM = function(mark) {
       const color = this.highlight_map[mark.attrs.highlightUid] ? this.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[instanceKey]);
@@ -56,11 +67,29 @@ class TextResource extends Component {
       }}]
     }
 
-    const dmSchema = new Schema({
+    // create schema based on prosemirror-schema-basic
+    return new Schema({
       nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
       marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
     });
-    this.schema = dmSchema;
+  }
+
+  createEditorState(dmSchema) {
+    const dmMenuContent = this.createMenu(dmSchema);
+    const dmDoc = dmSchema.nodeFromJSON(this.props.content);
+    return EditorState.create({
+      doc: dmDoc,
+      selection: TextSelection.create(dmDoc, 0),
+      plugins: exampleSetup({
+        schema: dmSchema,
+        menuContent: dmMenuContent,
+        floatingMenu: true
+      })
+    })
+  }
+
+  createMenu(dmSchema) {
+    const { document_id } = this.props;
 
     function cmdItem(cmd, options) {
       let passedOptions = {
@@ -102,21 +131,7 @@ class TextResource extends Component {
       dmMenuContent.unshift([toggleHighlight]);
     }
 
-    const dmDoc = dmSchema.nodeFromJSON(this.props.content);
-
-    this.props.updateEditorState(document_id, EditorState.create({
-      doc: dmDoc,
-      selection: TextSelection.create(dmDoc, 0),
-      plugins: exampleSetup({
-        schema: dmSchema,
-        menuContent: dmMenuContent,
-        floatingMenu: true
-      })
-    }));
-
-    setTextHighlightColor(this.getInstanceKey(), yellow500);
-
-    this.scheduledContentUpdate = null;
+    return dmMenuContent;
   }
 
   componentWillReceiveProps(props) {
