@@ -5,11 +5,10 @@ import { DropTarget } from 'react-dnd';
 import { openFolder, closeFolder, updateFolder } from './modules/folders';
 import { updateDocument } from './modules/documentGrid';
 import { loadProject } from './modules/project';
-import LinkableSummary from './LinkableSummary';
 import DocumentFolder from './DocumentFolder';
 
 const ListTargetInner = props => {
-  const { isFolder, isOver, isDraggable, writeEnabled, openDocumentIds, isOpen, item, openFolderContents, allDraggable } = props;
+  const { isFolder, isOver, writeEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
   if (isFolder) {
     let contents = openFolderContents[item.id];
     return <DocumentFolder
@@ -43,7 +42,7 @@ const listDropTarget = {
     return true;
   },
 
-  drop(props, monitor, component) {
+  drop(props, monitor) {
     if (!monitor.didDrop()) {
       const monitorItem = monitor.getItem();
       const isFolder = monitorItem.isFolder;
@@ -74,7 +73,6 @@ function collect(connect, monitor) {
 
 class ListDropTarget extends Component {
   render() {
-    const { isFolder, isOver, isDraggable, writeEnabled, openDocumentIds, isOpen } = this.props;
     return this.props.connectDropTarget(
       <div>
         <ListTargetInner {...this.props} />

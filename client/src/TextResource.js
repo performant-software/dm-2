@@ -5,6 +5,16 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 
 import { yellow500 } from 'material-ui/styles/colors';
+import DropDownMenu from 'material-ui/DropDownMenu';
+import MenuItem from 'material-ui/MenuItem';
+
+import IconButton from 'material-ui/IconButton';
+import FormatBold from 'material-ui/svg-icons/editor/format-bold';
+import FormatItalic from 'material-ui/svg-icons/editor/format-italic';
+import FormatUnderlined from 'material-ui/svg-icons/editor/format-underlined';
+import InsertLink from 'material-ui/svg-icons/editor/insert-link';
+import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
+import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
 
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection } from 'prosemirror-state';
@@ -13,7 +23,6 @@ import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform'
 import { schema } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
 import { toggleMark } from 'prosemirror-commands';
-import { MenuItem } from 'prosemirror-menu';
 import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
@@ -75,15 +84,13 @@ class TextResource extends Component {
   }
 
   createEditorState(dmSchema) {
-    const dmMenuContent = this.createMenu(dmSchema);
     const dmDoc = dmSchema.nodeFromJSON(this.props.content);
     return EditorState.create({
       doc: dmDoc,
       selection: TextSelection.create(dmDoc, 0),
       plugins: exampleSetup({
         schema: dmSchema,
-        menuContent: dmMenuContent,
-        floatingMenu: true
+        menuBar: false
       })
     })
   }
@@ -275,21 +282,92 @@ class TextResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
+  renderDropDownMenu() {
+    const styles = {
+      customWidth: {
+        width: 200,
+      },
+    };
+
+    return (
+      <DropDownMenu
+          value={3}
+          onChange={this.handleChange}
+          style={styles.customWidth}
+          autoWidth={false}
+        >
+          <MenuItem value={1} primaryText="Custom width" />
+          <MenuItem value={2} primaryText="Every Night" />
+          <MenuItem value={3} primaryText="Weeknights" />
+          <MenuItem value={4} primaryText="Weekends" />
+          <MenuItem value={5} primaryText="Weekly" />
+      </DropDownMenu>
+    );
+  }
+
+  renderToolbar() {
+    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled } = this.props;
+
+    if( !writeEnabled ) return <div></div>;
+    const instanceKey = this.getInstanceKey();
+
+    const iconBackdropStyle = {
+      width: '20px',
+      height: '20px',
+      marginBottom: '10px',
+      marginLeft: '5px',
+      background: 'white',
+      padding: '1px',
+      borderRadius: '1px'
+    };
+
+    const iconBackdropStyleActive = Object.assign({}, iconBackdropStyle);
+    // iconBackdropStyleActive.background = cyan100;
+    const iconBackdropStyleSpaced = Object.assign({}, iconBackdropStyle);
+    iconBackdropStyleSpaced.marginLeft = '12px';
+
+    const iconStyle = {
+      width: '18px',
+      height: '18px'
+    }
+
+    return <span>
+      <HighlightColorSelect
+        highlightColor={highlightColors[instanceKey]}
+        displayColorPicker={displayColorPickers[instanceKey]}
+        setHighlightColor={(color) => {setTextHighlightColor(instanceKey, color);}}
+        toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
+      />
+      <IconButton tooltip='Bold selected text.' style={iconBackdropStyleActive} iconStyle={iconStyle}>
+        <FormatBold />
+      </IconButton>
+      <IconButton tooltip='Italicize selected text.' style={iconBackdropStyleActive} iconStyle={iconStyle}>
+        <FormatItalic />
+      </IconButton>
+      <IconButton tooltip='Underline selected text.' style={iconBackdropStyleActive} iconStyle={iconStyle}>
+        <FormatUnderlined />
+      </IconButton>
+      { this.renderDropDownMenu() }
+      <IconButton tooltip='Create a hyperlink.' style={iconBackdropStyleActive} iconStyle={iconStyle}>
+        <InsertLink />
+      </IconButton>
+      <IconButton tooltip='Create a bulleted list.' style={iconBackdropStyleActive} iconStyle={iconStyle}>
+        <FormatListBulleted />
+      </IconButton>
+      <IconButton tooltip='Create a numbered list.' style={iconBackdropStyleActive} iconStyle={iconStyle}>
+        <FormatListNumbered />
+      </IconButton>
+    </span>        
+  }
+
   render() {
-    const { document_id, editorStates, highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled } = this.props;
+    const { document_id, editorStates, writeEnabled } = this.props;
     const editorState = editorStates[document_id];
     if (!editorState) return null;
-    const instanceKey = this.getInstanceKey();
+
     return (
       <div className="editorview-wrapper" style={{ flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px' }}>
-        {writeEnabled &&
-          <HighlightColorSelect
-            highlightColor={highlightColors[instanceKey]}
-            displayColorPicker={displayColorPickers[instanceKey]}
-            setHighlightColor={(color) => {setTextHighlightColor(instanceKey, color);}}
-            toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
-          />
-        }
+        { this.renderToolbar() }
         <ProseMirrorEditorView
           writeEnabled={writeEnabled}
           ref={this.onEditorView}

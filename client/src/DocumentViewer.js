@@ -1,16 +1,9 @@
 import React, { Component } from 'react';
-import { findDOMNode } from 'react-dom'
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import {
 	DragSource,
-	DropTarget,
-	ConnectDropTarget,
-	ConnectDragSource,
-	DropTargetMonitor,
-	DropTargetConnector,
-	DragSourceConnector,
-	DragSourceMonitor,
+	DropTarget
 } from 'react-dnd';
 import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';

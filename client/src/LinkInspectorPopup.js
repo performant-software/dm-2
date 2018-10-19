@@ -6,7 +6,7 @@ import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Subheader from 'material-ui/Subheader';
 import Divider from 'material-ui/Divider';
-import { grey400, yellow50 } from 'material-ui/styles/colors';
+import { yellow50 } from 'material-ui/styles/colors';
 import LinkInspector from './LinkInspector';
 
 export default class LinkInspectorPopup extends Component {

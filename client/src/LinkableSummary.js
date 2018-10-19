@@ -20,7 +20,7 @@ class Summary extends Component {
   }
 
   render() {
-    const { document_title, excerpt, document_kind, document_id, thumbnail_url, color } = this.props.item;
+    const {  document_kind, thumbnail_url } = this.props.item;
     return (
       <ListItem
         leftAvatar={document_kind === 'folder' ? null :

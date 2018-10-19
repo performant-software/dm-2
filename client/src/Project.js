@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
-import { loadProject, updateProject, mouseMove, showSettings, hideSettings, setSidebarIsDragging, setSidebarWidth } from './modules/project';
+import { loadProject, updateProject, showSettings, hideSettings, setSidebarIsDragging, setSidebarWidth } from './modules/project';
 import { selectTarget, closeTarget, promoteTarget } from './modules/annotationViewer';
 import { closeDeleteDialog, confirmDeleteDialog } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';

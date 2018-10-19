@@ -10,7 +10,7 @@ import DocumentFolder from './DocumentFolder';
 import ListDropTarget from './ListDropTarget';
 
 const ListContents = props => {
-  const { items, allDraggable, writeEnabled, openDocumentIds, openFolderContents, insideFolder } = props;
+  const { items, allDraggable, writeEnabled, openDocumentIds, openFolderContents } = props;
   return (
     <div>
       {items.map((item, index) => {
@@ -79,7 +79,7 @@ const ListContents = props => {
 
 class LinkableList extends Component {
   render() {
-    const { items, allDraggable, writeEnabled, openDocumentIds, openFolderContents, insideFolder } = this.props;
+    const { insideFolder } = this.props;
     return (
       <List style={{paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
         <ListContents {...this.props} />

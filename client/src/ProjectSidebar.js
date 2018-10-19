@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { grey400, yellow50 } from 'material-ui/styles/colors';
+import { yellow50 } from 'material-ui/styles/colors';
 import { setSidebarWidth, setSidebarIsDragging } from './modules/project';
 import TableOfContents from './TableOfContents';
 import SidebarLinkInspectorContainer from './SidebarLinkInspectorContainer';

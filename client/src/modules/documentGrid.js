@@ -2,7 +2,7 @@ import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
 import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeTarget} from './annotationViewer';
 import {updateEditorState} from './textEditor';
 import {deleteFolder} from './folders';
-import {setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE} from './canvasEditor';
+import {setAddTileSourceMode, UPLOAD_SOURCE_TYPE} from './canvasEditor';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';

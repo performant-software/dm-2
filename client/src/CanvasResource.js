@@ -235,6 +235,8 @@ class CanvasResource extends Component {
           this.drawLine(this.pointerCoords);
         }
         break;
+      default:
+        break;
     }
   }
 
@@ -267,6 +269,9 @@ class CanvasResource extends Component {
 
           this.overlay.fabricCanvas().renderAll();
           break;
+        default:
+          break;
+  
       }
     }
   }
@@ -648,6 +653,8 @@ class CanvasResource extends Component {
           const baseUrl = this.newTileSourceValue.split('info.json')[0];
           this.imageUrlForThumbnail = baseUrl + 'full/!160,160/0/default.png';
         }
+        break;
+
       default:
         newTileSources.push(this.newTileSourceValue);
     }
@@ -680,7 +687,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, isPencilMode, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
+    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
     const mode = addTileSourceMode[document_id];
     const key = this.getInstanceKey();
 
@@ -706,7 +713,7 @@ class CanvasResource extends Component {
     }
 
     return (
-      <div style={{ flexGrow: '1', display: 'flex', flexGrow: '1', padding: '10px' }}>
+      <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
         <div style={{ display: (mode || !globalCanvasDisplay) ? 'none' : 'flex', flexDirection: 'column', width: '100%' }}>
           {writeEnabled &&
             <div style={{ display: 'flex' }}>
