@@ -1,5 +1,3 @@
-// adapted from https://discuss.prosemirror.net/t/using-with-react/904
-
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
@@ -8,6 +6,7 @@ import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
+import { EditorView } from 'prosemirror-view';
 
 import IconButton from 'material-ui/IconButton';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
@@ -25,9 +24,8 @@ import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform'
 import { schema } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
 import { toggleMark } from 'prosemirror-commands';
-import { exampleSetup, buildMenuItems } from 'prosemirror-example-setup';
+import { exampleSetup } from 'prosemirror-example-setup';
 
-import ProseMirrorEditorView from './ProseMirrorEditorView';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
@@ -41,12 +39,9 @@ class TextResource extends Component {
     this.highlight_map = this.props.highlight_map;
     this.highlightsToDuplicate = [];
 
-    const dmSchema = this.createSchema();
-    const dmEditorState = this.createEditorState(dmSchema);
-    this.props.updateEditorState(this.props.document_id, dmEditorState);
+    this.schema = this.createSchema();
     this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
 
-    this.schema = dmSchema;
     this.scheduledContentUpdate = null;
   }
 
@@ -97,68 +92,64 @@ class TextResource extends Component {
     })
   }
 
-  onHighlight = (e) => {
+  focus() {
+    if (this._editorView) {
+      this._editorView.focus();
+    }
+  }
+
+  getEditorState() {
+    const { editorStates, document_id } = this.props;
+    return editorStates[document_id];
+  }
+
+  onHighlight = () => {
     const markType = this.schema.marks.highlight;
-    const { document_id, editorStates } = this.props;
-    const editorState = editorStates[document_id];
+    const { document_id } = this.props;
+    const editorState = this.getEditorState();
     const cmd = toggleMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
-    // TODO somehow post this command
-    // need the view so I can dispatch.. 
-    // cmd( editorState, editorViewDispatch );
+    cmd( editorState, this.editorView.dispatch );
   }
 
-  // createMenu(dmSchema) {
-  //   const { document_id } = this.props;
+  componentWillReceiveProps(nextProps) {
+    this.highlight_map = nextProps.highlight_map;
 
-  //   function cmdItem(cmd, options) {
-  //     let passedOptions = {
-  //       label: options.title,
-  //       run: cmd
-  //     }
-  //     for (let prop in options) passedOptions[prop] = options[prop]
-  //     if ((!options.enable || options.enable === true) && !options.select)
-  //       passedOptions[options.enable ? "enable" : "select"] = state => cmd(state)
-
-  //     return new MenuItem(passedOptions)
-  //   }
-  //   function markActive(state, type) {
-  //     let {from, $from, to, empty} = state.selection
-  //     if (empty) return type.isInSet(state.storedMarks || $from.marks())
-  //     else return state.doc.rangeHasMark(from, to, type)
-  //   }
-  //   function markItem(markType, options) {
-  //     let passedOptions = {
-  //       active(state) { return markActive(state, markType) },
-  //       enable: true
-  //     }
-  //     for (let prop in options) passedOptions[prop] = options[prop]
-  //     return cmdItem((state, dispatch) => {return toggleMark(markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id}).call(null, state, dispatch);}, passedOptions)
-  //   }
-
-  //   let dmMenuContent = [];
-  //   if (this.props.writeEnabled) {
-  //     const toggleHighlight = markItem(dmSchema.marks.highlight, {
-  //       title: 'Toggle highlight',
-  //       icon: {
-  //         width: 60, height: 60,
-  //         path: 'm12.32,59.74a1,1 0 0 0 1.32,0l33.3,-28.3l0,0l0,0l9.19,-9.19a13,13 0 0 0 -18.32,-18.44l-9.2,9.19l0,0l0,0l-28.38,34.36a1,1 0 0 0 0.1,1.37l11.99,11.01zm26.9,-54.52a11,11 0 1 1 15.56,15.56l-8.49,8.49l-2.47,-2.48l-2.47,-2.48l7.78,-7.78a1,1 0 0 0 0,-1.41l-4.24,-4.24a1,1 0 0 0 -1.41,0l-7.78,7.78l-2.48,-2.47l-2.48,-2.47l8.48,-8.5zm-5.66,21.22a2,2 0 0 1 -0.25,-0.31l0,-0.09a2,2 0 0 1 -0.14,-0.26l0,-0.07a2,2 0 0 1 -0.09,-0.3s0,-0.05 0,-0.08a2,2 0 0 1 0,-0.62s0,0 0,-0.07a2,2 0 0 1 0.09,-0.31l0,-0.07a2,2 0 0 1 0.14,-0.27l0,-0.08a2,2 0 0 1 0.25,-0.31l10.61,-10.6l2.83,2.83l-10.61,10.61a2,2 0 0 1 -2.83,0zm-4.17,-11.25l2.56,2.56l2.32,2.32l-2.12,2.12a4,4 0 0 0 -0.51,0.62l-0.07,0.13a4,4 0 0 0 -0.3,0.57l0,0.07a3.91,3.91 0 0 0 0,2.87l0,0.07a4,4 0 0 0 0.3,0.57l0.07,0.13a4,4 0 0 0 1.13,1.13l0.13,0.07a4,4 0 0 0 0.56,0.3l0.09,0a4,4 0 0 0 0.65,0.19l0,0a3.87,3.87 0 0 0 1.5,0l0,0a4,4 0 0 0 0.66,-0.19l0.09,0a4,4 0 0 0 0.57,-0.3l0.13,-0.07a4,4 0 0 0 0.62,-0.51l2.12,-2.12l2.35,2.35l2.54,2.54l-31.78,27.06l-10.62,-9.77l27.01,-32.71z'
-  //       },
-  //       // active(state) { return false; },
-  //       enable: true
-  //     });
-  //     dmMenuContent = buildMenuItems(dmSchema).fullMenu;
-  //     dmMenuContent.unshift([toggleHighlight]);
-  //   }
-
-  //   return dmMenuContent;
-  // }
-
-  componentWillReceiveProps(props) {
-    this.highlight_map = props.highlight_map;
+    // In case we receive new EditorState through props — we apply it to the
+    // EditorView instance.
+    if (this.editorView) {
+      const editorState = this.getEditorState();
+      if (nextProps.editorState !== editorState) {
+        this.editorView.updateState(nextProps.editorState);
+      }
+    }
   }
 
-  onEditorState = (editorState) => {
-    this.props.updateEditorState(this.props.document_id, editorState);
+  createEditorView(element) {
+    if( !this.editorView ) {
+      const dmEditorState = this.createEditorState(this.schema);
+        
+      this.editorView = new EditorView(element, {
+        state: dmEditorState,
+        dispatchTransaction: this.dispatchTransaction,
+        handlePaste: this.handlePaste,
+        editable: () => this.props.writeEnabled === true
+      });    
+
+      // TODO there's still a problem here first time through.. null state dispatched?
+      this.props.updateEditorState(this.props.document_id, dmEditorState);
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.editorView) {
+      this.editorView.destroy();
+    }
+  }
+
+  shouldComponentUpdate() {
+    // Note that EditorView manages its DOM itself so we'd rather not mess
+    // with it.
+    return false;
   }
 
   collectHighlights(startNode, from, to) {
@@ -196,6 +187,18 @@ class TextResource extends Component {
       this.highlightsToDuplicate.push(markEntry);
     });
   }
+
+  dispatchTransaction = (tx) => {
+    const editorState = this.getEditorState();
+
+    this.processAndConfirmTransaction(tx, function(tx) {
+      const nextEditorState = editorState.apply(tx);
+      if (this.editorView != null) {
+        this.editorView.updateState(nextEditorState);
+      }
+      this.props.updateEditorState(this.props.document_id, nextEditorState);
+    }.bind(this));
+  };
 
   processAndConfirmTransaction = (tx, callback) => {
     let postponeCallback = false;
@@ -352,21 +355,12 @@ class TextResource extends Component {
   }
 
   render() {
-    const { document_id, editorStates, writeEnabled } = this.props;
-    const editorState = editorStates[document_id];
-    if (!editorState) return null;
-
+    const { writeEnabled } = this.props;
+    
     return (
       <div className="editorview-wrapper" style={{ flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px' }}>
         { writeEnabled ? this.renderToolbar() : "" }
-        <ProseMirrorEditorView
-          writeEnabled={writeEnabled}
-          editorState={editorState}
-          onEditorState={this.onEditorState}
-          processAndConfirmTransaction={this.processAndConfirmTransaction}
-          handlePaste={this.handlePaste}
-          setGlobalCanvasDisplay={this.props.setGlobalCanvasDisplay}
-        />
+        <div ref={this.createEditorView.bind(this)} style={{ flexGrow: '1', overflowY: 'scroll' }} />
       </div>
     );
   }
