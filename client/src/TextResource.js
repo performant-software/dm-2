@@ -118,8 +118,8 @@ class TextResource extends Component {
     // EditorView instance.
     if (this.editorView) {
       const editorState = this.getEditorState();
-      if (nextProps.editorState !== editorState) {
-        this.editorView.updateState(nextProps.editorState);
+      if (nextProps.editorState && nextProps.editorState[nextProps.document_id] !== editorState) {
+        this.editorView.updateState(nextProps.editorState[nextProps.document_id]);
       }
     }
   }
@@ -135,7 +135,6 @@ class TextResource extends Component {
         editable: () => this.props.writeEnabled === true
       });    
 
-      // TODO there's still a problem here first time through.. null state dispatched?
       this.props.updateEditorState(this.props.document_id, dmEditorState);
     }
   }
