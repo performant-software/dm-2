@@ -36,12 +36,9 @@ class TextResource extends Component {
   constructor(props) {
     super(props);
 
-    this.highlight_map = this.props.highlight_map;
     this.highlightsToDuplicate = [];
-
     this.schema = this.createSchema();
     this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
-
     this.scheduledContentUpdate = null;
   }
 
@@ -50,7 +47,7 @@ class TextResource extends Component {
     const instanceKey = this.getInstanceKey();
 
     const toDOM = function(mark) {
-      const color = this.highlight_map[mark.attrs.highlightUid] ? this.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[instanceKey]);
+      const color = this.props.highlight_map[mark.attrs.highlightUid] ? this.props.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[instanceKey]);
       const properties = {
         class: 'dm-highlight', 
         style: `background: ${color};`, 
@@ -112,14 +109,13 @@ class TextResource extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    this.highlight_map = nextProps.highlight_map;
-
     // In case we receive new EditorState through props — we apply it to the
     // EditorView instance.
-    if (this.editorView) {
+    if (this.editorView && nextProps.editorState) {
       const editorState = this.getEditorState();
-      if (nextProps.editorState && nextProps.editorState[nextProps.document_id] !== editorState) {
-        this.editorView.updateState(nextProps.editorState[nextProps.document_id]);
+      const nextEditorState = nextProps.editorState[nextProps.document_id];
+      if (nextEditorState !== editorState) {
+        this.editorView.updateState(nextEditorState);
       }
     }
   }
@@ -145,11 +141,11 @@ class TextResource extends Component {
     }
   }
 
-  shouldComponentUpdate() {
-    // Note that EditorView manages its DOM itself so we'd rather not mess
-    // with it.
-    return false;
-  }
+  // shouldComponentUpdate() {
+  //   // Note that EditorView manages its DOM itself so we'd rather not mess
+  //   // with it.
+  //   return false;
+  // }
 
   collectHighlights(startNode, from, to) {
     let highlights = [];
@@ -188,13 +184,10 @@ class TextResource extends Component {
   }
 
   dispatchTransaction = (tx) => {
-    const editorState = this.getEditorState();
-
     this.processAndConfirmTransaction(tx, function(tx) {
+      const editorState = this.getEditorState();
       const nextEditorState = editorState.apply(tx);
-      if (this.editorView != null) {
-        this.editorView.updateState(nextEditorState);
-      }
+      this.editorView.updateState(nextEditorState);
       this.props.updateEditorState(this.props.document_id, nextEditorState);
     }.bind(this));
   };
