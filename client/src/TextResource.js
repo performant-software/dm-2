@@ -6,7 +6,6 @@ import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
-import { EditorView } from 'prosemirror-view';
 
 import IconButton from 'material-ui/IconButton';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
@@ -19,6 +18,7 @@ import BorderColor from 'material-ui/svg-icons/editor/border-color';
 
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
 
 import { schema } from 'prosemirror-schema-basic';
@@ -31,18 +31,25 @@ import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from 
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
+import ProseMirrorEditorView from './ProseMirrorEditorView';
+
 class TextResource extends Component {
 
   constructor(props) {
     super(props);
 
     this.highlightsToDuplicate = [];
-    this.schema = this.createSchema();
     this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
     this.scheduledContentUpdate = null;
+
+    this.state = { 
+      editorView: null, 
+      editorState: null, 
+      documentSchema: this.createDocumentSchema() 
+    };
   }
 
-  createSchema() {
+  createDocumentSchema() {
     const { document_id } = this.props;
     const instanceKey = this.getInstanceKey();
 
@@ -77,81 +84,69 @@ class TextResource extends Component {
     });
   }
 
-  createEditorState(dmSchema) {
-    const dmDoc = dmSchema.nodeFromJSON(this.props.content);
-    return EditorState.create({
-      doc: dmDoc,
-      selection: TextSelection.create(dmDoc, 0),
-      plugins: exampleSetup({
-        schema: dmSchema,
-        menuBar: false
-      })
-    })
-  }
-
-  focus() {
-    if (this._editorView) {
-      this._editorView.focus();
-    }
-  }
-
   getEditorState() {
     const { editorStates, document_id } = this.props;
-    return editorStates[document_id];
+    const dmSchema = this.state.documentSchema;
+    const existingEditorState = editorStates[document_id];
+ 
+    if( !existingEditorState ) {
+      // create a new editor state
+      const dmDoc = dmSchema.nodeFromJSON(this.props.content);
+      const editorState = EditorState.create({
+        doc: dmDoc,
+        selection: TextSelection.create(dmDoc, 0),
+        plugins: exampleSetup({
+          schema: dmSchema,
+          menuBar: false
+        })
+      })
+      this.props.updateEditorState(document_id, editorState);
+      return editorState;
+    } else {
+      return existingEditorState;
+    }
   }
 
   onHighlight = () => {
-    const markType = this.schema.marks.highlight;
+    const markType = this.state.documentSchema.marks.highlight;
     const { document_id } = this.props;
-    const editorState = this.getEditorState();
+    const editorState = this.state.editorState;
     const cmd = toggleMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
-    cmd( editorState, this.editorView.dispatch );
+    cmd( editorState, this.state.editorView.dispatch );
   }
 
   componentWillReceiveProps(nextProps) {
-    // In case we receive new EditorState through props — we apply it to the
-    // EditorView instance.
-    if (this.editorView && nextProps.editorState) {
-      const editorState = this.getEditorState();
-      const nextEditorState = nextProps.editorState[nextProps.document_id];
-      if (nextEditorState !== editorState) {
-        this.editorView.updateState(nextEditorState);
-      }
-    }
+    // When we receive new EditorState through props — we apply it to the
+    // EditorView instance and update local state for this component
+    if (this.state.editorState && nextProps.editorStates ) {
+     const nextEditorState = nextProps.editorStates[this.props.document_id];
+     if( nextEditorState !== this.state.editorState ) {
+        this.state.editorView.updateState(nextEditorState);
+        this.setState({ ...this.state, editorState: nextEditorState });
+     }
+    }      
   }
 
-  createEditorView(element) {
-    if( !this.editorView ) {
-      const dmEditorState = this.createEditorState(this.schema);
-        
-      this.editorView = new EditorView(element, {
-        state: dmEditorState,
+  createEditorView = (element) => {
+    if( !this.state.editorView ) {
+      const editorState = this.getEditorState();
+
+      const editorView = new EditorView(element, {
+        state: editorState,
         dispatchTransaction: this.dispatchTransaction,
         handlePaste: this.handlePaste,
         editable: () => this.props.writeEnabled === true
       });    
 
-      this.props.updateEditorState(this.props.document_id, dmEditorState);
+      this.setState( { ...this.state, editorView, editorState });
     }
   }
-
-  componentWillUnmount() {
-    if (this.editorView) {
-      this.editorView.destroy();
-    }
-  }
-
-  // shouldComponentUpdate() {
-  //   // Note that EditorView manages its DOM itself so we'd rather not mess
-  //   // with it.
-  //   return false;
-  // }
 
   collectHighlights(startNode, from, to) {
     let highlights = [];
     startNode.nodesBetween(from, to, node => {
       node.marks.forEach(mark => {
-        if (mark.type.name === this.schema.marks.highlight.name)
+        if (mark.type.name === this.state.documentSchema.marks.highlight.name)
           highlights.push(mark);
       });
     });
@@ -172,7 +167,7 @@ class TextResource extends Component {
     let pastedMarks = [];
     slice.content.descendants(node => {
       node.marks.forEach(mark => {
-        if (mark.type === this.schema.marks.highlight) pastedMarks.push(mark);
+        if (mark.type === this.state.documentSchema.marks.highlight) pastedMarks.push(mark);
       });
     });
     pastedMarks.forEach((mark, index) => {
@@ -185,9 +180,10 @@ class TextResource extends Component {
 
   dispatchTransaction = (tx) => {
     this.processAndConfirmTransaction(tx, function(tx) {
-      const editorState = this.getEditorState();
+      const editorState = this.state.editorState;
       const nextEditorState = editorState.apply(tx);
-      this.editorView.updateState(nextEditorState);
+      this.state.editorView.updateState(nextEditorState);
+      this.setState({ ...this.state, editorState: nextEditorState });
       this.props.updateEditorState(this.props.document_id, nextEditorState);
     }.bind(this));
   };
@@ -195,17 +191,17 @@ class TextResource extends Component {
   processAndConfirmTransaction = (tx, callback) => {
     let postponeCallback = false;
     let postContentChanges = true;
-    const serializer = DOMSerializer.fromSchema(this.schema);
+    const serializer = DOMSerializer.fromSchema(this.state.documentSchema);
     const { steps } = tx;
     const { document_id } = this.props;
     let alteredHighlights = [];
     steps.forEach(step => {
       // save new highlight
-      if (step instanceof AddMarkStep && step.mark.type.name === this.schema.marks.highlight.name) {
+      if (step instanceof AddMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name) {
         this.createHighlight(step.mark, tx.curSelection.content(), serializer);
       }
       // process highlights that have been removed or altered by a text content change or a mark toggle
-      else if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === this.schema.marks.highlight.name)) {
+      else if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name)) {
         // TODO: handle case where the space between two highlights is eliminated
         // pad the range where we look for effected highlights in order to accommodate edge cases with cursor at beginning or end of highlight
         let from = Math.max(step.from - 1, 0), to = step.to;
@@ -215,7 +211,7 @@ class TextResource extends Component {
             to += 1;
           }
         }
-        const effectedMarks = this.collectHighlights(this.props.editorStates[this.props.document_id].doc, from, to);
+        const effectedMarks = this.collectHighlights(this.state.editorState.doc, from, to);
         const additionTo = step.to + (tx.doc.nodeSize - tx.before.nodeSize);
         const possibleNewMarks = this.collectHighlights(tx.doc, step.from, additionTo);
         possibleNewMarks.forEach(mark => {
@@ -227,7 +223,7 @@ class TextResource extends Component {
           let removedMarks = effectedMarks.slice(0);
           tx.doc.descendants(node => {
             node.marks.forEach(mark => {
-              if (mark.type.name === this.schema.marks.highlight.name) {
+              if (mark.type.name === this.state.documentSchema.marks.highlight.name) {
                 const effectedIndex = effectedMarks.indexOf(mark);
                 if (effectedIndex >= 0) {
                   if (this.props.highlight_map[mark.attrs.highlightUid] && serializer.serializeNode(node).textContent !== this.props.highlight_map[mark.attrs.highlightUid].excerpt) {
@@ -346,13 +342,18 @@ class TextResource extends Component {
     );
   }
 
-  render() {
-    const { writeEnabled } = this.props;
-    
+  render() {    
+    const editorViewWrapperStyle = {
+      flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px'
+    };
+
     return (
-      <div className="editorview-wrapper" style={{ flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px' }}>
-        { writeEnabled ? this.renderToolbar() : "" }
-        <div ref={this.createEditorView.bind(this)} style={{ flexGrow: '1', overflowY: 'scroll' }} />
+      <div className="editorview-wrapper" style={editorViewWrapperStyle}>
+        { this.props.writeEnabled ? this.renderToolbar() : "" }
+        <ProseMirrorEditorView
+          editorView={this.state.editorView}
+          createEditorView={this.createEditorView}
+        />
       </div>
     );
   }
