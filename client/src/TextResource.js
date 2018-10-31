@@ -115,6 +115,21 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onBold = () => {
+    const markType = this.state.documentSchema.marks.strong;
+    const editorState = this.state.editorState;
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onItalic = () => {
+    const markType = this.state.documentSchema.marks.em;
+    const editorState = this.state.editorState;
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+
   componentWillReceiveProps(nextProps) {
     // When we receive new EditorState through props — we apply it to the
     // EditorView instance and update local state for this component
@@ -318,10 +333,10 @@ class TextResource extends Component {
           <IconButton onClick={this.onHighlight} tooltip='Highlight a passage of text.'>
             <BorderColor />
           </IconButton>
-          <IconButton tooltip='Bold selected text.'>
+          <IconButton onClick={this.onBold} tooltip='Bold selected text.'>
             <FormatBold />
           </IconButton>
-          <IconButton tooltip='Italicize selected text.'>
+          <IconButton onClick={this.onItalic} tooltip='Italicize selected text.'>
             <FormatItalic />
           </IconButton>
           <IconButton tooltip='Underline selected text.'>
