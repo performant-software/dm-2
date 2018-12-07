@@ -322,7 +322,7 @@ class TextResource extends Component {
     const instanceKey = this.getInstanceKey();
 
     return (
-      <Toolbar>
+      <Toolbar style={{ minHeight: '55px' }}>
         <ToolbarGroup>
           <HighlightColorSelect
             highlightColor={highlightColors[instanceKey]}

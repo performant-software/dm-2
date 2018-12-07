@@ -9,12 +9,12 @@ import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
-import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import Link from 'material-ui/svg-icons/content/link';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
-import { updateDocument, closeDocument, moveDocument, openDeleteDialog, DOCUMENT_DELETE, layoutOptions } from './modules/documentGrid';
+import { updateDocument, closeDocument, moveDocument, openDeleteDialog, layoutOptions } from './modules/documentGrid';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
+import DocumentStatusBar from './DocumentStatusBar';
 
 const DocumentInner = function(props) {
   switch (props.document_kind) {
@@ -136,24 +136,6 @@ class DocumentViewer extends Component {
                     }}
                     disabled={!this.props.writeEnabled}
                   />
-                  {this.props.writeEnabled &&
-                    <IconButton
-                      tooltip='Delete document'
-                      onClick={() => {
-                        this.props.openDeleteDialog(
-                          'Destroying "' + this.props.resourceName + '"',
-                          'Deleting this document will destroy all its associated highlights and links, as well as the content of the document itself.',
-                          'Destroy document',
-                          { documentId: this.props.document_id },
-                          DOCUMENT_DELETE
-                        );
-                      }}
-                      style={buttonStyle}
-                      iconStyle={iconStyle}
-                    >
-                      <DeleteForever color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
-                    </IconButton>
-                  }
                   <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
                     <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
                   </IconButton>
@@ -161,6 +143,11 @@ class DocumentViewer extends Component {
               </div>
             )}
             <DocumentInner {...this.props} />
+            <DocumentStatusBar 
+              document_id={this.props.document_id}
+              document_kind={this.props.document_kind} 
+              resourceName={this.props.resourceName} 
+              writeEnabled={this.props.writeEnabled} ></DocumentStatusBar>
           </div>
         )}
       </Paper>

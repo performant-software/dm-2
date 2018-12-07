@@ -1,0 +1,93 @@
+import React, { Component } from 'react';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux';
+import { updateDocument, closeDocument, moveDocument, openDeleteDialog, DOCUMENT_DELETE } from './modules/documentGrid';
+import IconButton from 'material-ui/IconButton';
+import RaisedButton from 'material-ui/RaisedButton';
+import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
+import { grey900 } from 'material-ui/styles/colors';
+
+
+class DocumentStatusBar extends Component {
+
+    renderStatusMessage() {
+
+        const style = {
+            color: this.props.document_kind === 'canvas' ? 'white' : 'black'
+        };
+        // Checked in state
+        // Checked out state
+        // Checkout out by another state
+        const statusMessage = "Check this document out to edit it.";
+
+        return (
+            <span style={style}>{statusMessage}</span>
+        );
+    }
+
+    renderCheckInOutButtons() {
+        const label = 'check out';
+        
+        return (
+            <RaisedButton 
+                style={{margin: '10px'}}
+                label={label}
+                onClick={() => {
+                    // TODO
+                }}            
+            ></RaisedButton>
+        );
+    }
+
+    renderDeleteButton() {
+        if( !this.props.writeEnabled ) return null;
+
+        return (
+            <IconButton style={{ float: 'right', marginTop:'5px'}}
+                tooltip='Delete document'
+                onClick={() => {
+                this.props.openDeleteDialog(
+                    'Destroying "' + this.props.resourceName + '"',
+                    'Deleting this document will destroy all its associated highlights and links, as well as the content of the document itself.',
+                    'Destroy document',
+                    { documentId: this.props.document_id },
+                    DOCUMENT_DELETE
+                );
+                }}
+            >
+                <DeleteForever color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+            </IconButton>
+        );
+    }
+  
+    render() {
+
+        const style = {
+            backgroundColor: this.props.document_kind === 'canvas' ? '#424242' : '#ccc',
+            paddingLeft: '7px'
+        }
+
+        return ( 
+            <div style={style} >
+                { this.renderCheckInOutButtons() }
+                { this.renderStatusMessage() }
+                { this.renderDeleteButton() }
+            </div> 
+        );
+    }
+}
+
+const mapStateToProps = state => ({
+});
+  
+const mapDispatchToProps = dispatch => bindActionCreators({
+    updateDocument,
+    closeDocument,
+    moveDocument,
+    openDeleteDialog
+}, dispatch);
+  
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(DocumentStatusBar);
