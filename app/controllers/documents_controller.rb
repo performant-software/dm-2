@@ -12,7 +12,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1
   def show
-    render json: @document, include: ['project_id', 'locked_by', 'locked', 'created_by', 'highlights', 'highlights.links_to', 'links_to']
+    render json: @document
   end
 
   # POST /documents
@@ -38,6 +38,13 @@ class DocumentsController < ApplicationController
   # DELETE /documents/1
   def destroy
     @document.destroy
+  end
+
+  # PATCH /documents/1/lock
+  def lock
+    # TODO lock or unlock this document if permissions are right
+    # record who locked it
+    render json: @document
   end
 
   # PUT /documents/1/add_images
@@ -69,6 +76,6 @@ class DocumentsController < ApplicationController
     end
 
     def document_params
-      params.require(:document).permit(:title, :locked, :document_kind, :parent_id, :parent_type, :buoyancy, :images => [], :content => {})
+      params.require(:document).permit(:title, :document_kind, :parent_id, :parent_type, :buoyancy, :images => [], :content => {})
     end
 end

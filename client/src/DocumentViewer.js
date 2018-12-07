@@ -146,6 +146,7 @@ class DocumentViewer extends Component {
             <DocumentStatusBar 
               document_id={this.props.document_id}
               document_kind={this.props.document_kind} 
+              locked={this.props.locked}
               resourceName={this.props.resourceName} 
               writeEnabled={this.props.writeEnabled} ></DocumentStatusBar>
           </div>

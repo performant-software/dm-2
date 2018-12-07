@@ -5,8 +5,6 @@ import { updateDocument, closeDocument, moveDocument, openDeleteDialog, DOCUMENT
 import IconButton from 'material-ui/IconButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
-import { grey900 } from 'material-ui/styles/colors';
-
 
 class DocumentStatusBar extends Component {
 
@@ -15,10 +13,8 @@ class DocumentStatusBar extends Component {
         const style = {
             color: this.props.document_kind === 'canvas' ? 'white' : 'black'
         };
-        // Checked in state
-        // Checked out state
         // Checkout out by another state
-        const statusMessage = "Check this document out to edit it.";
+        const statusMessage = this.props.locked ? "Check this document in to allow others to edit." : "Check this document out to edit it.";
 
         return (
             <span style={style}>{statusMessage}</span>
@@ -26,7 +22,7 @@ class DocumentStatusBar extends Component {
     }
 
     renderCheckInOutButtons() {
-        const label = 'check out';
+        const label = this.props.locked ? 'check in' : 'check out';
         
         return (
             <RaisedButton 

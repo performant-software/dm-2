@@ -73,7 +73,21 @@ class Project extends Component {
           <LinkInspectorPopupLayer targets={this.props.selectedTargets} closeHandler={this.props.closeTarget} mouseDownHandler={this.props.promoteTarget} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} sidebarWidth={this.props.sidebarWidth} />
           <div id='document-grid-inner' style={{ margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, display: 'flex', flexWrap: 'wrap', overflow: 'hidden' }}>
             {this.props.openDocuments.map((document, index) => (
-              <DocumentViewer key={`${document.id}-${document.timeOpened}`} index={index} document_id={document.id}  timeOpened={document.timeOpened} resourceName={document.title} document_kind={document.document_kind} content={document.content} highlight_map={document.highlight_map} image_thumbnail_urls={document.image_thumbnail_urls} image_urls={document.image_urls} linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} writeEnabled={this.props.writeEnabled} />
+              <DocumentViewer 
+                key={`${document.id}-${document.timeOpened}`} 
+                index={index} 
+                document_id={document.id}  
+                timeOpened={document.timeOpened} 
+                resourceName={document.title} 
+                document_kind={document.document_kind} 
+                content={document.content} 
+                highlight_map={document.highlight_map} 
+                image_thumbnail_urls={document.image_thumbnail_urls} 
+                image_urls={document.image_urls} 
+                linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
+                writeEnabled={this.props.writeEnabled} 
+                locked={document.locked}
+              />
             ))}
           </div>
         </div>

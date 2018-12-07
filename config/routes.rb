@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   post '/highlights/:id/set_thumbnail' => 'highlights#set_thumbnail'
   post '/documents/:id/set_thumbnail' => 'documents#set_thumbnail'
   put '/documents/:id/add_images' => 'documents#add_images'
+  patch '/documents/:id/lock' => 'documents#lock'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?

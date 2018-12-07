@@ -834,7 +834,7 @@ class CanvasResource extends Component {
                   )}
                   <br /><br />
                   {image_thumbnail_urls.map((thumbnailUrl, index) =>
-                    <img key={`thumbnail-${document_id}-${index}`} src={thumbnailUrl} style={{ maxWidth: '40px', maxHeight: '40px' }} />
+                    <img alt='' key={`thumbnail-${document_id}-${index}`} src={thumbnailUrl} style={{ maxWidth: '40px', maxHeight: '40px' }} />
                   )}
                 </div>
               )}
