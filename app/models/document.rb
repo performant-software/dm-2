@@ -7,6 +7,22 @@ class Document < Linkable
   has_many :highlights, dependent: :destroy
   has_many_attached :images
 
+  def adjust_lock( user, state )
+    if locked_by == nil || locked_by.id == user.id
+      if( state == true )
+        self.locked = true
+        self.locked_by = user
+      else
+        self.locked = false
+        self.locked_by = nil
+      end
+      return self.save
+    else
+      # if it is locked by someone else
+      return false
+    end
+  end
+  
   def document_id
     self.id
   end

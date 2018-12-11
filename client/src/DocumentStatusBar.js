@@ -9,12 +9,23 @@ import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 class DocumentStatusBar extends Component {
 
     renderStatusMessage() {
-
-        const style = {
+        let style = {
             color: this.props.document_kind === 'canvas' ? 'white' : 'black'
         };
-        // Checkout out by another state
-        const statusMessage = this.props.locked ? "Check this document in to allow others to edit." : "Check this document out to edit it.";
+
+        let statusMessage;
+        if( this.props.locked ) {
+            if( this.props.lockedByMe ) {
+                statusMessage = "Check this document in to allow others to edit."
+            } else {
+                statusMessage = `This document is checked out by ${this.props.lockedByUserName}.`;
+                style.display = 'block'
+                style.height = '20px'
+                style.padding = '5px'
+            }
+        } else {
+            statusMessage = "Check this document out to edit it.";
+        }
 
         return (
             <span style={style}>{statusMessage}</span>
@@ -22,7 +33,16 @@ class DocumentStatusBar extends Component {
     }
 
     renderCheckInOutButtons() {
-        const label = this.props.locked ? 'check in' : 'check out';
+        let label;
+        if( this.props.locked ) {
+            if( this.props.lockedByMe ) {
+                label = 'check in';
+            } else {
+                return null;
+            }
+        } else {
+            label = 'check out';
+        }
         
         return (
             <RaisedButton 
@@ -36,6 +56,9 @@ class DocumentStatusBar extends Component {
     }
 
     renderDeleteButton() {
+        // don't allow deletion if locked by someone else
+        if( this.props.locked && !this.props.lockedByMe ) return null;
+
         return (
             <IconButton style={{ float: 'right', marginTop:'5px'}}
                 tooltip='Delete document'

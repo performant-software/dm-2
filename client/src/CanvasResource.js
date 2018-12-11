@@ -687,7 +687,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, replaceDocument, writeEnabled, globalCanvasDisplay } = this.props;
+    const { document_id, image_thumbnail_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, addTileSourceMode, setAddTileSourceMode, replaceDocument, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
     const mode = addTileSourceMode[document_id];
     const key = this.getInstanceKey();
 
@@ -712,10 +712,12 @@ class CanvasResource extends Component {
       height: '18px'
     }
 
+    let editable = ( writeEnabled && lockedByMe );
+
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
         <div style={{ display: (mode || !globalCanvasDisplay) ? 'none' : 'flex', flexDirection: 'column', width: '100%' }}>
-          {writeEnabled &&
+          {editable &&
             <div style={{ display: 'flex' }}>
               <HighlightColorSelect
                 highlightColor={highlightColors[key]}

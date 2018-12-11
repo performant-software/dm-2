@@ -1,12 +1,12 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :update, :destroy, :add_images, :set_thumbnail]
+  before_action :set_document, only: [:show, :update, :destroy, :add_images, :set_thumbnail, :lock]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :update, :destroy, :set_thumbnail] do
+  before_action only: [:create, :update, :destroy, :set_thumbnail, :lock] do
     validate_user_write(@project)
   end
 
@@ -42,8 +42,8 @@ class DocumentsController < ApplicationController
 
   # PATCH /documents/1/lock
   def lock
-    # TODO lock or unlock this document if permissions are right
-    # record who locked it
+    locked = params['locked']
+    @document.adjust_lock( current_user, locked ) 
     render json: @document
   end
 

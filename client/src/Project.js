@@ -87,6 +87,8 @@ class Project extends Component {
                 linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
                 writeEnabled={this.props.writeEnabled} 
                 locked={document.locked}
+                lockedByUserName={document.locked_by_user_name}
+                lockedByMe={document.locked_by_me}
               />
             ))}
           </div>
