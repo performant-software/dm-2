@@ -36,8 +36,6 @@ class DocumentStatusBar extends Component {
     }
 
     renderDeleteButton() {
-        if( !this.props.writeEnabled ) return null;
-
         return (
             <IconButton style={{ float: 'right', marginTop:'5px'}}
                 tooltip='Delete document'
@@ -57,7 +55,8 @@ class DocumentStatusBar extends Component {
     }
   
     render() {
-
+        if( !this.props.writeEnabled ) return null;
+        
         const style = {
             backgroundColor: this.props.document_kind === 'canvas' ? '#424242' : '#ccc',
             paddingLeft: '7px'

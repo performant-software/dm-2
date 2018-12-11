@@ -55,6 +55,6 @@ class DocumentFoldersController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def document_folder_params
-      params.require(:document_folder).permit(:project_id, :title, :created_by_id, :parent_id, :parent_type, :buoyancy)
+      params.require(:document_folder).permit(:project_id, :title, :parent_id, :parent_type, :buoyancy)
     end
 end
