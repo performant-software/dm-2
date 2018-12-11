@@ -1,5 +1,4 @@
 class Highlight < Linkable
-  belongs_to :created_by, class_name: 'User', optional: true
   belongs_to :document, touch: true
 
   def highlight_id

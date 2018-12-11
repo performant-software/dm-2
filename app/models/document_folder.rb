@@ -1,6 +1,5 @@
 class DocumentFolder < ApplicationRecord
   belongs_to :project, touch: true
-  belongs_to :created_by, class_name: 'User', optional: true
   belongs_to :parent, polymorphic: true
   has_many :documents, as: :parent, dependent: :destroy
   has_many :document_folders, as: :parent, dependent: :destroy

@@ -2,7 +2,6 @@ include Rails.application.routes.url_helpers
 
 class Document < Linkable
   belongs_to :project, touch: true
-  belongs_to :created_by, class_name: 'User', optional: true
   belongs_to :locked_by, class_name: 'User', optional: true
   belongs_to :parent, polymorphic: true, optional: true
   has_many :highlights, dependent: :destroy
