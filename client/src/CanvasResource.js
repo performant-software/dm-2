@@ -528,7 +528,6 @@ class CanvasResource extends Component {
 
     this.stopDrawing()
     this.lockCanvasObjects(true);
-    // TODO disable editing and enable highlight popup
     this.currentMode = 'pan';
     this.osdViewer.setMouseNavEnabled(true);
   }
@@ -713,6 +712,10 @@ class CanvasResource extends Component {
     }
 
     let editable = ( writeEnabled && lockedByMe );
+
+    if( !editable && this.currentMode != 'pan' ) {
+      this.panClick();
+    }
 
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>

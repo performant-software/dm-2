@@ -142,16 +142,19 @@ class TextResource extends Component {
     }      
   }
 
-  createEditorView = (element) => {
-    const editable = ( this.props.writeEnabled && this.props.lockedByMe );
+  isEditable = () => {
+    const { writeEnabled, lockedByMe } = this.props;
+    return ( writeEnabled && lockedByMe );
+  }
 
+  createEditorView = (element) => {
     if( !this.state.editorView ) {
       const editorState = this.getEditorState();      
       const editorView = new EditorView(element, {
         state: editorState,
         dispatchTransaction: this.dispatchTransaction,
         handlePaste: this.handlePaste,
-        editable: () => editable === true
+        editable: this.isEditable
       });    
 
       this.setState( { ...this.state, editorView, editorState });
@@ -317,10 +320,9 @@ class TextResource extends Component {
   }
 
   renderToolbar() {
-    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, writeEnabled, lockedByMe } = this.props;
-    const editable = ( writeEnabled && lockedByMe );
+    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker } = this.props;
 
-    if( !editable ) return <div></div>;
+    if( !this.isEditable() ) return <div></div>;
     const instanceKey = this.getInstanceKey();
 
     return (
