@@ -30,9 +30,6 @@ export const DUPLICATE_HIGHLIGHTS_ERRORED = 'document_grid/DUPLICATE_HIGHLIGHTS_
 export const UPDATE_DOCUMENT = 'document_grid/UPDATE_CONTENT';
 export const PATCH_SUCCESS = 'document_grid/PATCH_SUCCESS';
 export const PATCH_ERRORED = 'document_grid/PATCH_ERRORED';
-export const DOCUMENT_LOCK = 'document_grid/DOCUMENT_LOCK';
-export const LOCK_SUCCESS = 'document_grid/LOCK_SUCCESS';
-export const LOCK_ERRORED = 'document_grid/LOCK_ERRORED';
 export const NEW_DOCUMENT = 'document_grid/NEW_DOCUMENT';
 export const POST_SUCCESS = 'document_grid/POST_SUCCESS';
 export const POST_ERRORED = 'document_grid/POST_ERRORED';
@@ -78,7 +75,6 @@ export default function(state = initialState, action) {
     case UPDATE_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
-    case DOCUMENT_LOCK:
       return {
         ...state,
         loading: true
@@ -546,7 +542,10 @@ export function updateDocument(documentId, attributes, options) {
       type: UPDATE_DOCUMENT
     });
 
-    return fetch(`/documents/${documentId}`, {
+    // patch via the lock method if we're adjusting the state of the lock
+    const url = ( options && options.adjustLock ) ? `/documents/${documentId}/lock` : `/documents/${documentId}`;
+
+    return fetch(url, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -799,46 +798,6 @@ export function deleteDocument(documentId) {
       type: DELETE_ERRORED
     }));
   };
-}
-
-
-export function updateDocumentLock(documentId) {
-  // return function(dispatch, getState) {
-  //   dispatch({
-  //     type: DOCUMENT_LOCK
-  //   });
-
-  //   return fetch(`/documents/lock/${documentId}`, {
-  //     headers: {
-  //       'Accept': 'application/json',
-  //       'Content-Type': 'application/json',
-  //       'access-token': localStorage.getItem('access-token'),
-  //       'token-type': localStorage.getItem('token-type'),
-  //       'client': localStorage.getItem('client'),
-  //       'expiry': localStorage.getItem('expiry'),
-  //       'uid': localStorage.getItem('uid')
-  //     },
-  //     method: 'PATCH',
-  //     body: JSON.stringify(attributes)
-  //   })
-  //   .then(response => {
-  //     if (!response.ok) {
-  //       throw Error(response.statusText);
-  //     }
-  //     return response;
-  //   })
-  //   .then(response => response.json())
-  //   .then(document => {
-  //     dispatch({
-  //       type: LOCK_SUCCESS,
-  //       document
-  //     });
-  //     // TODO
-  //   })
-  //   .catch(() => dispatch({
-  //     type: LOCK_ERRORED
-  //   }));
-  // }
 }
 
 export function openDeleteDialog(title, body, submit, payload, kind) {

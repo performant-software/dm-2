@@ -6,8 +6,11 @@ class DocumentsController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :update, :destroy, :set_thumbnail, :lock] do
+  before_action only: [:create] do
     validate_user_write(@project)
+  end
+  before_action only: [:update, :destroy, :set_thumbnail] do
+    validate_user_write(@project) && validate_document_lock(@document)
   end
 
   # GET /documents/1
@@ -43,10 +46,13 @@ class DocumentsController < ApplicationController
   # PATCH /documents/1/lock
   def lock
     locked = params['locked']
-    @document.adjust_lock( current_user, locked ) 
-    render json: @document
+    if @document.adjust_lock( current_user, locked ) && @document.save
+      render json: @document
+    else
+      render json: @document.errors, status: :unprocessable_entity
+    end
   end
-
+  
   # PUT /documents/1/add_images
   def add_images
     @document.images.attach(document_params[:images])
@@ -76,6 +82,6 @@ class DocumentsController < ApplicationController
     end
 
     def document_params
-      params.require(:document).permit(:title, :document_kind, :parent_id, :parent_type, :buoyancy, :images => [], :content => {})
+      params.require(:document).permit(:title, :parent_id, :parent_type, :buoyancy, :images => [], :content => {})
     end
 end

@@ -16,7 +16,7 @@ class Document < Linkable
         self.locked = false
         self.locked_by = nil
       end
-      return self.save
+      return true
     else
       # if it is locked by someone else
       return false

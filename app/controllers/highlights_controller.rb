@@ -10,10 +10,12 @@ class HighlightsController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :update, :destroy, :set_thumbnail] do
+  before_action only: [:create] do
     validate_user_write(@project)
   end
-
+  before_action only: [:update, :destroy, :set_thumbnail] do
+    validate_user_write(@project) && validate_document_lock(@document)
+  end
 
   # GET /highlights/1
   def show
@@ -116,6 +118,7 @@ class HighlightsController < ApplicationController
     def set_highlight
       @highlight = Highlight.find(params[:id])
       @project = @highlight.project
+      @document = @highlight.document
     end
 
     # Only allow a trusted parameter "white list" through.

@@ -9,6 +9,7 @@ class ApplicationController < ActionController::API
       format.html { render body: Rails.root.join('public/index.html').read }
     end
   end
+  
 
   protected
 
@@ -41,6 +42,15 @@ class ApplicationController < ActionController::API
       head :forbidden
     end
     false
+  end
+
+  def validate_document_lock(document)
+    if document.locked_by == nil || document.locked_by.id != current_user.id
+      head :fobidden
+      return false
+    else
+      return true
+    end
   end
 
   def validate_user_admin(project)

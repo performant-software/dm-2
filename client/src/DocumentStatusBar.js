@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { updateDocument, closeDocument, moveDocument, openDeleteDialog, DOCUMENT_DELETE } from './modules/documentGrid';
+import { updateDocument, openDeleteDialog, DOCUMENT_DELETE } from './modules/documentGrid';
 import IconButton from 'material-ui/IconButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
@@ -49,7 +49,7 @@ class DocumentStatusBar extends Component {
                 style={{margin: '10px'}}
                 label={label}
                 onClick={() => {
-                    // TODO
+                    this.props.updateDocument(this.props.document_id, { locked: !this.props.locked }, {adjustLock: true} )
                 }}            
             ></RaisedButton>
         );
@@ -100,8 +100,6 @@ const mapStateToProps = state => ({
   
 const mapDispatchToProps = dispatch => bindActionCreators({
     updateDocument,
-    closeDocument,
-    moveDocument,
     openDeleteDialog
 }, dispatch);
   
