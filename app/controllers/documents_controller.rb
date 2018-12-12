@@ -21,6 +21,7 @@ class DocumentsController < ApplicationController
   # POST /documents
   def create
     @document = Document.new(new_document_params)
+    @document.adjust_lock( current_user, true )
 
     if @document.save
       render json: @document, status: :created, location: @document
