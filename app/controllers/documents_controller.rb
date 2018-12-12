@@ -9,7 +9,7 @@ class DocumentsController < ApplicationController
   before_action only: [:create] do
     validate_user_write(@project)
   end
-  before_action only: [:update, :destroy, :set_thumbnail] do
+  before_action only: [:update, :set_thumbnail] do
     validate_user_write(@project) && validate_document_lock(@document)
   end
 
@@ -41,7 +41,11 @@ class DocumentsController < ApplicationController
 
   # DELETE /documents/1
   def destroy
-    @document.destroy
+    if @document.locked_by == nil || @document.locked_by.id == current_user.id
+      @document.destroy    
+    else
+      head :fobidden
+    end
   end
 
   # PATCH /documents/1/lock

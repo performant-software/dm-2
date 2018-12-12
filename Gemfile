@@ -27,7 +27,7 @@ gem 'pkg-config', "~> 1.1"
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'devise_token_auth'
+gem 'devise_token_auth', '~> 1.0'
 gem 'active_model_serializers'
 gem 'bootsnap', require: false
 gem 'image_processing', '~> 1.2'
