@@ -83,6 +83,18 @@ class DocumentViewer extends Component {
     this.props.connectDragPreview(new Image());
   }
 
+  isEditable = () => {
+    const { writeEnabled, lockedByMe } = this.props;
+    return ( writeEnabled && lockedByMe );
+  }
+
+  onChangeTitle = (event, newValue) => {
+    window.clearTimeout(this.titleChangeTimeout);
+    this.titleChangeTimeout = window.setTimeout(() => {
+      this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
+    }, this.titleChangeDelayMs);
+  }
+
   render() {
     const iconStyle = {
       padding: '0',
@@ -128,13 +140,8 @@ class DocumentViewer extends Component {
                     inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
                     defaultValue={this.props.resourceName}
                     underlineShow={false}
-                    onChange={(event, newValue) => {
-                      window.clearTimeout(this.titleChangeTimeout);
-                      this.titleChangeTimeout = window.setTimeout(() => {
-                        this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
-                      }, this.titleChangeDelayMs);
-                    }}
-                    disabled={!this.props.writeEnabled}
+                    onChange={this.onChangeTitle}
+                    disabled={!this.isEditable()}
                   />
                   <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
                     <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
