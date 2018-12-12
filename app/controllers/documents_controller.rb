@@ -47,7 +47,8 @@ class DocumentsController < ApplicationController
   # PATCH /documents/1/lock
   def lock
     locked = params['locked']
-    if @document.adjust_lock( current_user, locked ) && @document.save
+    @document.adjust_lock( current_user, locked )
+    if @document.save
       render json: @document
     else
       render json: @document.errors, status: :unprocessable_entity
