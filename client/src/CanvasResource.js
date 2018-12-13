@@ -713,7 +713,7 @@ class CanvasResource extends Component {
 
     let editable = ( writeEnabled && lockedByMe );
 
-    if( !editable && this.currentMode != 'pan' ) {
+    if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
     }
 

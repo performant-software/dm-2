@@ -6,7 +6,7 @@ import store, { history } from './store';
 import { verifyCredentials } from './modules/redux-token-auth-config';
 import './index.css';
 import App from './App';
-import registerServiceWorker from './registerServiceWorker';
+import unregister from './registerServiceWorker';
 
 verifyCredentials(store);
 
@@ -20,4 +20,7 @@ ReactDOM.render(
   </Provider>,
   document.getElementById('root')
 );
-registerServiceWorker();
+
+unregister();
+// TODO perhaps enable this later.
+//registerServiceWorker();
