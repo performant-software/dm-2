@@ -363,7 +363,7 @@ class TextResource extends Component {
 
   render() {    
     const editorViewWrapperStyle = {
-      flexGrow: '1', display: 'flex', flexDirection: 'column', padding: '10px'
+      flexGrow: '1', display: 'flex', flexDirection: 'column'
     };
 
     return (
