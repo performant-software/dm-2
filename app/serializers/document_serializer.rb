@@ -3,12 +3,12 @@ class DocumentSerializer < ActiveModel::Serializer
   has_many :links_to, serializer: LinkableSerializer
 
   def locked_by_user_name
-    return nil if object.locked_by == nil
+    return nil if object.locked_by.nil?
     object.locked_by.name
   end
 
   def locked_by_me
-    return false if object.locked_by == nil
-    object.locked_by.id == current_user.id
+    return false if object.locked_by.nil?
+    !current_user.nil? && !object.locked_by.nil? && object.locked_by.id == current_user.id
   end
 end

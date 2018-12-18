@@ -81,7 +81,6 @@ export default function(state = initialState, action) {
       }
 
     case OPEN_DOCUMENT_SUCCESS:
-    case REPLACE_DOCUMENT:
     case POST_SUCCESS:
       let openDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
@@ -111,6 +110,7 @@ export default function(state = initialState, action) {
       }
 
     case PATCH_SUCCESS:
+    case REPLACE_DOCUMENT:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
         if (+document.id === +action.document.id) {
