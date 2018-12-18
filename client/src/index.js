@@ -6,7 +6,7 @@ import store, { history } from './store';
 import { verifyCredentials } from './modules/redux-token-auth-config';
 import './index.css';
 import App from './App';
-import unregister from './registerServiceWorker';
+import {unregister} from './registerServiceWorker';
 
 verifyCredentials(store);
 
