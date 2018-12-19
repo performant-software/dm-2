@@ -33,6 +33,8 @@ import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighligh
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
+const debugStringRegex = /\"[\\"]*[^\"]*\"/gm;
+
 class TextResource extends Component {
 
   constructor(props) {
@@ -105,6 +107,16 @@ class TextResource extends Component {
     } else {
       return existingEditorState;
     }
+  }
+
+  toSearchText(document) {
+    let debugString = document.toString()
+    let matches = debugString.match(debugStringRegex)
+    let parsedPartials = [];
+    for( let match of matches ) {
+      parsedPartials.push(match.substring(0,match.length-1).substring(1));
+    }
+    return parsedPartials.join(" ");
   }
 
   onHighlight = () => {
@@ -277,7 +289,7 @@ class TextResource extends Component {
       }
     });
     if (postContentChanges && tx.before.content !== tx.doc.content)
-      this.scheduleContentUpdate(tx.doc.content);
+      this.scheduleContentUpdate(tx.doc.content, this.toSearchText(tx.doc) );
     if (!postponeCallback) {
       if (this.highlightsToDuplicate.length > 0) {
         this.props.duplicateHighlights(this.highlightsToDuplicate, document_id);
@@ -290,12 +302,12 @@ class TextResource extends Component {
     this.highlightsToDuplicate = [];
   }
 
-  scheduleContentUpdate(content) {
+  scheduleContentUpdate(content,searchText) {
     const delay = 1000; // milliseconds
     if (this.scheduledContentUpdate)
       window.clearTimeout(this.scheduledContentUpdate);
     this.scheduledContentUpdate = window.setTimeout(function() {
-      this.props.updateDocument(this.props.document_id, {content: {type: 'doc', content}});
+      this.props.updateDocument(this.props.document_id, {content: {type: 'doc', content}, search_text: searchText});
     }.bind(this), delay);
   }
 

@@ -7,6 +7,10 @@ class Document < Linkable
   has_many :highlights, dependent: :destroy
   has_many_attached :images
 
+  include PgSearch
+
+  pg_search_scope :search_for, against: %i(title search_text)
+
   def adjust_lock( user, state )
     if locked_by == nil || locked_by.id == user.id
       if( state == true )

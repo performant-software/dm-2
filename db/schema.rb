@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_12_11_143323) do
+ActiveRecord::Schema.define(version: 2018_12_19_020513) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -60,6 +60,7 @@ ActiveRecord::Schema.define(version: 2018_12_11_143323) do
     t.float "buoyancy", default: 0.0, null: false
     t.bigint "locked_by_id"
     t.boolean "locked", default: false, null: false
+    t.string "search_text"
     t.index ["locked_by_id"], name: "index_documents_on_locked_by_id"
     t.index ["parent_type", "parent_id"], name: "index_documents_on_parent_type_and_parent_id"
     t.index ["project_id"], name: "index_documents_on_project_id"
