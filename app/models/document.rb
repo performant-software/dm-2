@@ -72,7 +72,7 @@ class Document < Linkable
       document_kind: self.document_kind, 
       excerpt: self.excerpt,
       color: self.color,
-      thumbnail_url: self.image_thumbnail_urls.nil? ? nil : self.image_thumbnail_urls.first,
+      thumbnail_url: self.thumbnail_url,
       buoyancy: self.buoyancy
     }
   end
