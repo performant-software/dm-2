@@ -7,7 +7,9 @@ import { closeSearchPopup } from './modules/search';
 class SearchResultsPopupLayer extends Component {
 
   onClose = () => {
-    this.props.closeSearchPopup();
+    if( !this.props.search.loading ) {
+      this.props.closeSearchPopup();
+    }
   }
 
   render() {

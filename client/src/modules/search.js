@@ -2,11 +2,13 @@
 export const START_SEARCH = 'search/START_SEARCH';
 export const SEARCH_SUCCESS = 'search/SEARCH_SUCCESS';
 export const SEARCH_ERRORED = 'search/SEARCH_ERRORED';
+export const UPDATE_SEARCH_PHRASE_BUFFER = 'search/UPDATE_SEARCH_PHRASE_BUFFER';
 export const CLOSE_SEARCH_POPUP = 'search/CLOSE_SEARCH_POPUP';
 
 const initialState = {
   loading: false,
   searchPhrase: '',
+  searchPhraseBuffer: '',
   searchResults: [],
   popupOpen: false,
   errored: false
@@ -28,7 +30,7 @@ export default function(state = initialState, action) {
         ...state,
         searchResults: action.searchResults,
         popupOpen: true,
-        loading: true,
+        loading: false,
         errored: false
       }
 
@@ -41,10 +43,15 @@ export default function(state = initialState, action) {
       }
 
     case CLOSE_SEARCH_POPUP:
-        return {
+      return {
+        ...initialState
+      }
+
+    case UPDATE_SEARCH_PHRASE_BUFFER:
+      return {
         ...state,
-        popupOpen: false,
-        }
+        searchPhraseBuffer: action.searchPhraseBuffer
+      }
 
     default:
       return state;
@@ -91,6 +98,15 @@ export function startSearch(projectID, searchPhrase) {
     return function(dispatch) {
       dispatch({
         type: CLOSE_SEARCH_POPUP
+      });
+    }
+  }
+
+  export function updateSearchPhraseBuffer(searchPhraseBuffer) {
+    return function(dispatch) {
+      dispatch({
+        type: UPDATE_SEARCH_PHRASE_BUFFER,
+        searchPhraseBuffer
       });
     }
   }

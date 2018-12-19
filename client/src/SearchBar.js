@@ -5,25 +5,19 @@ import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import Search from 'material-ui/svg-icons/action/search';
 import { grey500 } from 'material-ui/styles/colors';
-import { startSearch } from './modules/search';
+import { startSearch, updateSearchPhraseBuffer } from './modules/search';
 
 class SearchBar extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            searchInput: ''
-        }
-    }
-
     onSearch = () => {
-        if( this.state.searchInput.length > 0 ) {
-            this.props.startSearch( this.props.projectID, this.state.searchInput );
+        const search = this.props.search;
+        if( search.searchPhraseBuffer.length > 0 ) {
+            this.props.startSearch( this.props.projectID, search.searchPhraseBuffer );
         }
     }
 
     onChange = (e,value) => {
-        this.setState({ searchInput: value});     
+        this.props.updateSearchPhraseBuffer( value );
     }
 
     // TODO: support hitting enter to begin a search
@@ -36,6 +30,7 @@ class SearchBar extends Component {
                     hintStyle={{color: grey500 }}
                     hintText="Search project..."
                     onChange={this.onChange}
+                    value={this.props.search.searchPhraseBuffer}
                 />
                 <IconButton onClick={this.onSearch} >
                     <Search color='white'/>
@@ -51,7 +46,8 @@ const mapStateToProps = state => ({
 });
   
 const mapDispatchToProps = dispatch => bindActionCreators({
-    startSearch
+    startSearch,
+    updateSearchPhraseBuffer
 }, dispatch);
 
 export default connect(
