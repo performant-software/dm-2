@@ -62,4 +62,19 @@ class Document < Linkable
   def descendant_folder_ids
     nil
   end
+
+  def to_obj
+    {
+      id: self.id, 
+      title: self.title, 
+      document_id: self.id, 
+      document_title: self.title, 
+      document_kind: self.document_kind, 
+      excerpt: self.excerpt,
+      color: self.color,
+      thumbnail_url: self.image_thumbnail_urls,
+      buoyancy: self.buoyancy
+    }
+  end
+
 end

@@ -1,5 +1,5 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy]
+  before_action :set_project, only: [:show, :update, :destroy, :search]
   before_action :validate_user_approved, only: [:create]
   # before_action only: [:show] do
   #   validate_user_read(@project)
@@ -56,6 +56,13 @@ class ProjectsController < ApplicationController
   # DELETE /projects/1
   def destroy
     @project.destroy
+  end
+
+  # GET /projects/1/search?search_phrase
+  def search
+    documents = Document.where( project_id: 1 )
+    results = documents.search_for( 'test' ).limit(100)
+    render json: results.map { |result| result.to_obj }
   end
 
   private
