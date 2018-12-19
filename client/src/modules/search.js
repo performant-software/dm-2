@@ -84,3 +84,10 @@ export function startSearch(projectID, searchPhrase) {
     };
   }
 
+  export function closeSearchPopup() {
+    return function(dispatch) {
+      dispatch({
+        type: CLOSE_SEARCH_POPUP
+      });
+    }
+  }
