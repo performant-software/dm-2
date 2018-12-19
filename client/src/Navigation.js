@@ -19,6 +19,7 @@ import { load, showRegistration, showLogin, toggleAuthMenu, hideAuthMenu, showAd
 import { setCurrentLayout, layoutOptions } from './modules/documentGrid';
 import LoginRegistrationDialog from './LoginRegistrationDialog';
 import AdminDialog from './AdminDialog';
+import SearchBar from './SearchBar';
 
 const LoginMenuBody = props => {
   if (props.currentUser && props.currentUser.isSignedIn) {
@@ -77,18 +78,21 @@ class Navigation extends Component {
           iconElementLeft={<IconButton onClick={this.props.returnHome}><ArrowBack /></IconButton>}
           iconElementRight={
             <div>
-              {!this.props.isHome &&
-                <DropDownMenu
-                  value={this.props.currentLayout}
-                  onChange={this.props.setCurrentLayout}
-                  style={{ height: '42px' }}
-                  labelStyle={{ color: 'white', lineHeight: '50px', height: '30px' }}
-                  menuStyle={{ marginTop: '52px' }}
-                >
-                  {layoutOptions.map((option, index) => (
-                    <MenuItem key={index} value={index} primaryText={option.description} />
-                  ))}
-                </DropDownMenu>
+              {!this.props.isHome && 
+                <div style={{display: 'inline'}}>
+                  <SearchBar />
+                  <DropDownMenu
+                    value={this.props.currentLayout}
+                    onChange={this.props.setCurrentLayout}
+                    style={{ height: '42px' }}
+                    labelStyle={{ color: 'white', lineHeight: '50px', height: '30px' }}
+                    menuStyle={{ marginTop: '52px' }}
+                  >
+                    {layoutOptions.map((option, index) => (
+                      <MenuItem key={index} value={index} primaryText={option.description} />
+                    ))}
+                  </DropDownMenu>
+                </div>
               }
               <FlatButton
                 style={{ minWidth: '48px', color: 'white', marginTop: '6px' }}
