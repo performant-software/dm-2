@@ -80,7 +80,7 @@ class Navigation extends Component {
             <div>
               {!this.props.isHome && 
                 <div style={{display: 'inline'}}>
-                  <SearchBar />
+                  <SearchBar projectID={this.props.inputId } />
                   <DropDownMenu
                     value={this.props.currentLayout}
                     onChange={this.props.setCurrentLayout}

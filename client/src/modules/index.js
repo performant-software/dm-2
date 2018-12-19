@@ -8,6 +8,7 @@ import documentGrid from './documentGrid';
 import annotationViewer from './annotationViewer';
 import textEditor from './textEditor';
 import canvasEditor from './canvasEditor';
+import search from './search';
 
 export default combineReducers({
   routing: routerReducer,
@@ -18,5 +19,6 @@ export default combineReducers({
   documentGrid,
   annotationViewer,
   textEditor,
-  canvasEditor
+  canvasEditor,
+  search
 });

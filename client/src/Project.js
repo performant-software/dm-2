@@ -80,7 +80,8 @@ class Project extends Component {
             sidebarWidth={this.props.sidebarWidth} 
           />
           <SearchResultsPopupLayer 
-            searchResults={this.props.contentsChildren} 
+            popupOpen={this.props.search.popupOpen}
+            searchResults={this.props.search.searchResults} 
             openDocumentIds={this.props.openDocumentIds} 
             sidebarWidth={this.props.sidebarWidth} 
           />
@@ -142,7 +143,8 @@ const mapStateToProps = state => ({
   deleteDialogBody:   state.documentGrid.deleteDialogBody,
   deleteDialogSubmit: state.documentGrid.deleteDialogSubmit,
   selectedTargets:    state.annotationViewer.selectedTargets,
-  sidebarTarget:      state.annotationViewer.sidebarTarget
+  sidebarTarget:      state.annotationViewer.sidebarTarget,
+  search:             state.search
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
