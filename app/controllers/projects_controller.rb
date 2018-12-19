@@ -60,8 +60,8 @@ class ProjectsController < ApplicationController
 
   # GET /projects/1/search?search_phrase
   def search
-    documents = Document.where( project_id: 1 )
-    results = documents.search_for( 'test' ).limit(100)
+    documents = Document.where( project_id: params['id'] )
+    results = documents.search_for( params['q'] ).limit(100)
     render json: results.map { |result| result.to_obj }
   end
 

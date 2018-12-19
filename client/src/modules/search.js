@@ -6,6 +6,7 @@ export const CLOSE_SEARCH_POPUP = 'search/CLOSE_SEARCH_POPUP';
 
 const initialState = {
   loading: false,
+  searchPhrase: '',
   searchResults: [],
   popupOpen: false,
   errored: false
@@ -16,6 +17,7 @@ export default function(state = initialState, action) {
     case START_SEARCH:
       return {
         ...state,
+        searchPhrase: action.searchPhrase,
         searchResults: [],
         loading: true,
         errored: false
@@ -52,10 +54,11 @@ export default function(state = initialState, action) {
 export function startSearch(projectID, searchPhrase) {
     return function(dispatch) {
       dispatch({
-        type: START_SEARCH
+        type: START_SEARCH,
+        searchPhrase
       });
   
-      fetch(`/projects/${projectID}/search`, {
+      fetch(`/projects/${projectID}/search?q=${encodeURI(searchPhrase)}`, {
         headers: {
           'access-token': localStorage.getItem('access-token'),
           'token-type': localStorage.getItem('token-type'),

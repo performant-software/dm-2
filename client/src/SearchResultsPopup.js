@@ -26,7 +26,7 @@ export default class SearchResultsPopup extends Component {
                     style={{ flexGrow: '1', cursor: '-webkit-grab' }} 
                     className='search-popup-drag-handle' 
                 >
-                    Search Results
+                    Search Results for: {this.props.searchPhrase}
                 </Subheader>
                 <IconButton
                   iconStyle={{width: '16px', height: '16px'}}

@@ -9,11 +9,6 @@ import { startSearch } from './modules/search';
 
 class SearchBar extends Component {
 
-// TODO: hitting enter or clicking icon should start search
-// search should pop up a search results dialog
-// entering a new search refeshes dialog with new results
-// need a redux layer for search? or a verb off of project?
-
     constructor(props) {
         super(props);
         this.state = {
@@ -22,12 +17,16 @@ class SearchBar extends Component {
     }
 
     onSearch = () => {
-        this.props.startSearch( this.props.projectID, this.state.searchInput );
+        if( this.state.searchInput.length > 0 ) {
+            this.props.startSearch( this.props.projectID, this.state.searchInput );
+        }
     }
 
     onChange = (e,value) => {
         this.setState({ searchInput: value});     
     }
+
+    // TODO: support hitting enter to begin a search
 
     render() {
         return (

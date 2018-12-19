@@ -20,6 +20,7 @@ class SearchResultsPopupLayer extends Component {
                 key='search-results'
                 id='search-results'
                 closeHandler={this.onClose}
+                searchPhrase={search.searchPhrase}
                 searchResults={search.searchResults}
                 openDocumentIds={this.props.openDocumentIds}
               /> 
