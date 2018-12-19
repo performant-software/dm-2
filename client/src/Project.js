@@ -14,6 +14,7 @@ import ProjectSettingsDialog from './ProjectSettingsDialog';
 import ProjectSidebar from './ProjectSidebar';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
+import SearchResultsPopupLayer from './SearchResultsPopupLayer';
 
 class Project extends Component {
   constructor(props) {
@@ -70,7 +71,19 @@ class Project extends Component {
           ref={el => {this.mainContainer = el;}}
           onMouseMove={event => {this.mouseX = event.clientX; this.mouseY = event.clientY;}}
         >
-          <LinkInspectorPopupLayer targets={this.props.selectedTargets} closeHandler={this.props.closeTarget} mouseDownHandler={this.props.promoteTarget} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} sidebarWidth={this.props.sidebarWidth} />
+          <LinkInspectorPopupLayer 
+            targets={this.props.selectedTargets} 
+            closeHandler={this.props.closeTarget} 
+            mouseDownHandler={this.props.promoteTarget} 
+            openDocumentIds={this.props.openDocumentIds} 
+            writeEnabled={this.props.writeEnabled} 
+            sidebarWidth={this.props.sidebarWidth} 
+          />
+          <SearchResultsPopupLayer 
+            searchResults={this.props.contentsChildren} 
+            openDocumentIds={this.props.openDocumentIds} 
+            sidebarWidth={this.props.sidebarWidth} 
+          />
           <div id='document-grid-inner' style={{ margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, display: 'flex', flexWrap: 'wrap', overflow: 'hidden' }}>
             {this.props.openDocuments.map((document, index) => (
               <DocumentViewer 
@@ -111,25 +124,25 @@ class Project extends Component {
 }
 
 const mapStateToProps = state => ({
-  currentUser: state.reduxTokenAuth.currentUser,
-  writeEnabled: state.project.currentUserPermissions.write,
-  adminEnabled: state.project.currentUserPermissions.admin,
-  projectId: state.project.id,
-  title: state.project.title,
-  loading: state.project.loading,
-  errored: state.project.errored,
-  contentsChildren: state.project.contentsChildren,
-  adminUsers: state.project.adminUsers,
-  openDocuments: state.documentGrid.openDocuments,
-  openDocumentIds: state.documentGrid.openDocuments.map(document => document.id.toString()),
-  selectedTargets: state.annotationViewer.selectedTargets,
-  sidebarTarget: state.annotationViewer.sidebarTarget,
-  deleteDialogOpen: state.documentGrid.deleteDialogOpen,
-  deleteDialogTitle: state.documentGrid.deleteDialogTitle,
-  deleteDialogBody: state.documentGrid.deleteDialogBody,
+  currentUser:        state.reduxTokenAuth.currentUser,
+  projectId:          state.project.id,
+  title:              state.project.title,
+  loading:            state.project.loading,
+  errored:            state.project.errored,
+  adminUsers:         state.project.adminUsers,
+  contentsChildren:   state.project.contentsChildren,
+  sidebarWidth:       state.project.sidebarWidth,
+  sidebarIsDragging:  state.project.sidebarIsDragging,
+  writeEnabled:       state.project.currentUserPermissions.write,
+  adminEnabled:       state.project.currentUserPermissions.admin,
+  openDocuments:      state.documentGrid.openDocuments,
+  openDocumentIds:    state.documentGrid.openDocuments.map(document => document.id.toString()),
+  deleteDialogOpen:   state.documentGrid.deleteDialogOpen,
+  deleteDialogTitle:  state.documentGrid.deleteDialogTitle,
+  deleteDialogBody:   state.documentGrid.deleteDialogBody,
   deleteDialogSubmit: state.documentGrid.deleteDialogSubmit,
-  sidebarWidth: state.project.sidebarWidth,
-  sidebarIsDragging: state.project.sidebarIsDragging
+  selectedTargets:    state.annotationViewer.selectedTargets,
+  sidebarTarget:      state.annotationViewer.sidebarTarget
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({

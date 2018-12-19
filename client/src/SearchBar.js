@@ -12,7 +12,7 @@ export default class SearchBar extends Component {
 // need a redux layer for search? or a verb off of project?
 
     onSearch = () => {
-        
+
     }
 
     onChange = (e,value) => {
