@@ -33,7 +33,7 @@ import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighligh
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
-const debugStringRegex = /\"[\\"]*[^\"]*\"/gm;
+const debugStringRegex = /"[\\"]*[^"]*"/gm;
 
 class TextResource extends Component {
 
