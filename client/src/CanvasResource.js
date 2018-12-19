@@ -538,8 +538,6 @@ class CanvasResource extends Component {
     this.lockCanvasObjects(false);
     this.osdViewer.setMouseNavEnabled(false);
 
-    const selectedObject = this.overlay.fabricCanvas().getActiveObject();
-    console.log(selectedObject);
     // deselect highlight to ensure resize handles behave properly
     this.overlay.fabricCanvas().discardActiveObject();
   }
