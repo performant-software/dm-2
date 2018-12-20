@@ -16,3 +16,5 @@
 .env
 
 .byebug_history
+.vscode
+convert/node_modules

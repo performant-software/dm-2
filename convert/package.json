@@ -1,0 +1,13 @@
+{
+  "name": "convert",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^7.7.1",
+    "prosemirror-model": "^1.6.3",
+    "prosemirror-schema-basic": "^1.0.0",
+    "prosemirror-schema-list": "^1.0.1",
+    "winston": "^3.1.0"
+  }
+}

@@ -8,7 +8,7 @@ import Subheader from 'material-ui/Subheader';
 import Divider from 'material-ui/Divider';
 import LinkableList from './LinkableList';
 
-const dialogStartPosition = { x: 300, y: 0 };
+const dialogStartPosition = { x: 300, y: 0, z: 1100 };
 
 export default class SearchResultsPopup extends Component {
   componentWillMount() {
@@ -18,7 +18,7 @@ export default class SearchResultsPopup extends Component {
   render() {
     return (
       <Draggable handle='.search-popup-drag-handle' bounds='parent'>
-        <Paper zDepth={4} style={{ position: 'absolute', top: `${dialogStartPosition.y}px`, left: `${dialogStartPosition.x}px`, zIndex: "1100" }}>
+        <Paper zDepth={4} style={{ position: 'absolute', top: `${dialogStartPosition.y}px`, left: `${dialogStartPosition.x}px`, zIndex: dialogStartPosition.z }}>
           <ResizableBox width={300} height={300} minConstraints={[200, 120]} maxConstraints={[500, 800]}>
             <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflowY: 'hidden'}}>
               <div style={{ display: 'flex', flexShrink: '0' }}>

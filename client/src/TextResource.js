@@ -110,13 +110,7 @@ class TextResource extends Component {
   }
 
   toSearchText(document) {
-    let debugString = document.toString()
-    let matches = debugString.match(debugStringRegex)
-    let parsedPartials = [];
-    for( let match of matches ) {
-      parsedPartials.push(match.substring(0,match.length-1).substring(1));
-    }
-    return parsedPartials.join(" ");
+    return document.textBetween(0,document.textContent.length, ' ');
   }
 
   onHighlight = () => {
