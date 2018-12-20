@@ -38,7 +38,12 @@ export default class SearchResultsPopup extends Component {
               <Divider style={{ flexShrink: '0' }} />
               <div style={{flexGrow: 1, overflowY: 'scroll'}}>
                 { this.props.searchResults.length > 0 ? 
-                  <LinkableList items={this.props.searchResults} inContents={true} openDocumentIds={this.props.openDocumentIds} allDraggable={false} writeEnabled={false} />
+                  <LinkableList 
+                    items={this.props.searchResults} 
+                    inContents={false} 
+                    openDocumentIds={this.props.openDocumentIds}
+                    allDraggable={false} 
+                    writeEnabled={false} />
                   :
                   <div style={{padding: '15px'}}>
                     No documents found.
