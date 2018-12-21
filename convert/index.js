@@ -33,6 +33,8 @@ function initDatabase() {
         database: 'dm2_staging',
         port: 5432,
     });    
+
+    // note, set ssl: true when connecting to hereoku postgres
 }
 
 function query(text, params, callback) {
