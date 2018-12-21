@@ -20,6 +20,14 @@ class SearchBar extends Component {
         this.props.updateSearchPhraseBuffer( value );
     }
 
+    onKeypress = (e) => {
+        let code = e.keyCode || e.which;
+        // enter key
+        if(code === 13) { 
+            this.onSearch();
+        } 
+    }
+
     // TODO: support hitting enter to begin a search
 
     render() {
@@ -29,6 +37,7 @@ class SearchBar extends Component {
                     inputStyle={{color: 'white'}} 
                     hintStyle={{color: grey500 }}
                     hintText="Search project..."
+                    onKeyPress={this.onKeypress}
                     onChange={this.onChange}
                     value={this.props.search.searchPhraseBuffer}
                 />

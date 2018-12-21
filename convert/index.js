@@ -34,7 +34,7 @@ function initDatabase() {
         port: 5432,
     });    
 
-    // note, set ssl: true when connecting to hereoku postgres
+    // note, set ssl: true when connecting to heroku postgres
 }
 
 function query(text, params, callback) {
