@@ -4,16 +4,10 @@ const { Schema } = require('prosemirror-model');
 const { schema } = require('prosemirror-schema-basic');
 const { addListNodes } = require('prosemirror-schema-list');
 
-const pool = new Pool({
-    user: 'nick',
-    password: '',
-    host: 'localhost',
-    database: 'dm2_staging',
-    port: 5432,
-});
-
 const logFile = 'log/convert.log';
-var logger;
+var logger, postGresDBConnectionPool;
+
+// pg_restore --verbose --clean --no-acl --no-owner -h localhost -U nick -d dm2_staging latest.dump
 
 function setupLogging() {
     logger = winston.createLogger({
@@ -31,9 +25,19 @@ function setupLogging() {
     });
 }
 
+function initDatabase() {
+    postGresDBConnectionPool = new Pool({
+        user: 'nick',
+        password: '',
+        host: 'localhost',
+        database: 'dm2_staging',
+        port: 5432,
+    });    
+}
+
 function query(text, params, callback) {
     const start = Date.now()
-    return pool.query(text, params, (err, results) => {
+    return postGresDBConnectionPool.query(text, params, (err, results) => {
         if( results ) {
             const duration = Date.now() - start
             logger.info(`executed query: ${text} in ${duration}ms returned ${results.rowCount} rows.`);    
@@ -96,6 +100,7 @@ function main() {
     setupLogging();
     logger.info("Starting convert tool...")
 
+    initDatabase();
     const dmSchema = createDocumentSchema();
 
     query('SELECT * FROM documents;', [], (results) => {
