@@ -62,6 +62,7 @@ class DocumentStatusBar extends Component {
         return (
             <IconButton style={{ float: 'right', marginTop:'5px'}}
                 tooltip='Delete document'
+                tooltipPosition='top-left'
                 onClick={() => {
                 this.props.openDeleteDialog(
                     'Destroying "' + this.props.resourceName + '"',
