@@ -75,8 +75,8 @@ class AddImageLayer extends Component {
     this.props.updateDocument(this.props.document_id, {
       content: newContent
     });
-    if (this.osdViewer) {
-      this.osdViewer.open(newContent.tileSources);
+    if (this.props.osdViewer) {
+      this.props.osdViewer.open(newContent.tileSources);
     }
     this.newTileSourceValue = '';
     this.props.setAddTileSourceMode(this.props.document_id, null);

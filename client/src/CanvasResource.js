@@ -43,11 +43,6 @@ fabric.Object.prototype._renderStroke = function(ctx) {
     ctx.restore();
 };
 
-const tileSourceTypeLabels = {};
-tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'IIIF info.json URL'};
-tileSourceTypeLabels[IMAGE_URL_SOURCE_TYPE] = {select: 'Image URL', textField: 'External static image URL'};
-tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: 'Choose files'};
-
 const strokeWidth = 3.0;
 const markerRadius = 4.0;
 const doubleClickTimeout = 500;
@@ -707,6 +702,7 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
+          osdViewer={this.osdViewer}
         />
       </div>
     );
