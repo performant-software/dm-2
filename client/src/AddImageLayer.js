@@ -2,10 +2,7 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import ActiveStorageProvider from 'react-activestorage-provider';
-import SelectField from 'material-ui/SelectField';
-import MenuItem from 'material-ui/MenuItem';
 import TextField from 'material-ui/TextField';
-import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import { Snackbar } from 'material-ui';
 
@@ -138,6 +135,7 @@ class AddImageLayer extends Component {
   onLinkSubmit = () => {
     const { document_id, addTileSourceMode } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
+
     this.addTileSource(tileSourceMode);
   }
 
@@ -146,6 +144,7 @@ class AddImageLayer extends Component {
   }
 
   renderUploadMessage(uploads) {
+    if( !uploads || uploads.length === 0 ) { return null; }
     const message = uploads.map(
         upload =>
         upload.state === 'waiting' || 'uploading' ? (
@@ -159,51 +158,57 @@ class AddImageLayer extends Component {
 
     return (
         <Snackbar
-            message={message}        
+            open={true}
+            message={<span style={{ color: 'white'}}>{message}</span>}        
             autoHideDuration={4000}
         />
     )
   }
 
   render() {
-    const { document_id, addTileSourceMode } = this.props;
+    const { document_id, writeEnabled, addTileSourceMode } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
+
+    if( !writeEnabled || !tileSourceMode ) return null;
+
+    const divStyle = { margin: 20 };
     const textStyle = { color: 'white' };
     const buttonStyle = { margin: 12, height: 60 };
     const iconStyle = { width: 50, height: 50}
+    const linkError = false;
 
     return (
-        <div style={{ display: tileSourceMode && this.props.writeEnabled ? 'initial' : 'none' }} >
+        <div style={divStyle} >
             <h2 style={textStyle}>Add an Image</h2>
-            <p style={textStyle}>Choose an image source type.</p>
-            <div>
-                { this.renderUploadButton(buttonStyle,iconStyle) }
-                <RaisedButton
-                        label='Link to IIIF Image'
-                        icon={<InsertLink style={iconStyle}/>}
-                        onClick={this.onIIIFLink}
-                        style={buttonStyle}
-                />
-                <RaisedButton
-                        label='Link to Web Image'
-                        icon={<InsertLink style={iconStyle}/>}
-                        onClick={this.onWebLink}
-                        style={buttonStyle}
-                />
-            </div>
+            <p style={textStyle}>Choose an image source.</p>
+
+            { this.renderUploadButton(buttonStyle,iconStyle) }
+            
+            <RaisedButton
+                    label='Link to IIIF'
+                    icon={<InsertLink style={iconStyle}/>}
+                    onClick={this.onIIIFLink}
+                    style={buttonStyle}
+            />
+            <RaisedButton
+                    label='Link to Web'
+                    icon={<InsertLink style={iconStyle}/>}
+                    onClick={this.onWebLink}
+                    style={buttonStyle}
+            />
 
             { tileSourceMode !== UPLOAD_SOURCE_TYPE &&
                 <div>
                     <TextField
-                        id={this.osdId + '-addtilesource'}
                         inputStyle={{ color: 'white' }}
                         floatingLabelStyle={{ color: 'white' }}
+                        errorText={ linkError ? "Please enter a valid URL." : "" }
                         floatingLabelText={tileSourceMode ? tileSourceTypeLabels[tileSourceMode].textField : ''}
                         onChange={(event, newValue) => {this.newTileSourceValue = newValue;}}
                     />
                     <RaisedButton
                         label='Add Image'
-                        style={ {marginLeft: 12} }
+                        style={ {margin: 30, verticalAlign:'top'} }
                         onClick={this.onLinkSubmit}
                     />
                 </div>
