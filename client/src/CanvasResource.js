@@ -16,10 +16,9 @@ import Edit from 'material-ui/svg-icons/image/edit';
 import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
-import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setIsPencilMode, setZoomControl, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
+import { setCanvasHighlightColor, toggleCanvasColorPicker, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
 import { updateDocument, setDocumentThumbnail, addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
@@ -59,7 +58,7 @@ class CanvasResource extends Component {
   }
 
   componentDidMount() {
-    const {content, highlight_map, document_id, setCanvasHighlightColor, updateHighlight, addHighlight, setHighlightThumbnail} = this.props;
+    const {content, highlight_map, document_id, setCanvasHighlightColor, setAddTileSourceMode, updateHighlight, addHighlight, setHighlightThumbnail} = this.props;
     this.highlight_map = highlight_map;
 
     const initialColor = yellow500;
@@ -76,6 +75,9 @@ class CanvasResource extends Component {
         const baseUrl = firstTileSource.split('info.json')[0];
         this.imageUrlForThumbnail = baseUrl + 'full/!400,400/0/default.png';
       }
+    } else {
+      // we don't have an image yet, so this causes AddImageLayer to display
+      setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
     } 
 
     const viewer = this.osdViewer = OpenSeadragon({
@@ -612,7 +614,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, setAddTileSourceMode, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
+    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
     const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
@@ -721,6 +723,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   addHighlight,
   updateHighlight,
+  setAddTileSourceMode,
   setHighlightThumbnail,
   setCanvasHighlightColor,
   toggleCanvasColorPicker,
