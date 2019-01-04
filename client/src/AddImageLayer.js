@@ -17,14 +17,20 @@ tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'Link 
 tileSourceTypeLabels[IMAGE_URL_SOURCE_TYPE] = {select: 'Image URL', textField: 'Link to Web Image'};
 tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: 'Choose files'};
 
+const validURLRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})).?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
+
 class AddImageLayer extends Component {
 
     constructor(props) {
         super(props);
-        this.imageUrlForThumbnail = null;
+        this.state = {
+            newTileSourceValue: null,
+            linkError: false
+        }
     }
 
   addTileSource = (addTileSourceMode) => {
+    let imageUrlForThumbnail = null;
     const newContent = {};
     if (this.props.content) Object.assign(newContent, this.props.content);
     const existingTileSources = newContent.tileSources || [];
@@ -48,28 +54,28 @@ class AddImageLayer extends Component {
             }
           });
           if (shouldSetThumbnail && newTileSources.length > 0)
-            this.imageUrlForThumbnail = newTileSources[0].url;
+            imageUrlForThumbnail = newTileSources[0].url;
         }
         break;
 
       case IMAGE_URL_SOURCE_TYPE:
         newTileSources.push({
           type: 'image',
-          url: this.newTileSourceValue
+          url: this.state.newTileSourceValue
         });
         if (shouldSetThumbnail)
-          this.imageUrlForThumbnail = this.newTileSourceValue;
+          imageUrlForThumbnail = this.state.newTileSourceValue;
         break;
 
       case IIIF_TILE_SOURCE_TYPE:
         if (shouldSetThumbnail) {
-          const baseUrl = this.newTileSourceValue.split('info.json')[0];
-          this.imageUrlForThumbnail = baseUrl + 'full/!160,160/0/default.png';
+          const baseUrl = this.state.newTileSourceValue.split('info.json')[0];
+          imageUrlForThumbnail = baseUrl + 'full/!160,160/0/default.png';
         }
         break;
 
       default:
-        newTileSources.push(this.newTileSourceValue);
+        newTileSources.push(this.state.newTileSourceValue);
     }
 
     newContent.tileSources = existingTileSources.concat(newTileSources);
@@ -79,11 +85,11 @@ class AddImageLayer extends Component {
     if (this.props.osdViewer) {
       this.props.osdViewer.open(newContent.tileSources);
     }
-    this.newTileSourceValue = '';
+    this.setState( { ...this.state, newTileSourceValue: null } );
     this.props.setAddTileSourceMode(this.props.document_id, null);
 
-    if (shouldSetThumbnail && this.imageUrlForThumbnail)
-      this.props.setDocumentThumbnail(this.props.document_id, this.imageUrlForThumbnail);
+    if (shouldSetThumbnail && imageUrlForThumbnail)
+      this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
   }
 
   renderUploadButton(buttonStyle,iconStyle) {
@@ -126,17 +132,32 @@ class AddImageLayer extends Component {
 
   onIIIFLink = () => {
     this.props.setAddTileSourceMode(this.props.document_id, IIIF_TILE_SOURCE_TYPE);
+    this.setState( { ...this.state, linkError: false } );
   }
 
   onWebLink = () => {
     this.props.setAddTileSourceMode(this.props.document_id, IMAGE_URL_SOURCE_TYPE);
+    this.setState( { ...this.state, linkError: false } );
   }
 
   onLinkSubmit = () => {
     const { document_id, addTileSourceMode } = this.props;
+    const tileSource = this.state.newTileSourceValue
     const tileSourceMode = addTileSourceMode[document_id];
 
-    this.addTileSource(tileSourceMode);
+    if( this.validateTileSource(tileSource) ) {
+        this.addTileSource(tileSourceMode);
+        this.setState( { ...this.state, linkError: false } );
+    } else {
+        this.setState( { ...this.state, linkError: true } );
+    }
+  }
+
+  validateTileSource(tileSource) {
+    if( tileSource && tileSource.length > 0 ) {
+        return validURLRegex.test( tileSource );
+    }
+    return false;
   }
 
   onCancel = () => {
@@ -175,7 +196,6 @@ class AddImageLayer extends Component {
     const textStyle = { color: 'white' };
     const buttonStyle = { margin: 12, height: 60 };
     const iconStyle = { width: 50, height: 50}
-    const linkError = false;
 
     return (
         <div style={divStyle} >
@@ -202,9 +222,9 @@ class AddImageLayer extends Component {
                     <TextField
                         inputStyle={{ color: 'white' }}
                         floatingLabelStyle={{ color: 'white' }}
-                        errorText={ linkError ? "Please enter a valid URL." : "" }
+                        errorText={ this.state.linkError ? "Please enter a valid URL." : "" }
                         floatingLabelText={tileSourceMode ? tileSourceTypeLabels[tileSourceMode].textField : ''}
-                        onChange={(event, newValue) => {this.newTileSourceValue = newValue;}}
+                        onChange={(event, newValue) => {this.setState( { ...this.state, newTileSourceValue: newValue}) }}
                     />
                     <RaisedButton
                         label='Add Image'
