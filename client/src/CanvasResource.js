@@ -19,7 +19,7 @@ import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setIsPencilMode, setZoomControl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
+import { setCanvasHighlightColor, toggleCanvasColorPicker, setIsPencilMode, setZoomControl, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { updateDocument, setDocumentThumbnail, addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';

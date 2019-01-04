@@ -8,6 +8,8 @@ import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 
+import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
+
 import { setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
 
@@ -23,14 +25,14 @@ class AddImageLayer extends Component {
         this.imageUrlForThumbnail = null;
     }
 
-  addTileSource() {
+  addTileSource = (addTileSourceMode) => {
     const newContent = {};
     if (this.props.content) Object.assign(newContent, this.props.content);
     const existingTileSources = newContent.tileSources || [];
     const shouldSetThumbnail = existingTileSources.length < 1;
 
     let newTileSources = [];
-    switch (this.props.addTileSourceMode[this.props.document_id]) {
+    switch (addTileSourceMode) {
       case UPLOAD_SOURCE_TYPE:
         if (this.props.image_urls && this.props.image_urls.length > 0) {
           let existingImageUrls = [];
@@ -85,7 +87,92 @@ class AddImageLayer extends Component {
       this.props.setDocumentThumbnail(this.props.document_id, this.imageUrlForThumbnail);
   }
 
+  renderUploadButton(buttonStyle) {
+    const { document_id, replaceDocument } = this.props;
+
+    return (
+        <ActiveStorageProvider
+            endpoint={{
+                path: `/documents/${document_id}/add_images`,
+                model: 'Document',
+                attribute: 'images',
+                method: 'PUT'
+            }}
+            multiple={true}
+            onSubmit={document => {
+                replaceDocument(document);
+                this.addTileSource(UPLOAD_SOURCE_TYPE);
+            }}
+            render={({ handleUpload, uploads, ready}) => (
+            <RaisedButton
+                containerElement='label'
+                label='Upload Files'
+                icon={<CloudUpload/>}
+                style={buttonStyle}
+            >
+                <input
+                key='upload-form'
+                type='file'
+                multiple={true}
+                disabled={!ready}
+                onChange={e => handleUpload(e.currentTarget.files)}
+                style={{ display: 'none' }}
+                />
+            </RaisedButton>
+            )}
+        />
+    );
+  }
+
+  onCancel = () => {
+    this.props.setAddTileSourceMode(this.props.document_id, null);
+  }
+
   render() {
+    const { document_id, addTileSourceMode } = this.props;
+    const tileSourceMode = addTileSourceMode[document_id];
+    const textStyle = { color: 'white' };
+    const buttonStyle = { margin: 12, display: 'inline' };
+    
+    return (
+        <div style={{ display: tileSourceMode && this.props.writeEnabled ? 'initial' : 'none' }} >
+            <h2 style={textStyle}>Add an Image</h2>
+            <p style={textStyle}>Choose an image source type.</p>
+            <div>
+                { this.renderUploadButton(buttonStyle) }
+                <RaisedButton
+                        label='IIIF URL'
+                        icon={<CloudUpload/>}
+                        onClick={this.onCancel}
+                        style={buttonStyle}
+                />
+                <RaisedButton
+                        label='WWW URL'
+                        icon={<CloudUpload/>}
+                        onClick={this.onCancel}
+                        style={buttonStyle}
+                />
+            </div>
+
+            { tileSourceMode !== UPLOAD_SOURCE_TYPE &&
+                <div>
+                    <TextField
+                        id={this.osdId + '-addtilesource'}
+                        inputStyle={{ color: 'white' }}
+                        floatingLabelStyle={{ color: 'white' }}
+                        floatingLabelText={tileSourceMode ? tileSourceTypeLabels[tileSourceMode].textField : ''}
+                        onChange={(event, newValue) => {this.newTileSourceValue = newValue;}}
+                    />
+                </div>
+            }
+
+            {/* TODO display cancel only when adding layers <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} /> */}
+        </div>
+    );
+  }
+
+
+  renderold() {
     const { document_id, image_thumbnail_urls, addTileSourceMode, setAddTileSourceMode, replaceDocument } = this.props;
     const mode = addTileSourceMode[document_id];
     
