@@ -165,6 +165,10 @@ class AddImageLayer extends Component {
   }
 
   renderUploadMessage(uploads) {
+
+    // TODO snackbar needs to be in correct spot in DOM for this to work
+    return null;
+
     if( !uploads || uploads.length === 0 ) { return null; }
     const message = uploads.map(
         upload =>
