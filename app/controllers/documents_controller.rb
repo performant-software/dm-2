@@ -61,8 +61,11 @@ class DocumentsController < ApplicationController
   
   # PUT /documents/1/add_images
   def add_images
-    @document.images.attach(document_params[:images])
-    render json: @document
+    if @document.images.attach(document_params[:images])
+      render json: @document 
+    else
+      render json: @document.errors, status: :unprocessable_entity
+    end 
   end
 
   # POST /documents/1/set_thumbnail

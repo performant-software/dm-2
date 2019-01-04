@@ -11,6 +11,25 @@ class Document < Linkable
 
   pg_search_scope :search_for, against: %i(title search_text)
 
+  validate :image_validation
+
+  def image_validation
+    return false if !self.images || !self.images.attached?
+    image = self.images.first 
+    if !image.nil?
+      if !image.blob.content_type.in?(%w(image/jpeg image/jpg image/png))
+        image.purge_later
+        errors.add(:image, 'The image wrong format')
+      elsif image.blob.content_type.in?(%w(image/jpeg image/jpg image/png)) && image.blob.byte_size > (5 * 1024 * 1024) # Limit size 5MB
+        image.purge_later
+        errors.add(:image, 'The image oversize limited (5MB)')
+      end
+    elsif image.attached? == false
+      image.purge_later
+      errors.add(:image, 'The image required.')
+    end
+  end
+
   def adjust_lock( user, state )
     if locked_by == nil || locked_by.id == user.id
       if( state == true )
