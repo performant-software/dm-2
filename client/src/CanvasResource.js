@@ -117,7 +117,7 @@ class CanvasResource extends Component {
     viewer.addHandler('zoom', event => {
       const max = this.osdViewer.viewport.getMaxZoom();
       const min = this.osdViewer.viewport.getMinZoom();
-      this.props.setZoomControl(document_id, Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
+      this.props.setZoomControl(this.getInstanceKey(), Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
     });
 
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
@@ -694,7 +694,7 @@ class CanvasResource extends Component {
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
-            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.1} value={this.props.zoomControls[document_id] || 0} onChange={this.zoomControlChange.bind(this)} />
+            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.1} value={this.props.zoomControls[key] || 0} onChange={this.zoomControlChange.bind(this)} />
             <div id={this.osdId} style={{ flexGrow: 1 }}></div>
           </div>
         </div>
