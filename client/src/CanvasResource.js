@@ -85,6 +85,7 @@ class CanvasResource extends Component {
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       showNavigationControl: false,
       tileSources,
+      navigatorSizeRatio: 0.15,
       // sequenceMode: true,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true
