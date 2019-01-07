@@ -19,7 +19,7 @@ import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
-import { updateDocument, setDocumentThumbnail, addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
+import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
 
@@ -730,8 +730,6 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   toggleCanvasColorPicker,
   setIsPencilMode,
   setZoomControl,
-  updateDocument,
-  setDocumentThumbnail,
   openDeleteDialog
 }, dispatch);
 
