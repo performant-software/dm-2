@@ -108,7 +108,7 @@ class TextResource extends Component {
   }
 
   toSearchText(document) {
-    return document.textBetween(0,document.textContent.length, ' ');
+    return document.textBetween(0,document.textContent.length+1, ' ');
   }
 
   onHighlight = () => {
@@ -281,7 +281,7 @@ class TextResource extends Component {
       }
     });
     if (postContentChanges && tx.before.content !== tx.doc.content)
-      this.scheduleContentUpdate(tx.doc.content, this.toSearchText(tx.doc) );
+      this.scheduleContentUpdate(tx.doc) 
     if (!postponeCallback) {
       if (this.highlightsToDuplicate.length > 0) {
         this.props.duplicateHighlights(this.highlightsToDuplicate, document_id);
@@ -294,12 +294,15 @@ class TextResource extends Component {
     this.highlightsToDuplicate = [];
   }
 
-  scheduleContentUpdate(content,searchText) {
+  scheduleContentUpdate(doc) {
     const delay = 1000; // milliseconds
-    if (this.scheduledContentUpdate)
+    const content = doc.content;
+    const search_text = this.toSearchText(doc)
+    if (this.scheduledContentUpdate) {
       window.clearTimeout(this.scheduledContentUpdate);
+    }
     this.scheduledContentUpdate = window.setTimeout(function() {
-      this.props.updateDocument(this.props.document_id, {content: {type: 'doc', content}, search_text: searchText});
+      this.props.updateDocument(this.props.document_id, {content: {type: 'doc', content}, search_text});
     }.bind(this), delay);
   }
 
