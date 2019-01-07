@@ -9,25 +9,27 @@ class Document < Linkable
 
   include PgSearch
 
+  MAX_IMAGE_SIZE = 10
+
   pg_search_scope :search_for, against: %i(title search_text)
 
-  validate :image_validation
-
-  def image_validation
-    return false if !self.images || !self.images.attached?
-    image = self.images.first 
-    if !image.nil?
-      if !image.blob.content_type.in?(%w(image/jpeg image/jpg image/png))
+  # checks that all images validate, purges invalid images
+  def valid_images?
+    self.images.each { |image| 
+      if !image.nil?
+        if !image.blob.content_type.in?(%w(image/jpeg image/jpg image/png))
+          image.purge_later
+          errors.add(:images, 'The image wrong format')
+        elsif image.blob.content_type.in?(%w(image/jpeg image/jpg image/png)) && image.blob.byte_size > (MAX_IMAGE_SIZE * 1024 * 1024) 
+          image.purge_later
+          errors.add(:images, "The image oversize limited (#{MAX_IMAGE_SIZE}MB)")
+        end
+      elsif image.attached? == false
         image.purge_later
-        errors.add(:image, 'The image wrong format')
-      elsif image.blob.content_type.in?(%w(image/jpeg image/jpg image/png)) && image.blob.byte_size > (5 * 1024 * 1024) # Limit size 5MB
-        image.purge_later
-        errors.add(:image, 'The image oversize limited (5MB)')
-      end
-    elsif image.attached? == false
-      image.purge_later
-      errors.add(:image, 'The image required.')
-    end
+        errors.add(:images, 'The image required.')
+      end  
+    }
+    return !(errors && errors.size > 0)
   end
 
   def adjust_lock( user, state )

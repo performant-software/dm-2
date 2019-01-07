@@ -61,7 +61,9 @@ class DocumentsController < ApplicationController
   
   # PUT /documents/1/add_images
   def add_images
-    if @document.images.attach(document_params[:images])
+    @document.images.attach(document_params[:images])
+
+    if @document.valid_images?
       render json: @document 
     else
       render json: @document.errors, status: :unprocessable_entity

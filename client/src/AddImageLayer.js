@@ -4,10 +4,11 @@ import { connect } from 'react-redux';
 import ActiveStorageProvider from 'react-activestorage-provider';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
-import { Snackbar } from 'material-ui';
+import CircularProgress from 'material-ui/CircularProgress';
 
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
+import Error from 'material-ui/svg-icons/alert/error';
 
 import { setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
@@ -25,7 +26,9 @@ class AddImageLayer extends Component {
         super(props);
         this.state = {
             newTileSourceValue: null,
-            linkError: false
+            linkError: false,
+            uploadErrorMessage: null,
+            uploading: false
         }
     }
 
@@ -97,32 +100,39 @@ class AddImageLayer extends Component {
     return (
         <ActiveStorageProvider
             endpoint={{
-                path: `/documents/${document_id}/add_images`,
-                model: 'Document',
-                attribute: 'images',
-                method: 'PUT'
+              path: `/documents/${document_id}/add_images`,
+              model: 'Document',
+              attribute: 'images',
+              method: 'PUT'
             }}
             multiple={true}
             onSubmit={document => {
-                this.props.setAddTileSourceMode(this.props.document_id, UPLOAD_SOURCE_TYPE);
-                replaceDocument(document);
-                this.addTileSource(UPLOAD_SOURCE_TYPE);
+              replaceDocument(document);
+              this.addTileSource(UPLOAD_SOURCE_TYPE);
+              this.setState( { ...this.state, uploadErrorMessage: null, uploading: false } );
+            }}
+            onError={ () => {
+              this.setState( { ...this.state, uploadErrorMessage: "Unable to process file.", uploading: false } );
             }}
             render={({ handleUpload, uploads, ready}) => (
             <RaisedButton
-                containerElement='label'
-                style={buttonStyle}
-                icon={<CloudUpload style={iconStyle}/>}
-                label='Upload from Computer'
+              containerElement='label'
+              style={buttonStyle}
+              icon={<CloudUpload style={iconStyle}/>}
+              label='Upload from Computer'
+              disabled={this.state.uploading}
             >                
-                { this.renderUploadMessage(uploads) }
-                <input
-                key='upload-form'
-                type='file'
-                disabled={!ready}
-                onChange={e => handleUpload(e.currentTarget.files)}
-                style={{ display: 'none' }}
-                />
+              <input
+              key='upload-form'
+              type='file'
+              disabled={!ready}
+              onChange={(e) => {
+                this.props.setAddTileSourceMode(this.props.document_id, UPLOAD_SOURCE_TYPE);
+                this.setState({ ...this.state, uploadErrorMessage: null, uploading: true })
+                handleUpload(e.currentTarget.files)
+              }}
+              style={{ display: 'none' }}
+              />
             </RaisedButton>
             )}
         />
@@ -131,12 +141,12 @@ class AddImageLayer extends Component {
 
   onIIIFLink = () => {
     this.props.setAddTileSourceMode(this.props.document_id, IIIF_TILE_SOURCE_TYPE);
-    this.setState( { ...this.state, linkError: false } );
+    this.setState( { ...this.state, uploadErrorMessage: null, uploading: false, linkError: false } );
   }
 
   onWebLink = () => {
     this.props.setAddTileSourceMode(this.props.document_id, IMAGE_URL_SOURCE_TYPE);
-    this.setState( { ...this.state, linkError: false } );
+    this.setState( { ...this.state, uploadErrorMessage: null, uploading: false, linkError: false } );
   }
 
   onLinkSubmit = () => {
@@ -163,28 +173,6 @@ class AddImageLayer extends Component {
     this.props.setAddTileSourceMode(this.props.document_id, null);
   }
 
-  renderUploadMessage(uploads) {
-    if( !uploads || uploads.length === 0 ) { return null; }
-    const message = uploads.map(
-        upload =>
-        upload.state === 'waiting' || 'uploading' ? (
-            `Uploading...`
-        ) : upload.state === 'error' ? (      
-            `Error uploading ${upload.file.name}: ${upload.error}`
-        ) : (
-            `Finished uploading ${upload.file.name}`
-        )
-    );
-
-    return (
-        <Snackbar
-            open={true}
-            message={<span style={{ color: 'white'}}>{message}</span>}        
-            autoHideDuration={4000}
-        />
-    )
-  }
-
   render() {
     const { document_id, writeEnabled, addTileSourceMode } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
@@ -207,12 +195,14 @@ class AddImageLayer extends Component {
                     label='Link to IIIF'
                     icon={<InsertLink style={iconStyle}/>}
                     onClick={this.onIIIFLink}
+                    disabled={this.state.uploading}
                     style={buttonStyle}
             />
             <RaisedButton
                     label='Link to Web'
                     icon={<InsertLink style={iconStyle}/>}
                     onClick={this.onWebLink}
+                    disabled={this.state.uploading}
                     style={buttonStyle}
             />
 
@@ -232,8 +222,19 @@ class AddImageLayer extends Component {
                     />
                 </div>
             }
+            { tileSourceMode === UPLOAD_SOURCE_TYPE &&
+              this.state.uploading ?
+                <div>
+                  <h2 style={{ color: 'white'}}>Uploading image...</h2>
+                  <CircularProgress size={80} thickness={5} color={'white'} />
+                </div>
+              : this.state.uploadErrorMessage != null && 
+                <div>
+                  <p style={{ color: 'white'}}><Error style={{ margin: 5, color: 'white'}}/>{this.state.uploadErrorMessage}</p>
+                </div> 
+            }   
 
-            {/* TODO display cancel only when adding layers <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} /> */}
+          {/* TODO display cancel only when adding layers <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} /> */}       
         </div>
     );
   }
