@@ -65,7 +65,7 @@ class TextResource extends Component {
       return ['span', properties, 0];
     }.bind(this);
 
-    const dmHighlightSpec = {
+    const highlightSpec = {
       attrs: {highlightUid: {default: 'dm_new_highlight'}, documentId: {default: null}, tempColor: {default: null}},
       toDOM: toDOM,
       parseDOM: [{tag: 'span.dm-highlight', getAttrs(dom) {
@@ -77,10 +77,19 @@ class TextResource extends Component {
       }}]
     }
 
+    const underlineSpec = {
+      parseDOM: [{tag: "u"}, {style: "text-decoration=underline"}],
+      toDOM() { return ["u", 0] }
+    }
+
+    const marks = schema.spec.marks
+      .addBefore('link', 'highlight', highlightSpec)
+      .addBefore('em', 'underline', underlineSpec)
+
     // create schema based on prosemirror-schema-basic
     return new Schema({
       nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
-      marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
+      marks: marks
     });
   }
 
@@ -128,6 +137,13 @@ class TextResource extends Component {
 
   onItalic = () => {
     const markType = this.state.documentSchema.marks.em;
+    const editorState = this.state.editorState;
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onUnderline = () => {
+    const markType = this.state.documentSchema.marks.underline;
     const editorState = this.state.editorState;
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
@@ -350,7 +366,7 @@ class TextResource extends Component {
           <IconButton onClick={this.onItalic} tooltip='Italicize selected text.'>
             <FormatItalic />
           </IconButton>
-          <IconButton tooltip='Underline selected text.'>
+          <IconButton onClick={this.onUnderline} tooltip='Underline selected text.'>
             <FormatUnderlined />
           </IconButton>
           Font Size: { this.renderDropDownMenu() }
