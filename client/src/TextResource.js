@@ -28,6 +28,7 @@ import { undo, redo } from "prosemirror-history"
 import { keymap } from "prosemirror-keymap"
 
 import { schema } from './TextSchema';
+import { addMark, removeMark } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
@@ -35,9 +36,10 @@ import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighligh
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
+// font sizes as defined in DM1
 const fontSize = {
   small: 'x-small',
-  normal: 'small',
+  normal: null,
   large: 'large',
   huge: 'xx-large'
 }
@@ -96,32 +98,38 @@ class TextResource extends Component {
 
   getEditorState() {
     const { editorStates, document_id } = this.props;
-    const dmSchema = this.state.documentSchema;
     const existingEditorState = editorStates[document_id];
  
     if( !existingEditorState ) {
-      let plugins = exampleSetup({
-        schema: dmSchema,
-        menuBar: false
-      });
-  
-      // add keyboard commands
-      plugins.push( 
-        keymap({"Mod-z": undo, "Mod-y": redo})
-      );
-  
-      // create a new editor state
-      const doc = dmSchema.nodeFromJSON(this.props.content);
-      const editorState = EditorState.create({
-        doc,
-        selection: TextSelection.create(doc, 0),
-        plugins
-      })
-      this.props.updateEditorState(document_id, editorState);
-      return editorState;
+      return this.createEditorState();
     } else {
       return existingEditorState;
     }
+  }
+
+  createEditorState() {
+    const document_id = this.props.document_id;
+    const dmSchema = this.state.documentSchema;
+
+    let plugins = exampleSetup({
+      schema: dmSchema,
+      menuBar: false
+    });
+
+    // add keyboard commands
+    plugins.push( 
+      keymap({"Mod-z": undo, "Mod-y": redo})
+    );
+
+    // create a new editor state
+    const doc = dmSchema.nodeFromJSON(this.props.content);
+    const editorState = EditorState.create({
+      doc,
+      selection: TextSelection.create(doc, 0),
+      plugins
+    })
+    this.props.updateEditorState(document_id, editorState);
+    return editorState;
   }
 
   toSearchText(document) {
@@ -158,9 +166,9 @@ class TextResource extends Component {
   }
 
   onFontSizeChange(e,i,fontSize) {
-    const markType = this.state.documentSchema.marks.fontSize;
+    const fontSizeMarkType = this.state.documentSchema.marks.fontSize;
     const editorState = this.getEditorState();
-    const cmd = toggleMark( markType, { fontSize } );
+    const cmd = fontSize ? addMark( fontSizeMarkType, { fontSize } ) : removeMark( fontSizeMarkType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
