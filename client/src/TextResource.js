@@ -53,7 +53,6 @@ class TextResource extends Component {
 
     this.state = { 
       editorView: null, 
-      editorState: null, 
       documentSchema: this.createDocumentSchema() 
     };
   }
@@ -99,18 +98,18 @@ class TextResource extends Component {
     const { editorStates, document_id } = this.props;
     const dmSchema = this.state.documentSchema;
     const existingEditorState = editorStates[document_id];
-
-    let plugins = exampleSetup({
-      schema: dmSchema,
-      menuBar: false
-    });
-
-    // add keyboard commands
-    plugins.push( 
-      keymap({"Mod-z": undo, "Mod-y": redo})
-    );
  
     if( !existingEditorState ) {
+      let plugins = exampleSetup({
+        schema: dmSchema,
+        menuBar: false
+      });
+  
+      // add keyboard commands
+      plugins.push( 
+        keymap({"Mod-z": undo, "Mod-y": redo})
+      );
+  
       // create a new editor state
       const doc = dmSchema.nodeFromJSON(this.props.content);
       const editorState = EditorState.create({
@@ -132,35 +131,35 @@ class TextResource extends Component {
   onHighlight = () => {
     const markType = this.state.documentSchema.marks.highlight;
     const { document_id } = this.props;
-    const editorState = this.state.editorState;
+    const editorState = this.getEditorState();
     const cmd = toggleMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
     cmd( editorState, this.state.editorView.dispatch );
   }
 
   onBold = () => {
     const markType = this.state.documentSchema.marks.strong;
-    const editorState = this.state.editorState;
+    const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
   onItalic = () => {
     const markType = this.state.documentSchema.marks.em;
-    const editorState = this.state.editorState;
+    const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
   onUnderline = () => {
     const markType = this.state.documentSchema.marks.underline;
-    const editorState = this.state.editorState;
+    const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
   onFontSizeChange(e,i,fontSize) {
     const markType = this.state.documentSchema.marks.fontSize;
-    const editorState = this.state.editorState;
+    const editorState = this.getEditorState();
     const cmd = toggleMark( markType, { fontSize } );
     cmd( editorState, this.state.editorView.dispatch );
   }
@@ -168,11 +167,11 @@ class TextResource extends Component {
   componentWillReceiveProps(nextProps) {
     // When we receive new EditorState through props — we apply it to the
     // EditorView instance and update local state for this component
-    if (this.state.editorState && nextProps.editorStates ) {
+    const editorState = this.getEditorState();
+    if (editorState && nextProps.editorStates ) {
      const nextEditorState = nextProps.editorStates[this.props.document_id];
-     if( nextEditorState !== this.state.editorState ) {
+     if( this.state.editorView && nextEditorState !== editorState ) {
         this.state.editorView.updateState(nextEditorState);
-        this.setState({ ...this.state, editorState: nextEditorState });
      }
     }      
   }
@@ -192,7 +191,7 @@ class TextResource extends Component {
         editable: this.isEditable
       });    
 
-      this.setState( { ...this.state, editorView, editorState });
+      this.setState( { ...this.state, editorView });
     }
   }
 
@@ -234,10 +233,9 @@ class TextResource extends Component {
 
   dispatchTransaction = (tx) => {
     this.processAndConfirmTransaction(tx, function(tx) {
-      const editorState = this.state.editorState;
+      const editorState = this.getEditorState();
       const nextEditorState = editorState.apply(tx);
       this.state.editorView.updateState(nextEditorState);
-      this.setState({ ...this.state, editorState: nextEditorState });
       this.props.updateEditorState(this.props.document_id, nextEditorState);
     }.bind(this));
   };
@@ -249,6 +247,7 @@ class TextResource extends Component {
     const { steps } = tx;
     const { document_id } = this.props;
     let alteredHighlights = [];
+    const editorState = this.getEditorState();
     steps.forEach(step => {
       // save new highlight
       if (step instanceof AddMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name) {
@@ -265,7 +264,7 @@ class TextResource extends Component {
             to += 1;
           }
         }
-        const effectedMarks = this.collectHighlights(this.state.editorState.doc, from, to);
+        const effectedMarks = this.collectHighlights(editorState.doc, from, to);
         const additionTo = step.to + (tx.doc.nodeSize - tx.before.nodeSize);
         const possibleNewMarks = this.collectHighlights(tx.doc, step.from, additionTo);
         possibleNewMarks.forEach(mark => {
@@ -326,7 +325,7 @@ class TextResource extends Component {
   }
 
   scheduleContentUpdate(doc) {
-    const delay = 1000; // milliseconds
+    const delay = 3000; // milliseconds
     const content = doc.content;
     const search_text = this.toSearchText(doc)
     if (this.scheduledContentUpdate) {
