@@ -21,17 +21,26 @@ import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
 
-import { schema } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
 import { toggleMark } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
+import { undo, redo } from "prosemirror-history"
+import { keymap } from "prosemirror-keymap"
 
+import { schema } from './TextSchema';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
+
+const fontSize = {
+  small: 'x-small',
+  normal: 'small',
+  large: 'large',
+  huge: 'xx-large'
+}
 
 class TextResource extends Component {
 
@@ -77,14 +86,7 @@ class TextResource extends Component {
       }}]
     }
 
-    const underlineSpec = {
-      parseDOM: [{tag: "u"}, {style: "text-decoration=underline"}],
-      toDOM() { return ["u", 0] }
-    }
-
-    const marks = schema.spec.marks
-      .addBefore('link', 'highlight', highlightSpec)
-      .addBefore('em', 'underline', underlineSpec)
+    const marks = schema.spec.marks.addBefore('link', 'highlight', highlightSpec)
 
     // create schema based on prosemirror-schema-basic
     return new Schema({
@@ -97,17 +99,24 @@ class TextResource extends Component {
     const { editorStates, document_id } = this.props;
     const dmSchema = this.state.documentSchema;
     const existingEditorState = editorStates[document_id];
+
+    let plugins = exampleSetup({
+      schema: dmSchema,
+      menuBar: false
+    });
+
+    // add keyboard commands
+    plugins.push( 
+      keymap({"Mod-z": undo, "Mod-y": redo})
+    );
  
     if( !existingEditorState ) {
       // create a new editor state
-      const dmDoc = dmSchema.nodeFromJSON(this.props.content);
+      const doc = dmSchema.nodeFromJSON(this.props.content);
       const editorState = EditorState.create({
-        doc: dmDoc,
-        selection: TextSelection.create(dmDoc, 0),
-        plugins: exampleSetup({
-          schema: dmSchema,
-          menuBar: false
-        })
+        doc,
+        selection: TextSelection.create(doc, 0),
+        plugins
       })
       this.props.updateEditorState(document_id, editorState);
       return editorState;
@@ -149,6 +158,12 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onFontSizeChange(e,i,fontSize) {
+    const markType = this.state.documentSchema.marks.fontSize;
+    const editorState = this.state.editorState;
+    const cmd = toggleMark( markType, { fontSize } );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
 
   componentWillReceiveProps(nextProps) {
     // When we receive new EditorState through props — we apply it to the
@@ -330,14 +345,14 @@ class TextResource extends Component {
   renderDropDownMenu() {
     return (
       <DropDownMenu
-          value={2}
-          onChange={this.handleChange}
-          autoWidth={false}
-        >
-          <MenuItem value={1} primaryText="Small" />
-          <MenuItem value={2} primaryText="Normal" />
-          <MenuItem value={3} primaryText="Large" />
-          <MenuItem value={4} primaryText="Huge" />
+        value={fontSize['normal']}
+        onChange={this.onFontSizeChange.bind(this)}
+        autoWidth={false}
+      >
+        <MenuItem value={fontSize['small']} primaryText="Small" />
+        <MenuItem value={fontSize['normal']} primaryText="Normal" />
+        <MenuItem value={fontSize['large']} primaryText="Large" />
+        <MenuItem value={fontSize['huge']} primaryText="Huge" />
       </DropDownMenu>
     );
   }
