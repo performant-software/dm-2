@@ -62,7 +62,7 @@ const initialState = {
   deleteDialogSubmit: 'Delete',
   deleteDialogPayload: null,
   deleteDialogKind: null,
-  currentLayout: 1
+  currentLayout: 2
 };
 
 export default function(state = initialState, action) {
