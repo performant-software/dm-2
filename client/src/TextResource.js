@@ -6,6 +6,9 @@ import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
+import Dialog from 'material-ui/Dialog';
+import FlatButton from 'material-ui/FlatButton';
+import TextField from 'material-ui/TextField';
 
 import IconButton from 'material-ui/IconButton';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
@@ -55,6 +58,9 @@ class TextResource extends Component {
 
     this.state = { 
       editorView: null, 
+      linkDialogOpen: false,
+      linkDialogBuffer: "",
+      linkDialogBufferInvalid: false,
       documentSchema: this.createDocumentSchema() 
     };
   }
@@ -166,7 +172,8 @@ class TextResource extends Component {
   }
 
   onHyperLink = () => {
-    // TODO
+    this.setState( {...this.state, linkDialogOpen: true, linkDialogBuffer: 'test' } );
+    // need to create a command callback here to execute when the link has been submitted and validated.
   }
 
   onOrderedList() {
@@ -424,6 +431,49 @@ class TextResource extends Component {
     );
   }
 
+  onCancelHyperlinkDialog = () => {
+    // discard the buffer state and close dialog
+    this.setState({...this.state, linkDialogOpen: false, linkDialogBufferInvalid: false, linkDialogBuffer: '' });
+  }
+
+  onSubmitHyperlinkDialog = () => {
+    // validate the contents of the buffer 
+    // call the callback if it is valid, otherwise, set error state and stay open
+    this.setState({...this.state, linkDialogOpen: false });
+  }
+
+  renderLinkDialog() {
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.onCancelHyperlinkDialog}
+      />,
+      <FlatButton
+        label="Add"
+        primary={true}
+        onClick={this.onSubmitHyperlinkDialog}
+      />,
+    ];
+
+    return (
+      <Dialog
+          title="Add Hyperlink"
+          actions={actions}
+          modal={true}
+          open={this.state.linkDialogOpen}
+          onRequestClose={this.onCancelHyperlinkDialog}
+        >
+          <TextField
+            value={this.state.linkDialogBuffer}
+            errorText={ this.state.linkDialogBufferInvalid ? "Please enter a valid URL." : "" }
+            floatingLabelText={"Enter a website URL."}
+            onChange={(event, newValue) => {this.setState( { ...this.state, linkDialogBuffer: newValue}) }}
+          />
+        </Dialog>
+    );
+  }
+
   render() {    
     const editorViewWrapperStyle = {
       flexGrow: '1', display: 'flex', flexDirection: 'column'
@@ -436,6 +486,7 @@ class TextResource extends Component {
           editorView={this.state.editorView}
           createEditorView={this.createEditorView}
         />
+        { this.renderLinkDialog() }
       </div>
     );
   }
