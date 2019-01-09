@@ -11,7 +11,7 @@ import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Link from 'material-ui/svg-icons/content/link';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
-import { updateDocument, closeDocument, moveDocument, openDeleteDialog, layoutOptions } from './modules/documentGrid';
+import { updateDocument, closeDocument, moveDocument, layoutOptions } from './modules/documentGrid';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 import DocumentStatusBar from './DocumentStatusBar';
@@ -182,8 +182,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
-  moveDocument,
-  openDeleteDialog
+  moveDocument
 }, dispatch);
 
 export default connect(

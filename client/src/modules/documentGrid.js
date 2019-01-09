@@ -126,14 +126,11 @@ export default function(state = initialState, action) {
 
     case CLOSE_DOCUMENT:
     case DELETE_SUCCESS:
-      let preCloseDocumentsCopy = state.openDocuments.slice(0);
-      let toCloseIndex = state.openDocuments.findIndex(resource => resource.id.toString() === action.documentId.toString());
-      if (toCloseIndex >= 0) {
-        preCloseDocumentsCopy.splice(toCloseIndex, 1);
-      }
+      const targetID = action.documentId.toString();
+      const openDocuments = state.openDocuments.filter( openDocument => ( openDocument.id.toString() !== targetID ) )
       return {
         ...state,
-        openDocuments: preCloseDocumentsCopy
+        openDocuments
       };
 
     case CLEAR_RESOURCES:
