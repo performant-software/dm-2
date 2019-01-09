@@ -115,7 +115,8 @@ export const marks = {
   link: {
     attrs: {
       href: {},
-      title: {default: null}
+      title: {default: null},
+      target: {default: '_blank'}
     },
     inclusive: false,
     parseDOM: [{tag: "a[href]", getAttrs(dom) {

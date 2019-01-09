@@ -165,6 +165,10 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onHyperLink = () => {
+    // TODO
+  }
+
   onOrderedList() {
     const orderedListNodeType = this.state.documentSchema.nodes.ordered_list;
     const editorState = this.getEditorState();
@@ -406,7 +410,7 @@ class TextResource extends Component {
             <FormatUnderlined />
           </IconButton>
           Font Size: { this.renderDropDownMenu() }
-          <IconButton tooltip='Create a hyperlink.'>
+          <IconButton onClick={this.onHyperLink} tooltip='Create a hyperlink.'>
             <InsertLink />
           </IconButton>
           <IconButton onClick={this.onBulletList.bind(this)} tooltip='Create a bulleted list.'>
