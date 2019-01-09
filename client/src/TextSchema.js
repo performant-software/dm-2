@@ -3,6 +3,8 @@ import {Schema} from "prosemirror-model"
 const pDOM = ["p", 0], blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
       preDOM = ["pre", ["code", 0]], brDOM = ["br"]
 
+const fontSizeRegEx = /font-size: (.*);/
+
 // :: Object
 // [Specs](#model.NodeSpec) for the nodes defined in this schema.
 export const nodes = {
@@ -125,18 +127,23 @@ export const marks = {
   // :: MarkSpec An emphasis mark. Rendered as an `<em>` element.
   // Has parse rules that also match `<i>` and `font-style: italic`.
   em: {
-    parseDOM: [{tag: "i"}, {tag: "em"}, {style: "font-style=italic"}],
+    parseDOM: [{tag: "i"}, {tag: "em"}],
     toDOM() { return emDOM }
   },
 
   underline: {
-    parseDOM: [{tag: "u"}, {style: "text-decoration=underline"}],
+    parseDOM: [{tag: "u"}],
     toDOM() { return ["u", 0] }
   },
 
   fontSize: {
     attrs: {fontSize: {default: 'normal'}},
-    parseDOM: [], // TODO was <font size=""> in DM1
+    parseDOM: [{tag: "span", getAttrs(dom) {
+      let styleAttr = dom.getAttribute("style")
+      let matches = styleAttr.match(fontSizeRegEx);
+      let fontSize = matches && matches.length > 1 ? matches[1] : {};
+      return { fontSize }
+    }}], 
     toDOM(mark) {
         let fontSize=mark.attrs.fontSize; 
         return ["span", { style: `font-size:${fontSize}` }, 0] 
