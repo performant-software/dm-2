@@ -21,7 +21,7 @@ import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
 
-import { addListNodes } from 'prosemirror-schema-list';
+import { addListNodes, wrapInList } from 'prosemirror-schema-list';
 import { toggleMark } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
 import { undo, redo } from "prosemirror-history"
@@ -162,6 +162,20 @@ class TextResource extends Component {
     const markType = this.state.documentSchema.marks.underline;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onOrderedList() {
+    const orderedListNodeType = this.state.documentSchema.nodes.ordered_list;
+    const editorState = this.getEditorState();
+    const cmd = wrapInList( orderedListNodeType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onBulletList() {
+    const bulletListNodeType = this.state.documentSchema.nodes.bullet_list;
+    const editorState = this.getEditorState();
+    const cmd = wrapInList( bulletListNodeType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
@@ -395,10 +409,10 @@ class TextResource extends Component {
           <IconButton tooltip='Create a hyperlink.'>
             <InsertLink />
           </IconButton>
-          <IconButton tooltip='Create a bulleted list.'>
+          <IconButton onClick={this.onBulletList.bind(this)} tooltip='Create a bulleted list.'>
             <FormatListBulleted />
           </IconButton>
-          <IconButton tooltip='Create a numbered list.'>
+          <IconButton onClick={this.onOrderedList.bind(this)} tooltip='Create a numbered list.'>
             <FormatListNumbered />
           </IconButton>
         </ToolbarGroup>
