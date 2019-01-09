@@ -136,7 +136,16 @@ export const marks = {
     toDOM() { return ["u", 0] }
   },
 
+  // TODO how to migrate old mark types to new ones?
   fontSize: {
+    attrs: {fontSize: {default: 'normal'}},
+    toDOM(mark) {
+        let fontSize=mark.attrs.fontSize; 
+        return ["span", { style: `font-size:${fontSize}` }, 0] 
+    }
+  },
+
+  textStyle: {
     attrs: {fontSize: {default: 'normal'}},
     parseDOM: [{tag: "span", getAttrs(dom) {
       let styleAttr = dom.getAttribute("style")

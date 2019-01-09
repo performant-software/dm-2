@@ -166,9 +166,9 @@ class TextResource extends Component {
   }
 
   onFontSizeChange(e,i,fontSize) {
-    const fontSizeMarkType = this.state.documentSchema.marks.fontSize;
+    const textStyleMarkType = this.state.documentSchema.marks.textStyle;
     const editorState = this.getEditorState();
-    const cmd = fontSize ? addMark( fontSizeMarkType, { fontSize } ) : removeMark( fontSizeMarkType );
+    const cmd = fontSize ? addMark( textStyleMarkType, { fontSize } ) : removeMark( textStyleMarkType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
