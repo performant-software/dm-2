@@ -236,10 +236,14 @@ export function load() {
       return response;
     })
     .then(response => response.json())
-    .then(projects => dispatch({
-      type: FETCH_SUCCESS,
-      projects
-    }))
+    .then(projects => {
+      // sort by title
+      projects = projects.sort(createAlphaNumericComparator('title'));
+      dispatch({
+        type: FETCH_SUCCESS,
+        projects
+      })
+    })
     .catch(() => dispatch({
       type: ERRORED
     }));
@@ -473,3 +477,20 @@ export function deleteUser(userId) {
     }));
   }
 }
+
+function createAlphaNumericComparator( field ) {
+  return function alphaNumericCompare(a,b) {
+    var nameA = a[field].toUpperCase(); // ignore upper and lowercase
+    var nameB = b[field].toUpperCase(); // ignore upper and lowercase
+    if (nameA < nameB) {
+      return -1;
+    }
+    if (nameA > nameB) {
+      return 1;
+    }
+  
+    // names must be equal
+    return 0;
+  }  
+}
+
