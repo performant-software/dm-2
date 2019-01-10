@@ -90,6 +90,29 @@ class Project extends Component {
     );
   }
 
+  renderDocumentViewer = (document,index) => {
+    const key = `${document.id}-${document.timeOpened}`;
+    return (
+      <DocumentViewer 
+        key={key} 
+        index={index} 
+        document_id={document.id}  
+        timeOpened={document.timeOpened} 
+        resourceName={document.title} 
+        document_kind={document.document_kind} 
+        content={document.content} 
+        highlight_map={document.highlight_map} 
+        image_thumbnail_urls={document.image_thumbnail_urls} 
+        image_urls={document.image_urls} 
+        linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
+        writeEnabled={this.props.writeEnabled} 
+        locked={document.locked}
+        lockedByUserName={document.locked_by_user_name}
+        lockedByMe={document.locked_by_me}
+      />
+    );
+  }
+
   renderDocumentGrid() {
     const gridInnerStyle = { 
       margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, 
@@ -104,26 +127,11 @@ class Project extends Component {
         ref={el => {this.mainContainer = el;}}
         onMouseMove={event => {this.mouseX = event.clientX; this.mouseY = event.clientY;}}
       >          
-        <div id='document-grid-inner' style={gridInnerStyle}>
-          {this.props.openDocuments.map((document, index) => (
-            <DocumentViewer 
-              key={`${document.id}-${document.timeOpened}`} 
-              index={index} 
-              document_id={document.id}  
-              timeOpened={document.timeOpened} 
-              resourceName={document.title} 
-              document_kind={document.document_kind} 
-              content={document.content} 
-              highlight_map={document.highlight_map} 
-              image_thumbnail_urls={document.image_thumbnail_urls} 
-              image_urls={document.image_urls} 
-              linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
-              writeEnabled={this.props.writeEnabled} 
-              locked={document.locked}
-              lockedByUserName={document.locked_by_user_name}
-              lockedByMe={document.locked_by_me}
-            />
-          ))}
+        <div 
+          id='document-grid-inner'
+          style={gridInnerStyle}
+        >
+          {this.props.openDocuments.map( this.renderDocumentViewer )}
         </div>
       </div>
     );

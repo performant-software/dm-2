@@ -146,9 +146,11 @@ class DocumentViewer extends Component {
 
   render() {
     const { currentLayout, openDocuments, isDragging, document_kind, connectDropTarget } = this.props;
-    const documentGridEl = document.getElementById('document-grid-inner');
-
+    const documentGridOffsetWidth = 1200;
+    const windowHeight = window.innerHeight;
     const numRows = Math.min(currentLayout.rows, Math.ceil(openDocuments.length / currentLayout.cols));
+    const width = (documentGridOffsetWidth / currentLayout.cols) - 16;
+    const height = ((windowHeight - 72.0) / numRows) - 16;
 
     return (
       <Paper
@@ -158,8 +160,8 @@ class DocumentViewer extends Component {
           margin: '8px',
           padding: '0',
           backgroundColor: document_kind === 'canvas' ? grey900 : '#FFF',
-          width: `${documentGridEl.offsetWidth / currentLayout.cols - 16}px`,
-          height: `${((window.innerHeight - 72.0) / numRows) - 16}px`,
+          width: `${width}px`,
+          height: `${height}px`,
           flexGrow: '1',
           flexShrink: '1'
         }}
