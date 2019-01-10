@@ -52,7 +52,7 @@ class Project extends Component {
   }
 
   renderDeleteDialog() {
-    const { deleteDialogTitle, closeDeleteDialog, deleteDialogSubmit, deleteDialogOpen, deleteDialogBody } = this.props;
+    const { deleteDialogTitle, closeDeleteDialog, deleteDialogSubmit, deleteDialogOpen, deleteDialogBody, confirmDeleteDialog } = this.props;
 
     return (
       <Dialog
