@@ -51,6 +51,84 @@ class Project extends Component {
     }
   }
 
+  renderDeleteDialog() {
+    const { deleteDialogTitle, closeDeleteDialog, deleteDialogSubmit, deleteDialogOpen, deleteDialogBody } = this.props;
+
+    return (
+      <Dialog
+        title={deleteDialogTitle}
+        actions={[
+          <FlatButton label='Cancel' primary={true} onClick={closeDeleteDialog} />,
+          <FlatButton label={deleteDialogSubmit} primary={true} onClick={confirmDeleteDialog} />
+        ]}
+        modal={true}
+        open={deleteDialogOpen}
+      >
+        {deleteDialogBody}
+      </Dialog>
+    );
+  }
+
+  renderDialogLayers() {
+    return (
+      <div>
+        <LinkInspectorPopupLayer 
+          targets={this.props.selectedTargets} 
+          closeHandler={this.props.closeTarget} 
+          mouseDownHandler={this.props.promoteTarget} 
+          openDocumentIds={this.props.openDocumentIds} 
+          writeEnabled={this.props.writeEnabled} 
+          sidebarWidth={this.props.sidebarWidth} 
+        />
+        <SearchResultsPopupLayer 
+          openDocumentIds={this.props.openDocumentIds} 
+          sidebarWidth={this.props.sidebarWidth} 
+        />
+        { this.renderDeleteDialog() }
+        <ProjectSettingsDialog />
+      </div>
+    );
+  }
+
+  renderDocumentGrid() {
+    const gridInnerStyle = { 
+      margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, 
+      display: 'flex', 
+      flexWrap: 'wrap', 
+      overflow: 'hidden' 
+    }
+
+    return (
+      <div
+        id='document-grid-main'
+        ref={el => {this.mainContainer = el;}}
+        onMouseMove={event => {this.mouseX = event.clientX; this.mouseY = event.clientY;}}
+      >          
+        <div id='document-grid-inner' style={gridInnerStyle}>
+          {this.props.openDocuments.map((document, index) => (
+            <DocumentViewer 
+              key={`${document.id}-${document.timeOpened}`} 
+              index={index} 
+              document_id={document.id}  
+              timeOpened={document.timeOpened} 
+              resourceName={document.title} 
+              document_kind={document.document_kind} 
+              content={document.content} 
+              highlight_map={document.highlight_map} 
+              image_thumbnail_urls={document.image_thumbnail_urls} 
+              image_urls={document.image_urls} 
+              linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
+              writeEnabled={this.props.writeEnabled} 
+              locked={document.locked}
+              lockedByUserName={document.locked_by_user_name}
+              lockedByMe={document.locked_by_me}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   render() {
     return (
       <div>
@@ -65,58 +143,8 @@ class Project extends Component {
         <Drawer docked={true} open={true} width={this.props.sidebarWidth}>
           <ProjectSidebar sidebarTarget={this.props.sidebarTarget} contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
         </Drawer>
-        <div
-          id='document-grid-main'
-          style={{ height: 'auto', position: 'relative' }}
-          ref={el => {this.mainContainer = el;}}
-          onMouseMove={event => {this.mouseX = event.clientX; this.mouseY = event.clientY;}}
-        >
-          <LinkInspectorPopupLayer 
-            targets={this.props.selectedTargets} 
-            closeHandler={this.props.closeTarget} 
-            mouseDownHandler={this.props.promoteTarget} 
-            openDocumentIds={this.props.openDocumentIds} 
-            writeEnabled={this.props.writeEnabled} 
-            sidebarWidth={this.props.sidebarWidth} 
-          />
-          <SearchResultsPopupLayer 
-            openDocumentIds={this.props.openDocumentIds} 
-            sidebarWidth={this.props.sidebarWidth} 
-          />
-          <div id='document-grid-inner' style={{ margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, display: 'flex', flexWrap: 'wrap', overflow: 'hidden' }}>
-            {this.props.openDocuments.map((document, index) => (
-              <DocumentViewer 
-                key={`${document.id}-${document.timeOpened}`} 
-                index={index} 
-                document_id={document.id}  
-                timeOpened={document.timeOpened} 
-                resourceName={document.title} 
-                document_kind={document.document_kind} 
-                content={document.content} 
-                highlight_map={document.highlight_map} 
-                image_thumbnail_urls={document.image_thumbnail_urls} 
-                image_urls={document.image_urls} 
-                linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
-                writeEnabled={this.props.writeEnabled} 
-                locked={document.locked}
-                lockedByUserName={document.locked_by_user_name}
-                lockedByMe={document.locked_by_me}
-              />
-            ))}
-          </div>
-        </div>
-        <Dialog
-          title={this.props.deleteDialogTitle}
-          actions={[
-            <FlatButton label='Cancel' primary={true} onClick={this.props.closeDeleteDialog} />,
-            <FlatButton label={this.props.deleteDialogSubmit} primary={true} onClick={this.props.confirmDeleteDialog} />
-          ]}
-          modal={true}
-          open={this.props.deleteDialogOpen}
-        >
-          {this.props.deleteDialogBody}
-        </Dialog>
-        <ProjectSettingsDialog />
+        { this.renderDialogLayers() }
+        { this.renderDocumentGrid() }
       </div>
     );
   }

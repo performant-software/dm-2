@@ -95,13 +95,40 @@ class DocumentViewer extends Component {
     }, this.titleChangeDelayMs);
   }
 
-  render() {
+  renderTitleBar() {
     const iconStyle = {
       padding: '0',
       width: '20px',
       height: '20px'
     };
     const buttonStyle = Object.assign({ margin: '2px' }, iconStyle);
+
+    return (
+      this.props.connectDragSource(
+        <div style={{ width: '100%', flexShrink: '0', cursor: '-webkit-grab' }}>
+          <div style={{ display: 'flex', padding: '10px 10px 0 10px', backgroundColor: this.props.document_kind === 'canvas' ? grey800 : grey100, borderRadius: '2px' }}>
+            <IconButton tooltip='Show link inspector' style={buttonStyle} iconStyle={iconStyle} onClick={this.props.linkInspectorAnchorClick}>
+              <Link color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+            </IconButton>
+            <TextField
+              id={`text-document-title-${this.props.document_id}`}
+              style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
+              inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
+              defaultValue={this.props.resourceName}
+              underlineShow={false}
+              onChange={this.onChangeTitle}
+              disabled={!this.isEditable()}
+            />
+            <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
+              <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+            </IconButton>
+          </div>
+        </div>
+      )
+    );
+  }
+
+  render() {
     const documentGridEl = document.getElementById('document-grid-inner');
     const numRows = Math.min(this.props.currentLayout.rows, Math.ceil(this.props.openDocuments.length / this.props.currentLayout.cols));
     return (
@@ -112,7 +139,6 @@ class DocumentViewer extends Component {
           margin: '8px',
           padding: '0',
           backgroundColor: this.props.document_kind === 'canvas' ? grey900 : '#FFF',
-          // overflow: 'hidden',
           width: `${documentGridEl.offsetWidth / this.props.currentLayout.cols - 16}px`,
           height: `${((window.innerHeight - 72.0) / numRows) - 16}px`,
           flexGrow: '1',
@@ -128,27 +154,7 @@ class DocumentViewer extends Component {
             display: 'flex',
             flexDirection: 'column'
           }}>
-            {this.props.connectDragSource(
-              <div style={{ width: '100%', flexShrink: '0', cursor: '-webkit-grab' }}>
-                <div style={{ display: 'flex', padding: '10px 10px 0 10px', backgroundColor: this.props.document_kind === 'canvas' ? grey800 : grey100, borderRadius: '2px' }}>
-                  <IconButton tooltip='Show link inspector' style={buttonStyle} iconStyle={iconStyle} onClick={this.props.linkInspectorAnchorClick}>
-                    <Link color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
-                  </IconButton>
-                  <TextField
-                    id={`text-document-title-${this.props.document_id}`}
-                    style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
-                    inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
-                    defaultValue={this.props.resourceName}
-                    underlineShow={false}
-                    onChange={this.onChangeTitle}
-                    disabled={!this.isEditable()}
-                  />
-                  <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
-                    <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
-                  </IconButton>
-                </div>
-              </div>
-            )}
+            { this.renderTitleBar() }
             <DocumentInner {...this.props} />
             <DocumentStatusBar 
               document_id={this.props.document_id}
@@ -157,7 +163,8 @@ class DocumentViewer extends Component {
               lockedByUserName={this.props.lockedByUserName}
               lockedByMe={this.props.lockedByMe}
               resourceName={this.props.resourceName} 
-              writeEnabled={this.props.writeEnabled} ></DocumentStatusBar>
+              writeEnabled={this.props.writeEnabled} >
+            </DocumentStatusBar>
           </div>
         )}
       </Paper>
