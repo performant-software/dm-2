@@ -128,10 +128,26 @@ class DocumentViewer extends Component {
     );
   }
 
+  renderStatusBar() {
+    const { document_kind, document_id, locked, lockedByMe, lockedByUserName, resourceName, writeEnabled } = this.props;
+
+    return (
+      <DocumentStatusBar 
+        document_id={document_id}
+        document_kind={document_kind} 
+        locked={locked}
+        lockedByUserName={lockedByUserName}
+        lockedByMe={lockedByMe}
+        resourceName={resourceName} 
+        writeEnabled={writeEnabled} >
+      </DocumentStatusBar>
+    );
+  }
+
   render() {
-    const { currentLayout, openDocuments, isDragging, document_kind, connectDropTarget, document_id, locked, lockedByMe, lockedByUserName, resourceName, writeEnabled } = this.props;
+    const { currentLayout, openDocuments, isDragging, document_kind, connectDropTarget } = this.props;
     const documentGridEl = document.getElementById('document-grid-inner');
-    
+
     const numRows = Math.min(currentLayout.rows, Math.ceil(openDocuments.length / currentLayout.cols));
 
     return (
@@ -159,15 +175,7 @@ class DocumentViewer extends Component {
           }}>
             { this.renderTitleBar() }
             <DocumentInner {...this.props} />
-            <DocumentStatusBar 
-              document_id={document_id}
-              document_kind={document_kind} 
-              locked={locked}
-              lockedByUserName={lockedByUserName}
-              lockedByMe={lockedByMe}
-              resourceName={resourceName} 
-              writeEnabled={writeEnabled} >
-            </DocumentStatusBar>
+            { this.renderStatusBar() }
           </div>
         )}
       </Paper>
