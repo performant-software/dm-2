@@ -5,7 +5,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings, setSidebarIsDragging, setSidebarWidth } from './modules/project';
 import { selectTarget, closeTarget, promoteTarget } from './modules/annotationViewer';
-import { closeDeleteDialog, confirmDeleteDialog } from './modules/documentGrid';
+import { closeDeleteDialog, confirmDeleteDialog, layoutOptions } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import Drawer from 'material-ui/Drawer';
@@ -109,11 +109,22 @@ class Project extends Component {
         locked={document.locked}
         lockedByUserName={document.locked_by_user_name}
         lockedByMe={document.locked_by_me}
+        numRows={this.numRows}
       />
     );
   }
 
   renderDocumentGrid() {
+    const { currentLayout, openDocuments } = this.props;
+    const newNumRows = Math.max(1, Math.ceil(openDocuments.length / currentLayout.cols));
+
+    // if the number of rows goes up, bump the scroll bar
+    if( this.numRows && newNumRows > currentLayout.rows && newNumRows > this.numRows ) {
+      const newScrollPos = 100 + window.pageYOffset;
+      window.scrollTo(0, newScrollPos);
+    }
+    this.numRows = newNumRows;
+
     const gridInnerStyle = { 
       margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, 
       display: 'flex', 
@@ -131,7 +142,7 @@ class Project extends Component {
           id='document-grid-inner'
           style={gridInnerStyle}
         >
-          {this.props.openDocuments.map( this.renderDocumentViewer )}
+          {openDocuments.map( this.renderDocumentViewer )}
         </div>
       </div>
     );
@@ -176,6 +187,7 @@ const mapStateToProps = state => ({
   deleteDialogTitle:  state.documentGrid.deleteDialogTitle,
   deleteDialogBody:   state.documentGrid.deleteDialogBody,
   deleteDialogSubmit: state.documentGrid.deleteDialogSubmit,
+  currentLayout:      layoutOptions[state.documentGrid.currentLayout],
   selectedTargets:    state.annotationViewer.selectedTargets,
   sidebarTarget:      state.annotationViewer.sidebarTarget
 });

@@ -145,12 +145,12 @@ class DocumentViewer extends Component {
   }
 
   render() {
-    const { currentLayout, openDocuments, isDragging, document_kind, connectDropTarget } = this.props;
+    const { currentLayout, isDragging, document_kind, connectDropTarget, numRows } = this.props;
     const documentGridOffsetWidth = 1200;
     const windowHeight = window.innerHeight;
-    const numRows = Math.min(currentLayout.rows, Math.ceil(openDocuments.length / currentLayout.cols));
     const width = (documentGridOffsetWidth / currentLayout.cols) - 16;
-    const height = ((windowHeight - 72.0) / numRows) - 16;
+    const rows = currentLayout.rows < numRows ? currentLayout.rows : numRows;
+    const height = ((windowHeight - 72.0) / rows) - 16;
 
     return (
       <Paper
