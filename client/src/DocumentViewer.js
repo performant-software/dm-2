@@ -129,24 +129,27 @@ class DocumentViewer extends Component {
   }
 
   render() {
+    const { currentLayout, openDocuments, isDragging, document_kind, connectDropTarget, document_id, locked, lockedByMe, lockedByUserName, resourceName, writeEnabled } = this.props;
     const documentGridEl = document.getElementById('document-grid-inner');
-    const numRows = Math.min(this.props.currentLayout.rows, Math.ceil(this.props.openDocuments.length / this.props.currentLayout.cols));
+    
+    const numRows = Math.min(currentLayout.rows, Math.ceil(openDocuments.length / currentLayout.cols));
+
     return (
       <Paper
         style={{
           zIndex: '99',
-          opacity: this.props.isDragging ? '0.5' : '1',
+          opacity: isDragging ? '0.5' : '1',
           margin: '8px',
           padding: '0',
-          backgroundColor: this.props.document_kind === 'canvas' ? grey900 : '#FFF',
-          width: `${documentGridEl.offsetWidth / this.props.currentLayout.cols - 16}px`,
+          backgroundColor: document_kind === 'canvas' ? grey900 : '#FFF',
+          width: `${documentGridEl.offsetWidth / currentLayout.cols - 16}px`,
           height: `${((window.innerHeight - 72.0) / numRows) - 16}px`,
           flexGrow: '1',
           flexShrink: '1'
         }}
         zDepth={2}
       >
-        {this.props.connectDropTarget(
+        {connectDropTarget(
           <div style={{
             width: '100%',
             height: '100%',
@@ -157,13 +160,13 @@ class DocumentViewer extends Component {
             { this.renderTitleBar() }
             <DocumentInner {...this.props} />
             <DocumentStatusBar 
-              document_id={this.props.document_id}
-              document_kind={this.props.document_kind} 
-              locked={this.props.locked}
-              lockedByUserName={this.props.lockedByUserName}
-              lockedByMe={this.props.lockedByMe}
-              resourceName={this.props.resourceName} 
-              writeEnabled={this.props.writeEnabled} >
+              document_id={document_id}
+              document_kind={document_kind} 
+              locked={locked}
+              lockedByUserName={lockedByUserName}
+              lockedByMe={lockedByMe}
+              resourceName={resourceName} 
+              writeEnabled={writeEnabled} >
             </DocumentStatusBar>
           </div>
         )}
