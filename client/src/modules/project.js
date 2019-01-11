@@ -47,7 +47,6 @@ const initialState = {
   errored: false,
   documentPopoverOpenFor: null,
   settingsShown: false,
-  allUsers: [],
   usersLoading: false,
   usersErrored: false,
   newPermissionUser: null,
@@ -361,7 +360,6 @@ export function showSettings() {
     dispatch({
       type: SETTINGS_SHOWN
     });
-    dispatch(loadAllUsers());
   };
 }
 
@@ -373,44 +371,12 @@ export function hideSettings() {
   };
 }
 
-export function loadAllUsers() {
-  return function(dispatch) {
-    dispatch({
-      type: USERS_LOADING
-    });
-
-    fetch(`/users`, {
-      headers: {
-        'access-token': localStorage.getItem('access-token'),
-        'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(users => dispatch({
-      type: LOAD_ALL_USERS_SUCCESS,
-      allUsers: users
-    }))
-    .catch(() => dispatch({
-      type: LOAD_ALL_USERS_ERRORED
-    }));
-  };
-}
-
 export function setNewPermissionUser(user) {
   return function(dispatch) {
-    dispatch({
-      type: NEW_PERMISSION_USER_CHANGE,
-      user
-    });
+    // dispatch({
+    //   type: NEW_PERMISSION_USER_CHANGE,
+    //   user
+    // });
   };
 }
 

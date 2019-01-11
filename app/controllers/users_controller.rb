@@ -1,13 +1,7 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [:admin_update, :destroy]
-  before_action :authenticate_user!, only: [:index, :list_admin, :admin_update, :destroy]
+  before_action :authenticate_user!, only: [:list_admin, :admin_update, :destroy]
   before_action :authenticate_user_admin, only: [:list_admin, :admin_update, :destroy]
-
-  def index
-    @users = User.is_approved.order(name: :asc)
-
-    render json: @users
-  end
 
   def list_admin
     @users = User.all.order(approved: :asc, admin: :desc, email: :asc)

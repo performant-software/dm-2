@@ -25,37 +25,15 @@ import { hideSettings, updateProject, setNewPermissionUser, setNewPermissionLeve
 class ProjectSettingsDialog extends Component {
 
   renderAddCollabRow() {
-    const { currentUser, allUsers, newPermissionLevel, userProjectPermissions, newPermissionUser } = this.props; 
-
-    let usersDataSource = [];
-    const permissionIds = userProjectPermissions.map(userProjectPermission => userProjectPermission.user.id);
-    allUsers.forEach(user => {
-      if (!permissionIds.includes(user.id)) {
-        usersDataSource.push({
-          textKey: user.name,
-          valueKey: user.id
-        });
-      }
-    });
-    let usersDataSourceConfig = {
-      text: 'textKey',
-      value: 'valueKey',
-    };
+    const { currentUser, newPermissionLevel, newPermissionUser } = this.props; 
 
     return (
       <TableRow>
+        <TableRowColumn/>
         <TableRowColumn>
-          <AutoComplete
-            hintText='Add a collaborator'
-            filter={AutoComplete.noFilter}
-            openOnFocus={true}
-            dataSource={usersDataSource}
-            dataSourceConfig={usersDataSourceConfig}
-            onNewRequest={(chosenRequest, index) => {
-              if (index >= 0) {
-                this.props.setNewPermissionUser(usersDataSource[index].valueKey);
-              }
-            }}
+          <TextField
+            floatingLabelText='User email'
+            onChange={(event, newValue) => {this.props.setNewPermissionUser(newValue);}}
           />
         </TableRowColumn>
         {currentUser.attributes.admin &&
@@ -238,7 +216,6 @@ const mapStateToProps = state => ({
   title: state.project.title,
   description: state.project.description,
   userProjectPermissions: state.project.userProjectPermissions,
-  allUsers: state.project.allUsers,
   public: state.project.public,
   newPermissionUser: state.project.newPermissionUser,
   newPermissionLevel: state.project.newPermissionLevel,

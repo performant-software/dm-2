@@ -7,8 +7,6 @@ Rails.application.routes.draw do
   resources :projects
   mount_devise_token_auth_for 'User', at: '/auth'
 
-  get '/users' => 'users#index'
-  get '/users/index'
   get '/users/update'
   get '/users/list_admin' => 'users#list_admin'
   patch '/users/:id' => 'users#admin_update'
