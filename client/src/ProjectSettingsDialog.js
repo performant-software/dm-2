@@ -28,7 +28,7 @@ class ProjectSettingsDialog extends Component {
 
     return (
       <TableRow>
-        <TableRowColumn><em>Invite a user by email address:</em></TableRowColumn>
+        <TableRowColumn><em>Enter an email address to invite:</em></TableRowColumn>
         <TableRowColumn>
           <TextField
             id='addcollab'
