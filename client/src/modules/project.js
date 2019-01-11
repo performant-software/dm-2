@@ -132,8 +132,8 @@ export default function(state = initialState, action) {
 
     case CREATE_PERMISSION_LOADING:
       return {
-        newPermissionLoading: true,
         ...state,
+        newPermissionLoading: true,
       };
 
     case CREATE_PERMISSION_SUCCESS:
@@ -146,9 +146,9 @@ export default function(state = initialState, action) {
 
     case CREATE_PERMISSION_ERRORED:
       return {
+        ...state,
         newPermissionLoading: false,
         newPermissionError: 'Unable to add user.',
-        ...state,
       }
 
     case NEW_PERMISSION_USER_CHANGE:
