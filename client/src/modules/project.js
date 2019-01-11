@@ -23,9 +23,6 @@ export const OPEN_DOCUMENT_POPOVER = 'project/OPEN_DOCUMENT_POPOVER';
 export const CLOSE_DOCUMENT_POPOVER = 'project/CLOSE_DOCUMENT_POPOVER';
 export const SETTINGS_SHOWN = 'project/SETTINGS_SHOWN';
 export const SETTINGS_HIDDEN = 'project/SETTINGS_HIDDEN';
-export const USERS_LOADING = 'project/USERS_LOADING';
-export const LOAD_ALL_USERS_ERRORED = 'project/LOAD_ALL_USERS_ERRORED';
-export const LOAD_ALL_USERS_SUCCESS = 'project/LOAD_ALL_USERS_SUCCESS';
 export const NEW_PERMISSION_LEVEL_CHANGE = 'project/NEW_PERMISSION_LEVEL_CHANGE';
 export const NEW_PERMISSION_USER_CHANGE = 'project/NEW_PERMISSION_USER_CHANGE';
 export const CREATE_PERMISSION_LOADING = 'project/CREATE_PERMISSION_LOADING';
@@ -47,10 +44,10 @@ const initialState = {
   errored: false,
   documentPopoverOpenFor: null,
   settingsShown: false,
-  usersLoading: false,
-  usersErrored: false,
+  newPermissionLoading: false,
   newPermissionUser: null,
   newPermissionLevel: READ_PERMISSION,
+  newPermissionError: null,
   deleteConfirmed: false,
   sidebarWidth: 350,
   sidebarIsDragging: false
@@ -134,29 +131,25 @@ export default function(state = initialState, action) {
       };
 
     case CREATE_PERMISSION_LOADING:
-    case USERS_LOADING:
+      return {
+        newPermissionLoading: true,
+        ...state,
+      };
+
+    case CREATE_PERMISSION_SUCCESS:
       return {
         ...state,
-        usersLoading: true,
-        usersErrored: false
+        newPermissionLoading: false,
+        newPermissionError: null,
+        newPermissionUser: null
       };
 
     case CREATE_PERMISSION_ERRORED:
-    case LOAD_ALL_USERS_ERRORED:
-      console.log('project settings error');
       return {
+        newPermissionLoading: false,
+        newPermissionError: 'Unable to add user.',
         ...state,
-        usersErrored: true,
-        usersLoading: false
       }
-
-    case LOAD_ALL_USERS_SUCCESS:
-      return {
-        ...state,
-        allUsers: action.allUsers,
-        usersLoading: false,
-        usersErrored: false
-      };
 
     case NEW_PERMISSION_USER_CHANGE:
       return {
@@ -168,14 +161,6 @@ export default function(state = initialState, action) {
       return {
         ...state,
         newPermissionLevel: action.level
-      };
-
-    case CREATE_PERMISSION_SUCCESS:
-      return {
-        ...state,
-        usersLoading: false,
-        usersErrored: false,
-        newPermissionUser: null
       };
 
     case TOGGLE_DELETE_CONFIRMATION:
@@ -373,10 +358,10 @@ export function hideSettings() {
 
 export function setNewPermissionUser(user) {
   return function(dispatch) {
-    // dispatch({
-    //   type: NEW_PERMISSION_USER_CHANGE,
-    //   user
-    // });
+    dispatch({
+      type: NEW_PERMISSION_USER_CHANGE,
+      user
+    });
   };
 }
 
@@ -391,11 +376,9 @@ export function setNewPermissionLevel(level) {
 
 export function createNewPermission() {
   return function(dispatch, getState) {
-    const projectId = getState().project.id;
-    const userId = getState().project.newPermissionUser;
-    const permissionLevel = getState().project.newPermissionLevel;
+    const { id, newPermissionUser, newPermissionLevel } = getState().project;
 
-    if (userId !== null) {
+    if (newPermissionUser !== null) {
       dispatch({
         type: CREATE_PERMISSION_LOADING
       });
@@ -412,9 +395,9 @@ export function createNewPermission() {
         },
         method: 'POST',
         body: JSON.stringify({
-          project_id: projectId,
-          user_id: userId,
-          permission: permissionLevel
+          project_id: id,
+          email: newPermissionUser,
+          permission: newPermissionLevel
         })
       })
       .then(response => {
@@ -426,7 +409,7 @@ export function createNewPermission() {
         dispatch({
           type: CREATE_PERMISSION_SUCCESS
         });
-        dispatch(loadProject(projectId));
+        dispatch(loadProject(id));
       })
       .catch(() => dispatch({
         type: CREATE_PERMISSION_ERRORED

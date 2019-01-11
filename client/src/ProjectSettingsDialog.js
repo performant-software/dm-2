@@ -13,7 +13,6 @@ import {
   TableRow,
   TableRowColumn,
 } from 'material-ui/Table';
-import AutoComplete from 'material-ui/AutoComplete';
 import SelectField from 'material-ui/SelectField';
 import MenuItem from 'material-ui/MenuItem';
 import Toggle from 'material-ui/Toggle';
@@ -25,20 +24,18 @@ import { hideSettings, updateProject, setNewPermissionUser, setNewPermissionLeve
 class ProjectSettingsDialog extends Component {
 
   renderAddCollabRow() {
-    const { currentUser, newPermissionLevel, newPermissionUser } = this.props; 
+    const { newPermissionLevel, newPermissionError } = this.props; 
 
     return (
       <TableRow>
-        <TableRowColumn/>
+        <TableRowColumn><em>Invite a user by email address:</em></TableRowColumn>
         <TableRowColumn>
           <TextField
-            floatingLabelText='User email'
+            id='addcollab'
             onChange={(event, newValue) => {this.props.setNewPermissionUser(newValue);}}
+            errorText={ newPermissionError ? newPermissionError : null }
           />
         </TableRowColumn>
-        {currentUser.attributes.admin &&
-          <TableRowColumn></TableRowColumn>
-        }
         <TableRowColumn>
           <SelectField
             value={newPermissionLevel}
@@ -50,9 +47,23 @@ class ProjectSettingsDialog extends Component {
           </SelectField>
         </TableRowColumn>
         <TableRowColumn>
-          <FlatButton label='Add' disabled={newPermissionUser === null} onClick={this.props.createNewPermission} backgroundColor={lightBlue100} hoverColor={lightBlue200} />
+          <FlatButton label={this.renderAddButtonLabel()} disabled={!this.validateAddCollab()} onClick={this.props.createNewPermission} backgroundColor={lightBlue100} hoverColor={lightBlue200} />
         </TableRowColumn>
       </TableRow>
+    )
+  }
+
+  renderAddButtonLabel() {
+    return this.props.newPermissionLoading ? 'Adding...' : 'Add'
+  }
+
+  validateAddCollab() {
+    const { newPermissionUser, newPermissionLoading } = this.props; 
+
+    return (
+      newPermissionLoading === false && 
+      newPermissionUser !== null && 
+      newPermissionUser.length > 0
     )
   }
 
@@ -62,9 +73,7 @@ class ProjectSettingsDialog extends Component {
     return (
       <TableRow key={userProjectPermission.id}>
         <TableRowColumn>{userProjectPermission.user.name}</TableRowColumn>
-        {currentUser.attributes.admin &&
-          <TableRowColumn>{userProjectPermission.user.user_email}</TableRowColumn>
-        }
+        <TableRowColumn>{userProjectPermission.user.user_email}</TableRowColumn>
         <TableRowColumn>
           <SelectField
             value={userProjectPermission.permission}
@@ -84,7 +93,7 @@ class ProjectSettingsDialog extends Component {
   }
 
   renderCollaboratorsTab() {
-    const { userProjectPermissions, currentUser } = this.props;
+    const { userProjectPermissions } = this.props;
 
     return (
       <Tab label='Collaborators'>
@@ -92,9 +101,7 @@ class ProjectSettingsDialog extends Component {
           <TableHeader displaySelectAll={false} adjustForCheckbox={false}>
             <TableRow>
               <TableHeaderColumn>Name</TableHeaderColumn>
-              { currentUser.attributes.admin &&
-                <TableHeaderColumn>Email</TableHeaderColumn>
-              }
+              <TableHeaderColumn>Email</TableHeaderColumn>
               <TableHeaderColumn>Permission level</TableHeaderColumn>
               <TableHeaderColumn></TableHeaderColumn>
             </TableRow>
@@ -111,7 +118,7 @@ class ProjectSettingsDialog extends Component {
   }
 
   renderProjectTab() {
-    const { title, description } = this.props;
+    const { id, title, description } = this.props;
 
     return (
       <Tab label='Project'>
@@ -128,6 +135,12 @@ class ProjectSettingsDialog extends Component {
           rows={4}
           rowsMax={2}
         />
+        <Toggle
+          label='Make project publicly viewable'
+          toggled={this.props.public}
+          onToggle={(event, isInputChecked) => {this.props.updateProject(id, {public: isInputChecked});}}
+          style={{ maxWidth: '300px', margin: '18px 0' }}
+        />
       </Tab>
     )
   }
@@ -136,14 +149,8 @@ class ProjectSettingsDialog extends Component {
     const { id, deleteConfirmed, toggleDeleteConfirmation } = this.props;
 
     return (
-      <Tab label='Publishing & Deletion'>
-        <Toggle
-          label='Make project publicly viewable'
-          toggled={this.props.public}
-          onToggle={(event, isInputChecked) => {this.props.updateProject(id, {public: isInputChecked});}}
-          style={{ maxWidth: '300px', margin: '18px 0' }}
-        />
-        <Divider />
+      <Tab label='Project Deletion'>
+        <h2>Delete My Project</h2>
         <Checkbox
           label='I understand that by destroying this project, I will permanently destroy all documents, folders, and highlights associated with it.'
           checked={deleteConfirmed}
@@ -219,6 +226,8 @@ const mapStateToProps = state => ({
   public: state.project.public,
   newPermissionUser: state.project.newPermissionUser,
   newPermissionLevel: state.project.newPermissionLevel,
+  newPermissionError: state.project.newPermissionError,
+  newPermissionLoading: state.project.newPermissionLoading,
   deleteConfirmed: state.project.deleteConfirmed
 });
 
