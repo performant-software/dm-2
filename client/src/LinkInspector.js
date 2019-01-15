@@ -6,7 +6,7 @@ import Subheader from 'material-ui/Subheader';
 import CircularProgress from 'material-ui/CircularProgress';
 import { grey400 } from 'material-ui/styles/colors';
 import { addLink, selectSidebarTarget } from './modules/annotationViewer';
-import LinkableSummary from './LinkableSummary';
+
 import LinkableList from './LinkableList';
 import { createTextDocumentWithLink } from './modules/documentGrid';
 import { openDocumentPopover, closeDocumentPopover } from './modules/project';
@@ -19,7 +19,7 @@ const LinkList = function(props) {
       <LinkableList items={props.items} openDocumentIds={props.openDocumentIds} />
     );
   }
-  return <Subheader style={{color: grey400}}>No links</Subheader>;
+  return null;
 }
 
 const linkTarget = {
@@ -45,11 +45,11 @@ function collect(connect, monitor) {
 class LinkDropTarget extends Component {
   render() {
     return this.props.connectDropTarget(
-      <div>
+      <div style={{marginTop: '8px'}}>
         <LinkList {...this.props} />
         <div style={{ height: '64px', margin: '0 8px 8px 8px', padding: '0 16px', borderRadius: '4px', border: `1px ${this.props.isOver ? 'black' : grey400} dashed`, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {!this.props.isOver &&
-            <Subheader style={{ fontStyle: 'italic', padding: '0' }}>Drag an item here to add a link.</Subheader>
+            <Subheader style={{ fontStyle: 'italic', padding: '0' }}>Drop link here.</Subheader>
           }
         </div>
       </div>
@@ -87,14 +87,10 @@ class LinkInspector extends Component {
 
     return (
       <div style={{ marginBottom: '8px' }}>
-        <LinkableSummary item={target} isDraggable={this.props.writeEnabled} isOpen={this.props.openDocumentIds && this.props.openDocumentIds.includes(target.document_id.toString())} handleDoubleClick={() => {this.props.selectSidebarTarget(target);}}>
-          {primaryText}
-        </LinkableSummary>
-        <Subheader style={{lineHeight: '32px'}}>Links to:</Subheader>
         <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
-        {this.props.writeEnabled &&
+        {this.props.writeEnabled && 
           <AddDocumentButton
-            label='Add New Linked Document'
+            label='Add Text Document'
             documentPopoverOpen={this.props.documentPopoverOpenFor === this.props.id}
             openDocumentPopover={() => {this.props.openDocumentPopover(this.props.id)}}
             closeDocumentPopover={this.props.closeDocumentPopover}

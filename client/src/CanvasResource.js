@@ -217,7 +217,7 @@ class CanvasResource extends Component {
             this.overlay.fabricCanvas().discardActiveObject();
 
             const highlight_id = this.highlight_map[selectedObject._highlightUid].id;
-            this.props.updateHighlight(highlight_id, {target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
+            this.props.updateHighlight(highlight_id, {color: newColor, target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
           }
           break;
 
