@@ -51,6 +51,8 @@ export const layoutOptions = [
   { rows: 3, cols: 3, description: '3 x 3' }
 ];
 
+export const MAX_EXCERPT_LENGTH = 80;
+
 const initialState = {
   layout: DEFAULT_LAYOUT,
   openDocuments: [],
