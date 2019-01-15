@@ -146,7 +146,7 @@ class DocumentViewer extends Component {
 
   render() {
     const { currentLayout, isDragging, document_kind, connectDropTarget, numRows } = this.props;
-    const documentGridOffsetWidth = 1200;
+    const documentGridOffsetWidth = 700;
     const windowHeight = window.innerHeight;
     const width = (documentGridOffsetWidth / currentLayout.cols) - 16;
     const rows = currentLayout.rows < numRows ? currentLayout.rows : numRows;

@@ -429,7 +429,7 @@ class TextResource extends Component {
           <IconButton onClick={this.onUnderline} tooltip='Underline selected text.'>
             <FormatUnderlined />
           </IconButton>
-          Font Size: { this.renderDropDownMenu() }
+          { this.renderDropDownMenu() }
           <IconButton onClick={this.onHyperLink} tooltip='Create a hyperlink.'>
             <InsertLink />
           </IconButton>
