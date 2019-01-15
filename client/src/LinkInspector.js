@@ -3,7 +3,6 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { DropTarget } from 'react-dnd';
 import Subheader from 'material-ui/Subheader';
-import CircularProgress from 'material-ui/CircularProgress';
 import { grey400 } from 'material-ui/styles/colors';
 import { addLink, selectSidebarTarget } from './modules/annotationViewer';
 
@@ -63,9 +62,6 @@ LinkDropTarget = DropTarget(
 )(LinkDropTarget);
 
 const LinkArea = props => {
-  if (props.loading) {
-    return <CircularProgress color={grey400} style={{margin: '16px'}} />;
-  }
   if (props.writeEnabled) {
     return <LinkDropTarget {...props} />;
   }
