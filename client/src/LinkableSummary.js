@@ -6,6 +6,7 @@ import { ListItem } from 'material-ui/List';
 import TextFields from 'material-ui/svg-icons/editor/text-fields';
 import ArrowDown from 'material-ui/svg-icons/navigation/expand-more';
 import ArrowRight from 'material-ui/svg-icons/navigation/chevron-right';
+import RemoveCircle from 'material-ui/svg-icons/content/remove-circle-outline';
 import Avatar from 'material-ui/Avatar';
 import { grey100, grey400, cyan100 } from 'material-ui/styles/colors';
 import { TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE } from './modules/project';
@@ -17,6 +18,14 @@ class Summary extends Component {
 
     this.singleClickTimeout = null;
     this.doubleClickCutoffMs = 400;
+  }
+
+  renderRightButton() {
+    const { item } = this.props;
+    if( !item.linkItem ) return null;
+    return (
+      <RemoveCircle onClick={()=>{ item.removeLinkCallback(item)} } style={{margin:10}}/>
+    )
   }
 
   render() {
@@ -36,6 +45,7 @@ class Summary extends Component {
           />
         }
         leftIcon={document_kind === 'folder' ? (this.props.isOpen ? <ArrowDown /> : <ArrowRight />) : null}
+        rightIconButton={ this.renderRightButton() }
         style={this.props.isDraggable ? {
           borderStyle: 'solid',
           borderWidth: this.props.borderBold ? '2px' : '1px',

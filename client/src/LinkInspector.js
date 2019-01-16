@@ -11,6 +11,7 @@ import { createTextDocumentWithLink } from './modules/documentGrid';
 import { openDocumentPopover, closeDocumentPopover } from './modules/project';
 import AddDocumentButton from './AddDocumentButton';
 import 'react-resizable/css/styles.css';
+import { AlertError } from 'material-ui/svg-icons';
 
 const LinkList = function(props) {
   if (props.items && props.items.length > 0) {
@@ -69,13 +70,30 @@ const LinkArea = props => {
 }
 
 class LinkInspector extends Component {
+
+  getItemList() {
+    const links = this.props.target.links_to;
+    if( links && links.length > 0 ) {
+      return links.map( (link) => {
+        const linkID = link.document_id + (link.highlight_id ? '-' + link.highlight_id : '');
+        return { ...link, id: linkID, linkItem: true, removeLinkCallback: this.removeLink };
+      })
+    } else {
+      return [];
+    }
+  }
+
+  removeLink = (linkItem) => {
+    // alert(`request to remove link item ${linkItem.id}.`);
+
+    
+  }
+  
   render() {
     const { target } = this.props;
     if (target === null) return null;
 
-    const items = target.links_to && target.links_to.length > 0 ? target.links_to.map(function(link) {
-      return Object.assign({id: link.document_id + (link.highlight_id ? '-' + link.highlight_id : '')}, link);
-    }) : [];
+    const items = this.getItemList();
 
     let primaryText = target.document_title;
     if (target.excerpt && target.excerpt.length > 0)
