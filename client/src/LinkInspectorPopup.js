@@ -10,6 +10,7 @@ import TextField from 'material-ui/TextField';
 
 import Link from 'material-ui/svg-icons/content/link';
 import Close from 'material-ui/svg-icons/navigation/close';
+import Done from 'material-ui/svg-icons/action/done';
 import { yellow100, orange100, red100, purple100, blue100, lightGreen100, white  } from 'material-ui/styles/colors';
 import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700 } from 'material-ui/styles/colors';
 
@@ -56,13 +57,47 @@ class LinkInspectorPopup extends Component {
     this.setState( {...this.state, titleBuffer: newTitle, titleUpdateTimer })
   }
 
-  onMouseDown = ( e ) => {
-    // TODO create a onBlue handler that turns off focus
+  onTitleFocus(e) {
     this.setState( {...this.state, titleHasFocus: true })
-    this.props.onDragHandleMouseDown(e)
   }
 
-  renderLinkInspectorInner() {
+  onTitleBlur() {
+    this.setState( {...this.state, titleHasFocus: false })
+  }
+
+  renderTitle(titleBarColor) {
+    const titleBarID = `highlight-title-${this.props.target.uid}`
+
+    if( this.state.titleHasFocus ) {
+      return (
+        <span>
+          <TextField
+            autocomplete="off" 
+            id={titleBarID}
+            style={{ fontWeight: 'bold', fontSize: '1.2em', cursor: 'text' }}
+            onChange={this.onChangeTitle}          
+            underlineStyle={{borderColor: titleBarColor }}
+            underlineShow={true}
+            value={this.state.titleBuffer}
+          />
+          <IconButton
+            iconStyle={{width: '16px', height: '16px' }}
+            onClick={this.onTitleBlur.bind(this)}
+          >
+            <Done />
+          </IconButton>
+        </span>
+      )  
+    } else {
+      return(
+        <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: 'black' }} onDoubleClick={this.onTitleFocus.bind(this)}>
+          {this.state.titleBuffer}
+        </span>        
+      )
+    }
+  }
+
+  render() {
     const { target } = this.props;
     
     const linkIconStyle = {
@@ -74,46 +109,30 @@ class LinkInspectorPopup extends Component {
     };
 
     const titleBarColor = this.getTitleColor(target.color);
-    const titleBarID = `highlight-title-${target.uid}`
 
     return (
-      <Paper zDepth={4} style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}>          
-        <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
-          <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.onMouseDown} >
-            <Link style={linkIconStyle}/>          
-            <TextField
-              id={titleBarID}
-              style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
-              onChange={this.onChangeTitle}
-              underlineShow={false}
-              value={this.state.titleBuffer}
-            />
-          </Subheader>
-          <IconButton
-            iconStyle={{width: '16px', height: '16px' }}
-            onClick={this.props.closeHandler}
-          >
-            <Close />
-          </IconButton>
-        </div>
-        <div style={{flexGrow: 1,}}>
-          <LinkInspector {...this.props} />
-        </div>         
-      </Paper>
+      <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus} >
+        <Paper zDepth={4} style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}>          
+          <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
+            <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
+              <Link style={linkIconStyle}/>    
+              { this.renderTitle(titleBarColor) }      
+            </Subheader>
+            <IconButton
+              iconStyle={{width: '16px', height: '16px' }}
+              onClick={this.props.closeHandler}
+            >
+              <Close />
+            </IconButton>
+          </div>
+          <div style={{flexGrow: 1,}}>
+            <LinkInspector {...this.props} />
+          </div>         
+        </Paper>
+      </Draggable>
     )
   }
 
-  render() {   
-    if( !this.state.titleHasFocus ) {
-      return( 
-        <Draggable handle='.links-popup-drag-handle' bounds='parent'>
-          { this.renderLinkInspectorInner() }
-        </Draggable>
-      )
-    } else {
-      return this.renderLinkInspectorInner();
-    }
-  }
 }
 
 const mapStateToProps = state => ({
