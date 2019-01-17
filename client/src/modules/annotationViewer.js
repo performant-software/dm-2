@@ -337,6 +337,7 @@ export function addLink(origin, linked) {
       });
     })
     .catch(() => {
+      // TODO
     });
   };
 }
@@ -363,26 +364,27 @@ export function deleteLink(doomedLink) {
     })
     .then(() => {
       const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      // if (sidebarTarget) {
-      //   let { highlight_id, document_id } = sidebarTarget;
-      //   if (highlight_id) {
-      //     if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (linked.linkable_type === 'Highlight' && linked.linkable_id === highlight_id))
-      //       dispatch(selectSidebarTarget(sidebarTarget));
-      //   }
-      //   else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (linked.linkable_type === 'Document' && linked.linkable_id === document_id))
-      //     dispatch(selectSidebarTarget(sidebarTarget));
-      // }
-      // getState().annotationViewer.selectedTargets.forEach((target, index) => {
-      //   let { highlight_id, document_id } = target;
-      //   if (highlight_id) {
-      //     if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (linked.linkable_type === 'Highlight' && linked.linkable_id === highlight_id))
-      //       dispatch(refreshTarget(index));
-      //   }
-      //   else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (linked.linkable_type === 'Document' && linked.linkable_id === document_id))
-      //     dispatch(refreshTarget(index));
-      // });
+      if (sidebarTarget) {
+        let { highlight_id, document_id } = sidebarTarget;
+        if (highlight_id) {
+          if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (doomedLink.linkable_type === 'Highlight' && doomedLink.linkable_id === highlight_id))
+            dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (doomedLink.linkable_type === 'Document' && doomedLink.linkable_id === document_id))
+          dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        let { highlight_id, document_id } = target;
+        if (highlight_id) {
+          if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (doomedLink.linkable_type === 'Highlight' && doomedLink.linkable_id === highlight_id))
+            dispatch(refreshTarget(index));
+        }
+        else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (doomedLink.linkable_type === 'Document' && doomedLink.linkable_id === document_id))
+          dispatch(refreshTarget(index));
+      });
     })
     .catch(() => {
+      //  TODO
     });
   };
 }
