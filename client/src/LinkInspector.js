@@ -11,6 +11,7 @@ import { createTextDocumentWithLink } from './modules/documentGrid';
 import { openDocumentPopover, closeDocumentPopover } from './modules/project';
 import AddDocumentButton from './AddDocumentButton';
 import 'react-resizable/css/styles.css';
+import DraggableLinkIcon from './DraggableLinkIcon';
 
 const LinkList = function(props) {
   if (props.items && props.items.length > 0) {
@@ -99,20 +100,27 @@ class LinkInspector extends Component {
       <div style={{ marginBottom: '8px' }}>
         <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
         {this.props.writeEnabled && 
-          <AddDocumentButton
-            label='Add Text Document'
-            documentPopoverOpen={this.props.documentPopoverOpenFor === this.props.id}
-            openDocumentPopover={() => {this.props.openDocumentPopover(this.props.id)}}
-            closeDocumentPopover={this.props.closeDocumentPopover}
-            textClick={() => {
-              this.props.createTextDocumentWithLink({
-                linkable_id: target.highlight_id || target.document_id,
-                linkable_type: target.highlight_id ? 'Highlight' : 'Document'
-              });
-            }}
-            idString={this.props.id}
-          />
-        }
+          <span>
+            <AddDocumentButton
+              label='Add Text Document'
+              documentPopoverOpen={this.props.documentPopoverOpenFor === this.props.id}
+              openDocumentPopover={() => {this.props.openDocumentPopover(this.props.id)}}
+              closeDocumentPopover={this.props.closeDocumentPopover}
+              textClick={() => {
+                this.props.createTextDocumentWithLink({
+                  linkable_id: target.highlight_id || target.document_id,
+                  linkable_type: target.highlight_id ? 'Highlight' : 'Document'
+                });
+              }}
+              idString={this.props.id}
+            />
+            <DraggableLinkIcon
+              item={target}
+              inContents={false}
+              key={`${target.document_kind}-${target.id}${target.highlight_id ? '-' + target.highlight_id : ''}`}
+            />
+          </span>
+          }
       </div>
     );
   }

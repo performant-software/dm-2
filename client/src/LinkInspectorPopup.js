@@ -8,8 +8,8 @@ import IconButton from 'material-ui/IconButton';
 import Subheader from 'material-ui/Subheader';
 import TextField from 'material-ui/TextField';
 
-import Link from 'material-ui/svg-icons/content/link';
 import Close from 'material-ui/svg-icons/navigation/close';
+import Link from 'material-ui/svg-icons/content/link';
 import Done from 'material-ui/svg-icons/action/done';
 import { yellow100, orange100, red100, purple100, blue100, lightGreen100  } from 'material-ui/styles/colors';
 import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700, grey400 } from 'material-ui/styles/colors';
@@ -101,6 +101,8 @@ class LinkInspectorPopup extends Component {
   render() {
     const { target } = this.props;
     
+    const titleBarColor = this.getTitleColor(target.color);
+    
     const linkIconStyle = {
       paddingLeft: 5,
       paddingRight: 10,
@@ -109,14 +111,12 @@ class LinkInspectorPopup extends Component {
       height: '20px'
     };
 
-    const titleBarColor = this.getTitleColor(target.color);
-
     return (
       <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus} >
         <Paper zDepth={4} style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}>          
           <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
             <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
-              <Link style={linkIconStyle}/>    
+              <Link style={linkIconStyle}/> 
               { this.renderTitle(titleBarColor) }      
             </Subheader>
             <IconButton
@@ -127,7 +127,7 @@ class LinkInspectorPopup extends Component {
             </IconButton>
           </div>
           <div style={{flexGrow: 1,}}>
-            <LinkInspector {...this.props} />
+            <LinkInspector {...this.props} /> Drag Link
           </div>         
         </Paper>
       </Draggable>

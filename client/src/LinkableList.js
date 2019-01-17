@@ -50,7 +50,7 @@ const ListContents = props => {
         }
         let primaryText = item.document_title;
         if (item.excerpt && item.excerpt.length > 0)
-          primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span> in {primaryText}</div>;
+          primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span></div>;
         return (
           <div key={itemKey}>
             {props.inContents && props.writeEnabled &&
