@@ -72,7 +72,7 @@ class LinkInspectorPopup extends Component {
       return (
         <span>
           <TextField
-            autocomplete="off" 
+            autoComplete="off" 
             id={titleBarID}
             style={{ fontWeight: 'bold', fontSize: '1.2em', cursor: 'text' }}
             onChange={this.onChangeTitle}          

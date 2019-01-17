@@ -10,6 +10,7 @@ export const CLOSE_TARGET = 'annotationViewer/CLOSE_TARGET';
 export const CLOSE_SIDEBAR_TARGET = 'annotationViewer/CLOSE_SIDEBAR_TARGET';
 export const PROMOTE_TARGET = 'annotationViewer/PROMOTE_TARGET';
 export const CLEAR_SELECTION = 'annotationViewer/CLEAR_SELECTION';
+export const DELETE_LINK_SUCCESS = 'annotationViewer/DELETE_LINK_SUCCESS';
 
 const initialState = {
   selectedTargets: [],
@@ -131,6 +132,26 @@ export default function(state = initialState, action) {
       return {
         ...state,
         selectedTargets: []
+      };
+
+    case DELETE_LINK_SUCCESS:
+      // remove the link from the active targets
+      const {selectedTargets, sidebarTarget} = state
+      let nextSidebarTarget = null, nextSelectedTargets; 
+      if (sidebarTarget) {
+        nextSidebarTarget = { ...sidebarTarget }
+        nextSidebarTarget.links_to = sidebarTarget.links_to.filter( link => link.link_id !== action.link_id )
+      }
+
+      nextSelectedTargets = [ ...selectedTargets ]
+      nextSelectedTargets.forEach( target => {
+        target.links_to = target.links_to.filter( link => link.link_id !== action.link_id )
+      })
+
+      return {
+        ...state,
+        sidebarTarget: nextSidebarTarget,
+        selectedTargets: nextSelectedTargets
       };
 
     default:
@@ -342,9 +363,9 @@ export function addLink(origin, linked) {
   };
 }
 
-export function deleteLink(doomedLink) {
+export function deleteLink(doomedLinkID) {
   return function(dispatch, getState) {
-    fetch(`/links/${doomedLink.link_id}`, {
+    fetch(`/links/${doomedLinkID}`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -363,24 +384,9 @@ export function deleteLink(doomedLink) {
       return response;
     })
     .then(() => {
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget) {
-        let { highlight_id, document_id } = sidebarTarget;
-        if (highlight_id) {
-          if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (doomedLink.linkable_type === 'Highlight' && doomedLink.linkable_id === highlight_id))
-            dispatch(selectSidebarTarget(sidebarTarget));
-        }
-        else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (doomedLink.linkable_type === 'Document' && doomedLink.linkable_id === document_id))
-          dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        let { highlight_id, document_id } = target;
-        if (highlight_id) {
-          if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (doomedLink.linkable_type === 'Highlight' && doomedLink.linkable_id === highlight_id))
-            dispatch(refreshTarget(index));
-        }
-        else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (doomedLink.linkable_type === 'Document' && doomedLink.linkable_id === document_id))
-          dispatch(refreshTarget(index));
+      dispatch({
+        type: DELETE_LINK_SUCCESS,
+        link_id: doomedLinkID
       });
     })
     .catch(() => {

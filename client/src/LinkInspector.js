@@ -75,15 +75,18 @@ class LinkInspector extends Component {
     if( links && links.length > 0 ) {
       return links.map( (link) => {
         const linkID = link.document_id + (link.highlight_id ? '-' + link.highlight_id : '');
-        return { ...link, id: linkID, linkItem: true, removeLinkCallback: this.removeLink };
+        return { 
+          ...link, 
+          id: linkID, 
+          linkItem: true, 
+          removeLinkCallback: (linkItem) => {
+            this.props.deleteLink(linkItem.link_id);
+          } 
+        };
       })
     } else {
       return [];
     }
-  }
-
-  removeLink = (linkItem) => {
-    this.props.deleteLink(linkItem);
   }
   
   render() {
