@@ -11,8 +11,8 @@ import TextField from 'material-ui/TextField';
 import Link from 'material-ui/svg-icons/content/link';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Done from 'material-ui/svg-icons/action/done';
-import { yellow100, orange100, red100, purple100, blue100, lightGreen100, white  } from 'material-ui/styles/colors';
-import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700 } from 'material-ui/styles/colors';
+import { yellow100, orange100, red100, purple100, blue100, lightGreen100  } from 'material-ui/styles/colors';
+import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700, grey400 } from 'material-ui/styles/colors';
 
 import LinkInspector from './LinkInspector';
 import { updateHighlight } from './modules/documentGrid';
@@ -23,8 +23,9 @@ class LinkInspectorPopup extends Component {
 
   constructor(props) {
     super(props)
+    let titleBuffer = props.target.highlight_id ? props.target.excerpt : props.target.title
     this.state = {
-      titleBuffer: props.target.excerpt,
+      titleBuffer,
       titleUpdateTimer: null,
       titleHasFocus: false
     }
@@ -41,7 +42,7 @@ class LinkInspectorPopup extends Component {
     if( color === purpleA100) return purple100
     if( color === blueA100) return blue100
     if( color === lightGreenA700) return lightGreen100
-    return white;
+    return grey400;
   }
 
   onChangeTitle = (e,newTitle) => {
@@ -68,7 +69,7 @@ class LinkInspectorPopup extends Component {
   renderTitle(titleBarColor) {
     const titleBarID = `highlight-title-${this.props.target.uid}`
 
-    if( this.state.titleHasFocus ) {
+    if( this.props.target.highlight_id && this.state.titleHasFocus ) {
       return (
         <span>
           <TextField
