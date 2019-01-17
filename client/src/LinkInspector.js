@@ -4,14 +4,13 @@ import { connect } from 'react-redux';
 import { DropTarget } from 'react-dnd';
 import Subheader from 'material-ui/Subheader';
 import { grey400 } from 'material-ui/styles/colors';
-import { addLink, selectSidebarTarget } from './modules/annotationViewer';
+import { addLink, deleteLink, selectSidebarTarget } from './modules/annotationViewer';
 
 import LinkableList from './LinkableList';
 import { createTextDocumentWithLink } from './modules/documentGrid';
 import { openDocumentPopover, closeDocumentPopover } from './modules/project';
 import AddDocumentButton from './AddDocumentButton';
 import 'react-resizable/css/styles.css';
-import { AlertError } from 'material-ui/svg-icons';
 
 const LinkList = function(props) {
   if (props.items && props.items.length > 0) {
@@ -84,9 +83,7 @@ class LinkInspector extends Component {
   }
 
   removeLink = (linkItem) => {
-    // alert(`request to remove link item ${linkItem.id}.`);
-
-    
+    this.props.deleteLink(linkItem);
   }
   
   render() {
@@ -94,10 +91,6 @@ class LinkInspector extends Component {
     if (target === null) return null;
 
     const items = this.getItemList();
-
-    let primaryText = target.document_title;
-    if (target.excerpt && target.excerpt.length > 0)
-      primaryText = <div><span style={{ background: target.color || 'yellow' }}>{target.excerpt}</span> in {primaryText}</div>;
 
     return (
       <div style={{ marginBottom: '8px' }}>
@@ -128,6 +121,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => bindActionCreators({
   addLink,
+  deleteLink,
   openDocumentPopover,
   closeDocumentPopover,
   createTextDocumentWithLink,

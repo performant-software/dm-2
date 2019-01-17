@@ -10,9 +10,6 @@ export const CLOSE_TARGET = 'annotationViewer/CLOSE_TARGET';
 export const CLOSE_SIDEBAR_TARGET = 'annotationViewer/CLOSE_SIDEBAR_TARGET';
 export const PROMOTE_TARGET = 'annotationViewer/PROMOTE_TARGET';
 export const CLEAR_SELECTION = 'annotationViewer/CLEAR_SELECTION';
-export const ADD_LINK = 'annotationViewer/ADD_LINK';
-export const ADD_LINK_SUCCESS = 'annotationViewer/ADD_LINK_SUCCESS';
-export const ADD_LINK_ERRORED = 'annotationViewer/ADD_LINK_ERRORED';
 
 const initialState = {
   selectedTargets: [],
@@ -294,11 +291,6 @@ export function clearSelection() {
 
 export function addLink(origin, linked) {
   return function(dispatch, getState) {
-    dispatch({
-      type: ADD_LINK,
-      origin
-    });
-
     fetch('/links', {
       headers: {
         'Accept': 'application/json',
@@ -324,11 +316,6 @@ export function addLink(origin, linked) {
       return response;
     })
     .then(() => {
-      dispatch({
-        type: ADD_LINK_SUCCESS,
-        origin,
-        linked
-      });
       const sidebarTarget = getState().annotationViewer.sidebarTarget;
       if (sidebarTarget) {
         let { highlight_id, document_id } = sidebarTarget;
@@ -349,8 +336,53 @@ export function addLink(origin, linked) {
           dispatch(refreshTarget(index));
       });
     })
-    .catch(() => dispatch({
-      type: ADD_LINK_ERRORED
-    }));
+    .catch(() => {
+    });
+  };
+}
+
+export function deleteLink(doomedLink) {
+  return function(dispatch, getState) {
+    fetch(`/links/${doomedLink.link_id}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'DELETE'
+    })  
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(() => {
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      // if (sidebarTarget) {
+      //   let { highlight_id, document_id } = sidebarTarget;
+      //   if (highlight_id) {
+      //     if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (linked.linkable_type === 'Highlight' && linked.linkable_id === highlight_id))
+      //       dispatch(selectSidebarTarget(sidebarTarget));
+      //   }
+      //   else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (linked.linkable_type === 'Document' && linked.linkable_id === document_id))
+      //     dispatch(selectSidebarTarget(sidebarTarget));
+      // }
+      // getState().annotationViewer.selectedTargets.forEach((target, index) => {
+      //   let { highlight_id, document_id } = target;
+      //   if (highlight_id) {
+      //     if ((origin.linkable_type === 'Highlight' && origin.linkable_id === highlight_id) || (linked.linkable_type === 'Highlight' && linked.linkable_id === highlight_id))
+      //       dispatch(refreshTarget(index));
+      //   }
+      //   else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (linked.linkable_type === 'Document' && linked.linkable_id === document_id))
+      //     dispatch(refreshTarget(index));
+      // });
+    })
+    .catch(() => {
+    });
   };
 }

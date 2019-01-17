@@ -41,7 +41,7 @@ class LinkInspectorPopup extends Component {
     if( color === purpleA100) return purple100
     if( color === blueA100) return blue100
     if( color === lightGreenA700) return lightGreen100
-    return '#FFF';
+    return white;
   }
 
   onChangeTitle = (e,newTitle) => {
