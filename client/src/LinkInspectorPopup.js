@@ -11,6 +11,7 @@ import TextField from 'material-ui/TextField';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Link from 'material-ui/svg-icons/content/link';
 import Done from 'material-ui/svg-icons/action/done';
+import ModeComment from 'material-ui/svg-icons/editor/mode-comment';
 import { yellow100, orange100, red100, purple100, blue100, lightGreen100  } from 'material-ui/styles/colors';
 import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700, grey400 } from 'material-ui/styles/colors';
 
@@ -116,7 +117,7 @@ class LinkInspectorPopup extends Component {
         <Paper zDepth={4} style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}>          
           <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
             <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
-              <Link style={linkIconStyle}/> 
+              <ModeComment style={linkIconStyle}/> 
               { this.renderTitle(titleBarColor) }      
             </Subheader>
             <IconButton

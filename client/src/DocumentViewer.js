@@ -9,7 +9,7 @@ import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
-import Link from 'material-ui/svg-icons/content/link';
+import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocument, layoutOptions } from './modules/documentGrid';
 import TextResource from './TextResource';
@@ -108,7 +108,7 @@ class DocumentViewer extends Component {
         <div style={{ width: '100%', flexShrink: '0', cursor: '-webkit-grab' }}>
           <div style={{ display: 'flex', padding: '10px 10px 0 10px', backgroundColor: this.props.document_kind === 'canvas' ? grey800 : grey100, borderRadius: '2px' }}>
             <IconButton tooltip='Show link inspector' style={buttonStyle} iconStyle={iconStyle} onClick={this.props.linkInspectorAnchorClick}>
-              <Link color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+              <Description color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
             <TextField
               id={`text-document-title-${this.props.document_id}`}
