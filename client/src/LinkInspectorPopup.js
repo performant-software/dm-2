@@ -127,7 +127,7 @@ class LinkInspectorPopup extends Component {
             </IconButton>
           </div>
           <div style={{flexGrow: 1,}}>
-            <LinkInspector {...this.props} /> Drag Link
+            <LinkInspector {...this.props} />
           </div>         
         </Paper>
       </Draggable>

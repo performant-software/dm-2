@@ -5,11 +5,11 @@ import { DropTarget } from 'react-dnd';
 import Subheader from 'material-ui/Subheader';
 import { grey400 } from 'material-ui/styles/colors';
 import { addLink, deleteLink, selectSidebarTarget } from './modules/annotationViewer';
-
+import NoteAdd from 'material-ui/svg-icons/action/note-add';
 import LinkableList from './LinkableList';
 import { createTextDocumentWithLink } from './modules/documentGrid';
 import { openDocumentPopover, closeDocumentPopover } from './modules/project';
-import AddDocumentButton from './AddDocumentButton';
+import RaisedButton from 'material-ui/RaisedButton';
 import 'react-resizable/css/styles.css';
 import DraggableLinkIcon from './DraggableLinkIcon';
 
@@ -95,31 +95,34 @@ class LinkInspector extends Component {
     if (target === null) return null;
 
     const items = this.getItemList();
+    const buttonId = `addNewDocumentButton-${this.props.idString}`;
 
     return (
       <div style={{ marginBottom: '8px' }}>
         <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
         {this.props.writeEnabled && 
-          <span>
-            <AddDocumentButton
-              label='Add Text Document'
-              documentPopoverOpen={this.props.documentPopoverOpenFor === this.props.id}
-              openDocumentPopover={() => {this.props.openDocumentPopover(this.props.id)}}
-              closeDocumentPopover={this.props.closeDocumentPopover}
-              textClick={() => {
+          <div>
+            <RaisedButton
+              label='Add Annotation'
+              icon={<NoteAdd />}
+              style={{margin: 5}}
+              onClick={() => {
                 this.props.createTextDocumentWithLink({
                   linkable_id: target.highlight_id || target.document_id,
                   linkable_type: target.highlight_id ? 'Highlight' : 'Document'
                 });
+                this.props.closeDocumentPopover();
               }}
-              idString={this.props.id}
+              id={buttonId}
             />
-            <DraggableLinkIcon
-              item={target}
-              inContents={false}
-              key={`${target.document_kind}-${target.id}${target.highlight_id ? '-' + target.highlight_id : ''}`}
-            />
-          </span>
+            <div style={{ float: 'right'}}>
+              <DraggableLinkIcon
+                item={target}
+                inContents={false}
+                key={`${target.document_kind}-${target.id}${target.highlight_id ? '-' + target.highlight_id : ''}`}
+              />
+            </div>
+          </div>
           }
       </div>
     );

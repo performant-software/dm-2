@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { DragSource } from 'react-dnd';
 import Link from 'material-ui/svg-icons/content/link';
+import { IconButton } from 'material-ui';
 
 const summarySource = {
   beginDrag(props) {
@@ -27,18 +28,15 @@ function collect(connect, monitor) {
 
 class DraggableLinkIcon extends Component { 
   render() {
-    const linkIconStyle = {
-        paddingLeft: 5,
-        paddingRight: 10,
-        marginBottom: '-5px',
-        width: '20px',
-        height: '20px'
-      };
-
     return this.props.connectDragSource( 
-      <div style={{display:'inline'}}>
-        <Link style={linkIconStyle}/> 
-      </div>
+      <span >
+        <IconButton
+          tooltipPosition="top-left"
+          tooltip={<span>Drag this icon to link to another highlight or document.</span>}
+        >
+          <Link/> 
+        </IconButton>
+      </span>
     );
   }
 }
