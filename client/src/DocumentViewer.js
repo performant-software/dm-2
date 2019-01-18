@@ -113,6 +113,7 @@ class DocumentViewer extends Component {
             <TextField
               id={`text-document-title-${this.props.document_id}`}
               style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
+              autoComplete='off'
               inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
               defaultValue={this.props.resourceName}
               underlineShow={false}

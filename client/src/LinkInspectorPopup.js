@@ -24,9 +24,8 @@ class LinkInspectorPopup extends Component {
 
   constructor(props) {
     super(props)
-    let titleBuffer = props.target.highlight_id ? props.target.excerpt : props.target.title
     this.state = {
-      titleBuffer,
+      titleBuffer: props.target.excerpt,
       titleUpdateTimer: null,
       titleHasFocus: false
     }
@@ -70,30 +69,38 @@ class LinkInspectorPopup extends Component {
   renderTitle(titleBarColor) {
     const titleBarID = `highlight-title-${this.props.target.uid}`
 
-    if( this.props.target.highlight_id && this.state.titleHasFocus ) {
-      return (
-        <span>
-          <TextField
-            autoComplete="off" 
-            id={titleBarID}
-            style={{ fontWeight: 'bold', fontSize: '1.2em', cursor: 'text' }}
-            onChange={this.onChangeTitle}          
-            underlineStyle={{borderColor: titleBarColor }}
-            underlineShow={true}
-            value={this.state.titleBuffer}
-          />
-          <IconButton
-            iconStyle={{width: '16px', height: '16px' }}
-            onClick={this.onTitleBlur.bind(this)}
-          >
-            <Done />
-          </IconButton>
-        </span>
-      )  
+    if( this.props.target.highlight_id ) {
+      if( this.state.titleHasFocus ) {
+        return (
+          <span>
+            <TextField
+              autoComplete="off" 
+              id={titleBarID}
+              style={{ fontWeight: 'bold', fontSize: '1.2em', cursor: 'text' }}
+              onChange={this.onChangeTitle}          
+              underlineStyle={{borderColor: titleBarColor }}
+              underlineShow={true}
+              value={this.state.titleBuffer}
+            />
+            <IconButton
+              iconStyle={{width: '16px', height: '16px' }}
+              onClick={this.onTitleBlur.bind(this)}
+            >
+              <Done />
+            </IconButton>
+          </span>
+        )    
+      } else {
+        return(
+          <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: 'black' }} onDoubleClick={this.onTitleFocus.bind(this)}>
+            {this.state.titleBuffer}
+          </span>        
+        )  
+      }
     } else {
-      return(
-        <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: 'black' }} onDoubleClick={this.onTitleFocus.bind(this)}>
-          {this.state.titleBuffer}
+      return (
+        <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: 'black' }} >
+          {this.props.target.title}
         </span>        
       )
     }
