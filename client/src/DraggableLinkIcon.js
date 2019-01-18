@@ -22,21 +22,31 @@ const summarySource = {
 function collect(connect, monitor) {
   return {
     connectDragSource: connect.dragSource(),
+    connectDragPreview: connect.dragPreview(),
     isDragging: monitor.isDragging()
   };
 }
 
 class DraggableLinkIcon extends Component { 
+
+  componentDidMount() {
+    // use a static image for dragg preview
+    const { connectDragPreview } = this.props;
+    let linkDragIcon = new Image();
+    linkDragIcon.src = '/dragging-link.png';
+    connectDragPreview(linkDragIcon);
+  }
+
   render() {
     return this.props.connectDragSource( 
-      <span >
+      <div >
         <IconButton
           tooltipPosition="top-left"
-          tooltip={<span>Drag this icon to link to another highlight or document.</span>}
+          tooltip={<span>Drag this icon to make a link.</span>}
         >
           <Link/> 
         </IconButton>
-      </span>
+      </div>
     );
   }
 }

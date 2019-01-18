@@ -119,7 +119,7 @@ class LinkInspector extends Component {
               <DraggableLinkIcon
                 item={target}
                 inContents={false}
-                key={`${target.document_kind}-${target.id}${target.highlight_id ? '-' + target.highlight_id : ''}`}
+                key={`draglink-${target.document_kind}-${target.id}${target.highlight_id ? '-' + target.highlight_id : ''}`}
               />
             </div>
           </div>
