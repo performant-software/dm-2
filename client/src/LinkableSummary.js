@@ -28,7 +28,7 @@ class Summary extends Component {
   renderRightButton() {
     const { item } = this.props;
     if( !item.linkItem ) {
-      if( item.document_kind !== 'folder' ) {
+      if( item.document_kind !== 'folder' && this.props.isDraggable ) {
         return (
           <IconButton
             tooltipPosition="top-left"

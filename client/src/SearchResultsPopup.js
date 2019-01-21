@@ -5,10 +5,11 @@ import Paper from 'material-ui/Paper';
 import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Subheader from 'material-ui/Subheader';
+import Search from 'material-ui/svg-icons/action/search';
 import Divider from 'material-ui/Divider';
 import LinkableList from './LinkableList';
 
-const dialogStartPosition = { x: 300, y: 0, z: 1100 };
+const dialogStartPosition = { x: 300, y: 100, z: 1100 };
 
 export default class SearchResultsPopup extends Component {
   componentWillMount() {
@@ -16,6 +17,15 @@ export default class SearchResultsPopup extends Component {
   }
 
   render() {
+
+    const searchIconStyle = {
+      paddingLeft: 5,
+      paddingRight: 10,
+      marginBottom: '-5px',
+      width: '20px',
+      height: '20px'
+    };
+
     return (
       <Draggable handle='.search-popup-drag-handle' bounds='parent'>
         <Paper zDepth={4} style={{ position: 'absolute', top: `${dialogStartPosition.y}px`, left: `${dialogStartPosition.x}px`, zIndex: dialogStartPosition.z }}>
@@ -26,7 +36,8 @@ export default class SearchResultsPopup extends Component {
                     style={{ flexGrow: '1', cursor: '-webkit-grab' }} 
                     className='search-popup-drag-handle' 
                 >
-                    Search Results for: {this.props.searchPhrase}
+                  <Search style={searchIconStyle} /> 
+                  Search for: {this.props.searchPhrase}
                 </Subheader>
                 <IconButton
                   iconStyle={{width: '16px', height: '16px'}}
