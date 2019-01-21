@@ -29,6 +29,7 @@ const LoginMenuBody = props => {
         <MenuItem primaryText = 'Sign out' onClick={() => {
           props.signOutUser()
           .then(() => {
+            props.clearSelection()
             props.hideAuthMenu();
             props.load();
             props.returnHome();
