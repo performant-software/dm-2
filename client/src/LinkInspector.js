@@ -27,11 +27,37 @@ const linkTarget = {
     return true;
   },
 
-  drop(props, monitor, component) {
-    props.addLink({
+  drop(props, monitor) {
+    const origin = {
       linkable_id: props.highlight_id || props.document_id,
       linkable_type: props.highlight_id ? 'Highlight' : 'Document'
-    }, monitor.getItem());
+    }
+    const target = monitor.getItem();
+
+    // first, make sure origin !== target
+    if( origin.linkable_type === target.linkable_type &&
+        origin.linkable_id === target.linkable_id        ) {
+        // TODO indicate invalid
+        return;
+    }
+    // then, make sure linked isn't already in our set of links
+    const existingLinkFound = props.items.find( (link) => {
+      if( target.linkable_type === 'Highlight') {
+        // are these same highlight?
+        return ( target.linkable_id === link.highlight_id )
+      } else {
+        // are these same doc?
+        return ( !link.highlight_id && target.linkable_id === link.document_id ) 
+      }
+    });
+
+    if( existingLinkFound ) {
+       // TODO indicate invalid
+      return
+    }
+
+    // this is a fresh link, create it...
+    props.addLink(origin, target);
   }
 };
 
