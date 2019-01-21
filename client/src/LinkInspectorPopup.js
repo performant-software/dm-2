@@ -133,7 +133,7 @@ class LinkInspectorPopup extends Component {
               <Close />
             </IconButton>
           </div>
-          <div style={{flexGrow: 1,}}>
+          <div style={{flexGrow: 1 }}>
             <LinkInspector {...this.props} />
           </div>         
         </Paper>
