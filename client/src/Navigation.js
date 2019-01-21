@@ -17,6 +17,7 @@ import MoreVert from 'material-ui/svg-icons/navigation/more-vert';
 import { signOutUser } from './modules/redux-token-auth-config';
 import { load, showRegistration, showLogin, toggleAuthMenu, hideAuthMenu, showAdminDialog } from './modules/home';
 import { setCurrentLayout, layoutOptions } from './modules/documentGrid';
+import { clearSelection } from './modules/annotationViewer'
 import LoginRegistrationDialog from './LoginRegistrationDialog';
 import AdminDialog from './AdminDialog';
 import SearchBar from './SearchBar';
@@ -54,6 +55,12 @@ const LoginMenuBody = props => {
 }
 
 class Navigation extends Component {
+
+  onCloseProject() {
+    this.props.clearSelection()
+    this.props.returnHome()
+  }
+
   render() {
     let userMenuLabel = '';
     if (this.props.currentUser.attributes.id) { // if a user is signed in
@@ -75,7 +82,7 @@ class Navigation extends Component {
             }
           </div>}
           showMenuIconButton={!this.props.isHome}
-          iconElementLeft={<IconButton onClick={this.props.returnHome}><ArrowBack /></IconButton>}
+          iconElementLeft={<IconButton onClick={this.onCloseProject.bind(this)}><ArrowBack /></IconButton>}
           iconElementRight={
             <div>
               {!this.props.isHome && 
@@ -140,7 +147,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   hideAuthMenu,
   signOutUser,
   showAdminDialog,
-  setCurrentLayout
+  setCurrentLayout,
+  clearSelection
 }, dispatch);
 
 export default connect(

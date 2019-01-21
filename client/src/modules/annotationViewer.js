@@ -10,6 +10,7 @@ export const REFRESH_SUCCESS = 'annotationViewer/REFRESH_SUCCESS';
 export const REFRESH_ERRORED = 'annotationViewer/REFRESH_ERRORED';
 export const CLOSE_TARGET = 'annotationViewer/CLOSE_TARGET';
 export const CLOSE_SIDEBAR_TARGET = 'annotationViewer/CLOSE_SIDEBAR_TARGET';
+export const CLOSE_DOCUMENT_TARGETS = 'annotationViewer/CLOSE_DOCUMENT_TARGETS';
 export const PROMOTE_TARGET = 'annotationViewer/PROMOTE_TARGET';
 export const CLEAR_SELECTION = 'annotationViewer/CLEAR_SELECTION';
 export const DELETE_LINK_SUCCESS = 'annotationViewer/DELETE_LINK_SUCCESS';
@@ -104,6 +105,13 @@ export default function(state = initialState, action) {
       return {
         ...state,
         selectedTargets: preCloseTargetsCopy
+      };
+
+    case CLOSE_DOCUMENT_TARGETS:
+      const newSelectedTargets = state.selectedTargets.filter(target => target.document_id !== action.document_id)
+      return {
+        ...state,
+        selectedTargets: newSelectedTargets
       };
 
     case CLOSE_SIDEBAR_TARGET:
@@ -282,6 +290,16 @@ export function closeTarget(document_id, highlight_id) {
       type: CLOSE_TARGET,
       document_id,
       highlight_id
+    });
+  }
+}
+
+// close all targets related to this document
+export function closeDocumentTargets(document_id) {
+  return function(dispatch) {
+    dispatch({
+      type: CLOSE_DOCUMENT_TARGETS,
+      document_id
     });
   }
 }

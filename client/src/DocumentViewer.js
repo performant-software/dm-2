@@ -12,6 +12,7 @@ import Close from 'material-ui/svg-icons/navigation/close';
 import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocument, layoutOptions } from './modules/documentGrid';
+import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 import DocumentStatusBar from './DocumentStatusBar';
@@ -95,6 +96,11 @@ class DocumentViewer extends Component {
     }, this.titleChangeDelayMs);
   }
 
+  onCloseDocument() {
+    this.props.closeDocument(this.props.document_id)
+    this.props.closeDocumentTargets(this.props.document_id)
+  }
+
   renderTitleBar() {
     const iconStyle = {
       padding: '0',
@@ -120,7 +126,7 @@ class DocumentViewer extends Component {
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
             />
-            <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
+            <IconButton tooltip='Close document' onClick={this.onCloseDocument.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
               <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
           </div>
@@ -203,7 +209,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
-  moveDocument
+  moveDocument,
+  closeDocumentTargets
 }, dispatch);
 
 export default connect(
