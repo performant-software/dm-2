@@ -1,5 +1,5 @@
 import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
-import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeTarget} from './annotationViewer';
+import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
 import {updateEditorState} from './textEditor';
 import {deleteFolder} from './folders';
 import {setAddTileSourceMode, UPLOAD_SOURCE_TYPE} from './canvasEditor';
@@ -801,6 +801,8 @@ export function deleteDocument(documentId) {
         type: DELETE_SUCCESS,
         documentId
       });
+      dispatch(closeDocumentTargets(documentId));
+      dispatch(refreshTargetByDocumentID(documentId));
       dispatch(loadProject(getState().project.id));
     })
     .catch(() => dispatch({
@@ -865,6 +867,7 @@ export function confirmDeleteDialog() {
         break;
 
       case FOLDER_DELETE:
+        // TODO close any document windows that are children of this folder and any target windows related to those documents
         dispatch(deleteFolder(payload.folderId, payload.parentType, payload.parentId));
         dispatch(closeDeleteDialog());
         break;

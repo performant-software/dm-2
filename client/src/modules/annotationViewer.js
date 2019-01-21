@@ -209,6 +209,19 @@ export function selectTarget(target) {
   }
 }
 
+// refresh all the targets that have links to this document
+export function refreshTargetByDocumentID( document_id ) {
+  return function(dispatch, getState) {
+    const selectedTargets = getState().annotationViewer.selectedTargets;
+    selectedTargets.forEach( (target,targetIndex) => {
+      const linkToDoc = target.links_to.find( link => link.document_id === document_id )
+      if( linkToDoc ) {
+        dispatch( refreshTarget(targetIndex) );
+      }
+    })
+  }
+}
+
 export function refreshTarget(index) {
   return function(dispatch, getState) {
     dispatch({
