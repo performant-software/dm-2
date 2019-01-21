@@ -9,7 +9,6 @@ import Subheader from 'material-ui/Subheader';
 import TextField from 'material-ui/TextField';
 
 import Close from 'material-ui/svg-icons/navigation/close';
-import Link from 'material-ui/svg-icons/content/link';
 import Done from 'material-ui/svg-icons/action/done';
 import ModeComment from 'material-ui/svg-icons/editor/mode-comment';
 import { yellow100, orange100, red100, purple100, blue100, lightGreen100  } from 'material-ui/styles/colors';

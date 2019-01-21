@@ -1,4 +1,3 @@
-import { ImageCropOriginal } from "material-ui/svg-icons";
 
 export const SELECT_TARGET = 'annotationViewer/SELECT_TARGET';
 export const SELECT_LOAD_SUCCESS = 'annotationViewer/SELECT_LOAD_SUCCESS';

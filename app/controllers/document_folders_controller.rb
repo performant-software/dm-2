@@ -43,7 +43,9 @@ class DocumentFoldersController < ApplicationController
 
   # DELETE /document_folders/1
   def destroy
+    descendants = @document_folder.descendant_folder_ids
     @document_folder.destroy
+    render json: descendants
   end
 
   private
