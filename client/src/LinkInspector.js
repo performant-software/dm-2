@@ -72,7 +72,7 @@ class LinkDropTarget extends Component {
   render() {
     return this.props.connectDropTarget(
       <div style={{marginTop: '8px'}}>
-        <div style={{maxHeight: '450px', margin: 10, overflowY: 'auto'}}>
+        <div style={{maxWidth: '350px', maxHeight: '450px', margin: 10, overflowY: 'auto'}}>
           <LinkList {...this.props} />
         </div>
         <div style={{ height: '64px', margin: '0 8px 8px 8px', padding: '0 16px', borderRadius: '4px', border: `1px ${this.props.isOver ? 'black' : grey400} dashed`, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -75,7 +75,7 @@ class LinkInspectorPopup extends Component {
             <TextField
               autoComplete="off" 
               id={titleBarID}
-              style={{ fontWeight: 'bold', fontSize: '1.2em', cursor: 'text' }}
+              style={{ fontWeight: 'bold', maxWidth: '350px', fontSize: '1.2em', cursor: 'text' }}
               onChange={this.onChangeTitle}          
               underlineStyle={{borderColor: titleBarColor }}
               underlineShow={true}
