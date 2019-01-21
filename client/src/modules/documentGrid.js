@@ -832,6 +832,25 @@ export function closeDeleteDialog() {
   }
 }
 
+export function closeFolderChildren( folderId ) {
+  return function(dispatch, getState) {
+    // go through all the open documents and determine if any 
+    // are children of this folder. If they are, close them 
+    // and related target windows.
+    const openDocuments = getState().documentGrid.openDocuments
+    openDocuments.forEach( (document) => {
+      // is this document a descendant of the folder?
+      const isDescendant = document.parent_id === folderId;
+      if(isDescendant) {
+        dispatch(closeDocumentTargets(document.id));
+        dispatch(closeDocument(document.id));
+        dispatch(refreshTargetByDocumentID(document.id));  
+      }
+    })
+
+  }
+}
+
 export function confirmDeleteDialog() {
   return function(dispatch, getState) {
     const payload = getState().documentGrid.deleteDialogPayload;
