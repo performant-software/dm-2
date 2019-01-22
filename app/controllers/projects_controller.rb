@@ -1,9 +1,7 @@
 class ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :update, :destroy, :search]
   before_action :validate_user_approved, only: [:create]
-  # before_action only: [:show] do
-  #   validate_user_read(@project)
-  # end
+
   before_action only: [:update, :destroy] do
     validate_user_admin(@project)
   end
@@ -26,9 +24,11 @@ class ProjectsController < ApplicationController
 
   # GET /projects/1
   def show
-    render json: @project, include: ['user_project_permissions', 'user_project_permissions.user', 'contents_children', 'can_admin'], scope_name: :current_user
-    # serialized_data = ProjectSerializer.new(@project, root: false)
-    # render json: { project: serialized_data, current_user_can_admin: true }
+    if validate_user_read(@project,true)
+      render json: @project, include: ['user_project_permissions', 'user_project_permissions.user', 'contents_children', 'can_admin'], scope_name: :current_user
+    else
+      render json: { forbidden: true }
+    end
   end
 
   # POST /projects

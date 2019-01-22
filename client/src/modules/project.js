@@ -216,16 +216,22 @@ export function loadProject(projectId, title) {
       return response;
     })
     .then(response => response.json())
-    .then(project => dispatch({
-      type: GET_SUCCESS,
-      projectId: project.id,
-      projectTitle: project.title,
-      projectDescription: project.description,
-      contentsChildren: project['contents_children'],
-      userProjectPermissions: project['user_project_permissions'],
-      public: project.public,
-      currentUserPermissions: project['current_user_permissions']
-    }))
+    .then(project => {
+      if( project.forbidden ) {
+        dispatch(push('/'))
+      } else {
+        dispatch({
+          type: GET_SUCCESS,
+          projectId: project.id,
+          projectTitle: project.title,
+          projectDescription: project.description,
+          contentsChildren: project['contents_children'],
+          userProjectPermissions: project['user_project_permissions'],
+          public: project.public,
+          currentUserPermissions: project['current_user_permissions']
+        })      
+      }
+    })
     .catch(() => dispatch({
       type: GET_ERRORED
     }));
