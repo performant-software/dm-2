@@ -152,10 +152,10 @@ class DocumentViewer extends Component {
   }
 
   render() {
-    const { currentLayout, isDragging, document_kind, connectDropTarget, numRows } = this.props;
-    const documentGridOffsetWidth = 700;
+    const { currentLayout, isDragging, document_kind, connectDropTarget, numRows, sidebarWidth } = this.props;
+    const documentGridOffsetWidth = window.innerWidth - sidebarWidth - 16;
     const windowHeight = window.innerHeight;
-    const width = (documentGridOffsetWidth / currentLayout.cols) - 16;
+    const width = (documentGridOffsetWidth / currentLayout.cols) - 100
     const rows = currentLayout.rows < numRows ? currentLayout.rows : numRows;
     const height = ((windowHeight - 72.0) / rows) - 16;
 
@@ -203,7 +203,8 @@ DocumentViewer = DragSource(
 
 const mapStateToProps = state => ({
   openDocuments: state.documentGrid.openDocuments,
-  currentLayout: layoutOptions[state.documentGrid.currentLayout]
+  currentLayout: layoutOptions[state.documentGrid.currentLayout],
+  sidebarWidth:  state.project.sidebarWidth,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
