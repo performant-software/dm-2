@@ -45,6 +45,7 @@ fabric.Object.prototype._renderStroke = function(ctx) {
 const strokeWidth = 3.0;
 const markerRadius = 4.0;
 const doubleClickTimeout = 500;
+const markerThumbnailSize = 100
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -138,8 +139,11 @@ class CanvasResource extends Component {
       if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
           if (highlight_id && imageUrlForThumbnail) {
+            const highlightCoords = event.target._isMarker ? 
+              this.computeMarkerThumbBounds(event.target) : 
+              event.target.aCoords
             updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
-            setHighlightThumbnail(highlight_id, imageUrlForThumbnail, event.target.aCoords, event.target.toSVG());
+            setHighlightThumbnail(highlight_id, imageUrlForThumbnail, highlightCoords, event.target.toSVG());
           }
       }
     });
@@ -398,6 +402,15 @@ class CanvasResource extends Component {
     }
   }
 
+  computeMarkerThumbBounds(markerCoords) {
+    return {
+      tl: { x: markerCoords.left - markerThumbnailSize, y: markerCoords.top - markerThumbnailSize },
+      tr: { x: markerCoords.left + markerThumbnailSize, y: markerCoords.top - markerThumbnailSize },
+      bl: { x: markerCoords.left - markerThumbnailSize, y: markerCoords.top + markerThumbnailSize },
+      br: { x: markerCoords.left + markerThumbnailSize, y: markerCoords.top + markerThumbnailSize }
+    }
+  }
+
   drawMarker(pCoords) {
     const imageUrlForThumbnail = this.props.imageURLs[this.getInstanceKey()];
 
@@ -405,10 +418,11 @@ class CanvasResource extends Component {
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
     var rad = markerRadius / this.overlay.fabricCanvas().getZoom();
+    let markerCoords = { left: pCoords.x - rad, top:  pCoords.y - rad }
     let marker = new fabric.Circle({
       radius: rad,
-      left: pCoords.x - rad, // offset to put marker at center of click
-      top: pCoords.y - rad,
+      left: markerCoords.left, // offset to put marker at center of click
+      top: markerCoords.top,
       fill: markerFill.toRgba(),
       lockScalingX: true,
       lockScalingY: true,
@@ -421,6 +435,7 @@ class CanvasResource extends Component {
       _isMarker: true
     });
     this.addShape(marker);
+    const highlightCoords = this.computeMarkerThumbBounds(markerCoords)
 
     // save as a highlight
     this.props.addHighlight(
@@ -433,7 +448,7 @@ class CanvasResource extends Component {
           this.props.setHighlightThumbnail(
             savedHighlight.id,
             imageUrlForThumbnail,
-            marker.aCoords,
+            highlightCoords,
             marker.toSVG()
           );
     });
