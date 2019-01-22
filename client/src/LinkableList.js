@@ -9,81 +9,121 @@ import LinkableSummary from './LinkableSummary';
 import DocumentFolder from './DocumentFolder';
 import ListDropTarget from './ListDropTarget';
 
-const ListContents = props => {
-  const { items, allDraggable, writeEnabled, openDocumentIds, openFolderContents } = props;
-  return (
-    <div>
-      {items.map((item, index) => {
-        const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
-        let buoyancyTarget = 1.0;
-        if (index > 0) {
-          let buoyancyA = item.buoyancy || 0;
-          let buoyancyB = items[index - 1].buoyancy || 0;
-          buoyancyTarget = (buoyancyA + buoyancyB) / 2.0;
-        }
-        else if (item.buoyancy) {
-          buoyancyTarget += item.buoyancy;
-        }
-        if (item.document_kind === 'folder') {
-          let contents = openFolderContents[item.id];
-          if (props.inContents && props.writeEnabled) {
-            return (
-              <div key={itemKey}>
-                <ListDropTarget {...props} isFolder={false} item={item} buoyancyTarget={buoyancyTarget} targetParentId={props.insideFolder ? props.parentFolderId : props.projectId} targetParentType={props.insideFolder ? 'DocumentFolder' : 'Project'} />
-                <ListDropTarget {...props} isFolder={true} item={item} buoyancyTarget={0} targetParentType = 'DocumentFolder' targetParentId={item.id} />
-              </div>
-            )
-          }
-          return (
-              <DocumentFolder
-                item={item} key={itemKey}
-                inContents={true}
-                isDraggable={allDraggable}
-                writeEnabled={writeEnabled}
-                openDocumentIds={openDocumentIds}
-                isOpen={contents}
-                contents={contents}
-                handleClick={() => {contents ? props.closeFolder(item.id) : props.openFolder(item.id);}}
-                handleDoubleClick={() => {}}
-              />
-            );
-        }
-        let primaryText = item.document_title;
-        if (item.excerpt && item.excerpt.length > 0)
-          primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span></div>;
-        return (
-          <div key={itemKey}>
-            {props.inContents && props.writeEnabled &&
-              <ListDropTarget {...props} buoyancyTarget={buoyancyTarget} targetParentId={props.insideFolder ? props.parentFolderId : props.projectId} targetParentType={props.insideFolder ? 'DocumentFolder' : 'Project'} />
-            }
-            <LinkableSummary
-              item={item}
-              inContents={true}
-              noMargin={props.inContents && props.writeEnabled}
-              key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
-              isDraggable={allDraggable}
-              isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
-              handleClick={() => {props.openDocument(item.document_id);}}
-              handleDoubleClick={() => {props.selectSidebarTarget(item);}}
-            >
-              <div>{primaryText}</div>
-            </LinkableSummary>
-          </div>
-        );
-      })}
-      {props.inContents && props.writeEnabled &&
-        <ListDropTarget {...props} buoyancyTarget={items.length > 0 ? (items[items.length - 1].buoyancy || 0) - 1 : 0} targetParentId={props.insideFolder ? props.parentFolderId : props.projectId} targetParentType={props.insideFolder ? 'DocumentFolder' : 'Project'} />
-      }
-    </div>
-  );
-}
-
 class LinkableList extends Component {
+
+  renderFolder(item, itemKey, buoyancyTarget, targetParentId, targetParentType) {
+    const { allDraggable, inContents, writeEnabled, openDocumentIds, openFolderContents } = this.props;
+
+    let contents = openFolderContents[item.id];
+    if (inContents && writeEnabled) {
+      return (
+        <div key={itemKey}>
+          <ListDropTarget 
+            {...this.props} 
+            isFolder={false} 
+            item={item} 
+            buoyancyTarget={buoyancyTarget} 
+            targetParentId={targetParentId} 
+            targetParentType={targetParentType} 
+          />
+          <ListDropTarget 
+            {...this.props} 
+            isFolder={true} 
+            item={item} 
+            buoyancyTarget={0} 
+            targetParentType = 'DocumentFolder'
+             targetParentId={item.id} 
+          />
+        </div>
+      )
+    }
+    return (
+        <DocumentFolder
+          item={item} key={itemKey}
+          inContents={true}
+          isDraggable={allDraggable}
+          writeEnabled={writeEnabled}
+          openDocumentIds={openDocumentIds}
+          isOpen={contents}
+          contents={contents}
+          handleClick={() => {contents ? this.props.closeFolder(item.id) : this.props.openFolder(item.id);}}
+          handleDoubleClick={() => {}}
+        />
+      );
+  }
+
+  renderItem(item, itemKey, buoyancyTarget, targetParentId, targetParentType) {
+    const { allDraggable, inContents, writeEnabled, openDocumentIds } = this.props;
+
+    let primaryText = item.document_title;
+    if (item.excerpt && item.excerpt.length > 0)
+      primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span></div>;
+      
+    return (
+      <div key={itemKey}>
+        {inContents && writeEnabled &&
+          <ListDropTarget 
+            {...this.props} 
+            buoyancyTarget={buoyancyTarget}
+            targetParentId={targetParentId} 
+            targetParentType={targetParentType} 
+          />
+        }
+        <LinkableSummary
+          item={item}
+          inContents={true}
+          noMargin={inContents && writeEnabled}
+          key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
+          isDraggable={allDraggable}
+          isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
+          handleClick={() => {this.props.openDocument(item.document_id);}}
+          handleDoubleClick={() => {this.props.selectSidebarTarget(item);}}
+        >
+          <div>{primaryText}</div>
+        </LinkableSummary>
+      </div>
+    );
+  }
+
+  determineBouyancy( item, items, index ) {
+    let buoyancyTarget = 1.0;
+    if (index > 0) {
+      let buoyancyA = item.buoyancy || 0;
+      let buoyancyB = items[index - 1].buoyancy || 0;
+      buoyancyTarget = (buoyancyA + buoyancyB) / 2.0;
+    }
+    else if (item.buoyancy) {
+      buoyancyTarget += item.buoyancy;
+    }
+    return buoyancyTarget
+  }
+
   render() {
-    const { insideFolder } = this.props;
+    const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId } = this.props;
+    const targetParentId = insideFolder ? parentFolderId : projectId 
+    const targetParentType = insideFolder ? 'DocumentFolder' : 'Project' 
+
     return (
       <List style={{paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
-        <ListContents {...this.props} />
+        <div>
+          {items.map((item, index) => {
+            const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
+            const buoyancyTarget = this.determineBouyancy( item, items, index )
+            if (item.document_kind === 'folder') {
+              return this.renderFolder(item, itemKey, buoyancyTarget);
+            } else {
+              return this.renderItem(item, itemKey, buoyancyTarget, targetParentId, targetParentType);
+            }
+          })}
+          {inContents && writeEnabled &&
+            <ListDropTarget 
+              {...this.props} 
+              buoyancyTarget={items.length > 0 ? (items[items.length - 1].buoyancy || 0) - 1 : 0} 
+              targetParentId={targetParentId} 
+              targetParentType={targetParentType} 
+            />
+          }
+        </div>
       </List>
     );
   }
