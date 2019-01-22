@@ -5,6 +5,7 @@ export const SET_ADD_TILE_SOURCE_MODE = 'canvasEditor/SET_ADD_TILE_SOURCE_MODE';
 export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
 export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
 export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
+export const SET_IMAGE_URL = 'canvasEditor/SET_IMAGE_URL';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
@@ -13,6 +14,7 @@ const initialState = {
   highlightColors: {},
   displayColorPickers: {},
   addTileSourceMode: {},
+  imageURLs: {},
   isPencilMode: {},
   zoomControls: {},
   globalCanvasDisplay: true
@@ -50,6 +52,14 @@ export default function(state = initialState, action) {
       return {
         ...state,
         addTileSourceMode: updatedAddTileSourceMode
+      };
+    
+    case SET_IMAGE_URL:
+      let imageURLs = { ...state.imageURLs };
+      imageURLs[action.editorKey] = action.url;
+      return {
+        ...state,
+        imageURLs
       };
 
     case SET_IS_PENCIL_MODE:
@@ -108,6 +118,16 @@ export function setAddTileSourceMode(editorKey, mode) {
       type: SET_ADD_TILE_SOURCE_MODE,
       editorKey,
       mode
+    });
+  }
+}
+
+export function setImageUrl(editorKey, url) {
+  return function(dispatch) {
+    dispatch({
+      type: SET_IMAGE_URL,
+      editorKey,
+      url
     });
   }
 }
