@@ -278,7 +278,7 @@ class CanvasResource extends Component {
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
-    const aCoords = this.newShape.aCoords;
+    const aCoords = this.newShape.calcCoords(true);
     const svg = this.newShape.toSVG();
 
     this.props.addHighlight(

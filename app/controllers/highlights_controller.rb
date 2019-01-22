@@ -93,18 +93,18 @@ class HighlightsController < ApplicationController
     base_image.format 'png'
 
     # TODO: process and overlay SVG
-    svg_object = params['svg_string']
-    svg_document = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"80\" height=\"80\" viewBox=\"#{adjusted_offset_x} #{adjusted_offset_y} #{crop_wh} #{crop_wh}\" xml:space=\"preserve\">#{svg_object}</svg>"
-    svg_file = Tempfile.new('temp-svg')
-    svg_file.write(svg_document)
-    svg_file.rewind
-    svg_image = MiniMagick::Image.open(svg_file.path)
+    # svg_object = params['svg_string']
+    # svg_document = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"80\" height=\"80\" viewBox=\"#{adjusted_offset_x} #{adjusted_offset_y} #{crop_wh} #{crop_wh}\" xml:space=\"preserve\">#{svg_object}</svg>"
+    # svg_file = Tempfile.new('temp-svg')
+    # svg_file.write(svg_document)
+    # svg_file.rewind
+    # svg_image = MiniMagick::Image.open(svg_file.path)
 
-    combined_image = base_image.composite(svg_image) do |c|
-      # c.background 'none'
-      c.compose "color-burn"  
-    end
-    # combined_image = base_image
+    # combined_image = base_image.composite(svg_image) do |c|
+    #   # c.background 'none'
+    #   c.compose "color-burn"  
+    # end
+    combined_image = base_image
 
     path = combined_image.path
     io = File.open(path)
