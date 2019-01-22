@@ -2,12 +2,18 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { DragSource } from 'react-dnd';
+
 import { ListItem } from 'material-ui/List';
 import TextFields from 'material-ui/svg-icons/editor/text-fields';
 import ArrowDown from 'material-ui/svg-icons/navigation/expand-more';
 import ArrowRight from 'material-ui/svg-icons/navigation/chevron-right';
+import HighlightOff from 'material-ui/svg-icons/action/highlight-off';
+import IconButton from 'material-ui/IconButton';
 import Avatar from 'material-ui/Avatar';
+import Link from 'material-ui/svg-icons/content/link';
+
 import { grey100, grey400, cyan100 } from 'material-ui/styles/colors';
+
 import { TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE } from './modules/project';
 import { openDocument } from './modules/documentGrid';
 
@@ -17,6 +23,32 @@ class Summary extends Component {
 
     this.singleClickTimeout = null;
     this.doubleClickCutoffMs = 400;
+  }
+
+  renderRightButton() {
+    const { item } = this.props;
+    if( !item.linkItem ) {
+      if( item.document_kind !== 'folder' && this.props.isDraggable ) {
+        return (
+          <IconButton
+            tooltipPosition="top-left"
+            tooltip={<span>Drag this icon to make a link.</span>}            
+          >
+            <Link style={{margin:10}}/>
+          </IconButton>
+        )    
+      } else {
+        return null;
+      }
+    } else {
+    return (
+      <IconButton
+        onClick={()=>{ item.removeLinkCallback(item)} }
+      >
+        <HighlightOff  style={{margin:10}}/>
+      </IconButton>
+      )
+    }
   }
 
   render() {
@@ -36,6 +68,7 @@ class Summary extends Component {
           />
         }
         leftIcon={document_kind === 'folder' ? (this.props.isOpen ? <ArrowDown /> : <ArrowRight />) : null}
+        rightIconButton={ this.renderRightButton() }
         style={this.props.isDraggable ? {
           borderStyle: 'solid',
           borderWidth: this.props.borderBold ? '2px' : '1px',
@@ -84,11 +117,21 @@ const summarySource = {
 function collect(connect, monitor) {
   return {
     connectDragSource: connect.dragSource(),
+    connectDragPreview: connect.dragPreview(),
     isDragging: monitor.isDragging()
   };
 }
 
 class DraggableSummary extends Component {
+
+  componentDidMount() {
+    // use a static image for dragg preview
+    const { connectDragPreview } = this.props;
+    let linkDragIcon = new Image();
+    linkDragIcon.src = '/dragging-link.png';
+    connectDragPreview(linkDragIcon);
+  }
+
   render() {
     return this.props.connectDragSource(
       <div>

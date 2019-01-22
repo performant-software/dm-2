@@ -17,7 +17,6 @@ import SelectField from 'material-ui/SelectField';
 import MenuItem from 'material-ui/MenuItem';
 import Toggle from 'material-ui/Toggle';
 import Checkbox from 'material-ui/Checkbox';
-import Divider from 'material-ui/Divider';
 import { red100, red200, red400, red600, lightBlue100, lightBlue200, grey200, grey600 } from 'material-ui/styles/colors';
 import { hideSettings, updateProject, setNewPermissionUser, setNewPermissionLevel, createNewPermission, deletePermission, updatePermission, toggleDeleteConfirmation, deleteProject, READ_PERMISSION, WRITE_PERMISSION, ADMIN_PERMISSION } from './modules/project';
 

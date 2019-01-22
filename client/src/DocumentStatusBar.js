@@ -16,7 +16,7 @@ class DocumentStatusBar extends Component {
         let statusMessage;
         if( this.props.locked ) {
             if( this.props.lockedByMe ) {
-                statusMessage = "Check this document in to allow others to edit."
+                statusMessage = "Check document in for team to edit."
             } else {
                 statusMessage = `This document is checked out by ${this.props.lockedByUserName}.`;
                 style.display = 'block'
@@ -24,7 +24,7 @@ class DocumentStatusBar extends Component {
                 style.padding = '5px'
             }
         } else {
-            statusMessage = "Check this document out to edit it.";
+            statusMessage = "Check document out to edit it.";
         }
 
         return (

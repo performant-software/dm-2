@@ -1,3 +1,4 @@
+
 export const SELECT_TARGET = 'annotationViewer/SELECT_TARGET';
 export const SELECT_LOAD_SUCCESS = 'annotationViewer/SELECT_LOAD_SUCCESS';
 export const SELECT_SIDEBAR_TARGET = 'annotationViewer/SELECT_SIDEBAR_TARGET';
@@ -8,11 +9,10 @@ export const REFRESH_SUCCESS = 'annotationViewer/REFRESH_SUCCESS';
 export const REFRESH_ERRORED = 'annotationViewer/REFRESH_ERRORED';
 export const CLOSE_TARGET = 'annotationViewer/CLOSE_TARGET';
 export const CLOSE_SIDEBAR_TARGET = 'annotationViewer/CLOSE_SIDEBAR_TARGET';
+export const CLOSE_DOCUMENT_TARGETS = 'annotationViewer/CLOSE_DOCUMENT_TARGETS';
 export const PROMOTE_TARGET = 'annotationViewer/PROMOTE_TARGET';
 export const CLEAR_SELECTION = 'annotationViewer/CLEAR_SELECTION';
-export const ADD_LINK = 'annotationViewer/ADD_LINK';
-export const ADD_LINK_SUCCESS = 'annotationViewer/ADD_LINK_SUCCESS';
-export const ADD_LINK_ERRORED = 'annotationViewer/ADD_LINK_ERRORED';
+export const DELETE_LINK_SUCCESS = 'annotationViewer/DELETE_LINK_SUCCESS';
 
 const initialState = {
   selectedTargets: [],
@@ -106,6 +106,13 @@ export default function(state = initialState, action) {
         selectedTargets: preCloseTargetsCopy
       };
 
+    case CLOSE_DOCUMENT_TARGETS:
+      const newSelectedTargets = state.selectedTargets.filter(target => target.document_id !== action.document_id)
+      return {
+        ...state,
+        selectedTargets: newSelectedTargets
+      };
+
     case CLOSE_SIDEBAR_TARGET:
       return {
         ...state,
@@ -134,6 +141,26 @@ export default function(state = initialState, action) {
       return {
         ...state,
         selectedTargets: []
+      };
+
+    case DELETE_LINK_SUCCESS:
+      // remove the link from the active targets
+      const {selectedTargets, sidebarTarget} = state
+      let nextSidebarTarget = null, nextSelectedTargets; 
+      if (sidebarTarget) {
+        nextSidebarTarget = { ...sidebarTarget }
+        nextSidebarTarget.links_to = sidebarTarget.links_to.filter( link => link.link_id !== action.link_id )
+      }
+
+      nextSelectedTargets = [ ...selectedTargets ]
+      nextSelectedTargets.forEach( target => {
+        target.links_to = target.links_to.filter( link => link.link_id !== action.link_id )
+      })
+
+      return {
+        ...state,
+        sidebarTarget: nextSidebarTarget,
+        selectedTargets: nextSelectedTargets
       };
 
     default:
@@ -178,6 +205,19 @@ export function selectTarget(target) {
     // .catch(() => dispatch({
     //   type: SELECT_LOAD_ERRORED
     // }));
+  }
+}
+
+// refresh all the targets that have links to this document
+export function refreshTargetByDocumentID( document_id ) {
+  return function(dispatch, getState) {
+    const selectedTargets = getState().annotationViewer.selectedTargets;
+    selectedTargets.forEach( (target,targetIndex) => {
+      const linkToDoc = target.links_to.find( link => link.document_id === document_id )
+      if( linkToDoc ) {
+        dispatch( refreshTarget(targetIndex) );
+      }
+    })
   }
 }
 
@@ -266,6 +306,16 @@ export function closeTarget(document_id, highlight_id) {
   }
 }
 
+// close all targets related to this document
+export function closeDocumentTargets(document_id) {
+  return function(dispatch) {
+    dispatch({
+      type: CLOSE_DOCUMENT_TARGETS,
+      document_id
+    });
+  }
+}
+
 export function closeSidebarTarget() {
   return function(dispatch) {
     dispatch({
@@ -294,11 +344,6 @@ export function clearSelection() {
 
 export function addLink(origin, linked) {
   return function(dispatch, getState) {
-    dispatch({
-      type: ADD_LINK,
-      origin
-    });
-
     fetch('/links', {
       headers: {
         'Accept': 'application/json',
@@ -324,11 +369,6 @@ export function addLink(origin, linked) {
       return response;
     })
     .then(() => {
-      dispatch({
-        type: ADD_LINK_SUCCESS,
-        origin,
-        linked
-      });
       const sidebarTarget = getState().annotationViewer.sidebarTarget;
       if (sidebarTarget) {
         let { highlight_id, document_id } = sidebarTarget;
@@ -349,8 +389,40 @@ export function addLink(origin, linked) {
           dispatch(refreshTarget(index));
       });
     })
-    .catch(() => dispatch({
-      type: ADD_LINK_ERRORED
-    }));
+    .catch(() => {
+      // TODO
+    });
+  };
+}
+
+export function deleteLink(doomedLinkID) {
+  return function(dispatch, getState) {
+    fetch(`/links/${doomedLinkID}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'DELETE'
+    })  
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(() => {
+      dispatch({
+        type: DELETE_LINK_SUCCESS,
+        link_id: doomedLinkID
+      });
+    })
+    .catch(() => {
+      //  TODO
+    });
   };
 }

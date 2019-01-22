@@ -10,7 +10,7 @@ import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import Error from 'material-ui/svg-icons/alert/error';
 
-import { setAddTileSourceMode, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
+import { setAddTileSourceMode, setImageUrl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
 
 const tileSourceTypeLabels = {};
@@ -93,6 +93,7 @@ class AddImageLayer extends Component {
 
     if (shouldSetThumbnail && imageUrlForThumbnail)
       this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
+      this.props.setImageUrl(this.props.editorKey, imageUrlForThumbnail)
   }
 
   renderUploadButton(buttonStyle,iconStyle) {
@@ -248,6 +249,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   setAddTileSourceMode,
   updateDocument,
+  setImageUrl,
   setDocumentThumbnail,
   replaceDocument
 }, dispatch);

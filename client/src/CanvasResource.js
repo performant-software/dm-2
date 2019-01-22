@@ -18,7 +18,7 @@ import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
+import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
 import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
@@ -45,6 +45,7 @@ fabric.Object.prototype._renderStroke = function(ctx) {
 const strokeWidth = 3.0;
 const markerRadius = 4.0;
 const doubleClickTimeout = 500;
+const markerThumbnailSize = 100
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -53,7 +54,6 @@ class CanvasResource extends Component {
     this.osdViewer = null;
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
-    this.imageUrlForThumbnail = null;
     this.currentMode = 'pan';
   }
 
@@ -66,15 +66,17 @@ class CanvasResource extends Component {
     setCanvasHighlightColor(key, initialColor);
     let tileSources = [];
     if (content && content.tileSources) tileSources = content.tileSources;
+    let imageUrlForThumbnail = null;
 
     const firstTileSource = tileSources[0];
     if (firstTileSource) {
       if (firstTileSource.type === 'image' && firstTileSource.url)
-        this.imageUrlForThumbnail = firstTileSource.url;
+        imageUrlForThumbnail = firstTileSource.url
       else {
         const baseUrl = firstTileSource.split('info.json')[0];
-        this.imageUrlForThumbnail = baseUrl + 'full/!400,400/0/default.png';
+        imageUrlForThumbnail = baseUrl + 'full/!400,400/0/default.png'
       }
+      this.props.setImageUrl(key, imageUrlForThumbnail);
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
@@ -136,9 +138,12 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('object:modified', event => {
       if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
-          if (highlight_id && this.imageUrlForThumbnail) {
+          if (highlight_id && imageUrlForThumbnail) {
+            const highlightCoords = event.target._isMarker ? 
+              this.computeMarkerThumbBounds(event.target) : 
+              event.target.aCoords
             updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
-            setHighlightThumbnail(highlight_id, this.imageUrlForThumbnail, event.target.aCoords, event.target.toSVG());
+            setHighlightThumbnail(highlight_id, imageUrlForThumbnail, highlightCoords, event.target.toSVG());
           }
       }
     });
@@ -150,8 +155,15 @@ class CanvasResource extends Component {
         path._highlightUid = highlightUid;
         path.perPixelTargetFind = true;
         this.overlay.fabricCanvas().setActiveObject(path);
-        let imageUrlForThumbnail = this.imageUrlForThumbnail;
-        addHighlight(document_id, highlightUid, JSON.stringify(path.toJSON(['_highlightUid', '_isMarker'])), this.overlay.fabricCanvas().freeDrawingBrush.color, 'Pencil highlight', savedHighlight => {setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());});
+        addHighlight(
+          document_id, 
+          highlightUid, 
+          JSON.stringify(path.toJSON(['_highlightUid', '_isMarker'])), 
+          this.overlay.fabricCanvas().freeDrawingBrush.color, 
+          'Pencil highlight', 
+          savedHighlight => {
+            setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());
+          });
       }
     });
 
@@ -217,7 +229,7 @@ class CanvasResource extends Component {
             this.overlay.fabricCanvas().discardActiveObject();
 
             const highlight_id = this.highlight_map[selectedObject._highlightUid].id;
-            this.props.updateHighlight(highlight_id, {target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
+            this.props.updateHighlight(highlight_id, {color: newColor, target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
           }
           break;
 
@@ -278,8 +290,9 @@ class CanvasResource extends Component {
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
-    const aCoords = this.newShape.aCoords;
+    const aCoords = this.newShape.calcCoords(true);
     const svg = this.newShape.toSVG();
+    const imageUrlForThumbnail = this.props.imageURLs[key]
 
     this.props.addHighlight(
       this.props.document_id,
@@ -290,7 +303,7 @@ class CanvasResource extends Component {
       savedHighlight => {
           this.props.setHighlightThumbnail(
             savedHighlight.id,
-            this.imageUrlForThumbnail,
+            imageUrlForThumbnail,
             aCoords,
             svg
           );
@@ -389,16 +402,27 @@ class CanvasResource extends Component {
     }
   }
 
+  computeMarkerThumbBounds(markerCoords) {
+    return {
+      tl: { x: markerCoords.left - markerThumbnailSize, y: markerCoords.top - markerThumbnailSize },
+      tr: { x: markerCoords.left + markerThumbnailSize, y: markerCoords.top - markerThumbnailSize },
+      bl: { x: markerCoords.left - markerThumbnailSize, y: markerCoords.top + markerThumbnailSize },
+      br: { x: markerCoords.left + markerThumbnailSize, y: markerCoords.top + markerThumbnailSize }
+    }
+  }
+
   drawMarker(pCoords) {
+    const imageUrlForThumbnail = this.props.imageURLs[this.getInstanceKey()];
 
     // create marker shape on canvas
     let markerFill = fabric.Color.fromHex(this.props.highlightColors[this.getInstanceKey()]);
     markerFill.setAlpha(0.3);
     var rad = markerRadius / this.overlay.fabricCanvas().getZoom();
+    let markerCoords = { left: pCoords.x - rad, top:  pCoords.y - rad }
     let marker = new fabric.Circle({
       radius: rad,
-      left: pCoords.x - rad, // offset to put marker at center of click
-      top: pCoords.y - rad,
+      left: markerCoords.left, // offset to put marker at center of click
+      top: markerCoords.top,
       fill: markerFill.toRgba(),
       lockScalingX: true,
       lockScalingY: true,
@@ -411,6 +435,7 @@ class CanvasResource extends Component {
       _isMarker: true
     });
     this.addShape(marker);
+    const highlightCoords = this.computeMarkerThumbBounds(markerCoords)
 
     // save as a highlight
     this.props.addHighlight(
@@ -422,8 +447,8 @@ class CanvasResource extends Component {
       savedHighlight => {
           this.props.setHighlightThumbnail(
             savedHighlight.id,
-            this.imageUrlForThumbnail,
-            marker.aCoords,
+            imageUrlForThumbnail,
+            highlightCoords,
             marker.toSVG()
           );
     });
@@ -433,6 +458,7 @@ class CanvasResource extends Component {
     if( !this.lineInProgress ) return;
     const aCoords = this.lineInProgress.aCoords;
     const svg = this.lineInProgress.toSVG();
+    const imageUrlForThumbnail = this.props.imageURLs[this.getInstanceKey()];
 
     // now act like other shapes, assign a unique id
     this.lineInProgress.perPixelTargetFind = true;
@@ -450,7 +476,7 @@ class CanvasResource extends Component {
       savedHighlight => {
         this.props.setHighlightThumbnail(
           savedHighlight.id,
-          this.imageUrlForThumbnail,
+          imageUrlForThumbnail,
           aCoords,
           svg
         );
@@ -700,6 +726,7 @@ class CanvasResource extends Component {
           </div>
         </div>
         <AddImageLayer 
+          editorKey={key}
           writeEnabled={writeEnabled}
           image_urls={image_urls}
           image_thumbnail_urls={image_thumbnail_urls}
@@ -716,6 +743,7 @@ const mapStateToProps = state => ({
   highlightColors: state.canvasEditor.highlightColors,
   displayColorPickers: state.canvasEditor.displayColorPickers,
   addTileSourceMode: state.canvasEditor.addTileSourceMode,
+  imageURLs: state.canvasEditor.imageURLs,
   isPencilMode: state.canvasEditor.isPencilMode,
   zoomControls: state.canvasEditor.zoomControls,
   globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay
@@ -725,6 +753,7 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   addHighlight,
   updateHighlight,
   setAddTileSourceMode,
+  setImageUrl,
   setHighlightThumbnail,
   setCanvasHighlightColor,
   toggleCanvasColorPicker,

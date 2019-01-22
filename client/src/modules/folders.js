@@ -1,4 +1,5 @@
 import { loadProject } from './project';
+import { closeDocumentFolders } from './documentGrid'
 
 export const NEW_FOLDER = 'folders/NEW_FOLDER';
 export const POST_SUCCESS = 'folders/POST_SUCCESS';
@@ -197,12 +198,9 @@ export function deleteFolder(folderId, parentType, parentId) {
         'uid': localStorage.getItem('uid')
       }
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => {
+    .then(response => response.json())
+    .then((descendants) => {
+      dispatch(closeDocumentFolders(descendants));
       dispatch({
         type: DELETE_SUCCESS,
         id: folderId

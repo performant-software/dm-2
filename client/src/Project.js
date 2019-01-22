@@ -35,8 +35,8 @@ class Project extends Component {
       target.document_title = resource.title;
       target.document_kind = resource.document_kind;
       target.startPosition = {
-        x: Math.min(Math.max(this.mouseX - this.props.sidebarWidth - 150, 0), this.mainContainer.offsetWidth - 300),
-        y: this.mouseY + window.scrollY - 52
+        x: Math.min(Math.max(this.mouseX - this.props.sidebarWidth, 0), this.mainContainer.offsetWidth),
+        y: this.mouseY + window.scrollY
       };
       window.highlightFocusTimeout = window.setTimeout(() => {
         this.props.selectTarget(target);

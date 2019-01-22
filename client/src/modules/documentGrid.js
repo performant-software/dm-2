@@ -1,5 +1,5 @@
 import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
-import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeTarget} from './annotationViewer';
+import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
 import {updateEditorState} from './textEditor';
 import {deleteFolder} from './folders';
 import {setAddTileSourceMode, UPLOAD_SOURCE_TYPE} from './canvasEditor';
@@ -50,6 +50,8 @@ export const layoutOptions = [
   { rows: 2, cols: 2, description: '2 x 2' },
   { rows: 3, cols: 3, description: '3 x 3' }
 ];
+
+export const MAX_EXCERPT_LENGTH = 80;
 
 const initialState = {
   layout: DEFAULT_LAYOUT,
@@ -799,6 +801,8 @@ export function deleteDocument(documentId) {
         type: DELETE_SUCCESS,
         documentId
       });
+      dispatch(closeDocumentTargets(documentId));
+      dispatch(refreshTargetByDocumentID(documentId));
       dispatch(loadProject(getState().project.id));
     })
     .catch(() => dispatch({
@@ -825,6 +829,21 @@ export function closeDeleteDialog() {
     dispatch({
       type: CLOSE_DELETE_DIALOG
     });
+  }
+}
+
+// close any documents found in these folders
+export function closeDocumentFolders( folders ) {
+  return function(dispatch, getState) {    
+    const openDocuments = getState().documentGrid.openDocuments
+    openDocuments.forEach( (document) => {
+      const found = folders.find( folderID => folderID === document.parent_id ) 
+      if( found ) {
+        dispatch(closeDocumentTargets(document.id));
+        dispatch(closeDocument(document.id));
+        dispatch(refreshTargetByDocumentID(document.id)); 
+      }
+    })
   }
 }
 
@@ -863,6 +882,7 @@ export function confirmDeleteDialog() {
         break;
 
       case FOLDER_DELETE:
+        // TODO close any document windows that are children of this folder and any target windows related to those documents
         dispatch(deleteFolder(payload.folderId, payload.parentType, payload.parentId));
         dispatch(closeDeleteDialog());
         break;

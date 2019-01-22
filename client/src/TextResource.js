@@ -35,7 +35,7 @@ import { addMark, removeMark } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
-import { TEXT_HIGHLIGHT_DELETE, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
+import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
@@ -257,7 +257,8 @@ class TextResource extends Component {
     const instanceKey = this.getInstanceKey();
     let div = document.createElement('div');
     div.appendChild(serializer.serializeFragment(slice.content));
-    this.props.addHighlight(document_id, highlightUid, highlightUid, highlightColors[instanceKey], div.textContent);
+    const excerpt = div.textContent.length > MAX_EXCERPT_LENGTH ? `${div.textContent.slice(0,MAX_EXCERPT_LENGTH-3)}...` : div.textContent
+    this.props.addHighlight(document_id, highlightUid, highlightUid, highlightColors[instanceKey],excerpt);
   }
 
   handlePaste = (view, event, slice) => {
@@ -428,7 +429,7 @@ class TextResource extends Component {
           <IconButton onClick={this.onUnderline} tooltip='Underline selected text.'>
             <FormatUnderlined />
           </IconButton>
-          Font Size: { this.renderDropDownMenu() }
+          { this.renderDropDownMenu() }
           <IconButton onClick={this.onHyperLink} tooltip='Create a hyperlink.'>
             <InsertLink />
           </IconButton>

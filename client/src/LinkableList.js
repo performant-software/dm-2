@@ -14,6 +14,7 @@ const ListContents = props => {
   return (
     <div>
       {items.map((item, index) => {
+        const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
         let buoyancyTarget = 1.0;
         if (index > 0) {
           let buoyancyA = item.buoyancy || 0;
@@ -27,7 +28,7 @@ const ListContents = props => {
           let contents = openFolderContents[item.id];
           if (props.inContents && props.writeEnabled) {
             return (
-              <div key={`${item.document_kind}-${item.id}`}>
+              <div key={itemKey}>
                 <ListDropTarget {...props} isFolder={false} item={item} buoyancyTarget={buoyancyTarget} targetParentId={props.insideFolder ? props.parentFolderId : props.projectId} targetParentType={props.insideFolder ? 'DocumentFolder' : 'Project'} />
                 <ListDropTarget {...props} isFolder={true} item={item} buoyancyTarget={0} targetParentType = 'DocumentFolder' targetParentId={item.id} />
               </div>
@@ -35,7 +36,7 @@ const ListContents = props => {
           }
           return (
               <DocumentFolder
-                item={item} key={`${item.document_kind}-${item.id}`}
+                item={item} key={itemKey}
                 inContents={true}
                 isDraggable={allDraggable}
                 writeEnabled={writeEnabled}
@@ -49,9 +50,9 @@ const ListContents = props => {
         }
         let primaryText = item.document_title;
         if (item.excerpt && item.excerpt.length > 0)
-          primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span> in {primaryText}</div>;
+          primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span></div>;
         return (
-          <div key={`${item.document_kind}-${item.id}`}>
+          <div key={itemKey}>
             {props.inContents && props.writeEnabled &&
               <ListDropTarget {...props} buoyancyTarget={buoyancyTarget} targetParentId={props.insideFolder ? props.parentFolderId : props.projectId} targetParentType={props.insideFolder ? 'DocumentFolder' : 'Project'} />
             }

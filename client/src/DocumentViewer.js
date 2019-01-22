@@ -9,9 +9,10 @@ import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
-import Link from 'material-ui/svg-icons/content/link';
+import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocument, layoutOptions } from './modules/documentGrid';
+import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 import DocumentStatusBar from './DocumentStatusBar';
@@ -95,6 +96,11 @@ class DocumentViewer extends Component {
     }, this.titleChangeDelayMs);
   }
 
+  onCloseDocument() {
+    this.props.closeDocument(this.props.document_id)
+    this.props.closeDocumentTargets(this.props.document_id)
+  }
+
   renderTitleBar() {
     const iconStyle = {
       padding: '0',
@@ -108,18 +114,19 @@ class DocumentViewer extends Component {
         <div style={{ width: '100%', flexShrink: '0', cursor: '-webkit-grab' }}>
           <div style={{ display: 'flex', padding: '10px 10px 0 10px', backgroundColor: this.props.document_kind === 'canvas' ? grey800 : grey100, borderRadius: '2px' }}>
             <IconButton tooltip='Show link inspector' style={buttonStyle} iconStyle={iconStyle} onClick={this.props.linkInspectorAnchorClick}>
-              <Link color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+              <Description color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
             <TextField
               id={`text-document-title-${this.props.document_id}`}
               style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
+              autoComplete='off'
               inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
               defaultValue={this.props.resourceName}
               underlineShow={false}
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
             />
-            <IconButton tooltip='Close document' onClick={() => {this.props.closeDocument(this.props.document_id);}} style={buttonStyle} iconStyle={iconStyle}>
+            <IconButton tooltip='Close document' onClick={this.onCloseDocument.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
               <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
           </div>
@@ -145,10 +152,10 @@ class DocumentViewer extends Component {
   }
 
   render() {
-    const { currentLayout, isDragging, document_kind, connectDropTarget, numRows } = this.props;
-    const documentGridOffsetWidth = 1200;
+    const { currentLayout, isDragging, document_kind, connectDropTarget, numRows, sidebarWidth } = this.props;
+    const documentGridOffsetWidth = window.innerWidth - sidebarWidth - 16;
     const windowHeight = window.innerHeight;
-    const width = (documentGridOffsetWidth / currentLayout.cols) - 16;
+    const width = (documentGridOffsetWidth / currentLayout.cols) - 100
     const rows = currentLayout.rows < numRows ? currentLayout.rows : numRows;
     const height = ((windowHeight - 72.0) / rows) - 16;
 
@@ -196,13 +203,15 @@ DocumentViewer = DragSource(
 
 const mapStateToProps = state => ({
   openDocuments: state.documentGrid.openDocuments,
-  currentLayout: layoutOptions[state.documentGrid.currentLayout]
+  currentLayout: layoutOptions[state.documentGrid.currentLayout],
+  sidebarWidth:  state.project.sidebarWidth,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
-  moveDocument
+  moveDocument,
+  closeDocumentTargets
 }, dispatch);
 
 export default connect(
