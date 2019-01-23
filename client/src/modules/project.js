@@ -49,7 +49,7 @@ const initialState = {
   newPermissionLevel: READ_PERMISSION,
   newPermissionError: null,
   deleteConfirmed: false,
-  sidebarWidth: 350,
+  sidebarWidth: 490,
   sidebarIsDragging: false
 };
 
