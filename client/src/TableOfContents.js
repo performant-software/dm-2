@@ -23,9 +23,9 @@ class TableOfContents extends Component {
         {this.props.writeEnabled &&
           <Toolbar noGutter={true} style={{marginLeft: 10, background: white}}>
             <ToolbarGroup >
-              <AddDocumentButton label='Add New Document' documentPopoverOpen={this.props.documentPopoverOpen} openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} closeDocumentPopover={this.props.closeDocumentPopover} textClick={() => {this.props.createTextDocument(this.props.projectId, 'Project');}} imageClick={() => {this.props.createCanvasDocument(this.props.projectId, 'Project');}} idString='tableOfContents' />
+              <AddDocumentButton label='New Item' documentPopoverOpen={this.props.documentPopoverOpen} openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} closeDocumentPopover={this.props.closeDocumentPopover} textClick={() => {this.props.createTextDocument(this.props.projectId, 'Project');}} imageClick={() => {this.props.createCanvasDocument(this.props.projectId, 'Project');}} idString='tableOfContents' />
               <FlatButton
-                label={'Add Folder'}
+                label={'New Folder'}
                 icon={<CreateNewFolder />}
                 onClick={() => {this.props.createFolder(this.props.projectId, 'Project');}}
               />

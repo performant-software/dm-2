@@ -720,7 +720,7 @@ export function createCanvasDocument(parentId, parentType, callback) {
       },
       method: 'POST',
       body: JSON.stringify({
-        title: 'Untitled Document',
+        title: 'Untitled Image',
         project_id: getState().project.id,
         document_kind: CANVAS_RESOURCE_TYPE,
         content: { tileSources: [] },

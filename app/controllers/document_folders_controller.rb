@@ -41,6 +41,12 @@ class DocumentFoldersController < ApplicationController
     end
   end
 
+  # PATCH/PUT /document_folders/1/reorder
+  def move
+    # the ids of this folder's children in the desired order
+    # reposonse is d
+  end
+
   # DELETE /document_folders/1
   def destroy
     descendants = @document_folder.descendant_folder_ids
