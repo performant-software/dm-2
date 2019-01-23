@@ -14,6 +14,9 @@ export const PATCH_ERRORED = 'folders/PATCH_ERRORED';
 export const DELETE_FOLDER = 'folders/DELETE_DOCUMENT';
 export const DELETE_SUCCESS = 'folders/DELETE_SUCCESS';
 export const DELETE_ERRORED = 'folders/DELETE_ERRORED';
+export const MOVE_FOLDER = 'folders/MOVE_FOLDER';
+export const MOVE_FOLDER_SUCCESS = 'folders/MOVE_FOLDER_SUCCESS';
+export const MOVE_FOLDER_ERRORED = 'folders/MOVE_FOLDER_ERRORED';
 
 const initialState = {
   openFolderContents: {}
@@ -22,6 +25,7 @@ const initialState = {
 export default function(state = initialState, action) {
   switch (action.type) {
     case FOLDER_OPENED:
+    case MOVE_FOLDER:
     case DELETE_FOLDER:
       let loadingOpenFolderContents = Object.assign({}, state.openFolderContents);
       loadingOpenFolderContents[action.id] = 'loading';
@@ -31,6 +35,7 @@ export default function(state = initialState, action) {
       };
 
     case OPEN_SUCCESS:
+    case MOVE_FOLDER_SUCCESS:
       let successOpenFolderContents = Object.assign({}, state.openFolderContents);
       successOpenFolderContents[action.id] = action.contentsChildren;
       return {
@@ -39,6 +44,7 @@ export default function(state = initialState, action) {
       };
 
     case OPEN_ERRORED:
+    case MOVE_FOLDER_ERRORED:
     case DELETE_ERRORED:
       let erroredOpenFolderContents = Object.assign({}, state.openFolderContents);
       erroredOpenFolderContents[action.id] = 'errored'
@@ -141,6 +147,45 @@ export function closeFolder(id) {
       id
     });
   };
+}
+
+export function moveFolder(folderID, destination_id, bouyancy ) {
+  return function(dispatch) {
+    dispatch({
+      type: UPDATE_FOLDER
+    });
+
+    return fetch(`/document_folders/${folderID}/move`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        destination_id,
+        bouyancy
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(() => {
+      dispatch({
+        type: MOVE_FOLDER_SUCCESS
+      });
+    })
+    .catch(() => dispatch({
+      type: MOVE_FOLDER_ERRORED
+    }));
+  }
 }
 
 export function updateFolder(id, attributes) {

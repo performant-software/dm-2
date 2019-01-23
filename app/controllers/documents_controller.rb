@@ -1,12 +1,12 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :update, :destroy, :add_images, :set_thumbnail, :lock]
+  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create] do
+  before_action only: [:create, :move] do
     validate_user_write(@project)
   end
   before_action only: [:update, :set_thumbnail] do
@@ -58,6 +58,16 @@ class DocumentsController < ApplicationController
       render json: @document.errors, status: :unprocessable_entity
     end
   end
+
+  # PATCH/PUT /documents/1/move
+  def move
+    p = document_move_params    
+    if @document.move_to(p[:destination_id], p[:buoyancy])
+      head :ok
+    else
+      render json: @document.errors, status: :unprocessable_entity
+    end
+  end
   
   # PUT /documents/1/add_images
   def add_images
@@ -92,7 +102,11 @@ class DocumentsController < ApplicationController
       params.require(:document).permit(:project_id, :title, :document_kind, :parent_id, :parent_type, :images => [], :content => {})
     end
 
+    def document_move_params
+      params.require(:document).permit(:destination_id, :buoyancy)
+    end
+
     def document_params
-      params.require(:document).permit(:title, :parent_id, :parent_type, :buoyancy, :search_text, :images => [], :content => {})
+      params.require(:document).permit(:title, :parent_id, :parent_type, :search_text, :images => [], :content => {})
     end
 end

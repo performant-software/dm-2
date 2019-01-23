@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { DropTarget } from 'react-dnd';
-import { openFolder, closeFolder, updateFolder } from './modules/folders';
-import { updateDocument } from './modules/documentGrid';
+import { openFolder, closeFolder, moveFolder } from './modules/folders';
+import { moveDocument } from './modules/documentGrid';
 import { loadProject } from './modules/project';
 import DocumentFolder from './DocumentFolder';
 
@@ -45,14 +45,10 @@ const listDropTarget = {
   drop(props, monitor) {
     if (!monitor.didDrop()) {
       const monitorItem = monitor.getItem();
-      const isFolder = monitorItem.isFolder;
-      const handler = isFolder ? props.updateFolder : props.updateDocument;
-      handler(monitorItem.id, {
-        parent_id: props.targetParentId,
-        parent_type: props.targetParentType,
-        buoyancy: props.buoyancyTarget
-      })
+      const handler = monitorItem.isFolder ? props.moveFolder : props.moveDocument;
+      handler(monitorItem.id, props.targetParentId, props.buoyancyTarget )
       .then(() => {
+        // TODO these shouldn't happen until we get an OK back from the server
         if (monitorItem.existingParentType === 'Project' || props.targetParentType === 'Project')
           props.loadProject(props.projectId);
         if (monitorItem.existingParentType === 'DocumentFolder' && props.openFolderContents[monitorItem.existingParentId])
@@ -90,8 +86,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   openFolder,
   closeFolder,
-  updateDocument,
-  updateFolder,
+  moveFolder,
+  moveDocument,
   loadProject
 }, dispatch);
 

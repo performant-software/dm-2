@@ -11,7 +11,7 @@ import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
-import { updateDocument, closeDocument, moveDocument, layoutOptions } from './modules/documentGrid';
+import { updateDocument, closeDocument, moveDocumentWindow, layoutOptions } from './modules/documentGrid';
 import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
@@ -50,7 +50,7 @@ const documentTarget = {
       return null;
     }
 
-    props.moveDocument(dragIndex, hoverIndex);
+    props.moveDocumentWindow(dragIndex, hoverIndex);
     monitor.getItem().index = hoverIndex;
   }
 }
@@ -210,7 +210,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
-  moveDocument,
+  moveDocumentWindow,
   closeDocumentTargets
 }, dispatch);
 

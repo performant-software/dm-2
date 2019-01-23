@@ -16,6 +16,8 @@ Rails.application.routes.draw do
   post '/documents/:id/set_thumbnail' => 'documents#set_thumbnail'
   put '/documents/:id/add_images' => 'documents#add_images'
   patch '/documents/:id/lock' => 'documents#lock'
+  patch '/documents/:id/move' => 'documents#move'
+  patch '/document_folders/:id/move' => 'document_folders#move'
   get '/projects/:id/search' => 'projects#search'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do

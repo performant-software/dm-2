@@ -4,6 +4,8 @@ class DocumentFolder < ApplicationRecord
   has_many :documents, as: :parent, dependent: :destroy
   has_many :document_folders, as: :parent, dependent: :destroy
 
+  include TreeNode
+
   def contents_children
     (self.documents + self.document_folders).sort_by(&:buoyancy).reverse
   end

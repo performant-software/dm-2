@@ -27,6 +27,9 @@ export const UPDATE_HIGHLIGHT_SUCCESS = 'document_grid/UPDATE_HIGHLIGHT_SUCCESS'
 export const DUPLICATE_HIGHLIGHTS = 'document_grid/DUPLICATE_HIGHLIGHTS';
 export const DUPLICATE_HIGHLIGHTS_SUCCESS = 'document_grid/DUPLICATE_HIGHLIGHTS_SUCCESS';
 export const DUPLICATE_HIGHLIGHTS_ERRORED = 'document_grid/DUPLICATE_HIGHLIGHTS_ERRORED';
+export const MOVE_DOCUMENT = 'document_grid/MOVE_DOCUMENT';
+export const MOVE_DOCUMENT_SUCCESS = 'document_grid/MOVE_DOCUMENT_SUCCESS';
+export const MOVE_DOCUMENT_ERRORED = 'document_grid/MOVE_DOCUMENT_ERRORED';
 export const UPDATE_DOCUMENT = 'document_grid/UPDATE_CONTENT';
 export const PATCH_SUCCESS = 'document_grid/PATCH_SUCCESS';
 export const PATCH_ERRORED = 'document_grid/PATCH_ERRORED';
@@ -42,7 +45,8 @@ export const ADD_IMAGE_TO_DOCUMENT = 'document_grid/ADD_IMAGE_TO_DOCUMENT';
 export const ADD_IMAGE_SUCCESS = 'document_grid/ADD_IMAGE_SUCCESS';
 export const ADD_IMAGE_ERRORED = 'document_grid/ADD_IMAGE_ERRORED';
 export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
-export const MOVE_DOCUMENT = 'document_grid/MOVE_DOCUMENT';
+export const MOVE_DOCUMENT_WINDOW = 'document_grid/MOVE_DOCUMENT_WINDOW';
+
 
 export const layoutOptions = [
   { rows: 1, cols: 1, description: '1 x 1' },
@@ -77,6 +81,7 @@ export default function(state = initialState, action) {
     case UPDATE_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
+    case MOVE_DOCUMENT:
       return {
         ...state,
         loading: true
@@ -227,7 +232,7 @@ export default function(state = initialState, action) {
         currentLayout: action.index
       };
 
-    case MOVE_DOCUMENT:
+    case MOVE_DOCUMENT_WINDOW:
       let draggedDocument = state.openDocuments[action.dragIndex];
       let openDocumentsMoveCopy = state.openDocuments.slice(0);
       openDocumentsMoveCopy.splice(action.dragIndex, 1);
@@ -543,6 +548,45 @@ export function createTextDocumentWithLink(origin, parentId = null, parentType =
       }));
     }));
   }
+}
+
+export function moveDocument(documentId, destination_id, bouyancy ) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: MOVE_DOCUMENT
+    });
+
+    return fetch(`/documents/${documentId}/move`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        destination_id,
+        bouyancy
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(() => {
+      dispatch({
+        type: MOVE_DOCUMENT_SUCCESS
+      });
+    })
+    .catch(() => dispatch({
+      type: MOVE_DOCUMENT_ERRORED
+    }));
+  }  
 }
 
 export function updateDocument(documentId, attributes, options) {
@@ -902,10 +946,10 @@ export function setCurrentLayout(event, index) {
   };
 }
 
-export function moveDocument(dragIndex, moveIndex) {
+export function moveDocumentWindow(dragIndex, moveIndex) {
   return function(dispatch) {
     dispatch({
-      type: MOVE_DOCUMENT,
+      type: MOVE_DOCUMENT_WINDOW,
       dragIndex,
       moveIndex
     });

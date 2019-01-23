@@ -8,6 +8,7 @@ class Document < Linkable
   has_many_attached :images
 
   include PgSearch
+  include TreeNode
 
   MAX_IMAGE_SIZE = 10
 

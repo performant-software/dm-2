@@ -1,12 +1,12 @@
 class DocumentFoldersController < ApplicationController
-  before_action :set_document_folder, only: [:show, :update, :destroy]
+  before_action :set_document_folder, only: [:show, :update, :move, :destroy]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :update, :destroy, :set_thumbnail] do
+  before_action only: [:create, :update, :destroy, :set_thumbnail, :move] do
     validate_user_write(@project)
   end
 
@@ -41,10 +41,14 @@ class DocumentFoldersController < ApplicationController
     end
   end
 
-  # PATCH/PUT /document_folders/1/reorder
+  # PATCH/PUT /document_folders/1/move
   def move
-    # the ids of this folder's children in the desired order
-    # reposonse is d
+    p = document_folder_move_params
+    if @document_folder.move_to(p[:destination_id], p[:buoyancy])
+      head :ok
+    else
+      render json: @document_folder.errors, status: :unprocessable_entity
+    end
   end
 
   # DELETE /document_folders/1
@@ -61,8 +65,12 @@ class DocumentFoldersController < ApplicationController
       @project = @document_folder.project
     end
 
+    def document_folder_move_params
+      params.require(:document_folder).permit(:destination_id, :buoyancy)
+    end
+
     # Only allow a trusted parameter "white list" through.
     def document_folder_params
-      params.require(:document_folder).permit(:project_id, :title, :parent_id, :parent_type, :buoyancy)
+      params.require(:document_folder).permit(:project_id, :title, :parent_id, :parent_type )
     end
 end
