@@ -79,7 +79,9 @@ class LinkableList extends Component {
           isDraggable={allDraggable}
           isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
           handleClick={() => {this.props.openDocument(item.document_id);}}
-          handleDoubleClick={() => {this.props.selectSidebarTarget(item);}}
+          // TODO use this for rename function
+          handleDoubleClick={() => {}}
+          // handleDoubleClick={() => {this.props.selectSidebarTarget(item);}}
         >
           <div>{primaryText}</div>
         </LinkableSummary>
