@@ -44,7 +44,8 @@ class ProjectSidebar extends Component {
         <div style={{flexGrow: '1'}}>
           <SidebarInner {...this.props} />
         </div>
-        <div draggable={true} onDragStart={this.startDragging.bind(this)} style={{ width: '6px', cursor: 'col-resize' }}>&nbsp;</div>
+        <div style={{ width: '6px' }}>&nbsp;</div>
+        {/* <div draggable={true} onDragStart={this.startDragging.bind(this)} style={{ width: '6px', cursor: 'col-resize' }}>&nbsp;</div> */}
       </div>
     );
   }
