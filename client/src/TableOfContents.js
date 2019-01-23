@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import RaisedButton from 'material-ui/RaisedButton';
 import CreateNewFolder from 'material-ui/svg-icons/file/create-new-folder';
 import { white } from 'material-ui/styles/colors'
 import { openDocumentPopover, closeDocumentPopover } from './modules/project';
