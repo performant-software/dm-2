@@ -11,8 +11,9 @@ import ListDropTarget from './ListDropTarget';
 
 class LinkableList extends Component {
 
-  renderFolder(item, itemKey, buoyancyTarget, targetParentId, targetParentType) {
+  renderFolder(item, buoyancyTarget, targetParentId, targetParentType) {
     const { allDraggable, inContents, writeEnabled, openDocumentIds, openFolderContents } = this.props;
+    const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
     let contents = openFolderContents[item.id];
     if (inContents && writeEnabled) {
@@ -32,7 +33,7 @@ class LinkableList extends Component {
             item={item} 
             buoyancyTarget={0} 
             targetParentType = 'DocumentFolder'
-             targetParentId={item.id} 
+            targetParentId={item.id} 
           />
         </div>
       )
@@ -52,8 +53,9 @@ class LinkableList extends Component {
       );
   }
 
-  renderItem(item, itemKey, buoyancyTarget, targetParentId, targetParentType) {
+  renderItem(item, buoyancyTarget, targetParentId, targetParentType) {
     const { allDraggable, inContents, writeEnabled, openDocumentIds } = this.props;
+    const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
     let primaryText = item.document_title;
     if (item.excerpt && item.excerpt.length > 0)
@@ -85,11 +87,11 @@ class LinkableList extends Component {
     );
   }
 
-  determineBouyancy( item, items, index ) {
+  determineBouyancy( item, index ) {
     let buoyancyTarget = 1.0;
     if (index > 0) {
       let buoyancyA = item.buoyancy || 0;
-      let buoyancyB = items[index - 1].buoyancy || 0;
+      let buoyancyB = this.props.items[index - 1].buoyancy || 0;
       buoyancyTarget = (buoyancyA + buoyancyB) / 2.0;
     }
     else if (item.buoyancy) {
@@ -107,12 +109,11 @@ class LinkableList extends Component {
       <List style={{paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
         <div>
           {items.map((item, index) => {
-            const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
-            const buoyancyTarget = this.determineBouyancy( item, items, index )
+            const buoyancyTarget = this.determineBouyancy( item, index )
             if (item.document_kind === 'folder') {
-              return this.renderFolder(item, itemKey, buoyancyTarget);
+              return this.renderFolder(item, buoyancyTarget, targetParentId, targetParentType);
             } else {
-              return this.renderItem(item, itemKey, buoyancyTarget, targetParentId, targetParentType);
+              return this.renderItem(item, buoyancyTarget, targetParentId, targetParentType);
             }
           })}
           {inContents && writeEnabled &&
