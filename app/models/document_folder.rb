@@ -6,8 +6,8 @@ class DocumentFolder < ApplicationRecord
 
   include TreeNode
 
-  def contents_children
-    (self.documents + self.document_folders).sort_by(&:buoyancy).reverse
+  def is_leaf?
+    false
   end
 
   def document_id
@@ -40,4 +40,15 @@ class DocumentFolder < ApplicationRecord
     end
     self.document_folders.map { |folder| [folder.id].concat(folder.descendant_folder_ids) }.flatten!
   end
+
+   # one time migration function for 20190124154624_add_document_position
+  def migrate_to_position!
+    i = 0
+    self.contents_children.each { |child|
+      child.position = i
+      i = i + 1
+      child.save!
+    }
+  end
+
 end

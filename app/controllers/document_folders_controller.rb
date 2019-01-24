@@ -44,7 +44,7 @@ class DocumentFoldersController < ApplicationController
   # PATCH/PUT /document_folders/1/move
   def move
     p = document_folder_move_params
-    if @document_folder.move_to(p[:destination_id], p[:buoyancy])
+    if @document_folder.move_to(p[:destination_id], p[:position])
       head :ok
     else
       render json: @document_folder.errors, status: :unprocessable_entity
@@ -66,7 +66,7 @@ class DocumentFoldersController < ApplicationController
     end
 
     def document_folder_move_params
-      params.require(:document_folder).permit(:destination_id, :buoyancy)
+      params.require(:document_folder).permit(:destination_id, :position)
     end
 
     # Only allow a trusted parameter "white list" through.

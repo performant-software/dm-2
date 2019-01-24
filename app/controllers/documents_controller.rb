@@ -62,7 +62,7 @@ class DocumentsController < ApplicationController
   # PATCH/PUT /documents/1/move
   def move
     p = document_move_params    
-    if @document.move_to(p[:destination_id], p[:buoyancy])
+    if @document.move_to(p[:destination_id], p[:position])
       head :ok
     else
       render json: @document.errors, status: :unprocessable_entity
@@ -103,7 +103,7 @@ class DocumentsController < ApplicationController
     end
 
     def document_move_params
-      params.require(:document).permit(:destination_id, :buoyancy)
+      params.require(:document).permit(:destination_id, :position)
     end
 
     def document_params

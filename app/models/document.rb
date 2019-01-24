@@ -49,6 +49,10 @@ class Document < Linkable
     end
   end
   
+  def is_leaf?
+    true
+  end
+
   def document_id
     self.id
   end
@@ -95,7 +99,6 @@ class Document < Linkable
       excerpt: self.excerpt,
       color: self.color,
       thumbnail_url: self.thumbnail_url,
-      buoyancy: self.buoyancy
     }
   end
 

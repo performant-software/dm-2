@@ -8,12 +8,14 @@ class Project < ApplicationRecord
   default_scope { order(updated_at: :desc) }
   scope :is_public, -> { where(public: true) }
 
-  def contents_children
-    (self.documents + self.document_folders).sort_by(&:buoyancy).reverse
-  end
+  include TreeNode
 
   def can_read
     self.users.merge(UserProjectPermission.read)
+  end
+
+  def is_leaf?
+    false
   end
 
   def can_write
@@ -23,4 +25,25 @@ class Project < ApplicationRecord
   def can_admin
     self.users.merge(UserProjectPermission.admin)
   end
+
+  # one time migration function for 20190124154624_add_document_position
+  def migrate_to_position_all!
+    Project.all.each { |project|
+      project.migrate_to_position!
+    }
+  end
+
+  # one time migration function for 20190124154624_add_document_position
+  def migrate_to_position!
+    i = 0
+    self.contents_children.each { |child|
+      child.position = i
+      i = i + 1
+      child.save!
+    }
+    self.document_folders.each { |folder |
+      folder.migrate_to_position!
+    }
+  end
+
 end
