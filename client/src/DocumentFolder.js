@@ -37,6 +37,7 @@ class DocumentFolder extends Component {
       <LinkableSummary {...this.props} isFolder={true} borderBold={this.props.isOver} noMargin={true}>
         <div style={{ display: 'flex' }}>
           <TextField
+            autoComplete='off'
             inputStyle={{ color: grey900, height: '20px' }}
             style={{ flexGrow: '1', height: '20px', cursor: 'text' }}
             id={'folderTitleField-' + this.props.item.id}
