@@ -129,6 +129,7 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
           window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
+          overlay.fabricCanvas().discardActiveObject();
       }
     });
     overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
