@@ -30,12 +30,9 @@ class Summary extends Component {
     if( !item.linkItem ) {
       if( item.document_kind !== 'folder' && this.props.isDraggable ) {
         return (
-          <IconButton
-            tooltipPosition="top-left"
-            tooltip={<span>Drag this icon to make a link.</span>}            
-          >
-            <Link color={this.props.isOpen ? white : black } style={{margin:10}}/>
-          </IconButton>
+          <div style={{ marginTop: 12, marginRight: 15}} >
+            <Link color={this.props.isOpen ? white : black} /> 
+          </div>
         )    
       } else {
         return null;

@@ -39,6 +39,15 @@ class DraggableLinkIcon extends Component {
 
   render() {
     return this.props.connectDragSource( 
+      <div style={{ marginTop: 12, marginRight: 15}} >
+          <Link/> 
+      </div>
+    );
+  }
+
+
+  oldrender() {
+    return this.props.connectDragSource( 
       <div >
         <IconButton
           tooltipPosition="top-left"
