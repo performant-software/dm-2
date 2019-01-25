@@ -26,7 +26,7 @@ class Summary extends Component {
   }
 
   renderRightButton() {
-    const { item } = this.props;
+    const { item, writeEnabled } = this.props;
     if( !item.linkItem ) {
       if( item.document_kind !== 'folder' && this.props.isDraggable ) {
         return (
@@ -41,12 +41,13 @@ class Summary extends Component {
         return null;
       }
     } else {
-    return (
-      <IconButton
-        onClick={()=>{ item.removeLinkCallback(item)} }
-      >
-        <HighlightOff  style={{margin:10}}/>
-      </IconButton>
+      if( !writeEnabled ) return null;
+      return (
+        <IconButton
+          onClick={()=>{ item.removeLinkCallback(item)} }
+        >
+          <HighlightOff  style={{margin:10}}/>
+        </IconButton>
       )
     }
   }

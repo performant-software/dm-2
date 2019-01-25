@@ -74,6 +74,7 @@ class LinkableList extends Component {
         <LinkableSummary
           item={item}
           inContents={true}
+          writeEnabled={writeEnabled}
           noMargin={inContents && writeEnabled}
           key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
           isDraggable={allDraggable}

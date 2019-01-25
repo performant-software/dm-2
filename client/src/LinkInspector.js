@@ -16,7 +16,7 @@ import DraggableLinkIcon from './DraggableLinkIcon';
 const LinkList = function(props) {
   if (props.items && props.items.length > 0) {
     return (
-      <LinkableList items={props.items} openDocumentIds={props.openDocumentIds} />
+      <LinkableList items={props.items} writeEnabled={props.writeEnabled} openDocumentIds={props.openDocumentIds} />
     );
   }
   return null;
