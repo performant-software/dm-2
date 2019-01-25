@@ -149,7 +149,7 @@ export function closeFolder(id) {
   };
 }
 
-export function moveFolder(folderID, destination_id, bouyancy ) {
+export function moveFolder(folderID, destination_id, position ) {
   return function(dispatch) {
     dispatch({
       type: UPDATE_FOLDER
@@ -167,8 +167,10 @@ export function moveFolder(folderID, destination_id, bouyancy ) {
       },
       method: 'PATCH',
       body: JSON.stringify({
-        destination_id,
-        bouyancy
+        document_folder: {
+          destination_id,
+          position
+        }
       })
     })
     .then(response => {

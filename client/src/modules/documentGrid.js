@@ -550,7 +550,7 @@ export function createTextDocumentWithLink(origin, parentId = null, parentType =
   }
 }
 
-export function moveDocument(documentId, destination_id, bouyancy ) {
+export function moveDocument(documentId, destination_id, position ) {
   return function(dispatch, getState) {
     dispatch({
       type: MOVE_DOCUMENT
@@ -567,9 +567,11 @@ export function moveDocument(documentId, destination_id, bouyancy ) {
         'uid': localStorage.getItem('uid')
       },
       method: 'PATCH',
-      body: JSON.stringify({
-        destination_id,
-        bouyancy
+      body: JSON.stringify({ 
+        document: {
+          destination_id,
+          position
+        }
       })
     })
     .then(response => {

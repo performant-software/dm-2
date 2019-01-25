@@ -6,8 +6,11 @@ class DocumentFoldersController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :update, :destroy, :set_thumbnail, :move] do
+  before_action only: [:create, :update, :destroy, :set_thumbnail] do
     validate_user_write(@project)
+  end
+  before_action only: [:move] do
+    validate_user_write(@document_folder.project)
   end
 
   #TODO: validate permissions for (recursively determined?) containing project
@@ -44,11 +47,7 @@ class DocumentFoldersController < ApplicationController
   # PATCH/PUT /document_folders/1/move
   def move
     p = document_folder_move_params
-    if @document_folder.move_to(p[:destination_id], p[:position])
-      head :ok
-    else
-      render json: @document_folder.errors, status: :unprocessable_entity
-    end
+    @document_folder.move_to(p[:position],p[:destination_id])
   end
 
   # DELETE /document_folders/1

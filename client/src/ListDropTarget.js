@@ -46,7 +46,8 @@ const listDropTarget = {
     if (!monitor.didDrop()) {
       const monitorItem = monitor.getItem();
       const handler = monitorItem.isFolder ? props.moveFolder : props.moveDocument;
-      handler(monitorItem.id, props.targetParentId, props.buoyancyTarget )
+      const targetID = props.targetParentType === 'Project' ? null : props.targetParentId
+      handler(monitorItem.id, targetID, props.buoyancyTarget )
       .then(() => {
         // TODO these shouldn't happen until we get an OK back from the server
         if (monitorItem.existingParentType === 'Project' || props.targetParentType === 'Project')

@@ -89,19 +89,6 @@ class LinkableList extends Component {
     );
   }
 
-  determineBouyancy( item, index ) {
-    let buoyancyTarget = 1.0;
-    if (index > 0) {
-      let buoyancyA = item.buoyancy || 0;
-      let buoyancyB = this.props.items[index - 1].buoyancy || 0;
-      buoyancyTarget = (buoyancyA + buoyancyB) / 2.0;
-    }
-    else if (item.buoyancy) {
-      buoyancyTarget += item.buoyancy;
-    }
-    return buoyancyTarget
-  }
-
   render() {
     const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId } = this.props;
     const targetParentId = insideFolder ? parentFolderId : projectId 
@@ -111,17 +98,16 @@ class LinkableList extends Component {
       <List style={{paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
         <div>
           {items.map((item, index) => {
-            const buoyancyTarget = this.determineBouyancy( item, index )
             if (item.document_kind === 'folder') {
-              return this.renderFolder(item, buoyancyTarget, targetParentId, targetParentType);
+              return this.renderFolder(item, index, targetParentId, targetParentType);
             } else {
-              return this.renderItem(item, buoyancyTarget, targetParentId, targetParentType);
+              return this.renderItem(item, index, targetParentId, targetParentType);
             }
           })}
           {inContents && writeEnabled &&
             <ListDropTarget 
               {...this.props} 
-              buoyancyTarget={items.length > 0 ? (items[items.length - 1].buoyancy || 0) - 1 : 0} 
+              buoyancyTarget={items.length} 
               targetParentId={targetParentId} 
               targetParentType={targetParentType} 
             />

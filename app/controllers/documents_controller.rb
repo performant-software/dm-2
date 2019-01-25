@@ -6,8 +6,11 @@ class DocumentsController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :move] do
+  before_action only: [:create] do
     validate_user_write(@project)
+  end
+  before_action only: [:move] do
+    validate_user_write(@document.project)
   end
   before_action only: [:update, :set_thumbnail] do
     validate_user_write(@project) && validate_document_lock(@document)
@@ -62,11 +65,7 @@ class DocumentsController < ApplicationController
   # PATCH/PUT /documents/1/move
   def move
     p = document_move_params    
-    if @document.move_to(p[:destination_id], p[:position])
-      head :ok
-    else
-      render json: @document.errors, status: :unprocessable_entity
-    end
+    @document.move_to(p[:position],p[:destination_id])
   end
   
   # PUT /documents/1/add_images
