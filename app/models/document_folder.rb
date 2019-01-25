@@ -47,7 +47,7 @@ class DocumentFolder < ApplicationRecord
    # one time migration function for 20190124154624_add_document_position
   def migrate_to_position!
     i = 0
-    self.contents_children.each { |child|
+    self.contents_children.reverse.each { |child|
       child.position = i
       i = i + 1
       child.save!
