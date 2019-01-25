@@ -10,6 +10,9 @@ class Document < Linkable
   include PgSearch
   include TreeNode
 
+  after_create :add_to_tree
+  before_destroy :remove_from_tree
+
   MAX_IMAGE_SIZE = 10
 
   pg_search_scope :search_for, against: %i(title search_text)

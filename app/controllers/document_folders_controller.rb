@@ -22,7 +22,7 @@ class DocumentFoldersController < ApplicationController
     @document_folder = DocumentFolder.new(document_folder_params)
 
     if @document_folder.save
-      render json: @document_folder, status: :created, location: @document_folder
+        render json: @document_folder, status: :created, location: @document_folder
     else
       render json: @document_folder.errors, status: :unprocessable_entity
     end

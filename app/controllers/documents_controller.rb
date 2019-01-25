@@ -99,7 +99,7 @@ class DocumentsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def new_document_params
-      params.require(:document).permit(:project_id, :title, :document_kind, :parent_id, :parent_type, :images => [], :content => {})
+      params.require(:document).permit(:project_id, :title, :document_kind, :images => [], :content => {})
     end
 
     def document_move_params
