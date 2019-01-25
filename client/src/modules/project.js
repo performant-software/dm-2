@@ -1,4 +1,5 @@
 import { push, replace } from 'react-router-redux';
+import { CLOSE_SEARCH_POPUP } from './search'
 
 export const TEXT_RESOURCE_TYPE = 'text';
 export const CANVAS_RESOURCE_TYPE = 'canvas';
@@ -188,6 +189,9 @@ export default function(state = initialState, action) {
 
 export function clearProject() {
   return function(dispatch) {
+    dispatch({
+      type: CLOSE_SEARCH_POPUP
+    });
     dispatch({
       type: CLEAR_PROJECT
     });
