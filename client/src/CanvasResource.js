@@ -46,6 +46,7 @@ const strokeWidth = 3.0;
 const markerRadius = 4.0;
 const doubleClickTimeout = 500;
 const markerThumbnailSize = 100
+const fabricViewportScale = 2000
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -93,7 +94,7 @@ class CanvasResource extends Component {
       showNavigator: true
     });
 
-    const overlay = this.overlay = viewer.fabricjsOverlay({scale: 2000});
+    const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
 
     viewer.addHandler('update-viewport', () => {
       if (!this.viewportUpdatedForPageYet) {
@@ -113,9 +114,12 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     });
+    
     viewer.addHandler('page', () => {
       this.markObjectsDirtyNextUpdate = true;
     });
+
+    viewer.addHandler('open', this.onOpen.bind(this) );
 
     viewer.addHandler('zoom', event => {
       const max = this.osdViewer.viewport.getMaxZoom();
@@ -173,6 +177,38 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     };
+  }
+
+  onOpen() {
+    if( this.props.firstTarget ) {
+      let targetHighLight = null;
+      for( let key in this.props.highlight_map ) {
+        let currentHighlight = this.props.highlight_map[key]
+        if( currentHighlight.id === this.props.firstTarget ) {
+          targetHighLight = currentHighlight
+          break
+        }
+      }
+      if( targetHighLight ) {
+        const target = JSON.parse(targetHighLight.target) 
+        const targetPoint = new OpenSeadragon.Point(
+          (target.left + (target.width/2)) / fabricViewportScale, 
+          (target.top + (target.height/2)) / fabricViewportScale
+        )
+        const canvas = this.overlay.fabricCanvas()
+        const zoomLevel = Math.min(
+          canvas.getWidth() / target.width,
+          canvas.getHeight() / target.height
+        )
+
+        // pan and zoom to the target
+        const viewport = this.osdViewer.viewport;
+        const max = viewport.getMaxZoom();
+        const min = viewport.getMinZoom();
+        viewport.zoomTo(min + (max - min) * zoomLevel);
+        viewport.panTo(targetPoint);   
+      }
+    }
   }
 
   objectClick(event) {

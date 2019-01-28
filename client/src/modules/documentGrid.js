@@ -2,7 +2,7 @@ import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
 import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
 import {updateEditorState} from './textEditor';
 import {deleteFolder} from './folders';
-import {setAddTileSourceMode, UPLOAD_SOURCE_TYPE} from './canvasEditor';
+import {setAddTileSourceMode,  UPLOAD_SOURCE_TYPE} from './canvasEditor';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
@@ -95,7 +95,7 @@ export default function(state = initialState, action) {
           openDocumentsCopy.splice(index, 1, Object.assign({timeOpened: document.timeOpened}, action.document));
       });
       let positionToSplice = action.documentPosition;
-      openDocumentsCopy.splice(positionToSplice, 0, Object.assign({timeOpened: Date.now()}, action.document));
+      openDocumentsCopy.splice(positionToSplice, 0, Object.assign({timeOpened: Date.now(), firstTarget: action.firstTarget }, action.document));
       return {
         ...state,
         openDocuments: openDocumentsCopy,
@@ -247,9 +247,9 @@ export default function(state = initialState, action) {
   }
 }
 
-export function openDocument(documentId, documentPosition) {
+export function openDocument(documentId, firstTarget) {
   return function(dispatch, getState) {
-    if (documentPosition === undefined) documentPosition = getState().documentGrid.openDocuments.length;
+    const documentPosition = getState().documentGrid.openDocuments.length;
     dispatch({
       type: OPEN_DOCUMENT
     });
@@ -276,6 +276,7 @@ export function openDocument(documentId, documentPosition) {
     .then(document => dispatch({
       type: OPEN_DOCUMENT_SUCCESS,
       document,
+      firstTarget,
       documentPosition
     }))
     .catch(() => dispatch({

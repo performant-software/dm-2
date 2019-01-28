@@ -60,7 +60,7 @@ class LinkableList extends Component {
     let primaryText = item.document_title;
     if (item.excerpt && item.excerpt.length > 0)
       primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span></div>;
-      
+
     return (
       <div key={itemKey}>
         {inContents && writeEnabled &&
@@ -79,7 +79,7 @@ class LinkableList extends Component {
           key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
           isDraggable={allDraggable}
           isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
-          handleClick={() => {this.props.openDocument(item.document_id);}}
+          handleClick={() => {this.props.openDocument(item.document_id, item.highlight_id)}}
           // TODO use this for rename function
           handleDoubleClick={() => {}}
           // handleDoubleClick={() => {this.props.selectSidebarTarget(item);}}

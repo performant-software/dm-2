@@ -110,6 +110,7 @@ class Project extends Component {
         lockedByUserName={document.locked_by_user_name}
         lockedByMe={document.locked_by_me}
         numRows={this.numRows}
+        firstTarget={document.firstTarget}
       />
     );
   }
