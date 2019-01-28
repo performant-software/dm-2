@@ -88,6 +88,8 @@ class CanvasResource extends Component {
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       showNavigationControl: false,
       tileSources,
+      minZoomImageRatio: 0.9,
+      maxZoomPixelRatio: 10.0,
       navigatorSizeRatio: 0.15,
       // sequenceMode: true,
       gestureSettingsMouse: { clickToZoom: false },
@@ -179,6 +181,7 @@ class CanvasResource extends Component {
     };
   }
 
+  // if a first target for this window has been specified, pan and zoom to it.
   onOpen() {
     if( this.props.firstTarget ) {
       let targetHighLight = null;
@@ -196,16 +199,12 @@ class CanvasResource extends Component {
           (target.top + (target.height/2)) / fabricViewportScale
         )
         const canvas = this.overlay.fabricCanvas()
-        const zoomLevel = Math.min(
-          canvas.getWidth() / target.width,
-          canvas.getHeight() / target.height
-        )
-
+        const zoomFactor = target.width > target.height ? target.width / canvas.getWidth() : target.height / canvas.getHeight();
         // pan and zoom to the target
         const viewport = this.osdViewer.viewport;
         const max = viewport.getMaxZoom();
         const min = viewport.getMinZoom();
-        viewport.zoomTo(min + (max - min) * zoomLevel);
+        viewport.zoomTo(min + (max - min) * (1.0 - zoomFactor));
         viewport.panTo(targetPoint);   
       }
     }
@@ -668,7 +667,7 @@ class CanvasResource extends Component {
     if (this.osdViewer && this.osdViewer.viewport) {
       const max = this.osdViewer.viewport.getMaxZoom();
       const min = this.osdViewer.viewport.getMinZoom();
-      this.osdViewer.viewport.zoomTo(min + (max - min) * value);
+      this.osdViewer.viewport.zoomTo(min + ((max - min) * value));
     }
   }
 
