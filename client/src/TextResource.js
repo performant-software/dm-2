@@ -258,8 +258,9 @@ class TextResource extends Component {
           if( targetPosition ) {
             const domNode = editorView.nodeDOM(targetPosition)
             if( domNode ) {
-              const domRect = domNode.parentNode.getBoundingClientRect();
-              element.scrollTop = domRect.top;
+              // parent node is the highlight span
+              domNode.parentNode.scrollIntoView({block: "center"})
+              window.scrollTo(0,0)
             } 
           }
         }
