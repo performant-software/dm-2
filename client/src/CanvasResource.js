@@ -47,6 +47,8 @@ const markerRadius = 4.0;
 const doubleClickTimeout = 500;
 const markerThumbnailSize = 100
 const fabricViewportScale = 2000
+const minZoomImageRatio = 0.9
+const maxZoomPixelRatio = 10.0
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -88,8 +90,8 @@ class CanvasResource extends Component {
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       showNavigationControl: false,
       tileSources,
-      minZoomImageRatio: 0.9,
-      maxZoomPixelRatio: 10.0,
+      minZoomImageRatio: minZoomImageRatio,
+      maxZoomPixelRatio: maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
       // sequenceMode: true,
       gestureSettingsMouse: { clickToZoom: false },
@@ -194,18 +196,15 @@ class CanvasResource extends Component {
       }
       if( targetHighLight ) {
         const target = JSON.parse(targetHighLight.target) 
-        const targetPoint = new OpenSeadragon.Point(
-          (target.left + (target.width/2)) / fabricViewportScale, 
-          (target.top + (target.height/2)) / fabricViewportScale
-        )
-        const canvas = this.overlay.fabricCanvas()
-        const zoomFactor = target.width > target.height ? target.width / canvas.getWidth() : target.height / canvas.getHeight();
-        // pan and zoom to the target
+        const x = target.left / fabricViewportScale
+        const y = target.top / fabricViewportScale
+        const w = target.width / fabricViewportScale
+        const h = target.height / fabricViewportScale
+        // back out a little so we can see highlight in context
+        const targetRect = new OpenSeadragon.Rect(x-0.1,y-0.1,w+0.2,h+0.2)
         const viewport = this.osdViewer.viewport;
-        const max = viewport.getMaxZoom();
-        const min = viewport.getMinZoom();
-        viewport.zoomTo(min + (max - min) * (1.0 - zoomFactor));
-        viewport.panTo(targetPoint);   
+        viewport.fitBoundsWithConstraints( targetRect )
+        // console.log(`tr: ${targetRect.toString()} tr2: ${targetRect2.toString()}`)
       }
     }
   }
