@@ -236,6 +236,36 @@ class TextResource extends Component {
         editable: this.isEditable
       });    
 
+      // if a highlight is targeted, locate it in props
+      if( this.props.firstTarget ) {
+        let targetHighlight = null;
+        for( let key in this.props.highlight_map ) {
+          let currentHighlight = this.props.highlight_map[key]
+          if( currentHighlight.id === this.props.firstTarget ) {
+            targetHighlight = currentHighlight
+            break
+          }
+        }
+        if( targetHighlight ) {
+          // find the highlight position in the doc
+          let targetPosition
+          editorState.doc.descendants( (node, pos) => {
+            if( targetPosition ) return false 
+            if( node.marks.find( mark => { return mark.attrs.highlightUid === targetHighlight.target } ) )
+              targetPosition = pos
+          })
+          // scroll to position
+          if( targetPosition ) {
+            const domNode = editorView.nodeDOM(targetPosition)
+            if( domNode ) {
+              // parent node is the highlight span
+              domNode.parentNode.scrollIntoView({block: "center"})
+              window.scrollTo(0,0)
+            } 
+          }
+        }
+      }
+
       this.setState( { ...this.state, editorView });
     }
   }

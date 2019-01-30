@@ -12,7 +12,7 @@ import IconButton from 'material-ui/IconButton';
 import Avatar from 'material-ui/Avatar';
 import Link from 'material-ui/svg-icons/content/link';
 
-import { grey100, grey400, cyan100 } from 'material-ui/styles/colors';
+import { grey100, grey400, grey800, white, black } from 'material-ui/styles/colors';
 
 import { TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE } from './modules/project';
 import { openDocument } from './modules/documentGrid';
@@ -26,27 +26,25 @@ class Summary extends Component {
   }
 
   renderRightButton() {
-    const { item } = this.props;
+    const { item, writeEnabled } = this.props;
     if( !item.linkItem ) {
       if( item.document_kind !== 'folder' && this.props.isDraggable ) {
         return (
-          <IconButton
-            tooltipPosition="top-left"
-            tooltip={<span>Drag this icon to make a link.</span>}            
-          >
-            <Link style={{margin:10}}/>
-          </IconButton>
+          <div style={{ marginTop: 12, marginRight: 15}} >
+            <Link color={this.props.isOpen ? white : black} /> 
+          </div>
         )    
       } else {
         return null;
       }
     } else {
-    return (
-      <IconButton
-        onClick={()=>{ item.removeLinkCallback(item)} }
-      >
-        <HighlightOff  style={{margin:10}}/>
-      </IconButton>
+      if( !writeEnabled ) return null;
+      return (
+        <IconButton
+          onClick={()=>{ item.removeLinkCallback(item)} }
+        >
+          <HighlightOff  style={{margin:10}}/>
+        </IconButton>
       )
     }
   }
@@ -73,9 +71,9 @@ class Summary extends Component {
           borderStyle: 'solid',
           borderWidth: this.props.borderBold ? '2px' : '1px',
           borderColor: grey400,
-          borderRadius: '0.5rem',
           margin: '0 8px',
-          backgroundColor: this.props.isOpen ? cyan100 : grey100,
+          color: this.props.isOpen ? white : black,
+          backgroundColor: this.props.isOpen && document_kind !== 'folder' ? grey800 : grey100,
           cursor: this.props.isDragging ? '-webkit-grabbing' : '-webkit-grab',
           maxWidth: `${this.props.sidebarWidth - 20}px`
         } : null}

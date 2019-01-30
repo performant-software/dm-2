@@ -1,5 +1,5 @@
 class DocumentFoldersController < ApplicationController
-  before_action :set_document_folder, only: [:show, :update, :destroy]
+  before_action :set_document_folder, only: [:show, :update, :move, :destroy]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
@@ -8,6 +8,9 @@ class DocumentFoldersController < ApplicationController
   end
   before_action only: [:create, :update, :destroy, :set_thumbnail] do
     validate_user_write(@project)
+  end
+  before_action only: [:move] do
+    validate_user_write(@document_folder.project)
   end
 
   #TODO: validate permissions for (recursively determined?) containing project
@@ -22,7 +25,7 @@ class DocumentFoldersController < ApplicationController
     @document_folder = DocumentFolder.new(document_folder_params)
 
     if @document_folder.save
-      render json: @document_folder, status: :created, location: @document_folder
+        render json: @document_folder, status: :created, location: @document_folder
     else
       render json: @document_folder.errors, status: :unprocessable_entity
     end
@@ -41,6 +44,12 @@ class DocumentFoldersController < ApplicationController
     end
   end
 
+  # PATCH/PUT /document_folders/1/move
+  def move
+    p = document_folder_move_params
+    @document_folder.move_to(p[:position],p[:destination_id])
+  end
+
   # DELETE /document_folders/1
   def destroy
     descendants = @document_folder.descendant_folder_ids
@@ -55,8 +64,12 @@ class DocumentFoldersController < ApplicationController
       @project = @document_folder.project
     end
 
+    def document_folder_move_params
+      params.require(:document_folder).permit(:destination_id, :position)
+    end
+
     # Only allow a trusted parameter "white list" through.
     def document_folder_params
-      params.require(:document_folder).permit(:project_id, :title, :parent_id, :parent_type, :buoyancy)
+      params.require(:document_folder).permit(:project_id, :title, :parent_id, :parent_type )
     end
 end

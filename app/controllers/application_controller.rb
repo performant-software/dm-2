@@ -26,10 +26,11 @@ class ApplicationController < ActionController::API
     false
   end
 
-  def validate_user_read(project)
+  def validate_user_read(project,check_only=false)
     if project.public? || (user_signed_in? && current_user.approved? && (current_user.admin? || project.can_read.exists?(:id => current_user.id)))
       return true
     else
+      return false if check_only
       head :forbidden
     end
     false

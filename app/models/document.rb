@@ -8,6 +8,10 @@ class Document < Linkable
   has_many_attached :images
 
   include PgSearch
+  include TreeNode
+
+  after_create :add_to_tree
+  before_destroy :remove_from_tree
 
   MAX_IMAGE_SIZE = 10
 
@@ -48,6 +52,10 @@ class Document < Linkable
     end
   end
   
+  def is_leaf?
+    true
+  end
+
   def document_id
     self.id
   end
@@ -94,7 +102,6 @@ class Document < Linkable
       excerpt: self.excerpt,
       color: self.color,
       thumbnail_url: self.thumbnail_url,
-      buoyancy: self.buoyancy
     }
   end
 

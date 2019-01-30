@@ -1,0 +1,93 @@
+module TreeNode
+    extend ActiveSupport::Concern
+
+    def add_to_tree
+        self.move_to( 0 )
+    end
+
+    def remove_from_tree
+        children = self.parent.contents_children
+        ActiveRecord::Base.transaction do    
+            i = 0
+            children.each { |child|
+                unless same_as( self, child )
+                    child.position = i
+                    i = i + 1
+                else
+                    child.parent = nil
+                end                    
+                child.save!
+            }
+        end    
+    end
+  
+    def contents_children
+        return nil if self.is_leaf?
+        (self.documents + self.document_folders).sort_by(&:position)
+    end
+
+    def renumber_children( children=nil )
+        children = contents_children if children.nil?
+        # renumber them in a single transaction
+        ActiveRecord::Base.transaction do    
+            i = 0
+            children.each { |child|
+                child.position = i
+                i = i + 1
+                child.save!
+            }
+        end        
+    end
+
+    def list_positions
+        self.contents_children.map { |child| [child.id, child.position] }
+    end
+
+    def same_as(node_a, node_b)
+        return true if node_a.nil? && node_b.nil?
+        return false if node_a.nil? || node_b.nil?        
+        node_a.id == node_b.id && node_a.class.to_s == node_b.class.to_s 
+    end
+
+    def move_to( target_position, destination_id=nil )
+        destination = destination_id.nil? ? self.project : DocumentFolder.find(destination_id)        
+
+        if same_as(self.parent, destination)
+            siblings = (destination.documents + destination.document_folders ).sort_by(&:position)
+        else
+            old_parent = self.parent
+            self.parent = destination
+            siblings = (destination.documents + destination.document_folders + [self]).sort_by(&:position)
+        end
+
+        target_position = siblings.length + 1 if target_position == :end
+
+        # start_state = siblings.map { |child| [child.id, child.position] }
+        # logger.info "MOVING #{destination_id} to #{target_position}"
+        # logger.info "START STATE: #{start_state}"
+
+        # move to right spot, note this is only saved when transaction suceeds
+        siblings.each { |sibling|
+            if same_as(sibling,self) 
+                sibling.position = target_position
+            else
+                if sibling.position >= target_position
+                    sibling.position = sibling.position + 1
+                end
+            end
+        }
+
+        # end_state = siblings.map { |child| [child.id, child.position] }
+        # logger.info "END STATE: #{end_state}"
+
+        # resort them again
+        siblings = siblings.sort_by(&:position)
+
+        # renumber the leafs
+        renumber_children(siblings)
+        old_parent.renumber_children() unless old_parent.nil?
+        
+        # end_state = siblings.map { |child| [child.id, child.position] }
+        # logger.info "RENUMBERED STATE: #{end_state}"
+    end   
+end

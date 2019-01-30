@@ -4,8 +4,13 @@ class DocumentFolder < ApplicationRecord
   has_many :documents, as: :parent, dependent: :destroy
   has_many :document_folders, as: :parent, dependent: :destroy
 
-  def contents_children
-    (self.documents + self.document_folders).sort_by(&:buoyancy).reverse
+  include TreeNode
+
+  after_create :add_to_tree
+  before_destroy :remove_from_tree
+
+  def is_leaf?
+    false
   end
 
   def document_id
@@ -38,4 +43,15 @@ class DocumentFolder < ApplicationRecord
     end
     self.document_folders.map { |folder| [folder.id].concat(folder.descendant_folder_ids) }.flatten!
   end
+
+   # one time migration function for 20190124154624_add_document_position
+  def migrate_to_position!
+    i = 0
+    self.contents_children.reverse.each { |child|
+      child.position = i
+      i = i + 1
+      child.save!
+    }
+  end
+
 end

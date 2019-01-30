@@ -1,3 +1,5 @@
+import { push } from 'react-router-redux';
+
 export const LOADING = 'home/LOADING';
 export const ERRORED = 'home/ERRORED';
 export const FETCH_SUCCESS = 'home/FETCH_SUCCESS';
@@ -243,6 +245,7 @@ export function load() {
         type: FETCH_SUCCESS,
         projects
       })
+      dispatch(push('/'));
     })
     .catch(() => dispatch({
       type: ERRORED

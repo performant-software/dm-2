@@ -12,8 +12,8 @@ export default class AddDocumentButton extends Component {
       <div>
         <FlatButton
           label={this.props.label}
+          style={{marginLeft: 10}}
           icon={<NoteAdd />}
-          style={{margin: 'auto'}}
           onClick={this.props.openDocumentPopover}
           id={buttonId}
         />
@@ -25,7 +25,7 @@ export default class AddDocumentButton extends Component {
           onRequestClose={this.props.closeDocumentPopover}
          >
           <Menu>
-            <MenuItem primaryText='Text' onClick={() => {
+            <MenuItem primaryText='Document' onClick={() => {
               this.props.textClick();
               this.props.closeDocumentPopover();
             }} />

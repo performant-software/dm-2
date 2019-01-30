@@ -96,6 +96,40 @@ class AddImageLayer extends Component {
       this.props.setImageUrl(this.props.editorKey, imageUrlForThumbnail)
   }
 
+  parseIIIFManifest(manifestJSON) {
+
+    const manifest = JSON.parse(manifestJSON);
+
+    if( manifest === null ) {
+      return [];
+    }
+
+    // IIIF presentation 2.0
+    // manifest["sequences"][n]["canvases"][n]["images"][n]["resource"]["service"]["@id"]
+
+    let images = [];
+
+    let sequence = manifest.sequences[0];
+    if( sequence !== null && sequence.canvases !== null ) {
+      sequence.canvases.forEach( (canvas) => {
+        let image = canvas.images[0]
+
+        if( image !== null && 
+            image.resource !== null &&
+            image.resource.service !== null ) {
+            images.push({
+              name: canvas.label,
+              xml_id: image.resource.service["@id"],
+              tile_source: image.resource.service["@id"]
+            });
+        }
+      }); 
+    }
+
+    return images;
+  }
+
+
   renderUploadButton(buttonStyle,iconStyle) {
     const { document_id, replaceDocument } = this.props;
     return (
