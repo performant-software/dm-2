@@ -9,9 +9,12 @@ import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
 import IconButton from 'material-ui/IconButton';
 import Close from 'material-ui/svg-icons/navigation/close';
+import Visibility from 'material-ui/svg-icons/action/visibility';
+import VisibilityOff from 'material-ui/svg-icons/action/visibility-off';
 import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocumentWindow, layoutOptions } from './modules/documentGrid';
+import { toggleHighlights } from './modules/canvasEditor'
 import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
@@ -96,6 +99,17 @@ class DocumentViewer extends Component {
     }, this.titleChangeDelayMs);
   }
 
+  onToggleHighlights() {
+    const key = this.getInstanceKey()
+    const currentState = this.props.highlightsHidden[key] === true ? true : false
+    this.props.toggleHighlights( key, !currentState )
+  }
+
+  getInstanceKey() {
+    const { document_id, timeOpened } = this.props;
+    return `${document_id}-${timeOpened}`;
+  }
+
   onCloseDocument() {
     this.props.closeDocument(this.props.document_id)
     this.props.closeDocumentTargets(this.props.document_id)
@@ -108,6 +122,7 @@ class DocumentViewer extends Component {
       height: '20px'
     };
     const buttonStyle = Object.assign({ margin: '2px' }, iconStyle);
+    const highlightsHidden = this.props.highlightsHidden[this.getInstanceKey()] 
 
     return (
       this.props.connectDragSource(
@@ -126,6 +141,11 @@ class DocumentViewer extends Component {
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
             />
+            { this.props.document_kind === 'canvas' && !this.isEditable() &&
+              <IconButton tooltip='Toggle highlights' onClick={this.onToggleHighlights.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
+                { highlightsHidden ? <VisibilityOff color='#FFF' /> : <Visibility color='#FFF' /> }
+              </IconButton>
+            }
             <IconButton tooltip='Close document' onClick={this.onCloseDocument.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
               <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
@@ -205,13 +225,15 @@ const mapStateToProps = state => ({
   openDocuments: state.documentGrid.openDocuments,
   currentLayout: layoutOptions[state.documentGrid.currentLayout],
   sidebarWidth:  state.project.sidebarWidth,
+  highlightsHidden: state.canvasEditor.highlightsHidden
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
   moveDocumentWindow,
-  closeDocumentTargets
+  closeDocumentTargets,
+  toggleHighlights
 }, dispatch);
 
 export default connect(

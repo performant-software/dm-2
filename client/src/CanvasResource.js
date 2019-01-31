@@ -677,7 +677,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
+    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, highlightsHidden, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
     const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
@@ -703,11 +703,24 @@ class CanvasResource extends Component {
 
     let editable = ( writeEnabled && lockedByMe );
     const mode = addTileSourceMode[document_id];
+    const highlightHidden = !editable && highlightsHidden[key]
 
     if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
     }
 
+    // don't render highlights if they are hidden
+    if( this.overlay ) {
+      const canvas = this.overlay.fabricCanvas()
+      if( highlightHidden && !canvas.isEmpty() ) {
+        canvas.clear();
+      } else {
+        if( !highlightHidden && canvas.isEmpty() ) {
+          this.renderHighlights(this.overlay,this.highlight_map)
+        }
+      }
+    }
+    
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
         <div style={{ display: (mode || !globalCanvasDisplay) ? 'none' : 'flex', flexDirection: 'column', width: '100%' }}>
@@ -777,6 +790,7 @@ class CanvasResource extends Component {
 
 const mapStateToProps = state => ({
   highlightColors: state.canvasEditor.highlightColors,
+  highlightsHidden: state.canvasEditor.highlightsHidden,
   displayColorPickers: state.canvasEditor.displayColorPickers,
   addTileSourceMode: state.canvasEditor.addTileSourceMode,
   imageURLs: state.canvasEditor.imageURLs,

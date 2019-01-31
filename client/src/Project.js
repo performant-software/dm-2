@@ -77,14 +77,12 @@ class Project extends Component {
   activateRolloverTimer( callback ) {
     this.deactivateRolloverTimer()
     this.rolloverTimer = setTimeout(callback, rolloverTimeout )
-    console.log('arm')
   }
 
   deactivateRolloverTimer() {
     if( this.rolloverTimer ) {
       clearTimeout(this.rolloverTimer)
       this.rolloverTimer = null
-      console.log('disarm')
     }
   }
 
