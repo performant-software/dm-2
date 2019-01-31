@@ -16,6 +16,8 @@ import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
 import SearchResultsPopupLayer from './SearchResultsPopupLayer';
 
+const rolloverTimeout = 500
+
 class Project extends Component {
   constructor(props) {
     super(props);
@@ -23,6 +25,7 @@ class Project extends Component {
     this.mainContainer = null;
     this.mouseX = 0;
     this.mouseY = 0;
+    this.rolloverTimer = null;
   }
 
   setFocusHighlight(document_id, highlight_id) {
@@ -35,9 +38,11 @@ class Project extends Component {
   showRollover(document_id, highlight_id) {
     const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
     if( !existingPopover ) {
-      const target = this.createTarget(document_id, highlight_id)
-      target.rollover = true
-      this.props.selectTarget(target);
+      this.activateRolloverTimer( () => {
+        const target = this.createTarget(document_id, highlight_id)
+        target.rollover = true
+        this.props.selectTarget(target);  
+      })
     }
   }
 
@@ -45,6 +50,8 @@ class Project extends Component {
     const existingRollover = this.props.selectedTargets.find( target => target.rollover && target.uid === highlight_uid )
     if( existingRollover ) {
       this.props.closeTargetRollover(highlight_uid);
+    } else {
+      this.deactivateRolloverTimer()
     }
   }
 
@@ -67,21 +74,19 @@ class Project extends Component {
     }
   }
 
-  // const rolloverTimeout = 3000
+  activateRolloverTimer( callback ) {
+    this.deactivateRolloverTimer()
+    this.rolloverTimer = setTimeout(callback, rolloverTimeout )
+    console.log('arm')
+  }
 
-  // activateRolloverTimer() {
-  //   this.deactivateRolloverTimer()
-  //   this.rolloverTimer = setTimeout(this.props.closeHandler, rolloverTimeout )
-  //   console.log('arm')
-  // }
-
-  // deactivateRolloverTimer() {
-  //   if( this.rolloverTimer ) {
-  //     clearTimeout(this.rolloverTimer)
-  //     this.rolloverTimer = null
-  //     console.log('disarm')
-  //   }
-  // }
+  deactivateRolloverTimer() {
+    if( this.rolloverTimer ) {
+      clearTimeout(this.rolloverTimer)
+      this.rolloverTimer = null
+      console.log('disarm')
+    }
+  }
 
   componentDidMount() {
     window.setFocusHighlight = this.setFocusHighlight.bind(this);

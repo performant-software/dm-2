@@ -136,14 +136,12 @@ class LinkInspectorPopup extends Component {
               <ModeComment style={linkIconStyle}/> 
               { this.renderTitle(titleBarColor) }      
             </Subheader>
-            { !this.props.rollover &&
               <IconButton
               iconStyle={{width: '16px', height: '16px' }}
               onClick={this.props.closeHandler}
               >
-              <Close />
-            </IconButton>
-            }
+              { !this.props.rollover && <Close /> }
+            </IconButton>            
           </div>
           { this.props.target.links_to && this.props.target.links_to.length > 0 && 
             <div style={{flexGrow: 1 }}>
