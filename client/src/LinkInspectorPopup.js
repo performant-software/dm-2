@@ -18,7 +18,6 @@ import LinkInspector from './LinkInspector';
 import { updateHighlight } from './modules/documentGrid';
 
 const timeUpdateDelay = 1000
-const rolloverTimeout = 3000
 
 class LinkInspectorPopup extends Component {
 
@@ -29,12 +28,10 @@ class LinkInspectorPopup extends Component {
       titleUpdateTimer: null,
       titleHasFocus: false      
     }
-    this.rolloverTimer = null;
   }
 
   componentWillMount() {
     Paper.defaultProps.transitionEnabled = false;
-    this.activateRolloverTimer()
   }
 
   getTitleColor(color) {
@@ -108,29 +105,6 @@ class LinkInspectorPopup extends Component {
     }
   }
 
-  activateRolloverTimer() {
-    this.rolloverTimer = setTimeout(this.props.closeHandler, rolloverTimeout )
-  }
-
-  deactivateRolloverTimer() {
-    if( this.rolloverTimer ) {
-      clearTimeout(this.rolloverTimer)
-    }
-  }
-
-
-  onMouseEnter(e) {
-    if( this.props.rollover && e.currentTarget.id === this.getInnerID() ) {
-      this.deactivateRolloverTimer()
-    }
-  }
-
-  onMouseLeave(e) {
-    if( this.props.rollover && e.currentTarget.id === this.getInnerID() ) {
-      this.activateRolloverTimer()
-    }
-  }
-
   getInnerID() {
     return `${this.props.id}-inner`
   }
@@ -154,8 +128,6 @@ class LinkInspectorPopup extends Component {
       <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus || this.props.rollover} >
         <Paper 
           id={this.getInnerID()} 
-          onMouseEnter={this.onMouseEnter.bind(this)} 
-          onMouseLeave={this.onMouseLeave.bind(this)} 
           zDepth={4} 
           style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}
         >          

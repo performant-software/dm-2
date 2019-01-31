@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings, setSidebarIsDragging, setSidebarWidth } from './modules/project';
-import { selectTarget, closeTarget, promoteTarget } from './modules/annotationViewer';
+import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
 import { closeDeleteDialog, confirmDeleteDialog, layoutOptions } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
@@ -26,26 +26,67 @@ class Project extends Component {
   }
 
   setFocusHighlight(document_id, highlight_id) {
-    if (window.highlightFocusTimeout) window.clearTimeout(window.highlightFocusTimeout);
-    const resource = this.props.openDocuments.find(resource => resource.id.toString() === document_id.toString());
-    const target = resource && highlight_id ? resource.highlight_map[highlight_id] : resource;
+    const target = this.createTarget(document_id, highlight_id)
     if (target) {
-      target.document_id = document_id;
-      target.highlight_id = highlight_id ? target.id : null;
-      target.document_title = resource.title;
-      target.document_kind = resource.document_kind;
-      target.startPosition = {
-        x: Math.min(Math.max(this.mouseX - this.props.sidebarWidth, 0), this.mainContainer.offsetWidth),
-        y: this.mouseY + window.scrollY
-      };
-      window.highlightFocusTimeout = window.setTimeout(() => {
-        this.props.selectTarget(target);
-      }, 10);
+      this.props.selectTarget(target);
     }
   }
 
+  showRollover(document_id, highlight_id) {
+    const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
+    if( !existingPopover ) {
+      const target = this.createTarget(document_id, highlight_id)
+      target.rollover = true
+      this.props.selectTarget(target);
+    }
+  }
+
+  hideRollover(highlight_uid) {
+    const existingRollover = this.props.selectedTargets.find( target => target.rollover && target.uid === highlight_uid )
+    if( existingRollover ) {
+      this.props.closeTargetRollover(highlight_uid);
+    }
+  }
+
+  createTarget( documentID, highlightID ) {
+    const resource = this.props.openDocuments.find(resource => resource.id.toString() === documentID.toString());
+    const target = resource && highlightID ? resource.highlight_map[highlightID] : resource;
+    if (target) {
+      let newTarget = { ...target }
+      newTarget.document_id = documentID;
+      newTarget.highlight_id = highlightID ? target.id : null;
+      newTarget.document_title = resource.title;
+      newTarget.document_kind = resource.document_kind;
+      newTarget.startPosition = {
+        x: Math.min(Math.max(this.mouseX - this.props.sidebarWidth, 0), this.mainContainer.offsetWidth),
+        y: this.mouseY + window.scrollY
+      };
+      return newTarget
+    } else {
+      return null
+    }
+  }
+
+  // const rolloverTimeout = 3000
+
+  // activateRolloverTimer() {
+  //   this.deactivateRolloverTimer()
+  //   this.rolloverTimer = setTimeout(this.props.closeHandler, rolloverTimeout )
+  //   console.log('arm')
+  // }
+
+  // deactivateRolloverTimer() {
+  //   if( this.rolloverTimer ) {
+  //     clearTimeout(this.rolloverTimer)
+  //     this.rolloverTimer = null
+  //     console.log('disarm')
+  //   }
+  // }
+
   componentDidMount() {
     window.setFocusHighlight = this.setFocusHighlight.bind(this);
+    window.showRollover = this.showRollover.bind(this);
+    window.hideRollover = this.hideRollover.bind(this);
     if (this.props.match.params.slug !== 'new') {
       this.props.loadProject(this.props.match.params.slug, this.props.projectTitle)
     }
@@ -198,6 +239,7 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateProject,
   selectTarget,
   closeTarget,
+  closeTargetRollover,
   promoteTarget,
   closeDeleteDialog,
   confirmDeleteDialog,

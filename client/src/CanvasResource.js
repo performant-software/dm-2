@@ -140,7 +140,6 @@ class CanvasResource extends Component {
           overlay.fabricCanvas().discardActiveObject();
       }
     });
-    overlay.fabricCanvas().on('mouse:out', this.clearFocusHighlightTimeout.bind(this));
     overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
     overlay.fabricCanvas().on('mouse:up', this.canvasMouseUp.bind(this) );
@@ -156,6 +155,19 @@ class CanvasResource extends Component {
           }
       }
     });
+
+    // rollover highlights 
+    overlay.fabricCanvas().on('mouse:over', event => {
+      if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
+        window.showRollover(this.props.document_id, event.target._highlightUid);
+      } 
+    });
+    overlay.fabricCanvas().on('mouse:out', function(event) {
+      if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
+        window.hideRollover(event.target._highlightUid);
+      } 
+    }.bind(this));
+
     // process paths created with pencil tool
     overlay.fabricCanvas().on('path:created', event => {
       if (event.path) {
@@ -209,19 +221,12 @@ class CanvasResource extends Component {
     }
   }
 
-  objectClick(event) {
-    if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-      window.setFocusHighlight(this.props.document_id, event.target._highlightUid);
-    }
-  }
-
   canvasMouseDown(event) {
 
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
     this.isMouseDown = true;
     this.pointerCoords = this.overlay.fabricCanvas().getPointer(event.e);
-    this.clearFocusHighlightTimeout();
 
     switch(this.currentMode) {
       case 'marker':
@@ -347,11 +352,6 @@ class CanvasResource extends Component {
     this.newShape = null;
   }
 
-  clearFocusHighlightTimeout() {
-    if (window.highlightFocusTimeout)
-      window.clearTimeout(window.highlightFocusTimeout);
-  }
-
   renderHighlights(overlay, highlight_map) {
     const jsonBlob = {objects: []};
     for (const highlightUid in highlight_map) {
@@ -370,6 +370,7 @@ class CanvasResource extends Component {
         object.dirty = true;
         object.perPixelTargetFind = true;
         object.selectable = true;
+
         if (!this.props.writeEnabled) {
           object.hoverCursor = 'default';
         }
