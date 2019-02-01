@@ -3,15 +3,14 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
-import { loadProject, updateProject, showSettings, hideSettings, setSidebarIsDragging, setSidebarWidth } from './modules/project';
+import { loadProject, updateProject, showSettings, hideSettings } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
 import { closeDeleteDialog, confirmDeleteDialog, layoutOptions } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
-import Drawer from 'material-ui/Drawer';
 import Navigation from './Navigation';
 import ProjectSettingsDialog from './ProjectSettingsDialog';
-import ProjectSidebar from './ProjectSidebar';
+import TableOfContents from './TableOfContents';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
 import SearchResultsPopupLayer from './SearchResultsPopupLayer';
@@ -194,19 +193,23 @@ class Project extends Component {
   }
 
   render() {
+    const { title, projectId, loading, adminEnabled, sidebarWidth, contentsChildren, openDocumentIds, writeEnabled } = this.props
     return (
       <div>
         <Navigation
-          title={this.props.title}
-          inputId={this.props.projectId}
-          onTitleChange={(event, newValue) => {this.props.updateProject(this.props.projectId, {title: newValue});}}
-          isLoading={this.props.loading}
-          showSettings={this.props.adminEnabled}
-          settingsClick={this.props.showSettings}
+          title={title}
+          inputId={projectId}
+          onTitleChange={(event, newValue) => {this.props.updateProject(projectId, {title: newValue});}}
+          isLoading={loading}
         />
-        <Drawer docked={true} open={true} width={this.props.sidebarWidth}>
-          <ProjectSidebar sidebarTarget={this.props.sidebarTarget} contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
-        </Drawer>
+        <TableOfContents 
+          showSettings={adminEnabled}
+          settingsClick={this.props.showSettings}
+          sidebarWidth={sidebarWidth} 
+          contentsChildren={contentsChildren} 
+          openDocumentIds={openDocumentIds} 
+          writeEnabled={writeEnabled} 
+        />
         { this.renderDialogLayers() }
         { this.renderDocumentGrid() }
       </div>
@@ -247,9 +250,7 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   closeDeleteDialog,
   confirmDeleteDialog,
   showSettings,
-  hideSettings,
-  setSidebarIsDragging,
-  setSidebarWidth
+  hideSettings
 }, dispatch);
 
 export default connect(

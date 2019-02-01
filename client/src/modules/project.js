@@ -30,8 +30,9 @@ export const CREATE_PERMISSION_LOADING = 'project/CREATE_PERMISSION_LOADING';
 export const CREATE_PERMISSION_ERRORED = 'project/CREATE_PERMISSION_ERRORED';
 export const CREATE_PERMISSION_SUCCESS = 'project/CREATE_PERMISSION_SUCCESS';
 export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
-export const SET_SIDEBAR_WIDTH = 'project/SET_SIDEBAR_WIDTH';
-export const SET_SIDEBAR_IS_DRAGGING = 'project/SET_SIDEBAR_IS_DRAGGING';
+export const TOGGLE_SIDEBAR = 'project/TOGGLE_SIDEBAR';
+
+const sidebarOpenWidth = 490
 
 const initialState = {
   id: null,
@@ -50,8 +51,8 @@ const initialState = {
   newPermissionLevel: READ_PERMISSION,
   newPermissionError: null,
   deleteConfirmed: false,
-  sidebarWidth: 490,
-  sidebarIsDragging: false
+  sidebarWidth: sidebarOpenWidth,
+  sidebarOpen: true
 };
 
 export default function(state = initialState, action) {
@@ -170,17 +171,14 @@ export default function(state = initialState, action) {
         deleteConfirmed: !state.deleteConfirmed
       };
 
-    case SET_SIDEBAR_WIDTH:
+    case TOGGLE_SIDEBAR:
+      const sidebarOpen = !state.sidebarOpen
+      const sidebarWidth = sidebarOpen ? sidebarOpenWidth : 0
       return {
         ...state,
-        sidebarWidth: action.width
+        sidebarOpen,
+        sidebarWidth 
       };
-
-    case SET_SIDEBAR_IS_DRAGGING:
-      return {
-        ...state,
-        sidebarIsDragging: action.isDragging
-      }
 
     default:
       return state;
@@ -509,6 +507,14 @@ export function toggleDeleteConfirmation() {
   }
 }
 
+export function toggleSidebar() {
+  return function(dispatch) {
+    dispatch({
+      type: TOGGLE_SIDEBAR
+    });
+  }
+}
+
 export function deleteProject(projectId) {
   return function(dispatch) {
     dispatch({
@@ -542,22 +548,4 @@ export function deleteProject(projectId) {
       type: DELETE_ERRORED
     }));
   }
-}
-
-export function setSidebarWidth(width) {
-  return function(dispatch) {
-    dispatch({
-      type: SET_SIDEBAR_WIDTH,
-      width
-    });
-  };
-}
-
-export function setSidebarIsDragging(isDragging) {
-  return function(dispatch) {
-    dispatch({
-      type: SET_SIDEBAR_IS_DRAGGING,
-      isDragging
-    });
-  };
 }
