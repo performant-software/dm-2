@@ -1,10 +1,10 @@
 class Project < ApplicationRecord
   belongs_to :owner, class_name: 'User', optional: true
-  has_many :documents, as: :parent, dependent: :destroy
-  has_many :document_folders, as: :parent, dependent: :destroy
-  has_many :user_project_permissions
+  has_many :documents, as: :parent, dependent: :delete_all
+  has_many :document_folders, as: :parent, dependent: :delete_all
+  has_many :user_project_permissions, dependent: :delete_all
   has_many :users, through: :user_project_permissions
-
+  
   default_scope { order(updated_at: :desc) }
   scope :is_public, -> { where(public: true) }
 
@@ -45,5 +45,4 @@ class Project < ApplicationRecord
       folder.migrate_to_position!
     }
   end
-
 end

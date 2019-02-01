@@ -4,7 +4,7 @@ class Document < Linkable
   belongs_to :project, touch: true
   belongs_to :locked_by, class_name: 'User', optional: true
   belongs_to :parent, polymorphic: true, optional: true
-  has_many :highlights, dependent: :destroy
+  has_many :highlights, dependent: :delete_all
   has_many_attached :images
 
   include PgSearch
@@ -12,10 +12,15 @@ class Document < Linkable
 
   after_create :add_to_tree
   before_destroy :remove_from_tree
+  before_destroy :purge_images
 
   MAX_IMAGE_SIZE = 10
 
   pg_search_scope :search_for, against: %i(title search_text)
+
+  def purge_images
+    images.each [ |image| image.purge ]
+  end
 
   # checks that all images validate, purges invalid images
   def valid_images?
