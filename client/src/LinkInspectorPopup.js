@@ -110,7 +110,7 @@ class LinkInspectorPopup extends Component {
   }
 
   render() {
-    const { target } = this.props;
+    const { target, writeEnabled, rollover } = this.props;
     
     const titleBarColor = this.getTitleColor(target.color);
     
@@ -122,7 +122,8 @@ class LinkInspectorPopup extends Component {
       height: '20px'
     };
 
-    const linkInspectorProps = { ...this.props, writeEnabled: this.props.writeEnabled && !this.props.rollover }
+    const linkInspectorVisible = (writeEnabled && !rollover) || (this.props.target.links_to && this.props.target.links_to.length > 0) 
+    const linkInspectorProps = { ...this.props, writeEnabled: writeEnabled && !rollover }
 
     return (
       <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus || this.props.rollover} >
@@ -143,7 +144,7 @@ class LinkInspectorPopup extends Component {
               { !this.props.rollover && <Close /> }
             </IconButton>            
           </div>
-          { this.props.target.links_to && this.props.target.links_to.length > 0 && 
+          { linkInspectorVisible && 
             <div style={{flexGrow: 1 }}>
               <LinkInspector { ...linkInspectorProps } />
             </div>             
