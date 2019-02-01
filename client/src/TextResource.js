@@ -9,6 +9,7 @@ import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 
 import IconButton from 'material-ui/IconButton';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
@@ -153,7 +154,7 @@ class TextResource extends Component {
     const markType = this.state.documentSchema.marks.highlight;
     const { document_id } = this.props;
     const editorState = this.getEditorState();
-    const cmd = toggleMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
+    const cmd = addMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
     cmd( editorState, this.state.editorView.dispatch );
   }
 
@@ -207,6 +208,13 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = fontSize ? addMark( textStyleMarkType, { fontSize } ) : removeMark( textStyleMarkType );
     cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onDeleteHighlight() {
+    const markType = this.state.documentSchema.marks.highlight;
+    const editorState = this.getEditorState();
+    const cmd = removeMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );    
   }
 
   componentWillReceiveProps(nextProps) {
@@ -468,6 +476,9 @@ class TextResource extends Component {
           </IconButton>
           <IconButton onClick={this.onOrderedList.bind(this)} tooltip='Create a numbered list.'>
             <FormatListNumbered />
+          </IconButton>
+          <IconButton onClick={this.onDeleteHighlight.bind(this)} tooltip='Delete selected highlight.'>
+            <DeleteForever />
           </IconButton>
         </ToolbarGroup>
       </Toolbar>
