@@ -12,15 +12,16 @@ class Document < Linkable
 
   after_create :add_to_tree
   before_destroy :remove_from_tree
-  before_destroy :purge_images
+  # before_destroy :purge_images
 
   MAX_IMAGE_SIZE = 10
 
   pg_search_scope :search_for, against: %i(title search_text)
 
-  def purge_images
-    images.each [ |image| image.purge ]
-  end
+  # TODO this won't be called by delete_all - need a better way to clean up images
+  # def purge_images
+  #   self.images.each { |image| image.purge }
+  # end
 
   # checks that all images validate, purges invalid images
   def valid_images?
