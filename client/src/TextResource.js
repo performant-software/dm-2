@@ -179,7 +179,18 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+
+  // markActive(state, type) {
+  //   let {from, $from, to, empty} = state.selection
+  //   if (empty) return type.isInSet(state.storedMarks || $from.marks())
+  //   else return state.doc.rangeHasMark(from, to, type)
+  // }
+
   onHyperLink = () => {
+
+    // http://prosemirror.net/examples/menu/
+    // is the caret in a hyperlink presently?
+
     const createHyperlink = (url) => {
       const markType = this.state.documentSchema.marks.link;
       const editorState = this.getEditorState();
