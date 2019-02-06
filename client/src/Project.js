@@ -28,6 +28,7 @@ class Project extends Component {
   }
 
   setFocusHighlight(document_id, highlight_id) {
+    this.hideRollover(highlight_id)
     const target = this.createTarget(document_id, highlight_id)
     if (target) {
       this.props.selectTarget(target);
