@@ -23,6 +23,7 @@ class Highlight < Linkable
       highlight_id: self.highlight_id,
       document_id: self.document_id,
       document_kind: self.document_kind,
+      document_title: self.document_title,
       excerpt: self.excerpt,
       color: self.color,
       thumbnail_url: self.thumbnail_url

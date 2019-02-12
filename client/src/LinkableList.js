@@ -59,8 +59,9 @@ class LinkableList extends Component {
 
     let primaryText = item.document_title;
     if (item.excerpt && item.excerpt.length > 0)
-      primaryText = <div><span style={{ background: item.color || 'yellow' }}>{item.excerpt}</span></div>;
+      primaryText = <div><span>"{item.excerpt}" in <i>{item.document_title}</i></span></div>;
 
+      // style={{ background: item.color || 'yellow' }}
     return (
       <div key={itemKey}>
         {inContents && writeEnabled &&
