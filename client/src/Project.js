@@ -3,18 +3,19 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
-import { loadProject, updateProject, showSettings, hideSettings, setSidebarIsDragging, setSidebarWidth } from './modules/project';
-import { selectTarget, closeTarget, promoteTarget } from './modules/annotationViewer';
+import { loadProject, updateProject, showSettings, hideSettings } from './modules/project';
+import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
 import { closeDeleteDialog, confirmDeleteDialog, layoutOptions } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
-import Drawer from 'material-ui/Drawer';
 import Navigation from './Navigation';
 import ProjectSettingsDialog from './ProjectSettingsDialog';
-import ProjectSidebar from './ProjectSidebar';
+import TableOfContents from './TableOfContents';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
 import SearchResultsPopupLayer from './SearchResultsPopupLayer';
+
+const rolloverTimeout = 500
 
 class Project extends Component {
   constructor(props) {
@@ -23,29 +24,72 @@ class Project extends Component {
     this.mainContainer = null;
     this.mouseX = 0;
     this.mouseY = 0;
+    this.rolloverTimer = null;
   }
 
   setFocusHighlight(document_id, highlight_id) {
-    if (window.highlightFocusTimeout) window.clearTimeout(window.highlightFocusTimeout);
-    const resource = this.props.openDocuments.find(resource => resource.id.toString() === document_id.toString());
-    const target = resource && highlight_id ? resource.highlight_map[highlight_id] : resource;
+    this.hideRollover(highlight_id)
+    const target = this.createTarget(document_id, highlight_id)
     if (target) {
-      target.document_id = document_id;
-      target.highlight_id = highlight_id ? target.id : null;
-      target.document_title = resource.title;
-      target.document_kind = resource.document_kind;
-      target.startPosition = {
+      this.props.selectTarget(target);
+    }
+  }
+
+  showRollover(document_id, highlight_id) {
+    const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
+    if( !existingPopover ) {
+      this.activateRolloverTimer( () => {
+        const target = this.createTarget(document_id, highlight_id)
+        target.rollover = true
+        this.props.selectTarget(target);  
+      })
+    }
+  }
+
+  hideRollover(highlight_uid) {
+    const existingRollover = this.props.selectedTargets.find( target => target.rollover && target.uid === highlight_uid )
+    if( existingRollover ) {
+      this.props.closeTargetRollover(highlight_uid);
+    } else {
+      this.deactivateRolloverTimer()
+    }
+  }
+
+  createTarget( documentID, highlightID ) {
+    const resource = this.props.openDocuments.find(resource => resource.id.toString() === documentID.toString());
+    const target = resource && highlightID ? resource.highlight_map[highlightID] : resource;
+    if (target) {
+      let newTarget = { ...target }
+      newTarget.document_id = documentID;
+      newTarget.highlight_id = highlightID ? target.id : null;
+      newTarget.document_title = resource.title;
+      newTarget.document_kind = resource.document_kind;
+      newTarget.startPosition = {
         x: Math.min(Math.max(this.mouseX - this.props.sidebarWidth, 0), this.mainContainer.offsetWidth),
         y: this.mouseY + window.scrollY
       };
-      window.highlightFocusTimeout = window.setTimeout(() => {
-        this.props.selectTarget(target);
-      }, 10);
+      return newTarget
+    } else {
+      return null
+    }
+  }
+
+  activateRolloverTimer( callback ) {
+    this.deactivateRolloverTimer()
+    this.rolloverTimer = setTimeout(callback, rolloverTimeout )
+  }
+
+  deactivateRolloverTimer() {
+    if( this.rolloverTimer ) {
+      clearTimeout(this.rolloverTimer)
+      this.rolloverTimer = null
     }
   }
 
   componentDidMount() {
     window.setFocusHighlight = this.setFocusHighlight.bind(this);
+    window.showRollover = this.showRollover.bind(this);
+    window.hideRollover = this.hideRollover.bind(this);
     if (this.props.match.params.slug !== 'new') {
       this.props.loadProject(this.props.match.params.slug, this.props.projectTitle)
     }
@@ -150,19 +194,23 @@ class Project extends Component {
   }
 
   render() {
+    const { title, projectId, loading, adminEnabled, sidebarWidth, contentsChildren, openDocumentIds, writeEnabled } = this.props
     return (
       <div>
         <Navigation
-          title={this.props.title}
-          inputId={this.props.projectId}
-          onTitleChange={(event, newValue) => {this.props.updateProject(this.props.projectId, {title: newValue});}}
-          isLoading={this.props.loading}
-          showSettings={this.props.adminEnabled}
-          settingsClick={this.props.showSettings}
+          title={title}
+          inputId={projectId}
+          onTitleChange={(event, newValue) => {this.props.updateProject(projectId, {title: newValue});}}
+          isLoading={loading}
         />
-        <Drawer docked={true} open={true} width={this.props.sidebarWidth}>
-          <ProjectSidebar sidebarTarget={this.props.sidebarTarget} contentsChildren={this.props.contentsChildren} openDocumentIds={this.props.openDocumentIds} writeEnabled={this.props.writeEnabled} />
-        </Drawer>
+        <TableOfContents 
+          showSettings={adminEnabled}
+          settingsClick={this.props.showSettings}
+          sidebarWidth={sidebarWidth} 
+          contentsChildren={contentsChildren} 
+          openDocumentIds={openDocumentIds} 
+          writeEnabled={writeEnabled} 
+        />
         { this.renderDialogLayers() }
         { this.renderDocumentGrid() }
       </div>
@@ -198,13 +246,12 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateProject,
   selectTarget,
   closeTarget,
+  closeTargetRollover,
   promoteTarget,
   closeDeleteDialog,
   confirmDeleteDialog,
   showSettings,
-  hideSettings,
-  setSidebarIsDragging,
-  setSidebarWidth
+  hideSettings
 }, dispatch);
 
 export default connect(

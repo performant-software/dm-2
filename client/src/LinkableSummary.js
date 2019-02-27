@@ -25,19 +25,23 @@ class Summary extends Component {
     this.doubleClickCutoffMs = 400;
   }
 
+  renderRightIcon() {
+    const { item } = this.props;
+
+    if( !item.linkItem && item.document_kind !== 'folder' && this.props.isDraggable ) {
+      return (
+        <div style={{ marginTop: 12, marginRight: 15}} >
+          <Link color={this.props.isOpen ? white : black} /> 
+        </div>
+      )    
+    } else {
+      return null;
+    }
+  }
+
   renderRightButton() {
     const { item, writeEnabled } = this.props;
-    if( !item.linkItem ) {
-      if( item.document_kind !== 'folder' && this.props.isDraggable ) {
-        return (
-          <div style={{ marginTop: 12, marginRight: 15}} >
-            <Link color={this.props.isOpen ? white : black} /> 
-          </div>
-        )    
-      } else {
-        return null;
-      }
-    } else {
+    if( item.linkItem ) {
       if( !writeEnabled ) return null;
       return (
         <IconButton
@@ -46,6 +50,8 @@ class Summary extends Component {
           <HighlightOff  style={{margin:10}}/>
         </IconButton>
       )
+    } else {
+      return null;
     }
   }
 
@@ -66,6 +72,7 @@ class Summary extends Component {
           />
         }
         leftIcon={document_kind === 'folder' ? (this.props.isOpen ? <ArrowDown /> : <ArrowRight />) : null}
+        rightIcon={ this.renderRightIcon() }
         rightIconButton={ this.renderRightButton() }
         style={this.props.isDraggable ? {
           borderStyle: 'solid',

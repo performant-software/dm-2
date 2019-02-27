@@ -158,7 +158,7 @@ class ProjectSettingsDialog extends Component {
         />
         <FlatButton
           label='Destroy project'
-          onClick={() => {deleteProject(id);}}
+          onClick={ () => {this.props.deleteProject(id)}}
           backgroundColor={red400}
           hoverColor={red600}
           style={{ color: deleteConfirmed ? 'white' : grey200 }}

@@ -8,6 +8,7 @@ export const REFRESH_TARGET = 'annotationViewer/REFRESH_TARGET';
 export const REFRESH_SUCCESS = 'annotationViewer/REFRESH_SUCCESS';
 export const REFRESH_ERRORED = 'annotationViewer/REFRESH_ERRORED';
 export const CLOSE_TARGET = 'annotationViewer/CLOSE_TARGET';
+export const CLOSE_TARGET_ROLLOVER = 'annotationViewer/CLOSE_TARGET_ROLLOVER';
 export const CLOSE_SIDEBAR_TARGET = 'annotationViewer/CLOSE_SIDEBAR_TARGET';
 export const CLOSE_DOCUMENT_TARGETS = 'annotationViewer/CLOSE_DOCUMENT_TARGETS';
 export const PROMOTE_TARGET = 'annotationViewer/PROMOTE_TARGET';
@@ -89,7 +90,7 @@ export default function(state = initialState, action) {
         sidebarLoading: false
       };
 
-    case CLOSE_TARGET:
+    case CLOSE_TARGET: {
       let preCloseTargetsCopy = state.selectedTargets.slice(0);
       let toCloseIndex = -1;
       if (action.highlight_id) {
@@ -105,6 +106,20 @@ export default function(state = initialState, action) {
         ...state,
         selectedTargets: preCloseTargetsCopy
       };
+    }
+
+    case CLOSE_TARGET_ROLLOVER: {
+      let preCloseTargetsCopy = state.selectedTargets.slice(0);
+      let toCloseIndex = -1;
+      toCloseIndex = preCloseTargetsCopy.findIndex(target => target.rollover && target.uid === action.highlight_uid);
+      if (toCloseIndex >= 0) {
+        preCloseTargetsCopy.splice(toCloseIndex, 1);
+      }
+      return {
+        ...state,
+        selectedTargets: preCloseTargetsCopy
+      };
+    }
 
     case CLOSE_DOCUMENT_TARGETS:
       const newSelectedTargets = state.selectedTargets.filter(target => target.document_id !== action.document_id)
@@ -293,6 +308,15 @@ export function selectSidebarTarget(target) {
     .catch(() => dispatch({
       type: SELECT_LOAD_ERRORED
     }));
+  }
+}
+
+export function closeTargetRollover(highlight_uid) {
+  return function(dispatch) {
+    dispatch({
+      type: CLOSE_TARGET_ROLLOVER,
+      highlight_uid
+    });
   }
 }
 

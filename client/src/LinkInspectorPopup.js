@@ -26,7 +26,7 @@ class LinkInspectorPopup extends Component {
     this.state = {
       titleBuffer: props.target.excerpt,
       titleUpdateTimer: null,
-      titleHasFocus: false
+      titleHasFocus: false      
     }
   }
 
@@ -69,7 +69,7 @@ class LinkInspectorPopup extends Component {
     const titleBarID = `highlight-title-${this.props.target.uid}`
 
     if( this.props.target.highlight_id ) {
-      if( this.state.titleHasFocus ) {
+      if( this.state.titleHasFocus && !this.props.rollover ) {
         return (
           <span>
             <TextField
@@ -105,8 +105,12 @@ class LinkInspectorPopup extends Component {
     }
   }
 
+  getInnerID() {
+    return `${this.props.id}-inner`
+  }
+
   render() {
-    const { target } = this.props;
+    const { target, writeEnabled, rollover } = this.props;
     
     const titleBarColor = this.getTitleColor(target.color);
     
@@ -118,24 +122,33 @@ class LinkInspectorPopup extends Component {
       height: '20px'
     };
 
+    const linkInspectorVisible = (writeEnabled && !rollover) || (this.props.target.links_to && this.props.target.links_to.length > 0) 
+    const linkInspectorProps = { ...this.props, writeEnabled: writeEnabled && !rollover }
+
     return (
-      <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus} >
-        <Paper zDepth={4} style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}>          
+      <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus || this.props.rollover} >
+        <Paper 
+          id={this.getInnerID()} 
+          zDepth={4} 
+          style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}
+        >          
           <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
             <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
               <ModeComment style={linkIconStyle}/> 
               { this.renderTitle(titleBarColor) }      
             </Subheader>
-            <IconButton
+              <IconButton
               iconStyle={{width: '16px', height: '16px' }}
               onClick={this.props.closeHandler}
-            >
-              <Close />
-            </IconButton>
+              >
+              { !this.props.rollover && <Close /> }
+            </IconButton>            
           </div>
-          <div style={{flexGrow: 1 }}>
-            <LinkInspector {...this.props} />
-          </div>         
+          { linkInspectorVisible && 
+            <div style={{flexGrow: 1 }}>
+              <LinkInspector { ...linkInspectorProps } />
+            </div>             
+          }
         </Paper>
       </Draggable>
     )

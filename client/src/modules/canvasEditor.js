@@ -6,6 +6,7 @@ export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
 export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
 export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
 export const SET_IMAGE_URL = 'canvasEditor/SET_IMAGE_URL';
+export const TOGGLE_HIGHLIGHTS = 'canvasEditor/TOGGLE_HIGHLIGHTS';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
@@ -14,6 +15,7 @@ const initialState = {
   highlightColors: {},
   displayColorPickers: {},
   addTileSourceMode: {},
+  highlightsHidden: {},
   imageURLs: {},
   isPencilMode: {},
   zoomControls: {},
@@ -84,6 +86,14 @@ export default function(state = initialState, action) {
         globalCanvasDisplay: action.value
       };
 
+    case TOGGLE_HIGHLIGHTS:
+      let highlightsHidden = { ...state.highlightsHidden };
+      highlightsHidden[action.editorKey] = action.value;
+      return {
+        ...state,
+        highlightsHidden
+      };
+
     default:
       return state;
   }
@@ -140,6 +150,16 @@ export function setIsPencilMode(editorKey, isPencilMode) {
       isPencilMode
     });
   }
+}
+
+export function toggleHighlights(editorKey, value) {
+  return function(dispatch) {
+    dispatch({
+      type: TOGGLE_HIGHLIGHTS,
+      editorKey,
+      value
+    });
+  };
 }
 
 export function setZoomControl(editorKey, zoomValue) {

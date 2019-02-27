@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { clearSelection } from './modules/annotationViewer'
 import { push } from 'react-router-redux';
 import AppBar from 'material-ui/AppBar';
-import IconButton from 'material-ui/IconButton';
 import FlatButton from 'material-ui/FlatButton';
 import Popover from 'material-ui/Popover';
 import Menu from 'material-ui/Menu';
@@ -11,13 +11,13 @@ import MenuItem from 'material-ui/MenuItem';
 import CircularProgress from 'material-ui/CircularProgress';
 import Divider from 'material-ui/Divider';
 import DropDownMenu from 'material-ui/DropDownMenu';
-import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
-import Settings from 'material-ui/svg-icons/action/settings';
+
 import MoreVert from 'material-ui/svg-icons/navigation/more-vert';
 import { signOutUser } from './modules/redux-token-auth-config';
+import { toggleSidebar } from './modules/project';
 import { load, showRegistration, showLogin, toggleAuthMenu, hideAuthMenu, showAdminDialog } from './modules/home';
 import { setCurrentLayout, layoutOptions } from './modules/documentGrid';
-import { clearSelection } from './modules/annotationViewer'
+
 import LoginRegistrationDialog from './LoginRegistrationDialog';
 import AdminDialog from './AdminDialog';
 import SearchBar from './SearchBar';
@@ -57,11 +57,6 @@ const LoginMenuBody = props => {
 
 class Navigation extends Component {
 
-  onCloseProject() {
-    this.props.clearSelection()
-    this.props.returnHome()
-  }
-
   render() {
     let userMenuLabel = '';
     if (this.props.currentUser.attributes.id) { // if a user is signed in
@@ -75,15 +70,12 @@ class Navigation extends Component {
         <AppBar
           title={<div>
             <span style={{ color: '#FFF', fontSize: '24px' }}>{this.props.title}</span>
-            {this.props.showSettings &&
-              <IconButton onClick={this.props.settingsClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ color: '#FFF', width: '20px', height: '20px' }}><Settings /></IconButton>
-            }
             {this.props.isLoading &&
               <CircularProgress color={'#FFF'} style={{top: '12px', left: '18px'}}/>
             }
           </div>}
           showMenuIconButton={!this.props.isHome}
-          iconElementLeft={<IconButton onClick={this.onCloseProject.bind(this)}><ArrowBack /></IconButton>}
+          onLeftIconButtonClick={this.props.toggleSidebar}
           iconElementRight={
             <div>
               {!this.props.isHome && 
@@ -149,7 +141,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   signOutUser,
   showAdminDialog,
   setCurrentLayout,
-  clearSelection
+  clearSelection,
+  toggleSidebar
 }, dispatch);
 
 export default connect(
