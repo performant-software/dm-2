@@ -14,7 +14,7 @@ import { setAddTileSourceMode, setImageUrl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOU
 import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
 
 const tileSourceTypeLabels = {};
-tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'Link to IIIF Image'};
+tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'Link to IIIF Image Information URI'};
 tileSourceTypeLabels[IMAGE_URL_SOURCE_TYPE] = {select: 'Image URL', textField: 'Link to Web Image'};
 tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: 'Choose files'};
 
@@ -71,9 +71,9 @@ class AddImageLayer extends Component {
         break;
 
       case IIIF_TILE_SOURCE_TYPE:
+        newTileSources.push(this.state.newTileSourceValue);
         if (shouldSetThumbnail) {
-          const baseUrl = this.state.newTileSourceValue.split('info.json')[0];
-          imageUrlForThumbnail = baseUrl + 'full/!160,160/0/default.png';
+          imageUrlForThumbnail = this.state.newTileSourceValue + '/full/!160,160/0/default.png';
         }
         break;
 
