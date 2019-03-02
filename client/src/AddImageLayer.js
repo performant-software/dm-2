@@ -91,9 +91,13 @@ class AddImageLayer extends Component {
     this.setState( { ...this.state, newTileSourceValue: null } );
     this.props.setAddTileSourceMode(this.props.document_id, null);
 
-    if (shouldSetThumbnail && imageUrlForThumbnail)
+    if (shouldSetThumbnail && imageUrlForThumbnail) {
       this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
+    }
+
+    if(imageUrlForThumbnail) {
       this.props.setImageUrl(this.props.editorKey, imageUrlForThumbnail)
+    }
   }
 
   renderUploadButton(buttonStyle,iconStyle) {

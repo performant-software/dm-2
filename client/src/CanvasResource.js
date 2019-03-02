@@ -80,8 +80,7 @@ class CanvasResource extends Component {
       if (firstTileSource.type === 'image' && firstTileSource.url)
         imageUrlForThumbnail = firstTileSource.url
       else {
-        const baseUrl = firstTileSource.split('info.json')[0];
-        imageUrlForThumbnail = baseUrl + 'full/!400,400/0/default.png'
+        imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
       }
       this.props.setImageUrl(key, imageUrlForThumbnail);
     } else {
