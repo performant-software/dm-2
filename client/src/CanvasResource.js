@@ -72,6 +72,10 @@ class CanvasResource extends Component {
     let imageUrlForThumbnail = null;
 
     const firstTileSource = tileSources[0];
+
+    // TODO check the tile source before we get into this, it should at least 
+    // resolve to a 200 response.
+
     if (firstTileSource) {
       if (firstTileSource.type === 'image' && firstTileSource.url)
         imageUrlForThumbnail = firstTileSource.url

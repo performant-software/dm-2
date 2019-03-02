@@ -20,6 +20,32 @@ module TreeNode
             }
         end    
     end
+
+    def add_subtree( tree )
+        project_id = self.document_kind == 'Project' ?  self.id : self.project_id
+        document_folder = DocumentFolder.new({
+            project_id: project_id,
+            title: tree['name'],
+            parent_id: self.id,
+            parent_type: self.document_kind == 'Project' ? 'Project' : 'DocumentFolder'
+        })
+        document_folder.save!
+        document_folder.move_to( :end, self.id )
+        tree['children'].each { |child|
+            image_url = child['image_info_uri']
+            document = Document.new({
+                project_id: project_id,
+                title: child['name'],
+                document_kind: 'canvas',
+                content: {
+                    tileSources: [ image_url ]
+                }
+            })
+            document.save!
+            document.add_thumbnail( image_url + '/full/!160,160/0/default.png')
+            document.move_to( :end, document_folder.id )
+        }
+    end
   
     def contents_children
         return nil if self.is_leaf?

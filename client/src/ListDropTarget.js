@@ -2,11 +2,12 @@ import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { DropTarget } from 'react-dnd';
-import { openFolder, closeFolder, moveFolder } from './modules/folders';
+import { openFolder, closeFolder, moveFolder, addTree } from './modules/folders';
 import { moveDocument } from './modules/documentGrid';
 import { loadProject } from './modules/project';
 import DocumentFolder from './DocumentFolder';
 import {NativeTypes} from 'react-dnd-html5-backend';
+import { parseIIIFManifest } from './modules/iiif';
 
 const ListTargetInner = props => {
   const { isFolder, isOver, writeEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
@@ -34,35 +35,35 @@ const ListTargetInner = props => {
   }
 }
 
-function parseIIIFManifest(manifestJSON) {
-  const manifest = JSON.parse(manifestJSON);
+function handleFileSystemDrop(props,monitorItem) {
+  const { addTree, targetParentId, targetParentType, buoyancyTarget } = props
+  const droppedFile = monitorItem.files[0]
+  const droppedFileName = droppedFile.name
+  let reader = new FileReader();
 
-  if( manifest === null ) {
-      return [];
-  }
-
-  // IIIF presentation 2.0
-  // manifest["sequences"][n]["canvases"][n]["images"][n]["resource"]["service"]["@id"]
-
-  let images = [];
-
-  let sequence = manifest.sequences[0];
-  if( sequence !== null && sequence.canvases !== null ) {
-      sequence.canvases.forEach( (canvas) => {
-      let image = canvas.images[0]
-
-      if( image !== null && 
-          image.resource !== null &&
-          image.resource.service !== null ) {
-          images.push({
-              name: canvas.label,
-              tile_source: image.resource.service["@id"]
-          });
+  reader.onload = (e) => {
+    try {
+      let sequences = parseIIIFManifest(reader.result);
+      if( sequences ) {        
+        // for manifests with a single sequence, don't create an extra subfolder
+        let tree = ( sequences.length === 1 ) ? {
+          name: droppedFileName,
+          position: buoyancyTarget,
+          children: sequences[0].children
+        } : {
+          name: droppedFileName,
+          position: buoyancyTarget,
+          children: sequences
+        }
+        console.log(tree)
+        addTree( targetParentId, targetParentType, tree)
       }
-      }); 
+    }
+    catch(e) {
+      console.log( "Unable to parse IIIF Manifest: "+e)
+    }
   }
-
-  return images;
+  reader.readAsText(droppedFile);
 }
 
 function handleDMItemDrop(props,monitorItem) {
@@ -78,27 +79,6 @@ function handleDMItemDrop(props,monitorItem) {
     if (props.targetParentType === 'DocumentFolder' && props.openFolderContents[props.targetParentId])
       props.openFolder(props.targetParentId);
   });
-}
-
-function handleFileSystemDrop(props,monitorItem) {
-  const reader = new FileReader();
-
-  reader.onload = (e) => {
-    let images
-    try {
-      images = parseIIIFManifest(reader.result);
-    }
-    catch(e) {
-      console.log( "error parsing")
-    }
-    if( images ) {
-      debugger
-      console.log( `found ${images.length} images`)
-    } else {
-      console.log( "no images found.")
-    }
-  }
-  reader.readAsText(monitorItem.files[0]);
 }
 
 const listDropTarget = {
@@ -150,7 +130,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   closeFolder,
   moveFolder,
   moveDocument,
-  loadProject
+  loadProject,
+  addTree
 }, dispatch);
 
 export default connect(

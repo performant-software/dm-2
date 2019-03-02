@@ -3,6 +3,16 @@ class DocumentFoldersController < ApplicationController
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
+  before_action only: [:add_tree] do 
+    p = document_folder_add_tree_params
+    if p[:parent_type] == 'Project'
+      @project = Project.find(p[:parent_id])
+    else
+      @document_folder = DocumentFolder.find(p[:parent_id])
+      @project = @document_folder.project
+    end
+    validate_user_write(@project)
+  end
   before_action only: [:show] do
     validate_user_read(@project)
   end
@@ -28,6 +38,16 @@ class DocumentFoldersController < ApplicationController
         render json: @document_folder, status: :created, location: @document_folder
     else
       render json: @document_folder.errors, status: :unprocessable_entity
+    end
+  end
+
+  # POST /document_folders/1/add_tree
+  def add_tree
+    p = document_folder_add_tree_params
+    if p[:parent_type] == 'Project'
+      @project.add_subtree(p[:tree].as_json)
+    else
+      @document_folder.add_subtree(p[:tree].as_json)
     end
   end
 
@@ -66,6 +86,10 @@ class DocumentFoldersController < ApplicationController
 
     def document_folder_move_params
       params.require(:document_folder).permit(:destination_id, :position)
+    end
+
+    def document_folder_add_tree_params
+      params.require(:document_folder).permit(:parent_id, :parent_type, :tree  => {})
     end
 
     # Only allow a trusted parameter "white list" through.

@@ -17,6 +17,9 @@ export const DELETE_ERRORED = 'folders/DELETE_ERRORED';
 export const MOVE_FOLDER = 'folders/MOVE_FOLDER';
 export const MOVE_FOLDER_SUCCESS = 'folders/MOVE_FOLDER_SUCCESS';
 export const MOVE_FOLDER_ERRORED = 'folders/MOVE_FOLDER_ERRORED';
+export const ADD_TREE = 'folders/ADD_TREE';
+export const ADD_TREE_SUCCESS = 'folders/ADD_TREE_SUCCESS';
+export const ADD_TREE_ERRORED = 'folders/ADD_TREE_ERRORED';
 
 const initialState = {
   openFolderContents: {}
@@ -264,4 +267,44 @@ export function deleteFolder(folderId, parentType, parentId) {
       id: folderId
     }));
   };
+}
+
+export function addTree( parentId, parentType, tree) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: ADD_TREE
+    });
+
+    fetch(`/document_folders/${parentId}/add_tree`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        document_folder: {
+          parent_id: parentId,
+          parent_type: parentType,
+          tree  
+        }
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+    })
+    .then(() => dispatch(loadProject(getState().project.id)))
+    .then(() => dispatch({
+      type: ADD_TREE_SUCCESS
+    }))
+    .catch(() => dispatch({
+      type: ADD_TREE_ERRORED
+    }));
+  }
 }

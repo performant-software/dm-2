@@ -82,6 +82,14 @@ class Document < Linkable
     nil
   end
 
+  def add_thumbnail( image_url )
+    processed = ImageProcessing::MiniMagick.source(open(image_url))
+      .resize_to_fill(80, 80)
+      .convert('png')
+      .call
+   self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+  end
+
   def highlight_map
     Hash[self.highlights.collect { |highlight| [highlight.uid, highlight]}]
   end

@@ -81,11 +81,7 @@ class DocumentsController < ApplicationController
 
   # POST /documents/1/set_thumbnail
   def set_thumbnail
-    processed = ImageProcessing::MiniMagick.source(open(params['image_url']))
-      .resize_to_fill(80, 80)
-      .convert('png')
-      .call
-    @document.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{@document.id}.png")
+    @document.add_thumbnail( params['image_url'] )
     render json: @document
   end
 
