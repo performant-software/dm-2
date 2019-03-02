@@ -82,7 +82,9 @@ class TextResource extends Component {
       const properties = {
         class: 'dm-highlight', 
         style: `background: ${color};`, 
-        onclick: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`
+        onclick: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`,
+        onmouseenter: `window.showRollover('${document_id}', '${mark.attrs.highlightUid}')`,
+        onmouseleave: `window.hideRollover('${mark.attrs.highlightUid}')`
       };
       properties['data-highlight-uid'] = mark.attrs.highlightUid;
       properties['data-document-id'] = mark.attrs.documentId;
