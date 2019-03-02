@@ -713,7 +713,7 @@ class CanvasResource extends Component {
     }
 
     // don't render highlights if they are hidden
-    if( this.overlay ) {
+    if( !lockedByMe && this.overlay ) {
       const canvas = this.overlay.fabricCanvas()
       if( highlightHidden && !canvas.isEmpty() ) {
         canvas.clear();
