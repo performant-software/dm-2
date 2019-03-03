@@ -48,7 +48,6 @@ module TreeNode
     end
   
     def contents_children
-        return nil if self.is_leaf?
         (self.documents + self.document_folders).sort_by(&:position)
     end
 
@@ -75,8 +74,20 @@ module TreeNode
         node_a.id == node_b.id && node_a.class.to_s == node_b.class.to_s 
     end
 
-    def move_to( target_position, destination_id=nil )
-        destination = destination_id.nil? ? self.project : DocumentFolder.find(destination_id)        
+    def get_tree_node_record( record_id, record_type )
+        if record_type == "Project" 
+            return Project.find(record_id)
+        elsif record_type == "DocumentFolder"
+            return DocumentFolder.find(record_id)
+        elsif record_type == "Document"
+            return Document.find(record_id)
+        end
+    end
+
+    def move_to( target_position, destination_id=nil, destination_type='DocumentFolder' )
+        destination = destination_id.nil? ? 
+            self.get_tree_node_record(self.parent_id, self.parent_type) : 
+            self.get_tree_node_record(destination_id, destination_type)      
 
         if same_as(self.parent, destination)
             siblings = (destination.documents + destination.document_folders ).sort_by(&:position)

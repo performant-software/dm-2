@@ -8,11 +8,7 @@ class DocumentFolder < ApplicationRecord
 
   after_create :add_to_tree
   before_destroy :remove_from_tree
-
-  def is_leaf?
-    false
-  end
-
+  
   def document_id
     nil
   end

@@ -6,6 +6,8 @@ class Document < Linkable
   belongs_to :parent, polymorphic: true, optional: true
   has_many :highlights, dependent: :delete_all
   has_many_attached :images
+  has_many :documents, as: :parent, dependent: :destroy
+  has_many :document_folders, as: :parent, dependent: :destroy
 
   include PgSearch
   include TreeNode
@@ -56,10 +58,6 @@ class Document < Linkable
       # if it is locked by someone else
       return false
     end
-  end
-  
-  def is_leaf?
-    true
   end
 
   def document_id

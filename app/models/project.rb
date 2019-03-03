@@ -14,10 +14,6 @@ class Project < ApplicationRecord
     self.users.merge(UserProjectPermission.read)
   end
 
-  def is_leaf?
-    false
-  end
-
   def can_write
     self.users.merge(UserProjectPermission.write)
   end
