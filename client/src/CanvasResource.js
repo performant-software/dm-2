@@ -77,7 +77,6 @@ class CanvasResource extends Component {
       minZoomImageRatio: minZoomImageRatio,
       maxZoomPixelRatio: maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
-      // sequenceMode: true,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true
     });
@@ -89,18 +88,27 @@ class CanvasResource extends Component {
     let imageUrlForThumbnail = null;
     
     if (firstTileSource) {
-      let isImageInfoURI
+      let resourceURL, isImageInfoURI
 
       if (firstTileSource.type === 'image' && firstTileSource.url) {
         isImageInfoURI = false
-        imageUrlForThumbnail = firstTileSource.url
+        resourceURL = firstTileSource.url
+        imageUrlForThumbnail = resourceURL
       }
       else {
         isImageInfoURI = true
+        resourceURL = firstTileSource
         imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
       }
       this.props.setImageUrl(key, imageUrlForThumbnail);
-      checkTileSource( firstTileSource, isImageInfoURI, this.onTileSource.bind(this), (errorResponse) => {
+      checkTileSource( resourceURL, isImageInfoURI, (validResourceURL) => {
+        if( isImageInfoURI ) {
+          this.openTileSource(validResourceURL)
+        } else {
+          this.openTileSource(firstTileSource)
+        }
+      }, 
+      (errorResponse) => {
         console.log( errorResponse )
       })
     } else {
@@ -203,7 +211,7 @@ class CanvasResource extends Component {
     };
   }
 
-  onTileSource(tileSource) {
+  openTileSource(tileSource) {
     this.osdViewer.open(tileSource);
   }
 
@@ -793,7 +801,7 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
-          onTileSource={this.onTileSource.bind(this)}
+          openTileSource={this.openTileSource.bind(this)}
         />
       </div>
     );

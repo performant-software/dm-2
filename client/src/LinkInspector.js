@@ -135,6 +135,7 @@ class LinkInspector extends Component {
               icon={<NoteAdd />}
               style={{margin: 5}}
               onClick={() => {
+                debugger
                 this.props.createTextDocumentWithLink({
                   linkable_id: target.highlight_id || target.document_id,
                   linkable_type: target.highlight_id ? 'Highlight' : 'Document'

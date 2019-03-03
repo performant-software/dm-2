@@ -97,7 +97,7 @@ class AddImageLayer extends Component {
       content: newContent
     });
 
-    this.props.onTileSource(newContent.tileSources)
+    this.props.openTileSource(newContent.tileSources)
   }
 
   renderUploadButton(buttonStyle,iconStyle) {
