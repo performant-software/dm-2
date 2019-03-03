@@ -20,6 +20,7 @@ import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
 import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
+import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
 
@@ -67,32 +68,12 @@ class CanvasResource extends Component {
     const initialColor = yellow500;
     const key = this.getInstanceKey();
     setCanvasHighlightColor(key, initialColor);
-    let tileSources = [];
-    if (content && content.tileSources) tileSources = content.tileSources;
-    let imageUrlForThumbnail = null;
-
-    const firstTileSource = tileSources[0];
-
-    // TODO check the tile source before we get into this, it should at least 
-    // resolve to a 200 response.
-
-    if (firstTileSource) {
-      if (firstTileSource.type === 'image' && firstTileSource.url)
-        imageUrlForThumbnail = firstTileSource.url
-      else {
-        imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
-      }
-      this.props.setImageUrl(key, imageUrlForThumbnail);
-    } else {
-      // we don't have an image yet, so this causes AddImageLayer to display
-      setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
-    } 
 
     const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       showNavigationControl: false,
-      tileSources,
+      tileSources: [],
       minZoomImageRatio: minZoomImageRatio,
       maxZoomPixelRatio: maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
@@ -102,6 +83,30 @@ class CanvasResource extends Component {
     });
 
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
+
+    let tileSources = (content && content.tileSources) ? content.tileSources : [];
+    const firstTileSource = tileSources[0];
+    let imageUrlForThumbnail = null;
+    
+    if (firstTileSource) {
+      let isImageInfoURI
+
+      if (firstTileSource.type === 'image' && firstTileSource.url) {
+        isImageInfoURI = false
+        imageUrlForThumbnail = firstTileSource.url
+      }
+      else {
+        isImageInfoURI = true
+        imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
+      }
+      this.props.setImageUrl(key, imageUrlForThumbnail);
+      checkTileSource( firstTileSource, isImageInfoURI, this.onTileSource.bind(this), (errorResponse) => {
+        console.log( errorResponse )
+      })
+    } else {
+      // we don't have an image yet, so this causes AddImageLayer to display
+      setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
+    } 
 
     viewer.addHandler('update-viewport', () => {
       if (!this.viewportUpdatedForPageYet) {
@@ -196,6 +201,10 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     };
+  }
+
+  onTileSource(tileSource) {
+    this.osdViewer.open(tileSource);
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
@@ -784,7 +793,7 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
-          osdViewer={this.osdViewer}
+          onTileSource={this.onTileSource.bind(this)}
         />
       </div>
     );

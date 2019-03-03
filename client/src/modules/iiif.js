@@ -1,24 +1,28 @@
 const MAX_IIIF_CANVASES = 1000
 
-export function checkTileSource( tileSource, successCallBack, errorCallback ) {
-
-    // TODO implement this and call before rendering the tile source.
-
-    // is it a valid url?
-    // it shouldn't let you put images into the system that you can't reach
-    
-    // tile source could be a image URL or an info json URI, or a JSON obj
-    // if this is a url .. then deref it.. if not, just pass on success
-    // http vs https?
-
-    fetch(tileSource).then(response => {
-        if (!response.ok) {
-            // if it errors out, try appending /info.json on there, see if that helps?
-            errorCallback(response.statusText);
-        } else {
-            successCallBack( )
+export function checkTileSource( tileSource, isImageInfoURI, successCallBack, errorCallback ) {
+  fetch(tileSource).then(response => {
+      if (!response.ok) {
+        // if it isn't ok, try again with info.json if this is an info uri
+        if( isImageInfoURI ) {
+          const initialResponse = response
+          const withInfoJson = tileSource+'/info.json'
+          fetch(withInfoJson).then(response => {
+            if( response.ok ) {
+              console.log(`Found image info at: ${withInfoJson}`)
+              successCallBack( withInfoJson )
+            } else {
+              errorCallback(initialResponse.statusText)
+            }            
+          })
         }
-    })
+        else {
+          errorCallback(response.statusText)
+        }
+      } else {
+        successCallBack( tileSource )
+      }
+  }) 
 }
 
 export function parseIIIFManifest(manifestJSON) {

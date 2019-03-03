@@ -81,13 +81,6 @@ class AddImageLayer extends Component {
         newTileSources.push(this.state.newTileSourceValue);
     }
 
-    newContent.tileSources = existingTileSources.concat(newTileSources);
-    this.props.updateDocument(this.props.document_id, {
-      content: newContent
-    });
-    if (this.props.osdViewer) {
-      this.props.osdViewer.open(newContent.tileSources);
-    }
     this.setState( { ...this.state, newTileSourceValue: null } );
     this.props.setAddTileSourceMode(this.props.document_id, null);
 
@@ -98,6 +91,13 @@ class AddImageLayer extends Component {
     if(imageUrlForThumbnail) {
       this.props.setImageUrl(this.props.editorKey, imageUrlForThumbnail)
     }
+
+    newContent.tileSources = existingTileSources.concat(newTileSources);
+    this.props.updateDocument(this.props.document_id, {
+      content: newContent
+    });
+
+    this.props.onTileSource(newContent.tileSources)
   }
 
   renderUploadButton(buttonStyle,iconStyle) {
