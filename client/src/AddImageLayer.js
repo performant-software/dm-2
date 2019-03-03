@@ -108,6 +108,7 @@ class AddImageLayer extends Component {
               path: `/documents/${document_id}/add_images`,
               model: 'Document',
               attribute: 'images',
+              protocol: 'https',
               method: 'PUT'
             }}
             multiple={true}
