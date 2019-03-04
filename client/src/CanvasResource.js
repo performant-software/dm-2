@@ -101,16 +101,16 @@ class CanvasResource extends Component {
         imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
       }
       this.props.setImageUrl(key, imageUrlForThumbnail);
-      checkTileSource( resourceURL, isImageInfoURI, (validResourceURL) => {
-        if( isImageInfoURI ) {
+      if( isImageInfoURI ) {
+        checkTileSource( resourceURL, isImageInfoURI, (validResourceURL) => {
           this.openTileSource(validResourceURL)
-        } else {
-          this.openTileSource(firstTileSource)
-        }
-      }, 
-      (errorResponse) => {
-        console.log( errorResponse )
-      })
+        },
+        (errorResponse) => {
+          console.log( errorResponse )
+        })
+      } else {
+        this.openTileSource(firstTileSource)
+      }
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
