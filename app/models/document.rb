@@ -105,7 +105,7 @@ class Document < Linkable
 
   def image_thumbnail_urls
     self.images.collect { |image| 
-      url = image.variant(thumbnail: '80x80') 
+      url = url_for image.variant(thumbnail: '80x80') 
       if url && url.match?(/http:/)
         return url.sub(/http:/,'https:')
       else
