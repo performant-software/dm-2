@@ -96,9 +96,9 @@ class Document < Linkable
     self.images.collect { |image| 
       url = url_for image 
       if url && url.match?(/http:/)
-        return url.sub(/http:/,'https:')
+        url.sub(/http:/,'https:')
       else
-        return url
+        url
       end
     }
   end
@@ -107,9 +107,9 @@ class Document < Linkable
     self.images.collect { |image| 
       url = url_for image.variant(thumbnail: '80x80') 
       if url && url.match?(/http:/)
-        return url.sub(/http:/,'https:')
+        url.sub(/http:/,'https:')
       else
-        return url
+        url
       end
     }
   end
