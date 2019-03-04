@@ -93,11 +93,25 @@ class Document < Linkable
   end
 
   def image_urls
-    self.images.collect { |image| url_for image }
+    self.images.collect { |image| 
+      url = url_for image 
+      if url && url.match?(/http:/)
+        return url.sub(/http:/,'https:')
+      else
+        return url
+      end
+    }
   end
 
   def image_thumbnail_urls
-    self.images.collect { |image| url_for image.variant(thumbnail: '80x80') }
+    self.images.collect { |image| 
+      url = image.variant(thumbnail: '80x80') 
+      if url && url.match?(/http:/)
+        return url.sub(/http:/,'https:')
+      else
+        return url
+      end
+    }
   end
 
   def descendant_folder_ids

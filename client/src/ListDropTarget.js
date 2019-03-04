@@ -119,8 +119,8 @@ class ListDropTarget extends Component {
   }
 }
 
-ListDropTarget = DropTarget(['contentsSummary', NativeTypes.FILE], listDropTarget, collect)(ListDropTarget);
-// ListDropTarget = DropTarget(['contentsSummary'], listDropTarget, collect)(ListDropTarget);
+// ListDropTarget = DropTarget(['contentsSummary', NativeTypes.FILE], listDropTarget, collect)(ListDropTarget);
+ListDropTarget = DropTarget(['contentsSummary'], listDropTarget, collect)(ListDropTarget);
 
 const mapStateToProps = state => ({
   openFolderContents: state.folders.openFolderContents,
