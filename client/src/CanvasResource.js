@@ -194,7 +194,6 @@ class CanvasResource extends Component {
     let imageUrlForThumbnail
 
     if (firstTileSource.type === 'image' && firstTileSource.url) {
-      this.osdViewer.open(firstTileSource)
       imageUrlForThumbnail = firstTileSource.url
       const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
       this.props.setImageUrl(key, tileSourceSSL);
