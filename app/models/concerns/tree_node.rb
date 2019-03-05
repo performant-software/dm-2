@@ -35,6 +35,8 @@ module TreeNode
             image_url = child['image_info_uri']
             document = Document.new({
                 project_id: project_id,
+                parent_id: document_folder.id,
+                parent_type: 'DocumentFolder',
                 title: child['name'],
                 document_kind: 'canvas',
                 content: {
@@ -43,7 +45,7 @@ module TreeNode
             })
             document.save!
             document.add_thumbnail( image_url + '/full/!160,160/0/default.png')
-            document.move_to( :end, document_folder.id )
+            document.move_to( :end )
         }
     end
   
