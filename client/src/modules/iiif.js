@@ -1,20 +1,24 @@
 const MAX_IIIF_CANVASES = 1000
 
 export function checkTileSource( tileSource, isImageInfoURI, successCallBack, errorCallback ) {
+
+  const retryWithInfoJSON = function(initialResponse) {
+    const withInfoJson = tileSource+'/info.json'
+    fetch(withInfoJson).then(response => {
+      if( response.ok ) {
+        console.log(`Found image info at: ${withInfoJson}`)
+        successCallBack( withInfoJson )
+      } else {
+        errorCallback(initialResponse.statusText)
+      }            
+    })
+  }
+
   fetch(tileSource).then(response => {
       if (!response.ok) {
         // if it isn't ok, try again with info.json if this is an info uri
         if( isImageInfoURI ) {
-          const initialResponse = response
-          const withInfoJson = tileSource+'/info.json'
-          fetch(withInfoJson).then(response => {
-            if( response.ok ) {
-              console.log(`Found image info at: ${withInfoJson}`)
-              successCallBack( withInfoJson )
-            } else {
-              errorCallback(initialResponse.statusText)
-            }            
-          })
+          retryWithInfoJSON(response)
         }
         else {
           errorCallback(response.statusText)
@@ -22,6 +26,8 @@ export function checkTileSource( tileSource, isImageInfoURI, successCallBack, er
       } else {
         successCallBack( tileSource )
       }
+  }).catch( (e) => {
+    retryWithInfoJSON(e)
   }) 
 }
 
