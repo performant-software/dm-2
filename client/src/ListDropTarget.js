@@ -55,7 +55,7 @@ function handleFileSystemDrop(props,monitorItem) {
           position: buoyancyTarget,
           children: sequences
         }
-        console.log(tree)
+        // console.log(tree)
         addTree( targetParentId, targetParentType, tree)
       }
     }
