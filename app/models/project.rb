@@ -22,6 +22,10 @@ class Project < ApplicationRecord
     self.users.merge(UserProjectPermission.admin)
   end
 
+  def document_kind
+    "Project"
+  end
+
   # one time migration function for 20190124154624_add_document_position
   def self.migrate_to_position_all!
     Project.all.each { |project|

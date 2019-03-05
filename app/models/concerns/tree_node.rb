@@ -34,7 +34,7 @@ module TreeNode
                 }
             else     
                 # if there's only one sequence, we don't create a sub folder    
-                self.add_child_document( project_id, document_folder.id, 'DocumentFolder', child )
+                self.add_child_document( project_id, root_folder.id, 'DocumentFolder', child )
             end
         }
     end
@@ -47,7 +47,7 @@ module TreeNode
             parent_type: parent_type
         })
         document_folder.save!
-        document_folder.move_to( :end, parent_id )
+        document_folder.move_to( :end, parent_id, parent_type )
         document_folder
     end
 
@@ -65,7 +65,7 @@ module TreeNode
         })
         document.save!
         document.add_thumbnail( image_url + '/full/!160,160/0/default.png')
-        document.move_to( :end )
+        document.move_to( :end, parent_id, parent_type )
         document
     end
   
