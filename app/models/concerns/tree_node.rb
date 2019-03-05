@@ -64,7 +64,11 @@ module TreeNode
             }
         })
         document.save!
-        document.add_thumbnail( image_url + '/full/!160,160/0/default.png')
+        begin
+            document.add_thumbnail( image_url + '/full/!160,160/0/default.png')            
+        rescue => exception
+            logger.error "Unable to generate thumb: #{exception}"
+        end
         document.move_to( :end, parent_id, parent_type )
         document
     end
