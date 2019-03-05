@@ -84,33 +84,11 @@ class CanvasResource extends Component {
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
 
     let tileSources = (content && content.tileSources) ? content.tileSources : [];
+    let imageUrlForThumbnail = null
     const firstTileSource = tileSources[0];
-    let imageUrlForThumbnail = null;
     
     if (firstTileSource) {
-      let resourceURL, isImageInfoURI
-
-      if (firstTileSource.type === 'image' && firstTileSource.url) {
-        isImageInfoURI = false
-        resourceURL = firstTileSource.url
-        imageUrlForThumbnail = resourceURL
-      }
-      else {
-        isImageInfoURI = true
-        resourceURL = firstTileSource
-        imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
-      }
-      this.props.setImageUrl(key, imageUrlForThumbnail);
-      if( isImageInfoURI ) {
-        checkTileSource( resourceURL, isImageInfoURI, (validResourceURL) => {
-          this.openTileSource(validResourceURL)
-        },
-        (errorResponse) => {
-          console.log( errorResponse )
-        })
-      } else {
-        this.openTileSource(firstTileSource)
-      }
+      imageUrlForThumbnail = this.openTileSource(firstTileSource)
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
@@ -211,8 +189,30 @@ class CanvasResource extends Component {
     };
   }
 
-  openTileSource(tileSource) {
-    this.osdViewer.open(tileSource);
+  openTileSource(firstTileSource) {
+    const key = this.getInstanceKey()
+    let imageUrlForThumbnail
+
+    if (firstTileSource.type === 'image' && firstTileSource.url) {
+      this.osdViewer.open(firstTileSource)
+      imageUrlForThumbnail = firstTileSource.url
+      this.props.setImageUrl(key, imageUrlForThumbnail);
+      const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
+      this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+    }
+    else {
+      let resourceURL = firstTileSource
+      imageUrlForThumbnail = firstTileSource + '/full/!400,400/0/default.png'
+      this.props.setImageUrl(key, imageUrlForThumbnail);
+      resourceURL = resourceURL.replace('http:', 'https:')
+      checkTileSource( 
+        resourceURL, 
+        (validResourceURL) => { this.osdViewer.open(validResourceURL) },
+        (errorResponse) => { console.log( errorResponse ) }
+      )
+    }
+
+    return imageUrlForThumbnail
   }
 
   // if a first target for this window has been specified, pan and zoom to it.

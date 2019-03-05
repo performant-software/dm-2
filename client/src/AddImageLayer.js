@@ -88,16 +88,12 @@ class AddImageLayer extends Component {
       this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
     }
 
-    if(imageUrlForThumbnail) {
-      this.props.setImageUrl(this.props.editorKey, imageUrlForThumbnail)
-    }
+    this.props.openTileSource(this.state.newTileSourceValue)
 
     newContent.tileSources = existingTileSources.concat(newTileSources);
     this.props.updateDocument(this.props.document_id, {
       content: newContent
     });
-
-    this.props.openTileSource(newContent.tileSources)
   }
 
   renderUploadButton(buttonStyle,iconStyle) {

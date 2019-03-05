@@ -1,6 +1,6 @@
 const MAX_IIIF_CANVASES = 1000
 
-export function checkTileSource( tileSource, isImageInfoURI, successCallBack, errorCallback ) {
+export function checkTileSource( tileSource, successCallBack, errorCallback ) {
 
   const retryWithInfoJSON = function(initialResponse) {
     const withInfoJson = tileSource+'/info.json'
@@ -16,13 +16,7 @@ export function checkTileSource( tileSource, isImageInfoURI, successCallBack, er
 
   fetch(tileSource).then(response => {
       if (!response.ok) {
-        // if it isn't ok, try again with info.json if this is an info uri
-        if( isImageInfoURI ) {
-          retryWithInfoJSON(response)
-        }
-        else {
-          errorCallback(response.statusText)
-        }
+        retryWithInfoJSON(response)
       } else {
         successCallBack( tileSource )
       }
