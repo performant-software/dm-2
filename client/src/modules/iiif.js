@@ -1,4 +1,4 @@
-const MAX_IIIF_CANVASES = 100
+const MAX_IIIF_CANVASES = 250
 
 export function checkTileSource( tileSource, successCallBack, errorCallback ) {
 
