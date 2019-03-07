@@ -124,7 +124,6 @@ class LinkInspector extends Component {
 
     const items = this.getItemList();
     const buttonId = `addNewDocumentButton-${this.props.idString}`;
-
     return (
       <div style={{ marginBottom: '8px' }}>
         <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
@@ -138,7 +137,7 @@ class LinkInspector extends Component {
                 this.props.createTextDocumentWithLink({
                   linkable_id: target.highlight_id || target.document_id,
                   linkable_type: target.highlight_id ? 'Highlight' : 'Document'
-                });
+                }, this.props.target.document_id, 'Document');
                 this.props.closeDocumentPopover();
               }}
               id={buttonId}

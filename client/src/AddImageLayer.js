@@ -14,7 +14,7 @@ import { setAddTileSourceMode, setImageUrl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOU
 import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
 
 const tileSourceTypeLabels = {};
-tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'Link to IIIF Image'};
+tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'Link to IIIF Image Information URI'};
 tileSourceTypeLabels[IMAGE_URL_SOURCE_TYPE] = {select: 'Image URL', textField: 'Link to Web Image'};
 tileSourceTypeLabels[UPLOAD_SOURCE_TYPE] = {select: 'Upload image', textField: 'Choose files'};
 
@@ -71,9 +71,9 @@ class AddImageLayer extends Component {
         break;
 
       case IIIF_TILE_SOURCE_TYPE:
+        newTileSources.push(this.state.newTileSourceValue);
         if (shouldSetThumbnail) {
-          const baseUrl = this.state.newTileSourceValue.split('info.json')[0];
-          imageUrlForThumbnail = baseUrl + 'full/!160,160/0/default.png';
+          imageUrlForThumbnail = this.state.newTileSourceValue + '/full/!160,160/0/default.png';
         }
         break;
 
@@ -81,54 +81,25 @@ class AddImageLayer extends Component {
         newTileSources.push(this.state.newTileSourceValue);
     }
 
+    this.setState( { ...this.state, newTileSourceValue: null } );
+    this.props.setAddTileSourceMode(this.props.document_id, null);
+
+    if (shouldSetThumbnail && imageUrlForThumbnail) {
+      this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
+    }
+
     newContent.tileSources = existingTileSources.concat(newTileSources);
     this.props.updateDocument(this.props.document_id, {
       content: newContent
     });
-    if (this.props.osdViewer) {
-      this.props.osdViewer.open(newContent.tileSources);
-    }
-    this.setState( { ...this.state, newTileSourceValue: null } );
-    this.props.setAddTileSourceMode(this.props.document_id, null);
 
-    if (shouldSetThumbnail && imageUrlForThumbnail)
-      this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
-      this.props.setImageUrl(this.props.editorKey, imageUrlForThumbnail)
+    if( addTileSourceMode === UPLOAD_SOURCE_TYPE ) {
+      this.props.openTileSource(newContent.tileSources[0])
+    } else {
+      this.props.openTileSource(this.state.newTileSourceValue)
+    }
+
   }
-
-  parseIIIFManifest(manifestJSON) {
-
-    const manifest = JSON.parse(manifestJSON);
-
-    if( manifest === null ) {
-      return [];
-    }
-
-    // IIIF presentation 2.0
-    // manifest["sequences"][n]["canvases"][n]["images"][n]["resource"]["service"]["@id"]
-
-    let images = [];
-
-    let sequence = manifest.sequences[0];
-    if( sequence !== null && sequence.canvases !== null ) {
-      sequence.canvases.forEach( (canvas) => {
-        let image = canvas.images[0]
-
-        if( image !== null && 
-            image.resource !== null &&
-            image.resource.service !== null ) {
-            images.push({
-              name: canvas.label,
-              xml_id: image.resource.service["@id"],
-              tile_source: image.resource.service["@id"]
-            });
-        }
-      }); 
-    }
-
-    return images;
-  }
-
 
   renderUploadButton(buttonStyle,iconStyle) {
     const { document_id, replaceDocument } = this.props;
@@ -138,6 +109,7 @@ class AddImageLayer extends Component {
               path: `/documents/${document_id}/add_images`,
               model: 'Document',
               attribute: 'images',
+              protocol: 'https',
               method: 'PUT'
             }}
             multiple={true}

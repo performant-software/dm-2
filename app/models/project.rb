@@ -14,16 +14,16 @@ class Project < ApplicationRecord
     self.users.merge(UserProjectPermission.read)
   end
 
-  def is_leaf?
-    false
-  end
-
   def can_write
     self.users.merge(UserProjectPermission.write)
   end
 
   def can_admin
     self.users.merge(UserProjectPermission.admin)
+  end
+
+  def document_kind
+    "Project"
   end
 
   # one time migration function for 20190124154624_add_document_position

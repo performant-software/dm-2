@@ -20,9 +20,60 @@ module TreeNode
             }
         end    
     end
+
+    def add_subtree( tree )
+        project_id = self.document_kind == 'Project' ?  self.id : self.project_id
+        parent_type = self.document_kind == 'Project' ? 'Project' : 'DocumentFolder'
+        root_folder = self.add_child_folder( project_id, self.id, parent_type, tree['name'] )
+        # note this isn't recursive, parses manifest and 1..n sequences
+        tree['children'].each { |child|
+            if child['children']
+                child_folder = self.add_child_folder( project_id, root_folder.id, 'DocumentFolder', child['name'] )
+                child['children'].each { |grandchild|
+                    self.add_child_document( project_id, child_folder.id, 'DocumentFolder', grandchild )
+                }
+            else     
+                # if there's only one sequence, we don't create a sub folder    
+                self.add_child_document( project_id, root_folder.id, 'DocumentFolder', child )
+            end
+        }
+    end
+
+    def add_child_folder( project_id, parent_id, parent_type, name )
+        document_folder = DocumentFolder.new({
+            project_id: project_id,
+            title: name,
+            parent_id: parent_id,
+            parent_type: parent_type
+        })
+        document_folder.save!
+        document_folder.move_to( :end, parent_id, parent_type )
+        document_folder
+    end
+
+    def add_child_document( project_id, parent_id, parent_type, document_json )
+        image_url = document_json['image_info_uri']
+        document = Document.new({
+            project_id: project_id,
+            parent_id: parent_id,
+            parent_type: parent_type,
+            title: document_json['name'],
+            document_kind: 'canvas',
+            content: {
+                tileSources: [ image_url ]
+            }
+        })
+        document.save!
+        begin
+            document.add_thumbnail( image_url + '/full/!160,160/0/default.png')            
+        rescue => exception
+            logger.error "Unable to generate thumb: #{exception}"
+        end
+        document.move_to( :end, parent_id, parent_type )
+        document
+    end
   
     def contents_children
-        return nil if self.is_leaf?
         (self.documents + self.document_folders).sort_by(&:position)
     end
 
@@ -49,8 +100,20 @@ module TreeNode
         node_a.id == node_b.id && node_a.class.to_s == node_b.class.to_s 
     end
 
-    def move_to( target_position, destination_id=nil )
-        destination = destination_id.nil? ? self.project : DocumentFolder.find(destination_id)        
+    def get_tree_node_record( record_id, record_type )
+        if record_type == "Project" 
+            return Project.find(record_id)
+        elsif record_type == "DocumentFolder"
+            return DocumentFolder.find(record_id)
+        elsif record_type == "Document"
+            return Document.find(record_id)
+        end
+    end
+
+    def move_to( target_position, destination_id=nil, destination_type='DocumentFolder' )
+        destination = destination_id.nil? ? 
+            self.get_tree_node_record(self.parent_id, self.parent_type) : 
+            self.get_tree_node_record(destination_id, destination_type)      
 
         if same_as(self.parent, destination)
             siblings = (destination.documents + destination.document_folders ).sort_by(&:position)

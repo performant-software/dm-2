@@ -20,6 +20,7 @@ import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
 import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
+import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
 
@@ -67,38 +68,31 @@ class CanvasResource extends Component {
     const initialColor = yellow500;
     const key = this.getInstanceKey();
     setCanvasHighlightColor(key, initialColor);
-    let tileSources = [];
-    if (content && content.tileSources) tileSources = content.tileSources;
-    let imageUrlForThumbnail = null;
-
-    const firstTileSource = tileSources[0];
-    if (firstTileSource) {
-      if (firstTileSource.type === 'image' && firstTileSource.url)
-        imageUrlForThumbnail = firstTileSource.url
-      else {
-        const baseUrl = firstTileSource.split('info.json')[0];
-        imageUrlForThumbnail = baseUrl + 'full/!400,400/0/default.png'
-      }
-      this.props.setImageUrl(key, imageUrlForThumbnail);
-    } else {
-      // we don't have an image yet, so this causes AddImageLayer to display
-      setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
-    } 
 
     const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
       prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
       showNavigationControl: false,
-      tileSources,
+      tileSources: [],
       minZoomImageRatio: minZoomImageRatio,
       maxZoomPixelRatio: maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
-      // sequenceMode: true,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true
     });
 
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
+
+    let tileSources = (content && content.tileSources) ? content.tileSources : [];
+    let imageUrlForThumbnail = null
+    const firstTileSource = tileSources[0];
+    
+    if (firstTileSource) {
+      imageUrlForThumbnail = this.openTileSource(firstTileSource)
+    } else {
+      // we don't have an image yet, so this causes AddImageLayer to display
+      setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
+    } 
 
     viewer.addHandler('update-viewport', () => {
       if (!this.viewportUpdatedForPageYet) {
@@ -193,6 +187,30 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     };
+  }
+
+  openTileSource(firstTileSource) {
+    const key = this.getInstanceKey()
+    let imageUrlForThumbnail
+
+    if (firstTileSource.type === 'image' && firstTileSource.url) {
+      imageUrlForThumbnail = firstTileSource.url
+      const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
+      this.props.setImageUrl(key, tileSourceSSL);
+      this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+    }
+    else {
+      let resourceURL = firstTileSource.replace('http:', 'https:')
+      imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png'
+      this.props.setImageUrl(key, imageUrlForThumbnail);
+      checkTileSource( 
+        resourceURL, 
+        (validResourceURL) => { this.osdViewer.open(validResourceURL) },
+        (errorResponse) => { console.log( errorResponse ) }
+      )
+    }
+
+    return imageUrlForThumbnail
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
@@ -710,7 +728,7 @@ class CanvasResource extends Component {
     }
 
     // don't render highlights if they are hidden
-    if( this.overlay ) {
+    if( !lockedByMe && this.overlay ) {
       const canvas = this.overlay.fabricCanvas()
       if( highlightHidden && !canvas.isEmpty() ) {
         canvas.clear();
@@ -781,7 +799,7 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
-          osdViewer={this.osdViewer}
+          openTileSource={this.openTileSource.bind(this)}
         />
       </div>
     );

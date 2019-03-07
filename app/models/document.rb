@@ -6,6 +6,8 @@ class Document < Linkable
   belongs_to :parent, polymorphic: true, optional: true
   has_many :highlights, dependent: :delete_all
   has_many_attached :images
+  has_many :documents, as: :parent, dependent: :destroy
+  has_many :document_folders, as: :parent, dependent: :destroy
 
   include PgSearch
   include TreeNode
@@ -57,10 +59,6 @@ class Document < Linkable
       return false
     end
   end
-  
-  def is_leaf?
-    true
-  end
 
   def document_id
     self.id
@@ -80,6 +78,14 @@ class Document < Linkable
 
   def color
     nil
+  end
+
+  def add_thumbnail( image_url )
+    processed = ImageProcessing::MiniMagick.source(open(image_url))
+      .resize_to_fill(80, 80)
+      .convert('png')
+      .call
+   self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
   end
 
   def highlight_map

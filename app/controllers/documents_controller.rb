@@ -81,11 +81,7 @@ class DocumentsController < ApplicationController
 
   # POST /documents/1/set_thumbnail
   def set_thumbnail
-    processed = ImageProcessing::MiniMagick.source(open(params['image_url']))
-      .resize_to_fill(80, 80)
-      .convert('png')
-      .call
-    @document.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{@document.id}.png")
+    @document.add_thumbnail( params['image_url'] )
     render json: @document
   end
 
@@ -98,7 +94,7 @@ class DocumentsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def new_document_params
-      params.require(:document).permit(:project_id, :title, :document_kind, :images => [], :content => {})
+      params.require(:document).permit(:project_id, :title, :parent_id, :parent_type, :document_kind, :images => [], :content => {})
     end
 
     def document_move_params
