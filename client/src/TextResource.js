@@ -551,7 +551,7 @@ class TextResource extends Component {
 
   render() {    
     const editorViewWrapperStyle = {
-      flexGrow: '1', display: 'flex', flexDirection: 'column'
+      flexGrow: '1', display: 'flex', flexDirection: 'column', overflowY: 'scroll'
     };
 
     return (
