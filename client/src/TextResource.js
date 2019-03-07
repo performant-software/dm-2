@@ -551,17 +551,19 @@ class TextResource extends Component {
 
   render() {    
     const editorViewWrapperStyle = {
-      flexGrow: '1', display: 'flex', flexDirection: 'column', overflowY: 'scroll'
+      flexGrow: '1', display: 'flex', flexDirection: 'column', overflowY: 'scroll', overflowX: 'hidden'
     };
 
     return (
-      <div className="editorview-wrapper" style={editorViewWrapperStyle}>
+      <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
-        <ProseMirrorEditorView
-          editorView={this.state.editorView}
-          createEditorView={this.createEditorView}
-        />
-        { this.renderLinkDialog() }
+        <div className="editorview-wrapper" style={editorViewWrapperStyle}>
+          <ProseMirrorEditorView
+            editorView={this.state.editorView}
+            createEditorView={this.createEditorView}
+          />
+          { this.renderLinkDialog() }
+        </div>
       </div>
     );
   }
