@@ -1,14 +1,22 @@
 class Project < ApplicationRecord
   belongs_to :owner, class_name: 'User', optional: true
-  has_many :documents, as: :parent, dependent: :delete_all
-  has_many :document_folders, as: :parent, dependent: :delete_all
-  has_many :user_project_permissions, dependent: :delete_all
+  has_many :documents, as: :parent
+  has_many :document_folders, as: :parent
+  has_many :user_project_permissions, dependent: :destroy
   has_many :users, through: :user_project_permissions
   
   default_scope { order(updated_at: :desc) }
   scope :is_public, -> { where(public: true) }
 
+  before_destroy :destroyer
+
   include TreeNode
+
+  def destroyer
+    self.contents_children.each { |child|
+      child.destroy
+    }
+  end
 
   def can_read
     self.users.merge(UserProjectPermission.read)

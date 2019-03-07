@@ -7,7 +7,14 @@ class DocumentFolder < ApplicationRecord
   include TreeNode
 
   after_create :add_to_tree
-  before_destroy :remove_from_tree
+  before_destroy :destroyer
+
+  def destroyer
+    self.contents_children.each { |child|
+      child.destroy
+    }
+    remove_from_tree
+  end
   
   def document_id
     nil

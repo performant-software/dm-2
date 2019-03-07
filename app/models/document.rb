@@ -13,17 +13,23 @@ class Document < Linkable
   include TreeNode
 
   after_create :add_to_tree
-  before_destroy :remove_from_tree
-  # before_destroy :purge_images
+  before_destroy :destroyer
 
-  MAX_IMAGE_SIZE = 10
+  MAX_IMAGE_SIZE = 10 # MB
 
   pg_search_scope :search_for, against: %i(title search_text)
 
-  # TODO this won't be called by delete_all - need a better way to clean up images
-  # def purge_images
-  #   self.images.each { |image| image.purge }
-  # end
+  def destroyer
+    self.contents_children.each { |child|
+      child.destroy
+    }
+    remove_from_tree
+    purge_images
+  end
+
+  def purge_images
+    self.images.each { |image| image.purge }
+  end
 
   # checks that all images validate, purges invalid images
   def valid_images?
