@@ -1,4 +1,4 @@
-Digtial Mappa v2.0 
+Digital Mappa v2.0 
 ============================================
 
 Digital Mappa v2.0 (DM2 for short) is a freely available online environment for creating projects out of digital images and texts. The premise of DM2 is simple and powerful: if you have a collection of digital images and/or texts, you should be able to produce an online resource that links together specific moments on these images and texts together, annotate these moments as much as you want, collaborate with others on this work, have the content you produce be searchable, and publish this work to others or the public as you wish. And you should be able to do this with little technical expertise.
@@ -45,7 +45,7 @@ The first user account created is automatically given admin powers. Thereafter, 
 Heroku Local Development Environment 
 -------------
 
-DM v2.0 is a pretty standard Ruby on Rails 5.x application. It uses a PostgreSQL and has been developed using PostgreSQL v11.1. It was developed using Ruby 2.5.1 and Bundler 1.16.5. Setting up PostgresSQL, Ruby, and Bundler are beyond the scope of this README, but plenty of information is available online about these tools.
+DM2 is a pretty standard Ruby on Rails 5.x application. It uses a PostgreSQL and has been developed using PostgreSQL v11.1. It was developed using Ruby 2.5.1 and Bundler 1.16.5. Setting up PostgresSQL, Ruby, and Bundler are beyond the scope of this README, but plenty of information is available online about these tools.
 
 Once the dependencies mentioned above are installed, please follow these steps:
 
