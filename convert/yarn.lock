@@ -106,6 +106,11 @@ inherits@~2.0.3:
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.3.tgz#633c2c83e3da42a502f52466022480f4208261de"
   integrity sha1-Yzwsg+PaQqUC9SRmAiSA9CCCYd4=
 
+iri@~1:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/iri/-/iri-1.3.0.tgz#3eedfb38a8ebaf7196b4d76b44603ac6f130cd7c"
+  integrity sha512-1bPyBMoj15VLCxtPDPC7YREka60TTAp7FH+4cU7k/haISq4XyR4/GVMmX+J3TeIOlNYH7twHbpYO9QQyejBZMg==
+
 is-arrayish@^0.3.1:
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/is-arrayish/-/is-arrayish-0.3.2.tgz#4574a2ae56f7ab206896fb431eaeed066fdf8f03"
@@ -259,6 +264,13 @@ prosemirror-transform@^1.0.0:
   integrity sha512-1O6Di5lOL1mp4nuCnQNkHY7l2roIW5y8RH4ZG3hMYmkmDEWzTaFFnxxAAHsE5ipGLBSRcTlP7SsDhYBIdSuLpQ==
   dependencies:
     prosemirror-model "^1.0.0"
+
+rdf@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/rdf/-/rdf-4.0.1.tgz#38a5edcd27481bcaa6a819d04c8ca986ae26f8b7"
+  integrity sha512-E6BOrd8VqySOkz3EwU525Ipf/BX7O2MF2oc+dDaRfbl3LVYXL68foEJHnJJ8sZlX6SLMBM7+0pxaNJ/zhrXyrw==
+  dependencies:
+    iri "~1"
 
 readable-stream@^2.3.6:
   version "2.3.6"
