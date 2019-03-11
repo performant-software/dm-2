@@ -62,8 +62,14 @@ function parseTextDocument( node ) {
         uri: node.uri,
         name: node[textDocumentName],
         userURI: node[textDocumentUserURI],
-        content: node[textDocumentContent]
+        content: parseTextContent(node[textDocumentContent])
     }
+}
+
+function parseTextContent( textContent ) {
+    // TODO convert this to a prosemirrror document model
+    // TODO extract highlights
+    return textContent
 }
 
 function setupLogging() {
@@ -140,6 +146,7 @@ function createStructures(nodes) {
 }
 
 function createLinkages(nodes,structures) {
+    // TODO
     return structures
 }
 
@@ -147,8 +154,8 @@ function main() {
     setupLogging();
     logger.info("Start TTL processing...")
 
-    // const dataFile = 'ttl/test.ttl'
-    const dataFile = 'ttl/app.digitalmappa.org.ttl'
+    const dataFile = 'ttl/test.ttl'
+    // const dataFile = 'ttl/app.digitalmappa.org.ttl'
     const nodes = createNodes(dataFile);
     const structures = createStructures(nodes);
     const dm2Graph = createLinkages(nodes,structures)
