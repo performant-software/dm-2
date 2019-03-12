@@ -134,8 +134,6 @@ function createStructures(nodes) {
     }
 
     const dmSchema = dmProseMirror.createDocumentSchema()
-    // const parseRules = dmProseMirror.createParseRules()
-    // const domParser = new DOMParser(dmSchema,parseRules)
 
     // iterate through the nodes and parse them into DM2 JSON
     Object.values(nodes).forEach( (node) => {

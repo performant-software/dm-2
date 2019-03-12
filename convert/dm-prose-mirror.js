@@ -34,23 +34,4 @@ function createDocumentSchema() {
     });
 }
 
-// function createParseRules() {
-//   return [
-//     {
-//       tag: 
-//       // namespace
-//       // style
-//       // priority
-//       // context
-//       // node
-//       // markskip
-//       // attrs
-//       // contentElement
-//       // preserveWhitespace
-//     }
-//   ]
-// }
-
-
 module.exports.createDocumentSchema = createDocumentSchema
-// module.exports.createParseRules = createParseRules
