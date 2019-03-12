@@ -1,13 +1,84 @@
-const winston = require('winston');
-const { Pool } = require('pg');
-const { Schema } = require('prosemirror-model');
-const { schema } = require('prosemirror-schema-basic');
-const { addListNodes } = require('prosemirror-schema-list');
+const winston = require('winston')
+const rdf = require('rdf')
+const fs = require('fs')
+const { DOMParser } = require('prosemirror-model');
+const dmProseMirror = require('./dm-prose-mirror')
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 
-const logFile = 'log/convert.log';
-var logger, postGresDBConnectionPool;
+const logFile = 'log/ttl-test.log'
+var logger;
 
-// pg_restore --verbose --clean --no-acl --no-owner -h localhost -U nick -d dm2_staging latest.dump
+// Predicates
+const nodeType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+const w3Label = "http://www.w3.org/2000/01/rdf-schema#label"
+const creator = "http://purl.org/dc/elements/1.1/creator"
+const aggregates = "http://www.openarchives.org/ore/terms/aggregates"
+
+const userNode = "http://xmlns.com/foaf/0.1/Agent"
+const userName = "http://xmlns.com/foaf/0.1/name"
+const userEmail = "http://xmlns.com/foaf/0.1/mbox"
+
+const projectNode = "http://dm.drew.edu/ns/Project"
+const projectName = w3Label
+const projectUserURI = creator
+const projectDocumentList = aggregates
+
+const textDocumentNode = "http://purl.org/dc/dcmitype/Text"
+const textDocumentName = w3Label
+const textDocumentUserURI = creator
+const textDocumentContent = "http://www.w3.org/2011/content#chars"
+
+// node type can only be one of these values
+const typeVocab = [ userNode, projectNode, textDocumentNode ]
+
+function loadTTL(ttlFile) {
+    const ttlRaw = fs.readFileSync( ttlFile, "utf8");
+    const ttlData = rdf.TurtleParser.parse(ttlRaw);
+    return ttlData.graph.toArray()
+}
+
+function parseUser( node ) {
+    return {
+        uri: node.uri,
+        name: node[userName],
+        email: parseEmail(node[userEmail])
+    }
+}
+
+function parseEmail( email ) {
+    // TODO chop off mail:to stuff
+    // <mailto:nick@performantsoftware.com>
+    return email
+}
+
+function parseProject( node ) {
+    return {
+        uri: node.uri,
+        name: node[projectName],
+        userURI: node[projectUserURI],
+        documents: node[projectDocumentList]
+    }
+}
+
+function parseTextDocument( dmSchema, node ) {
+    const htmlDOM = new JSDOM( node[textDocumentContent] );
+    const htmlDocument = htmlDOM.window.document
+
+    // TODO extract highlights from DOM
+
+    const documentNode = DOMParser.fromSchema(dmSchema).parse(htmlDocument.body.parentElement)
+    const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
+    const content = {type: 'doc', content: documentNode.content}
+
+    return {
+        uri: node.uri,
+        name: node[textDocumentName],
+        userURI: node[textDocumentUserURI],
+        content,
+        searchText
+    }
+}
 
 function setupLogging() {
     logger = winston.createLogger({
@@ -25,94 +96,83 @@ function setupLogging() {
     });
 }
 
-function initDatabase() {
-    postGresDBConnectionPool = new Pool({
-        user: 'nick',
-        password: '',
-        host: 'localhost',
-        database: 'dm2_staging',
-        port: 5432,
-    });    
+function createNodes(dataFile) {
+    // Load the test.ttl file and parse it into a JSON object with the following structure:
+    const triples = loadTTL(dataFile)
 
-    // note, set ssl: true when connecting to heroku postgres
-}
+    // turn triples into a hash of subject nodes
+    const nodes = []
+    triples.forEach( (triple) => {
+        const subject = triple.subject.value
+        const predicate = triple.predicate.value
+        const objectValue = triple.object.value
 
-function query(text, params, callback) {
-    const start = Date.now()
-    return postGresDBConnectionPool.query(text, params, (err, results) => {
-        if( results ) {
-            const duration = Date.now() - start
-            logger.info(`executed query: ${text} in ${duration}ms returned ${results.rowCount} rows.`);    
-            callback(results)
-        } else if( err ) {
-            logger.error(err)
+        if( !nodes[subject] ) nodes[subject] = { uri: subject }
+
+        if( predicate === nodeType ) {
+            // only accept node type valus in the vocab
+            if( typeVocab.includes( objectValue ) ) {
+                nodes[subject][predicate] = objectValue 
+            } 
+        } else if( predicate === aggregates ) {
+            // if this is an aggregate, emit array
+            if( !nodes[subject][predicate] ) nodes[subject][predicate] = []
+            nodes[subject][predicate].push( objectValue )
+        } else {
+            nodes[subject][predicate] = objectValue 
         }
     })
+
+    return nodes
 }
 
-function createDocumentSchema() {
-
-    const toDOM = function(mark) {
-      const color = 'black';
-      const properties = {
-        class: 'dm-highlight', 
-        style: `background: ${color};`
-      };
-      properties['data-highlight-uid'] = mark.attrs.highlightUid;
-      properties['data-document-id'] = mark.attrs.documentId;
-      return ['span', properties, 0];
-    }.bind(this);
-
-    const dmHighlightSpec = {
-      attrs: {highlightUid: {default: 'dm_new_highlight'}, documentId: {default: null}, tempColor: {default: null}},
-      toDOM: toDOM,
-      parseDOM: [{tag: 'span.dm-highlight', getAttrs(dom) {
-        return {
-          highlightUid: dom.getAttribute('data-highlight-uid'),
-          documentId: dom.getAttribute('data-document-id'),
-          tempColor: dom.style.background
-        };
-      }}]
+function createStructures(nodes) {
+    const dmData = {
+        users: [],
+        projects: [],
+        documents: []
     }
 
-    // create schema based on prosemirror-schema-basic
-    return new Schema({
-      nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
-      marks: schema.spec.marks.addBefore('link', 'highlight', dmHighlightSpec)
-    });
+    const dmSchema = dmProseMirror.createDocumentSchema()
+    // const parseRules = dmProseMirror.createParseRules()
+    // const domParser = new DOMParser(dmSchema,parseRules)
+
+    // iterate through the nodes and parse them into DM2 JSON
+    Object.values(nodes).forEach( (node) => {
+        switch( node[nodeType] ) {
+            case userNode:
+                dmData.users.push( parseUser(node) )
+                break
+            case projectNode:
+                dmData.projects.push( parseProject(node) )
+                break
+            case textDocumentNode:
+                dmData.documents.push( parseTextDocument(dmSchema,node) )
+                break
+            default:
+                break
+        }
+    })
+
+    return dmData
 }
 
-function processDocuments( dmSchema, documentRows ) {
-    let updatedDocs = [];
-    for( let doc of documentRows ) {
-        if( doc.document_kind === 'text' ) {
-            const dmDoc = dmSchema.nodeFromJSON(doc.content);
-            const searchText = dmDoc.textBetween(0,dmDoc.textContent.length, ' ');
-            updatedDocs.push({
-                id: doc.id,
-                title: doc.title,
-                searchText
-            });
-        }
-    }    
-    return updatedDocs;
+function createLinkages(nodes,structures) {
+    // TODO
+    return structures
 }
 
 function main() {
     setupLogging();
-    logger.info("Starting convert tool...")
+    logger.info("Start TTL processing...")
 
-    initDatabase();
-    const dmSchema = createDocumentSchema();
+    const dataFile = 'ttl/test.ttl'
+    // const dataFile = 'ttl/app.digitalmappa.org.ttl'
+    const nodes = createNodes(dataFile);
+    const structures = createStructures(nodes);
+    const dm2Graph = createLinkages(nodes,structures)
 
-    query('SELECT * FROM documents;', [], (results) => {
-        let updatedDocs = processDocuments(dmSchema, results.rows);
-        for( let doc of updatedDocs ) {
-            query(`update documents set search_text=$1 where id=$2`, [doc.searchText, doc.id], () => {
-                logger.info(`updated ${doc.title} ${doc.id}`);
-            })
-        }
-    })
+    logger.info("TTL Processing completed.")   
 }
 
 ///// RUN THE SCRIPT
