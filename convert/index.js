@@ -22,6 +22,7 @@ const userEmail = "http://xmlns.com/foaf/0.1/mbox"
 const projectNode = "http://dm.drew.edu/ns/Project"
 const projectName = w3Label
 const projectUserURI = creator
+const projectDescription = "http://purl.org/dc/terms/description"
 const projectDocumentList = aggregates
 
 const textDocumentNode = "http://purl.org/dc/dcmitype/Text"
@@ -47,9 +48,8 @@ function parseUser( node ) {
 }
 
 function parseEmail( email ) {
-    // TODO chop off mail:to stuff
-    // <mailto:nick@performantsoftware.com>
-    return email
+    // chop mailto:nick@performantsoftware.com
+    return email.replace( /^mailto:/, '' )
 }
 
 function parseProject( node ) {
@@ -57,6 +57,7 @@ function parseProject( node ) {
         uri: node.uri,
         name: node[projectName],
         userURI: node[projectUserURI],
+        description: node[projectDescription],
         documents: node[projectDocumentList]
     }
 }
@@ -82,8 +83,6 @@ function parseTextDocument( dmSchema, node ) {
         selectorURIs.push(selectorURI)
     }
     
-    const rootEl = htmlDocument.body.parentElement
-    console.log(rootEl.innerHTML)
     const documentNode = DOMParser.fromSchema(dmSchema).parse(htmlDocument.body.parentElement)
     const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
     const content = {type: 'doc', content: documentNode.content}
@@ -153,8 +152,6 @@ function createStructures(nodes) {
 
     const dmSchema = dmProseMirror.createDocumentSchema()
 
-    // TODO annotations contain the highlight objects
-
     // iterate through the nodes and parse them into DM2 JSON
     Object.values(nodes).forEach( (node) => {
         switch( node[nodeType] ) {
@@ -176,7 +173,7 @@ function createStructures(nodes) {
 }
 
 function createLinkages(nodes,structures) {
-    // TODO
+    // TODO annotations contain the highlight objects
     return structures
 }
 
@@ -190,6 +187,7 @@ function main() {
     const structures = createStructures(nodes);
     const dm2Graph = createLinkages(nodes,structures)
 
+    fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph));
     logger.info("TTL Processing completed.")   
 }
 
