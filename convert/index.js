@@ -62,11 +62,28 @@ function parseProject( node ) {
 }
 
 function parseTextDocument( dmSchema, node ) {
-    const htmlDOM = new JSDOM( node[textDocumentContent] );
+    const dm1Content = node[textDocumentContent] 
+    const htmlDOM = new JSDOM( dm1Content );
     const htmlDocument = htmlDOM.window.document
 
-    // TODO extract highlights from DOM
+    const spans = htmlDocument.getElementsByClassName('atb-editor-textannotation')
+    const selectorURIs = []
 
+    // port the text annotation spans to DM2 
+    for (let i = 0; i < spans.length; i++) {
+        let dm2Span = htmlDocument.createElement('span')
+        let span = spans[i];
+        const selectorURI = span.getAttribute('about');
+        dm2Span.setAttribute('class','dm-highlight')
+        dm2Span.setAttribute('style','background: #ffeb3b')
+        dm2Span.setAttribute('data-highlight-uri', selectorURI )
+        dm2Span.setAttribute('data-document-uri', node.uri )
+        span.parentNode.replaceChild(dm2Span, span);
+        selectorURIs.push(selectorURI)
+    }
+    
+    const rootEl = htmlDocument.body.parentElement
+    console.log(rootEl.innerHTML)
     const documentNode = DOMParser.fromSchema(dmSchema).parse(htmlDocument.body.parentElement)
     const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
     const content = {type: 'doc', content: documentNode.content}
@@ -76,7 +93,8 @@ function parseTextDocument( dmSchema, node ) {
         name: node[textDocumentName],
         userURI: node[textDocumentUserURI],
         content,
-        searchText
+        searchText,
+        selectorURIs
     }
 }
 
@@ -134,6 +152,8 @@ function createStructures(nodes) {
     }
 
     const dmSchema = dmProseMirror.createDocumentSchema()
+
+    // TODO annotations contain the highlight objects
 
     // iterate through the nodes and parse them into DM2 JSON
     Object.values(nodes).forEach( (node) => {
