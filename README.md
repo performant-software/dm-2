@@ -51,24 +51,24 @@ Once the dependencies mentioned above are installed, please follow these steps:
 
 1) Clone this repo to your local drive:
 
-    ```git clone https://github.com/performant-software/dm-2.git
+git clone https://github.com/performant-software/dm-2.git
 
 2) Run bundler in the base directory to get all the Ruby dependencies:
 
-    ```bundle 
+bundle 
 
 3) Run yarn in the client directory to get all the JS dependencies:
 
-    ```cd client
-    yarn
+cd client
+yarn
 
 4) Create a database for the application. The default database is called "dm2_staging" with no username or password. You can configure this in the config/database.yml file. Once the database is created, run:
 
-    ```rake db:migrate
+rake db:migrate
 
 5) Run the server with the following command:
 
-    ```heroku local -f Procfile.dev
+heroku local -f Procfile.dev
 
 Note that this runs two servers, one on port 3000 for Ruby on Rails and one on 3001 for the Create React App yarn server. This hot reloads any changes made to the Javascript files as you develop.
 
