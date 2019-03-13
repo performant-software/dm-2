@@ -19,17 +19,17 @@ Heroku Installation
 
 To install DM2 on Heroku, create a new app and point it at this respository. You will need to provision SendGrid and Heroku PostGres. The following config variables should be set for the application:
 
-AWS_ACCESS_KEY_ID
-AWS_BUCKET
-AWS_REGION
-AWS_SECRET_ACCESS_KEY
-HOSTNAME
-LANG
-RACK_ENV
-RAILS_LOG_TO_STDOUT
-RAILS_SERVE_STATIC_FILES
-SENDGRID_PASSWORD
-SENDGRID_USERNAME
+* AWS_ACCESS_KEY_ID
+* AWS_BUCKET
+* AWS_REGION
+* AWS_SECRET_ACCESS_KEY
+* HOSTNAME
+* LANG
+* RACK_ENV
+* RAILS_LOG_TO_STDOUT
+* RAILS_SERVE_STATIC_FILES
+* SENDGRID_PASSWORD
+* SENDGRID_USERNAME
 
 You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. See aws.amazon.com for more information.
 
@@ -51,24 +51,24 @@ Once the dependencies mentioned above are installed, please follow these steps:
 
 1) Clone this repo to your local drive:
 
-    git clone https://github.com/performant-software/dm-2.git
+    ```git clone https://github.com/performant-software/dm-2.git
 
 2) Run bundler in the base directory to get all the Ruby dependencies:
 
-    bundle 
+    ```bundle 
 
 3) Run yarn in the client directory to get all the JS dependencies:
 
-    cd client
+    ```cd client
     yarn
 
 4) Create a database for the application. The default database is called "dm2_staging" with no username or password. You can configure this in the config/database.yml file. Once the database is created, run:
 
-    rake db:migrate
+    ```rake db:migrate
 
 5) Run the server with the following command:
 
-    heroku local -f Procfile.dev
+    ```heroku local -f Procfile.dev
 
 Note that this runs two servers, one on port 3000 for Ruby on Rails and one on 3001 for the Create React App yarn server. This hot reloads any changes made to the Javascript files as you develop.
 
@@ -82,10 +82,12 @@ Installation without Heroku Toolset
 
 Installation without the Heroku tool set is possible but requires setup specific to your enviroment. Follow the steps given above, except when it comes time to run the application, run the client and the server with these commands:
 
-    To run the client:
+   To run the client:
+    
     cd client && PORT=3000 yarn start
 
-    The run the server:
-    PORT=3001 && bundle exec puma -C config/puma.rb
+   The run the server:
+   
+   ```PORT=3001 && bundle exec puma -C config/puma.rb
 
 
