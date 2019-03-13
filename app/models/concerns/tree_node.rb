@@ -10,13 +10,15 @@ module TreeNode
         ActiveRecord::Base.transaction do    
             i = 0
             children.each { |child|
-                unless same_as( self, child )
-                    child.position = i
-                    i = i + 1
-                else
-                    child.parent = nil
-                end                    
-                child.save!
+                unless child.destroyed?
+                    unless same_as( self, child )
+                        child.position = i 
+                        i = i + 1
+                    else
+                        child.parent = nil
+                    end                    
+                    child.save!
+                end
             }
         end    
     end

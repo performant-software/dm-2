@@ -26,7 +26,7 @@ export default class ProseMirrorEditorView extends Component {
   render() {
     // Render just an empty div which is then used as a container for an
     // EditorView instance.
-    const style = { flexGrow: '1', overflowY: 'scroll', padding: '10px' };
+    const style = { flexGrow: '1', padding: '10px' };
     return <div ref={this.props.createEditorView} style={style} />;
   }
 }
