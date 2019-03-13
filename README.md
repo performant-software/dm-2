@@ -88,6 +88,6 @@ Installation without the Heroku tool set is possible but requires setup specific
 
    The run the server:
    
-   ```PORT=3001 && bundle exec puma -C config/puma.rb
+    PORT=3001 && bundle exec puma -C config/puma.rb
 
 
