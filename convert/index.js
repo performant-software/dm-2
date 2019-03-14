@@ -121,6 +121,7 @@ function parseTextDocument( dmSchema, node ) {
     const obj = {
         uri: node.uri,
         name: node[textDocumentName],
+        documentKind: 'text',
         content,
         searchText,
         selectorURIs
@@ -133,6 +134,7 @@ function parseImageDocument( node ) {
     const obj = {
         uri: node.uri,
         name: node[imageDocumentName],
+        documentKind: 'canvas',
         width: node[imageWidth],
         height: node[imageHeight],
         images: []
