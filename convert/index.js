@@ -27,11 +27,21 @@ const projectDocumentList = aggregates
 
 const textDocumentNode = "http://purl.org/dc/dcmitype/Text"
 const textDocumentName = w3Label
-const textDocumentUserURI = creator
 const textDocumentContent = "http://www.w3.org/2011/content#chars"
 
+const imageDocumentNode = "http://www.shared-canvas.org/ns/Canvas"
+const imageDocumentName = w3Label
+const imageWidth = "http://www.w3.org/2003/12/exif/ns#width"
+const imageHeight = "http://www.w3.org/2003/12/exif/ns#height"
+
+const imageNode = "http://purl.org/dc/dcmitype/Image"
+
+const annotationNode = "http://www.w3.org/ns/oa#Annotation"
+const annotationHasBody = "http://www.w3.org/ns/oa#hasBody"
+const annotationHasTarget = "http://www.w3.org/ns/oa#hasTarget"
+
 // node type can only be one of these values
-const typeVocab = [ userNode, projectNode, textDocumentNode ]
+const typeVocab = [ userNode, projectNode, textDocumentNode, imageDocumentNode, imageNode, annotationNode ]
 
 function loadTTL(ttlFile) {
     const ttlRaw = fs.readFileSync( ttlFile, "utf8");
@@ -40,26 +50,27 @@ function loadTTL(ttlFile) {
 }
 
 function parseUser( node ) {
-    return {
+    // chop mailto:nick@performantsoftware.com
+    const email = node[userEmail].replace( /^mailto:/, '' )
+    const obj = {
         uri: node.uri,
         name: node[userName],
-        email: parseEmail(node[userEmail])
+        email
     }
-}
-
-function parseEmail( email ) {
-    // chop mailto:nick@performantsoftware.com
-    return email.replace( /^mailto:/, '' )
+    node.obj = obj
+    return obj
 }
 
 function parseProject( node ) {
-    return {
+    const obj = {
         uri: node.uri,
         name: node[projectName],
         userURI: node[projectUserURI],
         description: node[projectDescription],
         documents: node[projectDocumentList]
     }
+    node.obj = obj
+    return obj
 }
 
 function parseTextDocument( dmSchema, node ) {
@@ -87,14 +98,48 @@ function parseTextDocument( dmSchema, node ) {
     const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
     const content = {type: 'doc', content: documentNode.content}
 
-    return {
+    const obj = {
         uri: node.uri,
         name: node[textDocumentName],
-        userURI: node[textDocumentUserURI],
         content,
         searchText,
         selectorURIs
     }
+    node.obj = obj
+    return obj
+}
+
+function parseImageDocument( node ) {
+    const obj = {
+        uri: node.uri,
+        name: node[imageDocumentName],
+        width: node[imageWidth],
+        height: node[imageHeight]
+    }
+    node.obj = obj
+    return obj
+}
+
+function parseImage( node ) {
+    // Example: <image:40615860_10217291030455677_4752239145311535104_n.jpg>
+    const imageFilename = node.uri.replace( /^image:/, '' )
+
+    const obj = {
+        uri: node.uri,
+        imageFilename
+    }
+    node.obj = obj
+    return obj
+}
+
+function parseAnnotation( node ) {
+    const obj = {
+        uri: node.uri,
+        body: node[annotationHasBody],
+        target: node[annotationHasTarget]
+    }
+    node.obj = obj
+    return obj
 }
 
 function setupLogging() {
@@ -143,13 +188,18 @@ function createNodes(dataFile) {
     return nodes
 }
 
-function createStructures(nodes) {
-    const dmData = {
+function createGraph(nodes) {
+    let dmData = {
         users: [],
         projects: [],
-        documents: []
+        documents: [],
+        images: []
     }
 
+    // OA Annotation objects
+    let annotations = []
+
+    // document schema for parsing HTML -> ProseMirror JSON
     const dmSchema = dmProseMirror.createDocumentSchema()
 
     // iterate through the nodes and parse them into DM2 JSON
@@ -164,28 +214,39 @@ function createStructures(nodes) {
             case textDocumentNode:
                 dmData.documents.push( parseTextDocument(dmSchema,node) )
                 break
+            case imageDocumentNode:
+                dmData.documents.push( parseImageDocument(node) )
+                break
+            case imageNode:
+                dmData.images.push( parseImage(node) )
+                break
+            case annotationNode:
+                annotations.push( parseAnnotation(node) )
+                break
             default:
                 break
         }
     })
 
+    dmData.highlights = traverseAnnotations(annotations,nodes)
+
     return dmData
 }
 
-function createLinkages(nodes,structures) {
-    // TODO annotations contain the highlight objects
-    return structures
+function traverseAnnotations( annotations, nodes ) {
+    
+    return []
 }
+
 
 function main() {
     setupLogging();
     logger.info("Start TTL processing...")
 
-    const dataFile = 'ttl/test.ttl'
+    const dataFile = 'ttl/test-image.ttl'
     // const dataFile = 'ttl/app.digitalmappa.org.ttl'
     const nodes = createNodes(dataFile);
-    const structures = createStructures(nodes);
-    const dm2Graph = createLinkages(nodes,structures)
+    const dm2Graph = createGraph(nodes);
 
     fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph));
     logger.info("TTL Processing completed.")   
