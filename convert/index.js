@@ -40,8 +40,28 @@ const annotationNode = "http://www.w3.org/ns/oa#Annotation"
 const annotationHasBody = "http://www.w3.org/ns/oa#hasBody"
 const annotationHasTarget = "http://www.w3.org/ns/oa#hasTarget"
 
+const resourceSource = "http://www.w3.org/ns/oa#hasSource"
+const resourceSelector = "http://www.w3.org/ns/oa#hasSelector"
+
+const svgSelector = "http://www.w3.org/ns/oa#SvgSelector"
+const svgContent = "http://www.w3.org/2011/content#chars"
+
+const textQuoteSelector = "http://www.w3.org/ns/oa#TextQuoteSelector"
+const textQuoteExcerpt = "http://www.w3.org/ns/oa#exact"
+
+const yellow500 = "#ffeb3b"
+
 // node type can only be one of these values
-const typeVocab = [ userNode, projectNode, textDocumentNode, imageDocumentNode, imageNode, annotationNode ]
+const typeVocab = [ 
+    userNode, 
+    projectNode, 
+    textDocumentNode, 
+    imageDocumentNode, 
+    imageNode, 
+    annotationNode,
+    svgSelector,
+    textQuoteSelector 
+]
 
 function loadTTL(ttlFile) {
     const ttlRaw = fs.readFileSync( ttlFile, "utf8");
@@ -114,7 +134,8 @@ function parseImageDocument( node ) {
         uri: node.uri,
         name: node[imageDocumentName],
         width: node[imageWidth],
-        height: node[imageHeight]
+        height: node[imageHeight],
+        images: []
     }
     node.obj = obj
     return obj
@@ -140,6 +161,27 @@ function parseAnnotation( node ) {
     }
     node.obj = obj
     return obj
+}
+
+function parseSVGSelector( node ) {
+    // TODO convert SVG object to FabricJS JSON
+    const obj = {
+        uri: node.uri,
+        target: node[svgContent],
+        color: yellow500
+    }
+    node.obj = obj
+    return obj  
+}
+
+function parseTextQuoteSelector( node ) {
+    const obj = {
+        uri: node.uri,
+        excerpt: node[textQuoteExcerpt],
+        color: yellow500
+    }
+    node.obj = obj
+    return obj  
 }
 
 function setupLogging() {
@@ -189,11 +231,15 @@ function createNodes(dataFile) {
 }
 
 function createGraph(nodes) {
+
+    // JSON export object structure
     let dmData = {
         users: [],
         projects: [],
         documents: [],
-        images: []
+        images: [],
+        highlights: [],
+        links: []
     }
 
     // OA Annotation objects
@@ -223,19 +269,53 @@ function createGraph(nodes) {
             case annotationNode:
                 annotations.push( parseAnnotation(node) )
                 break
+            case svgSelector:
+                dmData.highlights.push( parseSVGSelector(node) )
+                break
+            case textQuoteSelector:
+                dmData.highlights.push( parseTextQuoteSelector(node) )
+                break
             default:
                 break
         }
     })
 
-    dmData.highlights = traverseAnnotations(annotations,nodes)
+    // Now traverse the annotations and link up all the references
+    annotations.forEach( (annotation) => {
+        const bodyNode = nodes[annotation.body]
+        const targetNode = nodes[annotation.target]
+        // Is this a canvas/image association or a link?
+        if( bodyNode[nodeType] === imageNode ) {
+            // associate the image with the imageDocument
+            const image = bodyNode.obj
+            const imageDocument = targetNode.obj
+            imageDocument.images.push(image.uri)
+        } else {
+            // these two together make a link
+            const linkA = parseSpecificResource( bodyNode )
+            const linkB = parseSpecificResource( targetNode )
+            links.push( { 
+                linkUriA: linkA.uri, 
+                linkTypeA: linkA.linkType, 
+                linkUriB: linkB.uri, 
+                linkTypeB: linkB.linkType
+            })
+        }
+    })
 
     return dmData
 }
 
-function traverseAnnotations( annotations, nodes ) {
-    
-    return []
+function parseSpecificResource( node ) {
+    // TODO are there source documents that don't appear in the project aggregation?
+    const source = node[ resourceSource ]
+    const selector = node[ resourceSelector ]
+    const linkType = (source[nodeType] === textDocumentNode) ? 'text' : 'canvas'
+
+    // associate source with the object in the selector
+    // TODO how do selectors work when target is the document itself?
+    selector.obj.documentURI = source.uri
+    return { uri: selector.uri, linkType }
 }
 
 
