@@ -1,13 +1,14 @@
 const winston = require('winston')
 const rdf = require('rdf')
 const fs = require('fs')
-const { DOMParser } = require('prosemirror-model');
+const { DOMParser } = require('prosemirror-model')
 const dmProseMirror = require('./dm-prose-mirror')
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
+const jsdom = require("jsdom")
+const { JSDOM } = jsdom
+const fabric = require('fabric').fabric
 
 const logFile = 'log/ttl-test.log'
-var logger;
+var logger
 
 // Predicates
 const nodeType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -40,6 +41,7 @@ const annotationNode = "http://www.w3.org/ns/oa#Annotation"
 const annotationHasBody = "http://www.w3.org/ns/oa#hasBody"
 const annotationHasTarget = "http://www.w3.org/ns/oa#hasTarget"
 
+const specificResource = "http://www.w3.org/ns/oa#SpecificResource"
 const resourceSource = "http://www.w3.org/ns/oa#hasSource"
 const resourceSelector = "http://www.w3.org/ns/oa#hasSelector"
 
@@ -60,7 +62,8 @@ const typeVocab = [
     imageNode, 
     annotationNode,
     svgSelector,
-    textQuoteSelector 
+    textQuoteSelector,
+    specificResource
 ]
 
 function loadTTL(ttlFile) {
@@ -166,12 +169,16 @@ function parseAnnotation( node ) {
 }
 
 function parseSVGSelector( node ) {
-    // TODO convert SVG object to FabricJS JSON
-    const obj = {
+    let obj = {
         uri: node.uri,
-        target: node[svgContent],
         color: yellow500
     }
+    // convert SVG object to FabricJS JSON
+    const svg = `<svg>${node[svgContent]}</svg>`
+    fabric.loadSVGFromString(svg, (fabObj) => { 
+        obj.target = JSON.stringify(fabObj[0])
+    })
+
     node.obj = obj
     return obj  
 }
@@ -294,9 +301,9 @@ function createGraph(nodes) {
             imageDocument.images.push(image.uri)
         } else {
             // these two together make a link
-            const linkA = parseSpecificResource( bodyNode )
-            const linkB = parseSpecificResource( targetNode )
-            links.push( { 
+            const linkA = parseSpecificResource( bodyNode, nodes )
+            const linkB = parseSpecificResource( targetNode, nodes )
+            dmData.links.push( { 
                 linkUriA: linkA.uri, 
                 linkTypeA: linkA.linkType, 
                 linkUriB: linkB.uri, 
@@ -308,10 +315,10 @@ function createGraph(nodes) {
     return dmData
 }
 
-function parseSpecificResource( node ) {
+function parseSpecificResource( node, nodes ) {
     // TODO are there source documents that don't appear in the project aggregation?
-    const source = node[ resourceSource ]
-    const selector = node[ resourceSelector ]
+    const source = nodes[ node[ resourceSource ] ]
+    const selector = nodes[ node[ resourceSelector ] ]
     const linkType = (source[nodeType] === textDocumentNode) ? 'text' : 'canvas'
 
     // associate source with the object in the selector
