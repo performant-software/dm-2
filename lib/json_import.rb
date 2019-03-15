@@ -12,7 +12,10 @@ class JSONImport
 		json_data = self.read_json_file(filepath)
         self.import_users json_data['users']
         self.import_projects json_data['projects']
+        self.import_images json_data['images']
         self.import_documents json_data['documents']
+        self.import_highlights json_data['highlights']
+        self.import_links json_data['links']
     end
 
     def import_users(user_data)
@@ -55,19 +58,72 @@ class JSONImport
         self.document_map = {}
         document_data.each { |document_obj|
             project_id = self.document_to_project_map[document_obj['uri']]
+            document_kind = document_obj['documentKind']
+
             document = Document.new({
                 title: document_obj['name'],
                 parent_id: project_id,
                 parent_type: 'Project',
                 content: document_obj['content'],
                 search_text: document_obj['searchText'],
-                document_kind: 'text', # or canvas 
+                document_kind: document_kind,
                 project_id: project_id
             })
             document.save!        
-        }
 
+            if document_kind == 'canvas'
+                document_obj['images'].each { |image_uri|
+                    image_filename = self.image_files[image_uri]
+                    image_path = "ttl/images/#{image_filename}"
+                    document.images.attach(io: File.open(image_path), filename: image_filename)
+                    image_content = {
+                        tileSources: [ {
+                            url: url_for(document.images.first),
+                            type: "image"
+                        }]
+                    }
+                    document.content = image_content
+                    document.save!
+                }
+            end
+        }
     end
+
+    def import_images( image_data ) 
+        self.image_files = {}
+        image_data.each { |image_obj|
+            self.image_map[ image_obj['uri'] ] = image_obj['imageFilename']
+        }
+    end
+
+    def import_highlights( highlight_data )
+        self.highlight_map = {}
+        highlight_data.each { |highlight_obj|
+            document_id = self.document_map[highlight_obj['documentURI']]
+            highlight = Highlight.new({
+                excerpt: highlight_obj['excerpt'],
+                color: highlight_obj['color']
+                target: highlight_obj['target'],
+                uid: highlight_obj['uri'],
+                document_id: document_id
+            })
+            highlight.save!
+            self.highlight_map[highlight_obj['uri']] = highlight.id
+        }
+    end
+
+    def import_links( link_data )
+        link_data.each { |link_obj|
+            link = Link.new({
+                linkable_a_id: self.document_map[ link_obj['linkUriA'] ],
+                linkable_a_type: link_obj['linkTypeA'],
+                linkable_b_id: self.document_map[ link_obj['linkUriB'] ],
+                linkable_b_type:link_obj['linkTypeB']
+            })
+            link.save!
+        }    
+    end
+
 
 	def read_json_file( filepath )
 		buf = []

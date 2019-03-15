@@ -138,6 +138,7 @@ function parseImageDocument( node ) {
         uri: node.uri,
         name: node[imageDocumentName],
         documentKind: 'canvas',
+        content: '',
         width: node[imageWidth],
         height: node[imageHeight],
         images: []
@@ -186,6 +187,7 @@ function parseSVGSelector( node ) {
 function parseTextQuoteSelector( node ) {
     const obj = {
         uri: node.uri,
+        target: node.uri,
         excerpt: node[textQuoteExcerpt],
         color: yellow500
     }
