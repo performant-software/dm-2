@@ -321,10 +321,10 @@ function parseSpecificResource( node, nodes ) {
     // TODO are there source documents that don't appear in the project aggregation?
     const source = nodes[ node[ resourceSource ] ]
     const selector = nodes[ node[ resourceSelector ] ]
-    const linkType = (source[nodeType] === textDocumentNode) ? 'text' : 'canvas'
+    // TODO how do selectors work when target is the document itself?
+    const linkType = 'Highlight'
 
     // associate source with the object in the selector
-    // TODO how do selectors work when target is the document itself?
     selector.obj.documentURI = source.uri
     return { uri: selector.uri, linkType }
 }

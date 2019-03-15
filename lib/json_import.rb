@@ -1,7 +1,7 @@
 
 class JSONImport
 
-    attr_accessor :unguessable_password, :user_map, :project_map, :document_map, :document_to_project_map
+    attr_accessor :unguessable_password, :user_map, :project_map, :document_map, :highlight_map, :image_files, :document_to_project_map
 
     def initialize
         # TODO randomly generate on each run a strong password
@@ -70,6 +70,7 @@ class JSONImport
                 project_id: project_id
             })
             document.save!        
+            document_map[document_obj['uri']] = document.id
 
             if document_kind == 'canvas'
                 document_obj['images'].each { |image_uri|
@@ -92,7 +93,7 @@ class JSONImport
     def import_images( image_data ) 
         self.image_files = {}
         image_data.each { |image_obj|
-            self.image_map[ image_obj['uri'] ] = image_obj['imageFilename']
+            self.image_files[ image_obj['uri'] ] = image_obj['imageFilename']
         }
     end
 
@@ -102,7 +103,7 @@ class JSONImport
             document_id = self.document_map[highlight_obj['documentURI']]
             highlight = Highlight.new({
                 excerpt: highlight_obj['excerpt'],
-                color: highlight_obj['color']
+                color: highlight_obj['color'],
                 target: highlight_obj['target'],
                 uid: highlight_obj['uri'],
                 document_id: document_id
@@ -114,10 +115,14 @@ class JSONImport
 
     def import_links( link_data )
         link_data.each { |link_obj|
+            # DEBUG
+            link_a_id = self.document_map[ link_obj['linkUriA'] ]
+            link_b_id = self.document_map[ link_obj['linkUriB'] ]
+            # Rails.logger.info  "Highlight lookup document id #{link_obj} from uri #{highlight_obj['documentURI']} in highlight #{highlight_obj['uri']}"
             link = Link.new({
-                linkable_a_id: self.document_map[ link_obj['linkUriA'] ],
+                linkable_a_id: link_a_id,
                 linkable_a_type: link_obj['linkTypeA'],
-                linkable_b_id: self.document_map[ link_obj['linkUriB'] ],
+                linkable_b_id: link_b_id,
                 linkable_b_type:link_obj['linkTypeB']
             })
             link.save!
