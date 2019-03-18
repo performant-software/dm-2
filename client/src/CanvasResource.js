@@ -195,9 +195,15 @@ class CanvasResource extends Component {
 
     if (firstTileSource.type === 'image' && firstTileSource.url) {
       imageUrlForThumbnail = firstTileSource.url
-      const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
-      this.props.setImageUrl(key, tileSourceSSL);
-      this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+      // don't force ssl for localhost
+      if( imageUrlForThumbnail.match(/^http:\/\/localhost/) ) {
+        this.props.setImageUrl(key, imageUrlForThumbnail);
+        this.osdViewer.open({ type: 'image', url: imageUrlForThumbnail })
+      } else {
+        const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
+        this.props.setImageUrl(key, tileSourceSSL);
+        this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+      }
     }
     else {
       let resourceURL = firstTileSource.replace('http:', 'https:')
