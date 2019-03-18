@@ -90,7 +90,7 @@ function parseProject( node ) {
         name: node[projectName],
         userURI: node[projectUserURI],
         description: node[projectDescription],
-        documents: node[projectDocumentList]
+        documents: node[projectDocumentList]   // Project table of contents (doesn't include annotations)
     }
     node.obj = obj
     return obj
@@ -124,8 +124,7 @@ function parseTextDocument( dmSchema, node ) {
         span.parentNode.replaceChild(dm2Span, span);
     })
 
-    var debugstr = htmlDocument.body.parentElement.innerHTML
-
+    // var debugstr = htmlDocument.body.parentElement.innerHTML
     const documentNode = DOMParser.fromSchema(dmSchema).parse(htmlDocument.body.parentElement)
     const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
     const content = {type: 'doc', content: documentNode.content}
@@ -195,6 +194,7 @@ function parseSVGSelector( node ) {
     })
 
     node.obj = obj
+    node.isSelector = true
     return obj  
 }
 
@@ -206,6 +206,7 @@ function parseTextQuoteSelector( node ) {
         color: yellow500
     }
     node.obj = obj
+    node.isSelector = true
     return obj  
 }
 
@@ -255,8 +256,7 @@ function createNodes(dataFile) {
     return nodes
 }
 
-function createGraph(nodes) {
-
+function parseAllTheThings(nodes) {
     // JSON export object structure
     let dmData = {
         users: [],
@@ -305,7 +305,12 @@ function createGraph(nodes) {
         }
     })
 
-    // Now traverse the annotations and link up all the references
+    return { annotations, dmData }
+}
+
+// Traverse the annotations and link up all the references
+function parseLinks(annotations,nodes) {
+    let links = []
     annotations.forEach( (annotation) => {
         const bodyNode = nodes[annotation.body]
         const targetNode = nodes[annotation.target]
@@ -317,9 +322,9 @@ function createGraph(nodes) {
             imageDocument.images.push(image.uri)
         } else {
             // these two together make a link
-            const linkA = parseSpecificResource( bodyNode, nodes )
-            const linkB = parseSpecificResource( targetNode, nodes )
-            dmData.links.push( { 
+            const linkA = parseAnnotationLink( bodyNode, nodes ) 
+            const linkB = parseAnnotationLink( targetNode, nodes )
+            links.push( { 
                 linkUriA: linkA.uri, 
                 linkTypeA: linkA.linkType, 
                 linkUriB: linkB.uri, 
@@ -328,21 +333,57 @@ function createGraph(nodes) {
         }
     })
 
+    return links
+}
+
+// Go through all the projects and link up the documents aggregate directly
+function associateTOCDocuments(projects) {
+    projects.forEach( (project) => {
+        project.documents.forEach( (document) => {
+            document.projectURI = project.uri
+            document.parentURI = project.uri
+            document.parentType = 'Project'
+        })
+    })
+}
+
+function createGraph(nodes) {
+    let { annotations, dmData } = parseAllTheThings(nodes)
+    dmData.links = parseLinks( annotations, nodes )
+    associateTOCDocuments( dmData.projects )
+    // propogateProjectAssociation( annotations, nodes )
     return dmData
 }
 
-function parseSpecificResource( node, nodes ) {
-    // TODO are there source documents that don't appear in the project aggregation?
-    const source = nodes[ node[ resourceSource ] ]
-    const selector = nodes[ node[ resourceSelector ] ]
-    // TODO how do selectors work when target is the document itself?
-    const linkType = 'Highlight'
+// TODO
+// function propogateProjectAssociation( annotations, nodes ) {
+//     annotations.forEach( (annotation) => {
+//         const bodyNode = nodes[annotation.body]
+//         const targetNode = nodes[annotation.target]
+//         if( bodyNode[nodeType] !== imageNode ) {
+//             const linkA = parseAnnotationLink( bodyNode, nodes ) 
+//             const linkB = parseAnnotationLink( targetNode, nodes )
+//             if( linkA.linkType === 'Document' ) {
 
-    // associate source with the object in the selector
-    selector.obj.documentURI = source.uri
-    return { uri: selector.uri, linkType }
+//             }
+//         }
+//     })
+// }
+
+function parseAnnotationLink( node, nodes ) {
+    let uri, linkType
+    if( node.isSelector ) {
+        const source = nodes[ node[ resourceSource ] ]
+        const selector = nodes[ node[ resourceSelector ] ]    
+        selector.obj.documentURI = source.uri
+        uri = selector.uri
+        linkType = 'Highlight'
+    } else {
+        uri = node.uri
+        linkType = 'Document'
+    }
+    return { uri, linkType }
 }
-
 
 function main() {
     setupLogging();
