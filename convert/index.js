@@ -172,12 +172,17 @@ function parseAnnotation( node ) {
 function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
+        excerpt: 'Highlight',
         color: yellow500
     }
     // convert SVG object to FabricJS JSON
     const svg = `<svg>${node[svgContent]}</svg>`
     fabric.loadSVGFromString(svg, (fabObj) => { 
-        obj.target = JSON.stringify(fabObj[0])
+        let shape = fabObj[0].toJSON()
+        shape._highlightUid = node.uri
+        shape.fill = "transparent"
+        shape.stroke = yellow500
+        obj.target = JSON.stringify(shape)
     })
 
     node.obj = obj
