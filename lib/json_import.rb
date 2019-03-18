@@ -28,6 +28,8 @@ class JSONImport
                 user.name = user_obj['name']
                 user.email = user_obj['email']
                 user.password = self.unguessable_password
+                user.approved = true
+                user.admin = true
                 user.save!                
             end
 
@@ -115,10 +117,8 @@ class JSONImport
 
     def import_links( link_data )
         link_data.each { |link_obj|
-            # DEBUG
-            link_a_id = self.document_map[ link_obj['linkUriA'] ]
-            link_b_id = self.document_map[ link_obj['linkUriB'] ]
-            # Rails.logger.info  "Highlight lookup document id #{link_obj} from uri #{highlight_obj['documentURI']} in highlight #{highlight_obj['uri']}"
+            link_a_id = self.highlight_map[ link_obj['linkUriA'] ]
+            link_b_id = self.highlight_map[ link_obj['linkUriB'] ]
             link = Link.new({
                 linkable_a_id: link_a_id,
                 linkable_a_type: link_obj['linkTypeA'],
