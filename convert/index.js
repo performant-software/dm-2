@@ -103,6 +103,7 @@ function parseTextDocument( dmSchema, node ) {
 
     const spans = htmlDocument.getElementsByClassName('atb-editor-textannotation')
     const selectorURIs = []
+    const replacements = []
 
     // port the text annotation spans to DM2 
     for (let i = 0; i < spans.length; i++) {
@@ -111,12 +112,20 @@ function parseTextDocument( dmSchema, node ) {
         const selectorURI = span.getAttribute('about');
         dm2Span.setAttribute('class','dm-highlight')
         dm2Span.setAttribute('style','background: #ffeb3b')
-        dm2Span.setAttribute('data-highlight-uri', selectorURI )
-        dm2Span.setAttribute('data-document-uri', node.uri )
-        span.parentNode.replaceChild(dm2Span, span);
+        dm2Span.setAttribute('data-highlight-uid', selectorURI )
+        dm2Span.innerHTML = span.innerHTML
+        replacements.push([dm2Span,span])
         selectorURIs.push(selectorURI)
     }
-    
+
+    // do this as a seperate step for the DOM's sake
+    replacements.forEach( (replacement) => {
+        let [ dm2Span, span ] = replacement
+        span.parentNode.replaceChild(dm2Span, span);
+    })
+
+    var debugstr = htmlDocument.body.parentElement.innerHTML
+
     const documentNode = DOMParser.fromSchema(dmSchema).parse(htmlDocument.body.parentElement)
     const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
     const content = {type: 'doc', content: documentNode.content}
