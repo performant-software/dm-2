@@ -194,7 +194,6 @@ function parseSVGSelector( node ) {
     })
 
     node.obj = obj
-    node.isSelector = true
     return obj  
 }
 
@@ -206,7 +205,6 @@ function parseTextQuoteSelector( node ) {
         color: yellow500
     }
     node.obj = obj
-    node.isSelector = true
     return obj  
 }
 
@@ -256,7 +254,7 @@ function createNodes(dataFile) {
     return nodes
 }
 
-function parseAllTheThings(nodes) {
+function parseMostThings(nodes) {
     // JSON export object structure
     let dmData = {
         users: [],
@@ -336,43 +334,85 @@ function parseLinks(annotations,nodes) {
     return links
 }
 
-// Go through all the projects and link up the documents aggregate directly
-function associateTOCDocuments(projects) {
+// Go through all the projects and link up the documents 
+function addDocumentsToProjects(dmData, annotations, nodes) {
+    const { projects } = dmData
+
+    const getDocumentURI = function( node ) {
+        if( node[nodeType] !== imageNode ) {
+            return node[nodeType] === specificResource ? node[ resourceSource ] : node.uri
+        } else {
+            return null
+        }
+    }
+
     projects.forEach( (project) => {
-        project.documents.forEach( (document) => {
+        logger.info(`Scanning annotations for documents in project ${project.uri}`)
+        let projectDocs = []
+
+        // first, mark all of the documents from the table of contents
+        project.documents.forEach( documentURI => {
+            let document = nodes[ documentURI ].obj
             document.projectURI = project.uri
             document.parentURI = project.uri
             document.parentType = 'Project'
-        })
+            projectDocs.push(documentURI)
+        })    
+
+        // keep going as long as we are finding new documents 
+        let prevCount = 0
+        while(prevCount < projectDocs.length) {
+            logger.info(`Found ${projectDocs.length - prevCount} new documents...`)
+            prevCount = projectDocs.length
+            annotations.forEach( annotation => {
+                const bodyDocURI = getDocumentURI( nodes[annotation.body] )
+                const targetDocURI = getDocumentURI( nodes[annotation.target] )
+                if( bodyDocURI && targetDocURI ) {
+                    let bodyDoc = nodes[bodyDocURI].obj
+                    let targetDoc = nodes[targetDocURI].obj
+                    // if two documents are linked by an annotation, they are in the same project.
+                    if( projectDocs.includes( bodyDocURI ) && !projectDocs.includes( targetDocURI ) ) {
+                        targetDoc.projectURI = project.uri
+                        projectDocs.push(targetDocURI)            
+                    } else if( projectDocs.includes( targetDocURI ) && !projectDocs.includes( bodyDocURI ) ) {
+                        bodyDoc.projectURI = project.uri
+                        projectDocs.push(bodyDocURI)            
+                    }   
+                    // if target doesn't have a parent, assign body  
+                    if( !targetDoc.parentURI ) {
+                        targetDoc.parentURI = bodyDocURI
+                        targetDoc.parentType = 'Document'
+                    }
+                }
+            })
+        } 
+        logger.info(`Done scanning project ${project.uri}`)   
     })
+
+    // filter out documents that have no project association
+    let unlinkedDocuments = 0
+    dmData.documents = dmData.documents.filter( document => {
+        if( !document.projectURI ) {
+            logger.info(`Document not included: ${document.uri}`)
+            unlinkedDocuments++
+            return false
+        } else {
+            return true
+        }
+    })
+    logger.info(`Found ${unlinkedDocuments} unlinked documents.`)
 }
 
 function createGraph(nodes) {
-    let { annotations, dmData } = parseAllTheThings(nodes)
+    let { annotations, dmData } = parseMostThings(nodes)
     dmData.links = parseLinks( annotations, nodes )
-    associateTOCDocuments( dmData.projects )
-    // propogateProjectAssociation( annotations, nodes )
+    addDocumentsToProjects( dmData, annotations, nodes )
     return dmData
 }
 
-// TODO
-// function propogateProjectAssociation( annotations, nodes ) {
-//     annotations.forEach( (annotation) => {
-//         const bodyNode = nodes[annotation.body]
-//         const targetNode = nodes[annotation.target]
-//         if( bodyNode[nodeType] !== imageNode ) {
-//             const linkA = parseAnnotationLink( bodyNode, nodes ) 
-//             const linkB = parseAnnotationLink( targetNode, nodes )
-//             if( linkA.linkType === 'Document' ) {
-
-//             }
-//         }
-//     })
-// }
-
 function parseAnnotationLink( node, nodes ) {
     let uri, linkType
-    if( node.isSelector ) {
+    if( node[nodeType] === specificResource ) {
         const source = nodes[ node[ resourceSource ] ]
         const selector = nodes[ node[ resourceSelector ] ]    
         selector.obj.documentURI = source.uri

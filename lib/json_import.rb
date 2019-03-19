@@ -29,7 +29,6 @@ class JSONImport
                 user.email = user_obj['email']
                 user.password = self.unguessable_password
                 user.approved = true
-                user.admin = true
                 user.save!                
             end
 
