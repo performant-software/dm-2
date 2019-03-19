@@ -29,6 +29,7 @@ class JSONImport
                 user.email = user_obj['email']
                 user.password = self.unguessable_password
                 user.approved = true
+                user.admin = true
                 user.save!                
             end
 
@@ -38,7 +39,6 @@ class JSONImport
 
     def import_projects(project_data)
         self.project_map = {}
-        self.document_to_project_map = {}
         project_data.each { |project_obj|
             user_id = self.user_map[project_obj['userURI']]
             project = Project.new( {
@@ -48,26 +48,24 @@ class JSONImport
             })
             project.save!
             self.project_map[project_obj['uri']] = project.id
-            # map all the document uris to this project id
-            project_obj['documents'].each { |document_uri|
-                self.document_to_project_map[document_uri] = project.id            
-            }
         }
     end
 
     def import_documents(document_data)
         self.document_map = {}
+        document_bridge = []
         document_data.each { |document_obj|
-            project_id = self.document_to_project_map[document_obj['uri']]
+            project_id = self.project_map[document_obj['projectURI']]
             document_kind = document_obj['documentKind']
 
+            # temporarily have all docs in root project folder when created
             document = Document.new({
                 title: document_obj['name'],
-                parent_id: project_id,
-                parent_type: 'Project',
                 content: document_obj['content'],
                 search_text: document_obj['searchText'],
                 document_kind: document_kind,
+                parent_type: 'Project',
+                parent_id: project_id,
                 project_id: project_id
             })
             document.save!        
@@ -88,6 +86,17 @@ class JSONImport
                     document.save!
                 }
             end
+            document_bridge.push( { doc: document, obj: document_obj })
+        }
+
+        # now that everything has ids, move docs to the correct place in the tree
+        document_bridge.each { |bridge|
+            document = bridge[:doc]
+            document_obj = bridge[:obj]            
+            parent_type = document_obj['parentType']
+            parent_uri = document_obj['parentURI']
+            parent_id = (parent_type == 'Project') ? self.project_map[parent_uri] : self.document_map[parent_uri]
+            document.move_to( :end, parent_id, parent_type )
         }
     end
 
@@ -116,8 +125,14 @@ class JSONImport
 
     def import_links( link_data )
         link_data.each { |link_obj|
-            link_a_id = self.highlight_map[ link_obj['linkUriA'] ]
-            link_b_id = self.highlight_map[ link_obj['linkUriB'] ]
+            link_a_id = link_obj['linkTypeA'] == 'Highlight' ? 
+                self.highlight_map[ link_obj['linkUriA'] ] : 
+                self.document_map[ link_obj['linkUriA'] ]
+                
+            link_b_id = link_obj['linkTypeB'] == 'Highlight' ? 
+                self.highlight_map[ link_obj['linkUriB'] ] : 
+                self.document_map[ link_obj['linkUriB'] ]
+            
             link = Link.new({
                 linkable_a_id: link_a_id,
                 linkable_a_type: link_obj['linkTypeA'],

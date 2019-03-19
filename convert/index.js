@@ -401,6 +401,19 @@ function addDocumentsToProjects(dmData, annotations, nodes) {
         }
     })
     logger.info(`Found ${unlinkedDocuments} unlinked documents.`)
+
+    // filter out highlights that have no document association
+    let unlinkedHighlights = 0
+    dmData.highlights = dmData.highlights.filter( highlight => {
+        if( !highlight.documentURI ) {
+            logger.info(`Highlight not included: ${highlight.uri}`)
+            unlinkedHighlights++
+            return false
+        } else {
+            return true
+        }
+    })
+    logger.info(`Found ${unlinkedHighlights} unlinked highlights.`)
 }
 
 function createGraph(nodes) {
