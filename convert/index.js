@@ -379,9 +379,9 @@ function addDocumentsToProjects(dmData, annotations, nodes) {
                         projectDocs.push(bodyDocURI)            
                     }   
                     // if target doesn't have a parent, assign body  
-                    if( !targetDoc.parentURI ) {
-                        targetDoc.parentURI = bodyDocURI
-                        targetDoc.parentType = 'Document'
+                    if( !bodyDoc.parentURI ) {
+                        bodyDoc.parentURI = targetDocURI
+                        bodyDoc.parentType = 'Document'
                     }
                 }
             })

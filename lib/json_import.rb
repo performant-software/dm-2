@@ -29,7 +29,6 @@ class JSONImport
                 user.email = user_obj['email']
                 user.password = self.unguessable_password
                 user.approved = true
-                user.admin = true
                 user.save!                
             end
 
@@ -48,6 +47,12 @@ class JSONImport
             })
             project.save!
             self.project_map[project_obj['uri']] = project.id
+            permission = UserProjectPermission.new( {
+                user_id: user_id,
+                project_id: project.id,
+                permission: 'admin'
+            })
+            permission.save!
         }
     end
 
@@ -91,12 +96,13 @@ class JSONImport
 
         # now that everything has ids, move docs to the correct place in the tree
         document_bridge.each { |bridge|
-            document = bridge[:doc]
             document_obj = bridge[:obj]            
             parent_type = document_obj['parentType']
-            parent_uri = document_obj['parentURI']
-            parent_id = (parent_type == 'Project') ? self.project_map[parent_uri] : self.document_map[parent_uri]
-            document.move_to( :end, parent_id, parent_type )
+            if parent_type != 'Project'
+                parent_id = self.document_map[document_obj['parentURI']]
+                document = bridge[:doc]
+                document.move_to( :end, parent_id, 'Document' )    
+            end
         }
     end
 
