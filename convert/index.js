@@ -279,56 +279,54 @@ async function createNodes(dataFile) {
     await nodeCollection.insertMany( Object.values(nodes) )
 }
 
-function parseMostThings(nodes) {
-    // JSON export object structure
-    let dmData = {
-        users: [],
-        projects: [],
-        documents: [],
-        images: [],
-        highlights: [],
-        links: []
-    }
+async function parseMostThings() {
 
-    // OA Annotation objects
+    const users = await mongoDB.collection('users')
+    const projects = await mongoDB.collection('projects')
+    const documents = await mongoDB.collection('documents')
+    const images = await mongoDB.collection('images')
+    const highlights = await mongoDB.collection('highlights')
     let annotations = []
 
     // document schema for parsing HTML -> ProseMirror JSON
     const dmSchema = dmProseMirror.createDocumentSchema()
 
-    // iterate through the nodes and parse them into DM2 JSON
-    Object.values(nodes).forEach( (node) => {
+    // iterate through all the nodes and parse them into DM2 JSON
+    let node
+    const nodes = await mongoDB.collection('nodes')
+    let nodeCursor = await nodes.find({})
+    while( node = await nodeCursor.next() ) {
         switch( node[nodeType] ) {
             case userNode:
-                dmData.users.push( parseUser(node) )
+                await users.insertOne( parseUser(node) )
                 break
             case projectNode:
-                dmData.projects.push( parseProject(node) )
+                await projects.insertOne( parseProject(node) )
                 break
             case textDocumentNode:
-                dmData.documents.push( parseTextDocument(dmSchema,node) )
+                await documents.insertOne( parseTextDocument(dmSchema,node) )
                 break
             case imageDocumentNode:
-                dmData.documents.push( parseImageDocument(node) )
+                await documents.insertOne( parseImageDocument(node) )
                 break
             case imageNode:
-                dmData.images.push( parseImage(node) )
+                await images.push( parseImage(node) )
                 break
             case annotationNode:
                 annotations.push( parseAnnotation(node) )
                 break
             case svgSelector:
-                dmData.highlights.push( parseSVGSelector(node) )
+                await highlights.insertOne( parseSVGSelector(node) )
                 break
             case textQuoteSelector:
-                dmData.highlights.push( parseTextQuoteSelector(node) )
+                await highlights.insertOne( parseTextQuoteSelector(node) )
                 break
             default:
                 break
         }
-    })
+    }
 
-    return { annotations, dmData }
+    return annotations
 }
 
 // Traverse the annotations and link up all the references
@@ -441,15 +439,15 @@ function addDocumentsToProjects(dmData, annotations, nodes) {
     logger.info(`Found ${unlinkedHighlights} unlinked highlights.`)
 }
 
-function createGraph(nodes) {
+async function createGraph() {
     try {
         logger.info("Parsing most of the things...")
-        let { annotations, dmData } = parseMostThings(nodes)
-        logger.info("Parsing links...")
-        dmData.links = parseLinks( annotations, nodes )
-        logger.info("Add Documents to Projects...")
-        addDocumentsToProjects( dmData, annotations, nodes )
-        return dmData
+        let annotations = await parseMostThings()
+        // logger.info("Parsing links...")
+        // dmData.links = parseLinks( annotations, nodes )
+        // logger.info("Add Documents to Projects...")
+        // addDocumentsToProjects( dmData, annotations, nodes )
+        // return dmData
     } catch(e) {
         logger.error(e)
     }
@@ -491,9 +489,10 @@ async function runAsync() {
     logger.info("Loading RDF Nodes...")
     await createNodes(dataFile)
 
-    // logger.info("Creating DM2 Graph...")
-    // const dm2Graph = createGraph(nodes)
+    logger.info("Creating DM2 Graph...")
+    await createGraph()
 
+    // TODO serialize graph 
     // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph))
     // fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph))  
     await mongoClient.close()
