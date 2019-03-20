@@ -74,7 +74,7 @@ function loadTTL(ttlFile) {
 
 function parseUser( node ) {
     // chop mailto:nick@performantsoftware.com
-    const email = node[userEmail].replace( /^mailto:/, '' )
+    const email = node[userEmail] ? node[userEmail].replace( /^mailto:/, '' ) : `${node.uri.replace(':','_')}@digitalmappa.org`
     const obj = {
         uri: node.uri,
         name: node[userName],
@@ -417,10 +417,18 @@ function addDocumentsToProjects(dmData, annotations, nodes) {
 }
 
 function createGraph(nodes) {
-    let { annotations, dmData } = parseMostThings(nodes)
-    dmData.links = parseLinks( annotations, nodes )
-    addDocumentsToProjects( dmData, annotations, nodes )
-    return dmData
+    try {
+        logger.info("Parsing most of the things...")
+        let { annotations, dmData } = parseMostThings(nodes)
+        logger.info("Parsing links...")
+        dmData.links = parseLinks( annotations, nodes )
+        logger.info("Add Documents to Projects...")
+        addDocumentsToProjects( dmData, annotations, nodes )
+        return dmData
+    } catch(e) {
+        logger.error(e)
+    }
+    return null    
 }
 
 function parseAnnotationLink( node, nodes ) {
@@ -440,14 +448,19 @@ function parseAnnotationLink( node, nodes ) {
 
 function main() {
     setupLogging();
-    logger.info("Start TTL processing...")
+    logger.info("Starting TTL processing...")
 
-    const dataFile = 'ttl/test-image.ttl'
-    // const dataFile = 'ttl/app.digitalmappa.org.ttl'
+    // const dataFile = 'ttl/test-image.ttl'
+    const dataFile = 'ttl/app.digitalmappa.org.ttl'
+
+    logger.info("Loading RDF Nodes...")
     const nodes = createNodes(dataFile);
+
+    logger.info("Creating DM2 Graph...")
     const dm2Graph = createGraph(nodes);
 
-    fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph));
+    // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph));
+    fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph));
     logger.info("TTL Processing completed.")   
 }
 
