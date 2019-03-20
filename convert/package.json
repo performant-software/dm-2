@@ -6,6 +6,7 @@
   "dependencies": {
     "fabric": "^2.7.0",
     "jsdom": "^14.0.0",
+    "mongodb": "^3.1.13",
     "pg": "^7.7.1",
     "prosemirror-model": "^1.6.3",
     "prosemirror-schema-basic": "^1.0.0",

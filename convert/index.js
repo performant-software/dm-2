@@ -6,50 +6,55 @@ const dmProseMirror = require('./dm-prose-mirror')
 const jsdom = require("jsdom")
 const { JSDOM } = jsdom
 const fabric = require('fabric').fabric
+const MongoClient = require('mongodb').MongoClient
 
+const mongoDatabaseURL = "mongodb://localhost:27017/"
+const mongoDatabaseName = "dm2_convert"
 const logFile = 'log/ttl-test.log'
-var logger
+
+// Global resources
+var logger, mongoDB, mongoClient
 
 // Predicates
-const nodeType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-const w3Label = "http://www.w3.org/2000/01/rdf-schema#label"
-const creator = "http://purl.org/dc/elements/1.1/creator"
-const aggregates = "http://www.openarchives.org/ore/terms/aggregates"
+const nodeType = convertURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+const w3Label = convertURI("http://www.w3.org/2000/01/rdf-schema#label")
+const creator = convertURI("http://purl.org/dc/elements/1.1/creator")
+const aggregates = convertURI("http://www.openarchives.org/ore/terms/aggregates")
 
-const userNode = "http://xmlns.com/foaf/0.1/Agent"
-const userName = "http://xmlns.com/foaf/0.1/name"
-const userEmail = "http://xmlns.com/foaf/0.1/mbox"
+const userNode = convertURI("http://xmlns.com/foaf/0.1/Agent")
+const userName = convertURI("http://xmlns.com/foaf/0.1/name")
+const userEmail = convertURI("http://xmlns.com/foaf/0.1/mbox")
 
-const projectNode = "http://dm.drew.edu/ns/Project"
+const projectNode = convertURI("http://dm.drew.edu/ns/Project")
 const projectName = w3Label
 const projectUserURI = creator
-const projectDescription = "http://purl.org/dc/terms/description"
+const projectDescription = convertURI("http://purl.org/dc/terms/description")
 const projectDocumentList = aggregates
 
-const textDocumentNode = "http://purl.org/dc/dcmitype/Text"
+const textDocumentNode = convertURI("http://purl.org/dc/dcmitype/Text")
 const textDocumentName = w3Label
-const textDocumentContent = "http://www.w3.org/2011/content#chars"
+const textDocumentContent = convertURI("http://www.w3.org/2011/content#chars")
 
-const imageDocumentNode = "http://www.shared-canvas.org/ns/Canvas"
+const imageDocumentNode = convertURI("http://www.shared-canvas.org/ns/Canvas")
 const imageDocumentName = w3Label
-const imageWidth = "http://www.w3.org/2003/12/exif/ns#width"
-const imageHeight = "http://www.w3.org/2003/12/exif/ns#height"
+const imageWidth = convertURI("http://www.w3.org/2003/12/exif/ns#width")
+const imageHeight = convertURI("http://www.w3.org/2003/12/exif/ns#height")
 
-const imageNode = "http://purl.org/dc/dcmitype/Image"
+const imageNode = convertURI("http://purl.org/dc/dcmitype/Image")
 
-const annotationNode = "http://www.w3.org/ns/oa#Annotation"
-const annotationHasBody = "http://www.w3.org/ns/oa#hasBody"
-const annotationHasTarget = "http://www.w3.org/ns/oa#hasTarget"
+const annotationNode = convertURI("http://www.w3.org/ns/oa#Annotation")
+const annotationHasBody = convertURI("http://www.w3.org/ns/oa#hasBody")
+const annotationHasTarget = convertURI("http://www.w3.org/ns/oa#hasTarget")
 
-const specificResource = "http://www.w3.org/ns/oa#SpecificResource"
-const resourceSource = "http://www.w3.org/ns/oa#hasSource"
-const resourceSelector = "http://www.w3.org/ns/oa#hasSelector"
+const specificResource = convertURI("http://www.w3.org/ns/oa#SpecificResource")
+const resourceSource = convertURI("http://www.w3.org/ns/oa#hasSource")
+const resourceSelector = convertURI("http://www.w3.org/ns/oa#hasSelector")
 
-const svgSelector = "http://www.w3.org/ns/oa#SvgSelector"
-const svgContent = "http://www.w3.org/2011/content#chars"
+const svgSelector = convertURI("http://www.w3.org/ns/oa#SvgSelector")
+const svgContent = convertURI("http://www.w3.org/2011/content#chars")
 
-const textQuoteSelector = "http://www.w3.org/ns/oa#TextQuoteSelector"
-const textQuoteExcerpt = "http://www.w3.org/ns/oa#exact"
+const textQuoteSelector = convertURI("http://www.w3.org/ns/oa#TextQuoteSelector")
+const textQuoteExcerpt = convertURI("http://www.w3.org/ns/oa#exact")
 
 const yellow500 = "#ffeb3b"
 
@@ -70,6 +75,11 @@ function loadTTL(ttlFile) {
     const ttlRaw = fs.readFileSync( ttlFile, "utf8");
     const ttlData = rdf.TurtleParser.parse(ttlRaw);
     return ttlData.graph.toArray()
+}
+
+// mongo doesn't like keys with '.' in them.
+function convertURI( uri ) {
+    return uri.replace(/\./g,'_')
 }
 
 function parseUser( node ) {
@@ -224,16 +234,29 @@ function setupLogging() {
     });
 }
 
-function createNodes(dataFile) {
+async function createNodes(dataFile) {
     // Load the test.ttl file and parse it into a JSON object with the following structure:
     const triples = loadTTL(dataFile)
 
     // turn triples into a hash of subject nodes
     const nodes = []
     triples.forEach( (triple) => {
-        const subject = triple.subject.value
-        const predicate = triple.predicate.value
-        const objectValue = triple.object.value
+        const subject = convertURI(triple.subject.value)
+        const predicate = convertURI(triple.predicate.value)
+
+        let objectValue
+        if( triple.object.termType === "NamedNode" ) {
+            // special case for email addresses, which should not be escaped
+            if( triple.object.value.startsWith('mailto:') ) {
+                objectValue = triple.object.value
+            } else {
+                // otherwise this is an RDF Node pointer
+                objectValue = convertURI(triple.object.value)
+            }
+        } else {
+            // if this is a literal node, record its value
+            objectValue = triple.object.value
+        }
 
         if( !nodes[subject] ) nodes[subject] = { uri: subject }
 
@@ -251,7 +274,9 @@ function createNodes(dataFile) {
         }
     })
 
-    return nodes
+    // store the nodes in mongo
+    const nodeCollection = await mongoDB.collection('nodes')
+    await nodeCollection.insertMany( Object.values(nodes) )
 }
 
 function parseMostThings(nodes) {
@@ -446,23 +471,44 @@ function parseAnnotationLink( node, nodes ) {
     return { uri, linkType }
 }
 
+async function dropCollections() {
+    const collections = await mongoDB.collections()
+    collections.forEach( async collection => {
+        await collection.drop()
+    })
+}
+
+async function runAsync() {
+    const dataFile = 'ttl/test-image.ttl'
+    // const dataFile = 'ttl/app.digitalmappa.org.ttl'
+
+    mongoClient = await MongoClient.connect(mongoDatabaseURL)
+    mongoDB = await mongoClient.db(mongoDatabaseName)   
+    
+    // clear object cache
+    await dropCollections()
+
+    logger.info("Loading RDF Nodes...")
+    await createNodes(dataFile)
+
+    // logger.info("Creating DM2 Graph...")
+    // const dm2Graph = createGraph(nodes)
+
+    // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph))
+    // fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph))  
+    await mongoClient.close()
+}
+
 function main() {
     setupLogging();
     logger.info("Starting TTL processing...")
 
-    // const dataFile = 'ttl/test-image.ttl'
-    const dataFile = 'ttl/app.digitalmappa.org.ttl'
-
-    logger.info("Loading RDF Nodes...")
-    const nodes = createNodes(dataFile);
-
-    logger.info("Creating DM2 Graph...")
-    const dm2Graph = createGraph(nodes);
-
-    // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph));
-    fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph));
-    logger.info("TTL Processing completed.")   
+    runAsync().then(() => {
+        logger.info("TTL Processing completed.")   
+    }, (err) => {
+        logger.error(err)   
+    });
 }
 
 ///// RUN THE SCRIPT
-main();
+main()
