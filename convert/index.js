@@ -90,7 +90,6 @@ function parseUser( node ) {
         name: node[userName],
         email
     }
-    node.obj = obj
     return obj
 }
 
@@ -102,7 +101,6 @@ function parseProject( node ) {
         description: node[projectDescription],
         documents: node[projectDocumentList]   // Project table of contents (doesn't include annotations)
     }
-    node.obj = obj
     return obj
 }
 
@@ -125,7 +123,6 @@ function parseTextDocument( dmSchema, node ) {
         dm2Span.setAttribute('data-highlight-uid', selectorURI )
         dm2Span.innerHTML = span.innerHTML
         replacements.push([dm2Span,span])
-        selectorURIs.push(selectorURI)
     }
 
     // do this as a seperate step for the DOM's sake
@@ -137,17 +134,15 @@ function parseTextDocument( dmSchema, node ) {
     // var debugstr = htmlDocument.body.parentElement.innerHTML
     const documentNode = DOMParser.fromSchema(dmSchema).parse(htmlDocument.body.parentElement)
     const searchText = documentNode.textBetween(0,documentNode.textContent.length, ' ');
-    const content = {type: 'doc', content: documentNode.content}
+    const content = JSON.stringify( {type: 'doc', content: documentNode.content} )
 
     const obj = {
         uri: node.uri,
         name: node[textDocumentName],
         documentKind: 'text',
         content,
-        searchText,
-        selectorURIs
+        searchText
     }
-    node.obj = obj
     return obj
 }
 
@@ -161,7 +156,6 @@ function parseImageDocument( node ) {
         height: node[imageHeight],
         images: []
     }
-    node.obj = obj
     return obj
 }
 
@@ -173,7 +167,6 @@ function parseImage( node ) {
         uri: node.uri,
         imageFilename
     }
-    node.obj = obj
     return obj
 }
 
@@ -183,11 +176,10 @@ function parseAnnotation( node ) {
         body: node[annotationHasBody],
         target: node[annotationHasTarget]
     }
-    node.obj = obj
     return obj
 }
 
-function parseSVGSelector( node ) {
+async function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
         excerpt: 'Highlight',
@@ -195,15 +187,18 @@ function parseSVGSelector( node ) {
     }
     // convert SVG object to FabricJS JSON
     const svg = `<svg>${node[svgContent]}</svg>`
-    fabric.loadSVGFromString(svg, (fabObj) => { 
-        let shape = fabObj[0].toJSON()
-        shape._highlightUid = node.uri
-        shape.fill = "transparent"
-        shape.stroke = yellow500
-        obj.target = JSON.stringify(shape)
-    })
 
-    node.obj = obj
+    let shape = await new Promise(resolve => {
+        fabric.loadSVGFromString(svg, (fabObj) => { 
+            let shape = fabObj[0].toJSON()
+            shape._highlightUid = node.uri
+            shape.fill = "transparent"
+            shape.stroke = yellow500
+            resolve(shape)
+        })    
+    });
+
+    obj.target = JSON.stringify(shape)
     return obj  
 }
 
@@ -214,7 +209,6 @@ function parseTextQuoteSelector( node ) {
         excerpt: node[textQuoteExcerpt],
         color: yellow500
     }
-    node.obj = obj
     return obj  
 }
 
@@ -310,13 +304,13 @@ async function parseMostThings() {
                 await documents.insertOne( parseImageDocument(node) )
                 break
             case imageNode:
-                await images.push( parseImage(node) )
+                await images.insertOne( parseImage(node) )
                 break
             case annotationNode:
                 annotations.push( parseAnnotation(node) )
                 break
             case svgSelector:
-                await highlights.insertOne( parseSVGSelector(node) )
+                await highlights.insertOne( await parseSVGSelector(node) )
                 break
             case textQuoteSelector:
                 await highlights.insertOne( parseTextQuoteSelector(node) )
@@ -330,31 +324,38 @@ async function parseMostThings() {
 }
 
 // Traverse the annotations and link up all the references
-function parseLinks(annotations,nodes) {
-    let links = []
-    annotations.forEach( (annotation) => {
-        const bodyNode = nodes[annotation.body]
-        const targetNode = nodes[annotation.target]
+async function parseLinks(annotations) {
+    const nodes = await mongoDB.collection('nodes')
+    const links = await mongoDB.collection('links')
+    const images = await mongoDB.collection('images')
+    const documents = await mongoDB.collection('documents')
+
+    for( let i=0; i < annotations.length; i++ ) {
+        let annotation = annotations[i]
+        const bodyNode = await nodes.findOne({ uri: annotation.body })
+        const targetNode = await nodes.findOne({ uri: annotation.target })
+
         // Is this a canvas/image association or a link?
         if( bodyNode[nodeType] === imageNode ) {
             // associate the image with the imageDocument
-            const image = bodyNode.obj
-            const imageDocument = targetNode.obj
-            imageDocument.images.push(image.uri)
+            const bodyQ = { uri: bodyNode.uri }
+            const targetQ = { uri: targetNode.uri }
+            const image = await images.findOne(bodyQ)
+            const imageDocument = await documents.findOne(targetQ)
+            const imageSet = [ ...imageDocument.images, image.uri ]
+            await documents.updateOne( targetQ, { $set: { images: imageSet }} )
         } else {
             // these two together make a link
-            const linkA = parseAnnotationLink( bodyNode, nodes ) 
-            const linkB = parseAnnotationLink( targetNode, nodes )
-            links.push( { 
+            const linkA = await parseAnnotationLink( bodyNode, documents, nodes ) 
+            const linkB = await parseAnnotationLink( targetNode, documents, nodes )
+            await links.insertOne( { 
                 linkUriA: linkA.uri, 
                 linkTypeA: linkA.linkType, 
                 linkUriB: linkB.uri, 
                 linkTypeB: linkB.linkType
             })
         }
-    })
-
-    return links
+    }
 }
 
 // Go through all the projects and link up the documents 
@@ -440,26 +441,22 @@ function addDocumentsToProjects(dmData, annotations, nodes) {
 }
 
 async function createGraph() {
-    try {
-        logger.info("Parsing most of the things...")
-        let annotations = await parseMostThings()
-        // logger.info("Parsing links...")
-        // dmData.links = parseLinks( annotations, nodes )
-        // logger.info("Add Documents to Projects...")
-        // addDocumentsToProjects( dmData, annotations, nodes )
-        // return dmData
-    } catch(e) {
-        logger.error(e)
-    }
-    return null    
+    logger.info("Parsing most of the things...")
+    let annotations = await parseMostThings()
+    logger.info("Parsing links...")
+    await parseLinks( annotations )
+    // logger.info("Add Documents to Projects...")
+    // addDocumentsToProjects( dmData, annotations, nodes )
 }
 
-function parseAnnotationLink( node, nodes ) {
+async function parseAnnotationLink( node, documents, nodes ) {
     let uri, linkType
     if( node[nodeType] === specificResource ) {
-        const source = nodes[ node[ resourceSource ] ]
-        const selector = nodes[ node[ resourceSelector ] ]    
-        selector.obj.documentURI = source.uri
+        const resourceSourceQ = { uri: node[resourceSource] }
+        const resourceSelectorQ = { uri: node[resourceSelector] }
+        const source = await nodes.findOne(resourceSourceQ)
+        const selector = await nodes.findOne(resourceSelectorQ)    
+        await documents.updateOne( resourceSelectorQ, { $set: { documentURI: source.uri }})
         uri = selector.uri
         linkType = 'Highlight'
     } else {
@@ -505,7 +502,7 @@ function main() {
     runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
-        logger.error(err)   
+        logger.error(`${err}: ${err.stack}`)   
     });
 }
 
