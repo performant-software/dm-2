@@ -324,52 +324,83 @@ async function parseMostThings() {
 }
 
 // Traverse the annotations and link up all the references
-async function parseLinks(annotations) {
+async function parseLinks(annotationBuffer) {
     const nodes = await mongoDB.collection('nodes')
     const links = await mongoDB.collection('links')
     const images = await mongoDB.collection('images')
     const documents = await mongoDB.collection('documents')
+    const highlights = await mongoDB.collection('highlights')
+    const annotations = await mongoDB.collection('annotations')
+    const linkBuffer = []
 
-    for( let i=0; i < annotations.length; i++ ) {
-        let annotation = annotations[i]
+    // keep a list of annotations for deletion
+    const doomedAnnotations = []
+
+    for( let i=0; i < annotationBuffer.length; i++ ) {
+        let annotation = annotationBuffer[i]
         const bodyNode = await nodes.findOne({ uri: annotation.body })
         const targetNode = await nodes.findOne({ uri: annotation.target })
 
-        // Is this a canvas/image association or a link?
-        if( bodyNode[nodeType] === imageNode ) {
-            // associate the image with the imageDocument
-            const bodyQ = { uri: bodyNode.uri }
-            const targetQ = { uri: targetNode.uri }
-            const image = await images.findOne(bodyQ)
-            const imageDocument = await documents.findOne(targetQ)
-            const imageSet = [ ...imageDocument.images, image.uri ]
-            await documents.updateOne( targetQ, { $set: { images: imageSet }} )
+        if( bodyNode && targetNode ) {
+            // Is this a canvas/image association or a link?
+            if( bodyNode[nodeType] === imageNode ) {
+                // associate the image with the imageDocument
+                const bodyQ = { uri: bodyNode.uri }
+                const targetQ = { uri: targetNode.uri }
+                const image = await images.findOne(bodyQ)
+                const imageDocument = await documents.findOne(targetQ)
+                if( image && imageDocument ) {
+                    const imageSet = [ ...imageDocument.images, image.uri ]
+                    await documents.updateOne( targetQ, { $set: { images: imageSet }} )
+                } 
+                // once we have this information, no longer need to keep this annotation
+                doomedAnnotations.push(annotation)
+            } else {
+                // these two together make a link
+                const linkA = await parseAnnotationLink( bodyNode, highlights, nodes ) 
+                const linkB = await parseAnnotationLink( targetNode, highlights, nodes )
+                if( linkA && linkB ) {
+                    linkBuffer.push( {
+                        linkUriA: linkA.uri, 
+                        linkTypeA: linkA.linkType, 
+                        linkUriB: linkB.uri, 
+                        linkTypeB: linkB.linkType
+                    })
+                } else {
+                    doomedAnnotations.push(annotation)
+                }
+            }
         } else {
-            // these two together make a link
-            const linkA = await parseAnnotationLink( bodyNode, documents, nodes ) 
-            const linkB = await parseAnnotationLink( targetNode, documents, nodes )
-            await links.insertOne( { 
-                linkUriA: linkA.uri, 
-                linkTypeA: linkA.linkType, 
-                linkUriB: linkB.uri, 
-                linkTypeB: linkB.linkType
-            })
+            doomedAnnotations.push(annotation)
         }
     }
+
+    // write links
+    await links.insertMany( linkBuffer )    
+
+    // scrub malformed annotations and image document annotations
+    annotationBuffer = annotationBuffer.filter( annotation => !doomedAnnotations.includes(annotation) )
+    await annotations.insertMany( annotationBuffer )
+}
+
+async function createNodeIndex() {
+    const nodes = await mongoDB.collection('nodes')
+    const nodeCursor = await nodes.find({})
+    const nodeBuffer = await nodeCursor.toArray()
+    const nodeIndex = {} 
+    nodeBuffer.forEach( node => nodeIndex[node.uri] = node )
+    return nodeIndex
 }
 
 // Go through all the projects and link up the documents 
-async function addDocumentsToProjects(annotations) {
-    const nodes = await mongoDB.collection('nodes')
+async function addDocumentsToProjects() {
     const projects = await mongoDB.collection('projects')
     const documents = await mongoDB.collection('documents')
+    const annotations = await mongoDB.collection('annotations')
+    const nodeIndex = await createNodeIndex()
 
     const getDocumentURI = function( node ) {
-        if( node[nodeType] !== imageNode ) {
-            return node[nodeType] === specificResource ? node[ resourceSource ] : node.uri
-        } else {
-            return null
-        }
+        return node[nodeType] === specificResource ? node[ resourceSource ] : node.uri
     }
 
     let projectCursor = await projects.find({})
@@ -378,19 +409,21 @@ async function addDocumentsToProjects(annotations) {
         let projectDocs = []
 
         // first, mark all of the documents from the table of contents
-        for( let i=0; i< project.documents.length; i++ ) {
-            const documentURI = project.documents[i]
-            await documents.updateOne( 
-                { uri: documentURI },
-                {
-                    $set: {
-                        projectURI: project.uri,
-                        parentURI: project.uri,
-                        parentType: 'Project'
+        if( project.documents ) {
+            for( let i=0; i< project.documents.length; i++ ) {
+                const documentURI = project.documents[i]
+                await documents.updateOne( 
+                    { uri: documentURI },
+                    {
+                        $set: {
+                            projectURI: project.uri,
+                            parentURI: project.uri,
+                            parentType: 'Project'
+                        }
                     }
-                }
-            )
-            projectDocs.push(documentURI)
+                )
+                projectDocs.push(documentURI)
+            }    
         }
 
         // keep going as long as we are finding new documents 
@@ -398,10 +431,11 @@ async function addDocumentsToProjects(annotations) {
         while(prevCount < projectDocs.length) {
             logger.info(`Found ${projectDocs.length - prevCount} new documents...`)
             prevCount = projectDocs.length
-            for( let i=0; i< annotations.length; i++ ) {
-                const annotation = annotations[i]
-                const bodyDocURI = getDocumentURI( await nodes.findOne( { uri: annotation.body }) )
-                const targetDocURI = getDocumentURI( await nodes.findOne( { uri: annotation.target }) )
+
+            let annotationCursor = await annotations.find({})
+            while( annotation = await annotationCursor.next() ) {
+                const bodyDocURI = getDocumentURI( nodeIndex[annotation.body] )
+                const targetDocURI = getDocumentURI( nodeIndex[annotation.target] )
                 if( bodyDocURI && targetDocURI ) {
                     // if two documents are linked by an annotation, they are in the same project.
                     if( projectDocs.includes( bodyDocURI ) && !projectDocs.includes( targetDocURI ) ) {
@@ -411,9 +445,9 @@ async function addDocumentsToProjects(annotations) {
                         await documents.updateOne( { uri: bodyDocURI }, { $set: { projectURI: project.uri }} )
                         projectDocs.push(bodyDocURI)            
                     }   
-                    // if target doesn't have a parent, assign body  
+                    // if target doesn't have a parent, assign target  
                     const bodyDoc = await documents.findOne({uri: bodyDocURI})
-                    if( !bodyDoc.parentURI ) {
+                    if( bodyDoc && !bodyDoc.parentURI ) {
                         await documents.updateOne( 
                             { uri: bodyDocURI }, 
                             { 
@@ -430,8 +464,8 @@ async function addDocumentsToProjects(annotations) {
         logger.info(`Done scanning project ${project.uri}`)   
     }
 
-    // filter out documents that have no project association
-    const docResult = await documents.deleteMany( { projectURI: null } )
+    // filter out documents that have no project association or no parent
+    const docResult = await documents.deleteMany( { $or: [ { projectURI: null }, { parentURI: null }] } )
     logger.info(`Found ${docResult.deletedCount} unlinked documents.`)
 
     // filter out highlights that have no document association
@@ -441,24 +475,28 @@ async function addDocumentsToProjects(annotations) {
 }
 
 async function createGraph() {
-    logger.info("Parsing most of the things...")
-    let annotations = await parseMostThings()
-    logger.info("Parsing links...")
-    await parseLinks( annotations )
+    // logger.info("Parsing most of the things...")
+    // let annotationBuffer = await parseMostThings()
+    // logger.info("Parsing links...")
+    // await parseLinks( annotationBuffer )
     logger.info("Add Documents to Projects...")
-    await addDocumentsToProjects( annotations )
+    await addDocumentsToProjects()
 }
 
-async function parseAnnotationLink( node, documents, nodes ) {
+async function parseAnnotationLink( node, highlights, nodes ) {
     let uri, linkType
     if( node[nodeType] === specificResource ) {
         const resourceSourceQ = { uri: node[resourceSource] }
         const resourceSelectorQ = { uri: node[resourceSelector] }
         const source = await nodes.findOne(resourceSourceQ)
-        const selector = await nodes.findOne(resourceSelectorQ)    
-        await documents.updateOne( resourceSelectorQ, { $set: { documentURI: source.uri }})
-        uri = selector.uri
-        linkType = 'Highlight'
+        const selector = await nodes.findOne(resourceSelectorQ)  
+        if( source && selector ) {
+            await highlights.updateOne( resourceSelectorQ, { $set: { documentURI: source.uri }})
+            uri = selector.uri
+            linkType = 'Highlight'    
+        } else {
+            return null
+        }
     } else {
         uri = node.uri
         linkType = 'Document'
@@ -481,13 +519,13 @@ async function runAsync() {
     mongoDB = await mongoClient.db(mongoDatabaseName)   
     
     // clear object cache
-    await dropCollections()
+    // await dropCollections()
 
-    logger.info("Loading RDF Nodes...")
-    await createNodes(dataFile)
+    // logger.info("Loading RDF Nodes...")
+    // await createNodes(dataFile)
 
     logger.info("Creating DM2 Graph...")
-    await createGraph()
+    // await createGraph()
 
     // TODO serialize graph 
     // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph))
