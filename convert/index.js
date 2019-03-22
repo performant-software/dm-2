@@ -359,8 +359,10 @@ async function parseLinks(annotations) {
 }
 
 // Go through all the projects and link up the documents 
-function addDocumentsToProjects(dmData, annotations, nodes) {
-    const { projects } = dmData
+async function addDocumentsToProjects(annotations) {
+    const nodes = await mongoDB.collection('nodes')
+    const projects = await mongoDB.collection('projects')
+    const documents = await mongoDB.collection('documents')
 
     const getDocumentURI = function( node ) {
         if( node[nodeType] !== imageNode ) {
@@ -370,74 +372,72 @@ function addDocumentsToProjects(dmData, annotations, nodes) {
         }
     }
 
-    projects.forEach( (project) => {
+    let projectCursor = await projects.find({})
+    while( project = await projectCursor.next() ) {
         logger.info(`Scanning annotations for documents in project ${project.uri}`)
         let projectDocs = []
 
         // first, mark all of the documents from the table of contents
-        project.documents.forEach( documentURI => {
-            let document = nodes[ documentURI ].obj
-            document.projectURI = project.uri
-            document.parentURI = project.uri
-            document.parentType = 'Project'
+        for( let i=0; i< project.documents.length; i++ ) {
+            const documentURI = project.documents[i]
+            await documents.updateOne( 
+                { uri: documentURI },
+                {
+                    $set: {
+                        projectURI: project.uri,
+                        parentURI: project.uri,
+                        parentType: 'Project'
+                    }
+                }
+            )
             projectDocs.push(documentURI)
-        })    
+        }
 
         // keep going as long as we are finding new documents 
         let prevCount = 0
         while(prevCount < projectDocs.length) {
             logger.info(`Found ${projectDocs.length - prevCount} new documents...`)
             prevCount = projectDocs.length
-            annotations.forEach( annotation => {
-                const bodyDocURI = getDocumentURI( nodes[annotation.body] )
-                const targetDocURI = getDocumentURI( nodes[annotation.target] )
+            for( let i=0; i< annotations.length; i++ ) {
+                const annotation = annotations[i]
+                const bodyDocURI = getDocumentURI( await nodes.findOne( { uri: annotation.body }) )
+                const targetDocURI = getDocumentURI( await nodes.findOne( { uri: annotation.target }) )
                 if( bodyDocURI && targetDocURI ) {
-                    let bodyDoc = nodes[bodyDocURI].obj
-                    let targetDoc = nodes[targetDocURI].obj
                     // if two documents are linked by an annotation, they are in the same project.
                     if( projectDocs.includes( bodyDocURI ) && !projectDocs.includes( targetDocURI ) ) {
-                        targetDoc.projectURI = project.uri
+                        await documents.updateOne( { uri: targetDocURI }, { $set: { projectURI: project.uri }} )
                         projectDocs.push(targetDocURI)            
                     } else if( projectDocs.includes( targetDocURI ) && !projectDocs.includes( bodyDocURI ) ) {
-                        bodyDoc.projectURI = project.uri
+                        await documents.updateOne( { uri: bodyDocURI }, { $set: { projectURI: project.uri }} )
                         projectDocs.push(bodyDocURI)            
                     }   
                     // if target doesn't have a parent, assign body  
+                    const bodyDoc = await documents.findOne({uri: bodyDocURI})
                     if( !bodyDoc.parentURI ) {
-                        bodyDoc.parentURI = targetDocURI
-                        bodyDoc.parentType = 'Document'
+                        await documents.updateOne( 
+                            { uri: bodyDocURI }, 
+                            { 
+                                $set: { 
+                                    parentURI: targetDocURI,
+                                    parentType: 'Document'
+                                }
+                            } 
+                        )
                     }
                 }
-            })
+            }
         } 
         logger.info(`Done scanning project ${project.uri}`)   
-    })
+    }
 
     // filter out documents that have no project association
-    let unlinkedDocuments = 0
-    dmData.documents = dmData.documents.filter( document => {
-        if( !document.projectURI ) {
-            logger.info(`Document not included: ${document.uri}`)
-            unlinkedDocuments++
-            return false
-        } else {
-            return true
-        }
-    })
-    logger.info(`Found ${unlinkedDocuments} unlinked documents.`)
+    const docResult = await documents.deleteMany( { projectURI: null } )
+    logger.info(`Found ${docResult.deletedCount} unlinked documents.`)
 
     // filter out highlights that have no document association
-    let unlinkedHighlights = 0
-    dmData.highlights = dmData.highlights.filter( highlight => {
-        if( !highlight.documentURI ) {
-            logger.info(`Highlight not included: ${highlight.uri}`)
-            unlinkedHighlights++
-            return false
-        } else {
-            return true
-        }
-    })
-    logger.info(`Found ${unlinkedHighlights} unlinked highlights.`)
+    const highlights = await mongoDB.collection('highlights')
+    const highlightResult = await highlights.deleteMany( { documentURI: null } )
+    logger.info(`Found ${highlightResult.deletedCount} unlinked highlights.`)
 }
 
 async function createGraph() {
@@ -445,8 +445,8 @@ async function createGraph() {
     let annotations = await parseMostThings()
     logger.info("Parsing links...")
     await parseLinks( annotations )
-    // logger.info("Add Documents to Projects...")
-    // addDocumentsToProjects( dmData, annotations, nodes )
+    logger.info("Add Documents to Projects...")
+    await addDocumentsToProjects( annotations )
 }
 
 async function parseAnnotationLink( node, documents, nodes ) {
@@ -474,8 +474,8 @@ async function dropCollections() {
 }
 
 async function runAsync() {
-    const dataFile = 'ttl/test-image.ttl'
-    // const dataFile = 'ttl/app.digitalmappa.org.ttl'
+    // const dataFile = 'ttl/test-image.ttl'
+    const dataFile = 'ttl/app.digitalmappa.org.ttl'
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
