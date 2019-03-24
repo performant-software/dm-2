@@ -511,6 +511,27 @@ async function dropCollections() {
     })
 }
 
+
+async function serializeGraph() {
+    async function collectionToArray(collectionName) {
+        const coll = await mongoDB.collection(collectionName)
+        const cursor = await coll.find({})
+        return await cursor.toArray()    
+    }
+
+    const dm2Graph = {
+        users: await collectionToArray('users'),
+        documents: await collectionToArray('documents'),
+        images: await collectionToArray('images'),
+        projects: await collectionToArray('projects'),
+        highlights: await collectionToArray('highlights'),
+        links: await collectionToArray('links')
+    }
+
+    // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph))
+    fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph))  
+}
+
 async function runAsync() {
     // const dataFile = 'ttl/test-image.ttl'
     const dataFile = 'ttl/app.digitalmappa.org.ttl'
@@ -527,9 +548,7 @@ async function runAsync() {
     logger.info("Creating DM2 Graph...")
     // await createGraph()
 
-    // TODO serialize graph 
-    // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph))
-    // fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph))  
+    await serializeGraph()
     await mongoClient.close()
 }
 
@@ -540,7 +559,8 @@ function main() {
     runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
-        logger.error(`${err}: ${err.stack}`)   
+        logger.error(`${err}: ${err.stack}`)  
+        mongoClient.close().then() 
     });
 }
 
