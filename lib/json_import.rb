@@ -8,12 +8,12 @@ class JSONImport
         self.unguessable_password = 'pass12345'
     end
 
-	def load(filepath)
+	def load(filepath,image_dir)
 		json_data = self.read_json_file(filepath)
         self.import_users json_data['users']
         self.import_projects json_data['projects']
         self.import_images json_data['images']
-        self.import_documents json_data['documents']
+        self.import_documents( json_data['documents'], image_dir )
         self.import_highlights json_data['highlights']
         self.import_links json_data['links']
     end
@@ -56,7 +56,7 @@ class JSONImport
         }
     end
 
-    def import_documents(document_data)
+    def import_documents(document_data, images_path)
         self.document_map = {}
         document_bridge = []
         document_data.each { |document_obj|
@@ -79,7 +79,7 @@ class JSONImport
             if document_kind == 'canvas'
                 document_obj['images'].each { |image_uri|
                     image_filename = self.image_files[image_uri]
-                    image_path = "ttl/images/#{image_filename}"
+                    image_path = "#{images_path}/#{image_filename}"
                     document.images.attach(io: File.open(image_path), filename: image_filename)
                     image_content = {
                         tileSources: [ {

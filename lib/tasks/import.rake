@@ -9,4 +9,9 @@ namespace :import do
       json_import = JSONImport.new
       json_import.load('ttl/test.json')
    end
+
+   task :mappa => :environment do
+      json_import = JSONImport.new
+      json_import.load('ttl/test-mappa.json', 'ttl/app-images')
+   end
 end
