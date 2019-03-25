@@ -66,7 +66,7 @@ class JSONImport
             # temporarily have all docs in root project folder when created
             document = Document.new({
                 title: document_obj['name'],
-                content: document_obj['content'],
+                content: document_obj['content'].blank? ? '' : JSON.parse(document_obj['content']),
                 search_text: document_obj['searchText'],
                 document_kind: document_kind,
                 parent_type: 'Project',
@@ -117,10 +117,11 @@ class JSONImport
         self.highlight_map = {}
         highlight_data.each { |highlight_obj|
             document_id = self.document_map[highlight_obj['documentURI']]
+            target = highlight_obj['target']
             highlight = Highlight.new({
                 excerpt: highlight_obj['excerpt'],
                 color: highlight_obj['color'],
-                target: highlight_obj['target'],
+                target: target, 
                 uid: highlight_obj['uri'],
                 document_id: document_id
             })

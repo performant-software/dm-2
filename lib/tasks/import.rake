@@ -7,7 +7,7 @@ namespace :import do
 
    task :test => :environment do
       json_import = JSONImport.new
-      json_import.load('ttl/test.json')
+      json_import.load('ttl/test.json', 'ttl/images')
    end
 
    task :mappa => :environment do

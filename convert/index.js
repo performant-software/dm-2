@@ -9,7 +9,6 @@ const fabric = require('fabric').fabric
 const MongoClient = require('mongodb').MongoClient
 
 const mongoDatabaseURL = "mongodb://localhost:27017/"
-const mongoDatabaseName = "dm2_convert"
 const logFile = 'log/ttl-test.log'
 
 // Global resources
@@ -160,8 +159,8 @@ function parseImageDocument( node ) {
 }
 
 function parseImage( node ) {
-    // Example: <image:40615860_10217291030455677_4752239145311535104_n.jpg>
-    const imageFilename = node.uri.replace( /^image:/, '' )
+    // Example: <image:40615860_10217291030455677_4752239145311535104_n_jpg>
+    const imageFilename = node.uri.replace( /^image:/, '' ).replace( /_jpg$/, '.jpg' )
 
     const obj = {
         uri: node.uri,
@@ -475,10 +474,10 @@ async function addDocumentsToProjects() {
 }
 
 async function createGraph() {
-    // logger.info("Parsing most of the things...")
-    // let annotationBuffer = await parseMostThings()
-    // logger.info("Parsing links...")
-    // await parseLinks( annotationBuffer )
+    logger.info("Parsing most of the things...")
+    let annotationBuffer = await parseMostThings()
+    logger.info("Parsing links...")
+    await parseLinks( annotationBuffer )
     logger.info("Add Documents to Projects...")
     await addDocumentsToProjects()
 }
@@ -512,7 +511,7 @@ async function dropCollections() {
 }
 
 
-async function serializeGraph() {
+async function serializeGraph(outputJSONFile) {
     async function collectionToArray(collectionName) {
         const coll = await mongoDB.collection(collectionName)
         const cursor = await coll.find({})
@@ -528,27 +527,34 @@ async function serializeGraph() {
         links: await collectionToArray('links')
     }
 
-    // fs.writeFileSync('ttl/test.json', JSON.stringify(dm2Graph))
-    fs.writeFileSync('ttl/test-mappa.json', JSON.stringify(dm2Graph))  
+    fs.writeFileSync(outputJSONFile, JSON.stringify(dm2Graph))  
 }
 
 async function runAsync() {
-    // const dataFile = 'ttl/test-image.ttl'
-    const dataFile = 'ttl/app.digitalmappa.org.ttl'
+
+    // process test TTL
+    const inputTTLFile = 'ttl/test-image.ttl'
+    const outputJSONFile = 'ttl/test.json'
+    const mongoDatabaseName = "dm2_convert_test"
+
+    // process production TTL
+    // const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
+    // const outputJSONFile = 'ttl/test-mappa.json'
+    // const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
     
     // clear object cache
-    // await dropCollections()
+    await dropCollections()
 
-    // logger.info("Loading RDF Nodes...")
-    // await createNodes(dataFile)
+    logger.info("Loading RDF Nodes...")
+    await createNodes(inputTTLFile)
 
     logger.info("Creating DM2 Graph...")
-    // await createGraph()
+    await createGraph()
 
-    await serializeGraph()
+    await serializeGraph(outputJSONFile)
     await mongoClient.close()
 }
 
