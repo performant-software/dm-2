@@ -159,8 +159,10 @@ function parseImageDocument( node ) {
 }
 
 function parseImage( node ) {
-    // Example: <image:40615860_10217291030455677_4752239145311535104_n_jpg>
-    const imageFilename = node.uri.replace( /^image:/, '' ).replace( /_jpg$/, '.jpg' )
+    // Examples: image:40615860_10217291030455677_4752239145311535104_n_jpg
+    // image:Screen%20Shot%202017-07-29%20at%203_18_51%20PM_png
+    const imageFilename = node.uri.replace( /^image:/, '' ).replace( /_(png|PNG)$/, '.png' ).replace( /_(jpg|JPG)$/, '.jpg' ).replace( /_(jpeg|JPEG)$/, '.jpg' ).replace(/%20/g, ' ')
+    // TODO get thumbnail images
 
     const obj = {
         uri: node.uri,
@@ -530,17 +532,26 @@ async function serializeGraph(outputJSONFile) {
     fs.writeFileSync(outputJSONFile, JSON.stringify(dm2Graph))  
 }
 
+async function runExport() {
+    const outputJSONFile = 'ttl/test.json'
+    const mongoDatabaseName = "dm2_convert_test"
+    mongoClient = await MongoClient.connect(mongoDatabaseURL)
+    mongoDB = await mongoClient.db(mongoDatabaseName)   
+    await serializeGraph(outputJSONFile)
+    await mongoClient.close()
+}
+
 async function runAsync() {
 
     // process test TTL
-    const inputTTLFile = 'ttl/test-image.ttl'
-    const outputJSONFile = 'ttl/test.json'
-    const mongoDatabaseName = "dm2_convert_test"
+    // const inputTTLFile = 'ttl/test-image.ttl'
+    // const outputJSONFile = 'ttl/test.json'
+    // const mongoDatabaseName = "dm2_convert_test"
 
     // process production TTL
-    // const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
-    // const outputJSONFile = 'ttl/test-mappa.json'
-    // const mongoDatabaseName = "dm2_convert"
+    const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
+    const outputJSONFile = 'ttl/test-mappa.json'
+    const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
@@ -562,6 +573,7 @@ function main() {
     setupLogging();
     logger.info("Starting TTL processing...")
 
+    // runExport().then( () => {
     runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {

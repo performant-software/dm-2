@@ -23,7 +23,7 @@ default: &default
 
 development:
   <<: *default
-  database: dm2_staging
+  database: dm2_staging_test2
 
   # The specified database role being used to connect to postgres.
   # To create additional roles in postgres see `$ createuser --help`.
