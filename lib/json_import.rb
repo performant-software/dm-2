@@ -9,7 +9,7 @@ class JSONImport
     end
 
 	def load(filepath,image_dir)
-		json_data = self.read_json_file(filepath)
+        json_data = self.read_json_file(filepath)
         self.import_users json_data['users']
         self.import_projects json_data['projects']
         self.import_images json_data['images']
@@ -60,48 +60,63 @@ class JSONImport
         self.document_map = {}
         document_bridge = []
         document_data.each { |document_obj|
-            project_id = self.project_map[document_obj['projectURI']]
-            document_kind = document_obj['documentKind']
+            begin
+                project_id = self.project_map[document_obj['projectURI']]
+                document_kind = document_obj['documentKind']
 
-            # temporarily have all docs in root project folder when created
-            document = Document.new({
-                title: document_obj['name'],
-                content: document_obj['content'].blank? ? '' : JSON.parse(document_obj['content']),
-                search_text: document_obj['searchText'],
-                document_kind: document_kind,
-                parent_type: 'Project',
-                parent_id: project_id,
-                project_id: project_id
-            })
-            document.save!        
-            document_map[document_obj['uri']] = document.id
+                # temporarily have all docs in root project folder when created
+                document = Document.new({
+                    title: document_obj['name'],
+                    content: document_obj['content'].blank? ? '' : JSON.parse(document_obj['content']),
+                    search_text: document_obj['searchText'],
+                    document_kind: document_kind,
+                    project_id: project_id
+                })
+                # import mode bypasses placing doc in tree for efficiency
+                document.import_mode = true  
+                document.save!        
+                document_map[document_obj['uri']] = document.id
 
-            if document_kind == 'canvas'
-                document_obj['images'].each { |image_uri|
-                    image_filename = self.image_files[image_uri]
-                    image_path = "#{images_path}/#{image_filename}"
-                    document.images.attach(io: File.open(image_path), filename: image_filename)
-                    image_content = {
-                        tileSources: [ {
-                            url: url_for(document.images.first),
-                            type: "image"
-                        }]
+                if document_kind == 'canvas'
+                    document_obj['images'].each { |image_uri|
+                        image_filename = self.image_files[image_uri]
+                        image_path = "#{images_path}/#{image_filename}"
+                        # begin
+                            document.images.attach(io: File.open(image_path), filename: image_filename)
+                            image_content = {
+                                tileSources: [ {
+                                    url: url_for(document.images.first),
+                                    type: "image"
+                                }]
+                            }
+                            document.content = image_content
+                            document.save!
+                        # rescue
+                            #logger.error "Unable to open image file: #{image_path}"
+                        # end
                     }
-                    document.content = image_content
-                    document.save!
-                }
+                end
+                document_bridge.push( { doc: document, obj: document_obj })
+            rescue
+                #logger.error "Unable to open image file: #{image_path}"
+                document
             end
-            document_bridge.push( { doc: document, obj: document_obj })
         }
 
         # now that everything has ids, move docs to the correct place in the tree
         document_bridge.each { |bridge|
+            document = bridge[:doc]
             document_obj = bridge[:obj]            
-            parent_type = document_obj['parentType']
-            if parent_type != 'Project'
-                parent_id = self.document_map[document_obj['parentURI']]
-                document = bridge[:doc]
-                document.move_to( :end, parent_id, 'Document' )    
+            if document_obj['parentType'] != 'Project'
+                document.parent_type = 'Document'
+                document.parent_id = self.document_map[document_obj['parentURI']]
+                document.save!
+                document.move_to( :end )    
+            else
+                document.parent_type = 'Project'
+                document.parent_id = self.project_map[document_obj['parentURI']]
+                document.save!
+                document.move_to( :end )
             end
         }
     end
