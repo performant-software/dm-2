@@ -93,7 +93,7 @@ class JSONImport
                     }
                 end
                 document_bridge.push( { doc: document, obj: document_obj })
-            rescue e
+            rescue Exception => e 
                 # log error and continue
                 Rails.logger.info( "Unable to load document with URI: #{document_obj['uri']} Reason: #{e}")
             end
