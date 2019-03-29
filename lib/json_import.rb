@@ -81,25 +81,21 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        # begin
-                            document.images.attach(io: File.open(image_path), filename: image_filename)
-                            image_content = {
-                                tileSources: [ {
-                                    url: url_for(document.images.first),
-                                    type: "image"
-                                }]
-                            }
-                            document.content = image_content
-                            document.save!
-                        # rescue
-                            #logger.error "Unable to open image file: #{image_path}"
-                        # end
+                        document.images.attach(io: File.open(image_path), filename: image_filename)
+                        image_content = {
+                            tileSources: [ {
+                                url: url_for(document.images.first),
+                                type: "image"
+                            }]
+                        }
+                        document.content = image_content
+                        document.save!
                     }
                 end
                 document_bridge.push( { doc: document, obj: document_obj })
-            rescue
-                #logger.error "Unable to open image file: #{image_path}"
-                document
+            rescue e
+                # log error and continue
+                Rails.logger.info( "Unable to load document with URI: #{document_obj['uri']} Reason: #{e}")
             end
         }
 
@@ -110,6 +106,11 @@ class JSONImport
             if document_obj['parentType'] != 'Project'
                 document.parent_type = 'Document'
                 document.parent_id = self.document_map[document_obj['parentURI']]
+                if document.parent_id.nil?
+                    Rails.logger.info("Unable to find parent doc: #{document_obj['parentURI']} for document #{document.id}")
+                    document.parent_type = 'Project'
+                    document.parent_id = self.project_map[document_obj['parentURI']]                        
+                end
                 document.save!
                 document.move_to( :end )    
             else
