@@ -109,7 +109,7 @@ class JSONImport
                 if document.parent_id.nil?
                     Rails.logger.info("Unable to find parent doc: #{document_obj['parentURI']} for document #{document.id}")
                     document.parent_type = 'Project'
-                    document.parent_id = self.project_map[document_obj['parentURI']]                        
+                    document.parent_id = document.project_id                     
                 end
                 document.save!
                 document.move_to( :end )    
