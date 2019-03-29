@@ -133,16 +133,18 @@ class JSONImport
         self.highlight_map = {}
         highlight_data.each { |highlight_obj|
             document_id = self.document_map[highlight_obj['documentURI']]
-            target = highlight_obj['target']
-            highlight = Highlight.new({
-                excerpt: highlight_obj['excerpt'],
-                color: highlight_obj['color'],
-                target: target, 
-                uid: highlight_obj['uri'],
-                document_id: document_id
-            })
-            highlight.save!
-            self.highlight_map[highlight_obj['uri']] = highlight.id
+            unless document_id.nil?
+                target = highlight_obj['target']
+                highlight = Highlight.new({
+                    excerpt: highlight_obj['excerpt'],
+                    color: highlight_obj['color'],
+                    target: target, 
+                    uid: highlight_obj['uri'],
+                    document_id: document_id
+                })
+                highlight.save!
+                self.highlight_map[highlight_obj['uri']] = highlight.id
+            end
         }
     end
 
@@ -156,13 +158,15 @@ class JSONImport
                 self.highlight_map[ link_obj['linkUriB'] ] : 
                 self.document_map[ link_obj['linkUriB'] ]
             
-            link = Link.new({
-                linkable_a_id: link_a_id,
-                linkable_a_type: link_obj['linkTypeA'],
-                linkable_b_id: link_b_id,
-                linkable_b_type:link_obj['linkTypeB']
-            })
-            link.save!
+            if link_a_id && link_b_id
+                link = Link.new({
+                    linkable_a_id: link_a_id,
+                    linkable_a_type: link_obj['linkTypeA'],
+                    linkable_b_id: link_b_id,
+                    linkable_b_type:link_obj['linkTypeB']
+                })
+                link.save!
+            end
         }    
     end
 
