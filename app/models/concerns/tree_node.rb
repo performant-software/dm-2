@@ -125,6 +125,7 @@ module TreeNode
             siblings = (destination.documents + destination.document_folders + [self]).sort_by(&:position)
         end
 
+        skip_renumbering = (target_position == :end && old_parent.nil?)
         target_position = siblings.length + 1 if target_position == :end
 
         # start_state = siblings.map { |child| [child.id, child.position] }
@@ -145,12 +146,17 @@ module TreeNode
         # end_state = siblings.map { |child| [child.id, child.position] }
         # logger.info "END STATE: #{end_state}"
 
-        # resort them again
-        siblings = siblings.sort_by(&:position)
+        unless skip_renumbering
+            # resort them again
+            siblings = siblings.sort_by(&:position)
 
-        # renumber the leafs
-        renumber_children(siblings)
-        old_parent.renumber_children() unless old_parent.nil?
+            # renumber the leafs
+            renumber_children(siblings)
+            old_parent.renumber_children() unless old_parent.nil?
+        else
+            # being inserted 
+            self.save!
+        end
         
         # end_state = siblings.map { |child| [child.id, child.position] }
         # logger.info "RENUMBERED STATE: #{end_state}"

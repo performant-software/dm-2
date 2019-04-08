@@ -14,6 +14,8 @@ gem 'pg', '>= 0.18', '< 2.0'
 # Use Puma as the app server
 gem 'puma', '~> 3.7'
 
+gem 'devise', '~> 4.6.1'
+
 # needed for nokogiri
 gem 'pkg-config', "~> 1.1"
 

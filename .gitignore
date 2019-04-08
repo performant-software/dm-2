@@ -14,9 +14,11 @@
 !/tmp/.keep
 /storage/*
 .env
+/ttl
 
 .byebug_history
 .vscode
+.idea
 convert/node_modules
 
 latest.dump

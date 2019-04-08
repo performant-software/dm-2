@@ -12,10 +12,10 @@ class Document < Linkable
   include PgSearch
   include TreeNode
 
-  after_create :add_to_tree
+  after_create :tree_check
   before_destroy :destroyer
 
-  MAX_IMAGE_SIZE = 10 # MB
+  MAX_IMAGE_SIZE = 100 # MB
 
   pg_search_scope :search_for, against: %i(title search_text)
 
@@ -29,6 +29,10 @@ class Document < Linkable
 
   def purge_images
     self.images.each { |image| image.purge }
+  end
+
+  def tree_check
+    add_to_tree unless @import_mode
   end
 
   # checks that all images validate, purges invalid images
@@ -64,6 +68,10 @@ class Document < Linkable
       # if it is locked by someone else
       return false
     end
+  end
+
+  def import_mode=(state)
+    @import_mode = state
   end
 
   def document_id
