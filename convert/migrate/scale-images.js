@@ -1,43 +1,71 @@
-const fabric = require('fabric').fabric
 const MongoClient = require('mongodb').MongoClient
 
-const mongoDatabaseName = "dm2_convert_test"
+const mongoDatabaseName = "dm2_convert"
 const mongoDatabaseURL = "mongodb://localhost:27017/"
 
 // Global resources
 var mongoDB, mongoClient
 
-async function scaleImages() {
+async function collectionToArray(collectionName) {
+    const coll = await mongoDB.collection(collectionName)
+    const cursor = await coll.find({})
+    return await cursor.toArray()    
+}
+
+async function collectionToHash(collectionName, key) {
+    let arr = await collectionToArray(collectionName)  
+    let hash = {}
+    arr.forEach( obj => { hash[obj[key]] = obj })
+    return hash
+}
+
+async function resetTarget() {
     const highlights = await mongoDB.collection('highlights')
+    const highlightsBuffer = await collectionToArray('highlights')
 
-    const scaleX = 0.64
-    const scaleY = 0.33
-
-    let highlightsCursor = await highlights.find({})
-    while( highlight = await highlightsCursor.next() ) {
+    for( let i=0; i < highlightsBuffer.length; i++ ) {
+        let highlight = highlightsBuffer[i]
         let { target } = highlight        
         if( target[0] === '{' ) {
-            // load target into fabric js
-            const canvas = new fabric.StaticCanvas(null, { width: 2000, height: 2000 })
-            await canvas.loadFromJSON(`{ "objects": [ ${target} ]}`)
+            // write this value to originalTarget field
+            highlight.target = highlight.originalTarget
+            await highlights.replaceOne( { uri: highlight.uri }, highlight )
+        }
+    }
+}
 
-            // transform object
-            const shape = canvas.item(0)
-            shape.scaleX = shape.scaleX * scaleX
-            shape.scaleY = shape.scaleY * scaleY
-            shape.left = shape.left * scaleX
-            shape.top = shape.top * scaleY
-            shape.setCoords()
+async function scaleImages() {
+    const highlights = await mongoDB.collection('highlights')
+    const highlightsBuffer = await collectionToArray('highlights')
+    const documentMap = await collectionToHash('documents','uri')
 
-            // write object back into mongo
-            let shapeObj = shape.toObject(['_highlightUid'])
+    for( let i=0; i < highlightsBuffer.length; i++ ) {
+        let highlight = highlightsBuffer[i]
+        let target = highlight.originalTarget      
+        if( target && target[0] === '{' ) {
+            const document = documentMap[highlight.documentURI]
+            if( document ) {
+                const scaleX = 2000.0 / document.width 
+                const scaleY = 3700.0 / document.height
+    
+                let shape = JSON.parse(target)        
+                shape.scaleX = shape.scaleX * scaleX
+                shape.scaleY = shape.scaleY * scaleY
+                shape.left = shape.left * scaleX
+                shape.top = (shape.top-150) * scaleY
+    
+                // write object back into mongo 
+                highlight.target = JSON.stringify(shape) 
+                await highlights.replaceOne( { uri: highlight.uri }, highlight )
+            }
         }
     }
 }
 
 async function runAsync() {
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
-    mongoDB = await mongoClient.db(mongoDatabaseName)       
+    mongoDB = await mongoClient.db(mongoDatabaseName)   
+    // await resetTarget()    
     await scaleImages()
     await mongoClient.close()
 }

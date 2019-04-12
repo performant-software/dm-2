@@ -512,14 +512,72 @@ async function dropCollections() {
     })
 }
 
+async function collectionToArray(collectionName) {
+    const coll = await mongoDB.collection(collectionName)
+    const cursor = await coll.find({})
+    return await cursor.toArray()    
+}
 
-async function serializeGraph(outputJSONFile) {
-    async function collectionToArray(collectionName) {
-        const coll = await mongoDB.collection(collectionName)
-        const cursor = await coll.find({})
-        return await cursor.toArray()    
+async function collectionToHash(collectionName, key) {
+    let arr = await collectionToArray(collectionName)  
+    let hash = {}
+    arr.forEach( obj => { hash[obj[key]] = obj })
+    return hash
+}
+
+function addUnique( array, item ) {
+    if( !array.includes(item) ) array.push(item)
+}
+
+async function serializeProject( projectURI, outputJSONFile ) {
+
+    const documents = await collectionToArray('documents')
+    const highlights = await collectionToArray('highlights')
+    const links = await collectionToArray('links')
+
+    const images = await collectionToHash('images','uri')
+    const users = await collectionToHash('users','uri')
+    const projects = await collectionToHash('projects','uri')
+
+    const targetProject = projects[projectURI]
+    const projectOwner = users[ targetProject.userURI ]
+    const dm2Graph = {
+        users: [ projectOwner ],
+        documents: [],
+        images: [],
+        projects: [ targetProject ],
+        highlights: [],
+        links: []
     }
 
+    // delete all documents that aren't in the target project
+    documents.forEach( document => {
+        if( document.projectURI === projectURI ) {
+            dm2Graph.documents.push(document)
+            if( document.images ) { 
+                document.images.forEach( imageURI => {
+                   addUnique( dm2Graph.images, images[imageURI] )
+                })
+            }
+            highlights.forEach( highlight => {
+                if( document.uri === highlight.documentURI ) {
+                    dm2Graph.highlights.push( highlight )
+                }
+            })
+            links.forEach( link => {
+                if( (link.linkTypeA === 'Document' && link.linkUriA === document.uri) ||
+                    (link.linkTypeB === 'Document' && link.linkUriB === document.uri)    )  {
+                    addUnique( dm2Graph.links, link )
+                }
+            })                        
+        }        
+    })
+
+    fs.writeFileSync(outputJSONFile, JSON.stringify(dm2Graph)) 
+}
+
+async function serializeGraph(outputJSONFile) {
+    
     const dm2Graph = {
         users: await collectionToArray('users'),
         documents: await collectionToArray('documents'),
@@ -533,11 +591,13 @@ async function serializeGraph(outputJSONFile) {
 }
 
 async function runExport() {
-    const outputJSONFile = 'ttl/test.json'
-    const mongoDatabaseName = "dm2_convert_test"
+    const outputJSONFile = 'ttl/test-mappa.json'
+    const mongoDatabaseName = "dm2_convert"
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
-    await serializeGraph(outputJSONFile)
+    // just Old English Facs
+    await serializeProject('urn:uuid:5jb712oxclgh13fhpitydiu6871sbbyxs8c', outputJSONFile)
+    // await serializeGraph(outputJSONFile)
     await mongoClient.close()
 }
 
@@ -573,8 +633,8 @@ function main() {
     setupLogging();
     logger.info("Starting TTL processing...")
 
-    // runExport().then( () => {
-    runAsync().then(() => {
+    runExport().then( () => {
+    // runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
         logger.error(`${err}: ${err.stack}`)  
