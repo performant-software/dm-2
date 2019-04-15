@@ -46,8 +46,8 @@ async function scaleImages() {
             const document = documentMap[highlight.documentURI]
             if( document ) {
                 const scaleFactor = 2000.0 / document.width 
-
-                `let shape = JSON.parse(target)        
+                    
+                let shape = JSON.parse(target)        
                 shape.scaleX = shape.scaleX * scaleFactor
                 shape.scaleY = shape.scaleY * scaleFactor
                 shape.left = shape.left * scaleFactor
