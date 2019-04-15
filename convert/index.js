@@ -38,6 +38,7 @@ const imageDocumentNode = convertURI("http://www.shared-canvas.org/ns/Canvas")
 const imageDocumentName = w3Label
 const imageWidth = convertURI("http://www.w3.org/2003/12/exif/ns#width")
 const imageHeight = convertURI("http://www.w3.org/2003/12/exif/ns#height")
+const imageFilename = convertURI("http://www.digitalmappa.org/ImageFilename")
 
 const imageNode = convertURI("http://purl.org/dc/dcmitype/Image")
 
@@ -159,14 +160,9 @@ function parseImageDocument( node ) {
 }
 
 function parseImage( node ) {
-    // Examples: image:40615860_10217291030455677_4752239145311535104_n_jpg
-    // image:Screen%20Shot%202017-07-29%20at%203_18_51%20PM_png
-    const imageFilename = node.uri.replace( /^image:/, '' ).replace( /_(png|PNG)$/, '.png' ).replace( /_(jpg|JPG)$/, '.jpg' ).replace( /_(jpeg|JPEG)$/, '.jpg' ).replace(/%20/g, ' ')
-    // TODO get thumbnail images
-
     const obj = {
         uri: node.uri,
-        imageFilename
+        imageFilename: node[imageFilename]
     }
     return obj
 }
@@ -255,8 +251,15 @@ async function createNodes(dataFile) {
 
         if( !nodes[subject] ) nodes[subject] = { uri: subject }
 
+        // special handling for image filenames which also happen to be URIs in this TTL
+        if( triple.subject.value.startsWith('image:') ) {
+            const imageURI = triple.subject.value
+            const imageFile = imageURI.replace( /^image:/, '' ).replace( /.PNG$/, '.png' ).replace( /.JPG$/, '.jpg' ).replace( /.JPEG$/, '.jpg' ).replace(/%20/g, ' ')
+            nodes[subject][imageFilename] = imageFile
+        }
+
         if( predicate === nodeType ) {
-            // only accept node type valus in the vocab
+            // only accept node type values in the vocab
             if( typeVocab.includes( objectValue ) ) {
                 nodes[subject][predicate] = objectValue 
             } 
@@ -475,11 +478,40 @@ async function addDocumentsToProjects() {
     logger.info(`Found ${highlightResult.deletedCount} unlinked highlights.`)
 }
 
+async function scaleSVGs() {
+    const highlights = await mongoDB.collection('highlights')
+    const highlightsBuffer = await collectionToArray('highlights')
+    const documentMap = await collectionToHash('documents','uri')
+
+    for( let i=0; i < highlightsBuffer.length; i++ ) {
+        let highlight = highlightsBuffer[i]
+        let target = highlight.target      
+        if( target && target[0] === '{' ) {
+            const document = documentMap[highlight.documentURI]
+            if( document ) {
+                const scaleFactor = 2000.0 / document.width 
+                    
+                let shape = JSON.parse(target)        
+                shape.scaleX = shape.scaleX * scaleFactor
+                shape.scaleY = shape.scaleY * scaleFactor
+                shape.left = shape.left * scaleFactor
+                shape.top = shape.top * scaleFactor
+    
+                // write object back into mongo 
+                highlight.target = JSON.stringify(shape) 
+                await highlights.replaceOne( { uri: highlight.uri }, highlight )
+            }
+        }
+    }
+}
+
 async function createGraph() {
     logger.info("Parsing most of the things...")
     let annotationBuffer = await parseMostThings()
     logger.info("Parsing links...")
     await parseLinks( annotationBuffer )
+    logger.info("Scale SVGs...")
+    await scaleSVGs()
     logger.info("Add Documents to Projects...")
     await addDocumentsToProjects()
 }
@@ -610,7 +642,7 @@ async function runAsync() {
 
     // process production TTL
     const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
-    const outputJSONFile = 'ttl/test-mappa.json'
+    const outputJSONFile = 'ttl/digitalmappa.json'
     const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
@@ -633,8 +665,8 @@ function main() {
     setupLogging();
     logger.info("Starting TTL processing...")
 
-    runExport().then( () => {
-    // runAsync().then(() => {
+    // runExport().then( () => {
+    runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
         logger.error(`${err}: ${err.stack}`)  
