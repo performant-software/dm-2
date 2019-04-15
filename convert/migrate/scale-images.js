@@ -45,14 +45,13 @@ async function scaleImages() {
         if( target && target[0] === '{' ) {
             const document = documentMap[highlight.documentURI]
             if( document ) {
-                const scaleX = 2000.0 / document.width 
-                const scaleY = 3700.0 / document.height
-    
-                let shape = JSON.parse(target)        
-                shape.scaleX = shape.scaleX * scaleX
-                shape.scaleY = shape.scaleY * scaleY
-                shape.left = shape.left * scaleX
-                shape.top = (shape.top-150) * scaleY
+                const scaleFactor = 2000.0 / document.width 
+
+                `let shape = JSON.parse(target)        
+                shape.scaleX = shape.scaleX * scaleFactor
+                shape.scaleY = shape.scaleY * scaleFactor
+                shape.left = shape.left * scaleFactor
+                shape.top = shape.top * scaleFactor
     
                 // write object back into mongo 
                 highlight.target = JSON.stringify(shape) 
