@@ -8,12 +8,12 @@ class JSONImport
         self.unguessable_password = 'pass12345'
     end
 
-	def load(filepath,image_dir)
+	def load(filepath,image_path)
         json_data = self.read_json_file(filepath)
         self.import_users json_data['users']
         self.import_projects json_data['projects']
         self.import_images json_data['images']
-        self.import_documents( json_data['documents'], image_dir )
+        self.import_documents( json_data['documents'], image_path )
         self.import_highlights json_data['highlights']
         self.import_links json_data['links']
     end
@@ -81,8 +81,7 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        image_file = File.open(image_path)
-                        document.images.attach(io: image_file, filename: image_filename)
+                        document.images.attach(image_path)
                         document.content = {
                             tileSources: [ {
                                 url: url_for(document.images.first),
@@ -90,7 +89,7 @@ class JSONImport
                             }]
                         }
 
-                        thumb_file = ImageProcessing::MiniMagick.source(image_file)
+                        thumb_file = ImageProcessing::MiniMagick.source(image_path)
                         .resize_to_fill(80, 80)
                         .convert('png')
                         .call
@@ -178,16 +177,8 @@ class JSONImport
     end
 
 
-	def read_json_file( filepath )
-		buf = []
-		File.open(filepath, "r") do |f|
-		  f.each_line do |line|
-		    buf.push line
-		  end
-		end
-
-		json_string = buf.join
-		JSON.parse(json_string)
+	def read_json_file( url )
+        JSON.parse open(url).read
 	end
 
 end
