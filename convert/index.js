@@ -209,6 +209,15 @@ function parseTextQuoteSelector( node ) {
     return obj  
 }
 
+function parseSpecificResource( node ) {
+    const obj = {
+        uri: node.uri,
+        selectorURI: node[resourceSelector], 
+        sourceURI: node[resourceSource]
+    }
+    return obj  
+}
+
 function setupLogging() {
     logger = winston.createLogger({
         format: winston.format.printf(info => { return `${info.message}` }),
@@ -284,6 +293,7 @@ async function parseMostThings() {
     const documents = await mongoDB.collection('documents')
     const images = await mongoDB.collection('images')
     const highlights = await mongoDB.collection('highlights')
+    const specificResources = await mongoDB.collection('specificResources')
     let annotations = []
 
     // document schema for parsing HTML -> ProseMirror JSON
@@ -312,6 +322,9 @@ async function parseMostThings() {
                 break
             case annotationNode:
                 annotations.push( parseAnnotation(node) )
+                break
+            case specificResource:
+                await specificResources.insertOne( parseSpecificResource(node) )
                 break
             case svgSelector:
                 await highlights.insertOne( await parseSVGSelector(node) )
@@ -361,8 +374,8 @@ async function parseLinks(annotationBuffer) {
                 doomedAnnotations.push(annotation)
             } else {
                 // these two together make a link
-                const linkA = await parseAnnotationLink( bodyNode, highlights, nodes ) 
-                const linkB = await parseAnnotationLink( targetNode, highlights, nodes )
+                const linkA = await parseAnnotationLink( bodyNode, nodes ) 
+                const linkB = await parseAnnotationLink( targetNode, nodes )
                 if( linkA && linkB ) {
                     linkBuffer.push( {
                         linkUriA: linkA.uri, 
@@ -510,13 +523,27 @@ async function createGraph() {
     let annotationBuffer = await parseMostThings()
     logger.info("Parsing links...")
     await parseLinks( annotationBuffer )
+    logger.info("Link highlights to documents...")
+    await linkHighlightsToDocuments()
     logger.info("Scale SVGs...")
     await scaleSVGs()
-    logger.info("Add Documents to Projects...")
+    logger.info("Add documents to projects...")
     await addDocumentsToProjects()
 }
 
-async function parseAnnotationLink( node, highlights, nodes ) {
+async function linkHighlightsToDocuments() {
+    const highlights = await mongoDB.collection('highlights')
+    const specificResourceBuffer = await collectionToArray('specificResources')
+
+    for( let i=0; i < specificResourceBuffer.length; i++ ) {
+        const { sourceURI, selectorURI } = specificResourceBuffer[i]
+        if( sourceURI && selectorURI ) {
+            await highlights.updateOne( { uri: selectorURI }, { $set: { documentURI: sourceURI }})
+        } 
+    }
+}
+
+async function parseAnnotationLink( node, nodes ) {
     let uri, linkType
     if( node[nodeType] === specificResource ) {
         const resourceSourceQ = { uri: node[resourceSource] }
@@ -524,7 +551,6 @@ async function parseAnnotationLink( node, highlights, nodes ) {
         const source = await nodes.findOne(resourceSourceQ)
         const selector = await nodes.findOne(resourceSelectorQ)  
         if( source && selector ) {
-            await highlights.updateOne( resourceSelectorQ, { $set: { documentURI: source.uri }})
             uri = selector.uri
             linkType = 'Highlight'    
         } else {
@@ -623,7 +649,7 @@ async function serializeGraph(outputJSONFile) {
 }
 
 async function runExport() {
-    const outputJSONFile = 'ttl/test-mappa.json'
+    const outputJSONFile = 'ttl/test.json'
     const mongoDatabaseName = "dm2_convert"
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
@@ -665,8 +691,8 @@ function main() {
     setupLogging();
     logger.info("Starting TTL processing...")
 
-    // runExport().then( () => {
-    runAsync().then(() => {
+    runExport().then( () => {
+    // runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
         logger.error(`${err}: ${err.stack}`)  

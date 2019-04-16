@@ -81,14 +81,21 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        document.images.attach(io: File.open(image_path), filename: image_filename)
-                        image_content = {
+                        image_file = File.open(image_path)
+                        document.images.attach(io: image_file, filename: image_filename)
+                        document.content = {
                             tileSources: [ {
                                 url: url_for(document.images.first),
                                 type: "image"
                             }]
                         }
-                        document.content = image_content
+
+                        thumb_file = ImageProcessing::MiniMagick.source(image_file)
+                        .resize_to_fill(80, 80)
+                        .convert('png')
+                        .call
+                        document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
+
                         document.save!
                     }
                 end
