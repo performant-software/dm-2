@@ -80,8 +80,8 @@ class JSONImport
                 if document_kind == 'canvas'
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
-                        image_path = "#{images_path}/#{image_filename}"
-                        document.images.attach(image_path)
+                        image_path = URI.escape("#{images_path}/#{image_filename}" )
+                        document.images.attach(io: open(image_path), filename: image_filename )
                         document.content = {
                             tileSources: [ {
                                 url: url_for(document.images.first),
