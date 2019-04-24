@@ -98,7 +98,7 @@ class JSONImport
                         document.save!
                     }
                 end
-                document_bridge.push( { doc: document, obj: document_obj })
+                document_bridge.push( { doc: document.id, obj: document_obj })
             rescue Exception => e 
                 # log error and continue
                 Rails.logger.info( "Unable to load document with URI: #{document_obj['uri']} Reason: #{e}")
@@ -107,7 +107,7 @@ class JSONImport
 
         # now that everything has ids, move docs to the correct place in the tree
         document_bridge.each { |bridge|
-            document = bridge[:doc]
+            document = Document.find(bridge[:doc])
             document_obj = bridge[:obj]            
             if document_obj['parentType'] != 'Project'
                 document.parent_type = 'Document'
