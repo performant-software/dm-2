@@ -180,7 +180,8 @@ async function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
         excerpt: 'Highlight',
-        color: yellow500
+        color: yellow500,
+        svg: true
     }
     // convert SVG object to FabricJS JSON
     const svg = `<svg>${node[svgContent]}</svg>`
@@ -346,7 +347,6 @@ async function parseLinks(annotationBuffer) {
     const links = await mongoDB.collection('links')
     const images = await mongoDB.collection('images')
     const documents = await mongoDB.collection('documents')
-    const highlights = await mongoDB.collection('highlights')
     const annotations = await mongoDB.collection('annotations')
     const linkBuffer = []
 
@@ -499,17 +499,27 @@ async function scaleSVGs() {
     for( let i=0; i < highlightsBuffer.length; i++ ) {
         let highlight = highlightsBuffer[i]
         let target = highlight.target      
-        if( target && target[0] === '{' ) {
+        if( highlight.svg ) {
             const document = documentMap[highlight.documentURI]
             if( document ) {
                 const scaleFactor = 2000.0 / document.width 
                     
+                // scale the svg
                 let shape = JSON.parse(target)        
                 shape.scaleX = shape.scaleX * scaleFactor
                 shape.scaleY = shape.scaleY * scaleFactor
                 shape.left = shape.left * scaleFactor
                 shape.top = shape.top * scaleFactor
-    
+
+                // record the thumbnail info
+                highlight.imageURI = document.images[0]
+                highlight.thumbnailRect = {
+                    left: shape.left,
+                    top: shape.top,
+                    width: shape.width * scaleFactor,
+                    height: shape.height * scaleFactor
+                }
+
                 // write object back into mongo 
                 highlight.target = JSON.stringify(shape) 
                 await highlights.replaceOne( { uri: highlight.uri }, highlight )
@@ -662,14 +672,14 @@ async function runExport() {
 async function runAsync() {
 
     // process test TTL
-    // const inputTTLFile = 'ttl/test-image.ttl'
-    // const outputJSONFile = 'ttl/test.json'
-    // const mongoDatabaseName = "dm2_convert_test"
+    const inputTTLFile = 'ttl/test-image.ttl'
+    const outputJSONFile = 'ttl/test.json'
+    const mongoDatabaseName = "dm2_convert_test"
 
     // process production TTL
-    const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
-    const outputJSONFile = 'ttl/digitalmappa.json'
-    const mongoDatabaseName = "dm2_convert"
+    // const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
+    // const outputJSONFile = 'ttl/digitalmappa.json'
+    // const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
@@ -691,8 +701,8 @@ function main() {
     setupLogging();
     logger.info("Starting TTL processing...")
 
-    runExport().then( () => {
-    // runAsync().then(() => {
+    // runExport().then( () => {
+    runAsync().then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
         logger.error(`${err}: ${err.stack}`)  

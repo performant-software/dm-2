@@ -66,50 +66,15 @@ class HighlightsController < ApplicationController
   end
 
   def set_thumbnail
-    pad_factor = 0.06
-    base_image = MiniMagick::Image.open(params['image_url'])
-    base_image.resize '200'
     coords = params['coords']
-    orig_offset_x = coords['tl']['x']
-    orig_offset_y = coords['tl']['y']
-    orig_width = coords['tr']['x'] - orig_offset_x
-    orig_height = coords['bl']['y'] - orig_offset_y
-    is_wider_than_long = orig_width > orig_height
-    min_max = [orig_width, orig_height].minmax
-    greater_of_width_and_height = min_max[1]
-    lesser_of_width_and_height = min_max[0]
-    offset_subtract = (greater_of_width_and_height - lesser_of_width_and_height) / 2.0
-    pad_subtract = greater_of_width_and_height * pad_factor
-    crop_wh = greater_of_width_and_height * (1 + pad_factor * 2.0)
-    adjusted_offset_x = orig_offset_x - pad_subtract
-    adjusted_offset_y = orig_offset_y - pad_subtract
-    if is_wider_than_long
-      adjusted_offset_y = adjusted_offset_y - offset_subtract
-    else
-      adjusted_offset_x = adjusted_offset_x - offset_subtract
-    end
-    base_image.crop "#{crop_wh * 0.1}x#{crop_wh * 0.1}+#{adjusted_offset_x * 0.1}+#{adjusted_offset_y * 0.1}"
-    base_image.resize '80x80'
-    base_image.format 'png'
+    thumb_rect = { 
+      'left': coords['tl']['x'],
+      'top': coords['tl']['y'],
+      'width': coords['tr']['x'] - coords['tl']['x'],
+      'height': coords['bl']['y'] - coords['tl']['y']
+    }
 
-    # TODO: process and overlay SVG
-    # svg_object = params['svg_string']
-    # svg_document = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"80\" height=\"80\" viewBox=\"#{adjusted_offset_x} #{adjusted_offset_y} #{crop_wh} #{crop_wh}\" xml:space=\"preserve\">#{svg_object}</svg>"
-    # svg_file = Tempfile.new('temp-svg')
-    # svg_file.write(svg_document)
-    # svg_file.rewind
-    # svg_image = MiniMagick::Image.open(svg_file.path)
-
-    # combined_image = base_image.composite(svg_image) do |c|
-    #   # c.background 'none'
-    #   c.compose "color-burn"  
-    # end
-    combined_image = base_image
-
-    path = combined_image.path
-    io = File.open(path)
-    @highlight.thumbnail.attach(io: io, filename: "thumbnail-for-highlight-#{@highlight.id}.png")
-
+    @highlight.set_thumbnail( params['image_url'], thumb_rect )
     render json: @highlight
   end
 
