@@ -11,10 +11,10 @@ class Highlight < Linkable
     pad_factor = 0.06
     base_image = MiniMagick::Image.open(image_url)
     base_image.resize '200'
-    orig_offset_x = thumb_rect[:left]
-    orig_offset_y = thumb_rect[:top]
-    orig_width = thumb_rect[:width]
-    orig_height = thumb_rect[:height]
+    orig_offset_x = thumb_rect[:left] != nil ? thumb_rect[:left] : thumb_rect['left']
+    orig_offset_y = thumb_rect[:top] != nil ? thumb_rect[:top] : thumb_rect['top']
+    orig_width = thumb_rect[:width] != nil ? thumb_rect[:width] : thumb_rect['width']
+    orig_height = thumb_rect[:height] != nil ? thumb_rect[:height] : thumb_rect['height']
     is_wider_than_long = orig_width > orig_height
     min_max = [orig_width, orig_height].minmax
     greater_of_width_and_height = min_max[1]
