@@ -152,7 +152,7 @@ class JSONImport
 
                 # create a thumbnail for this highlight if it is in SVG
                 if highlight_obj['svg'] 
-                    image_url = self.images[highlight_obj['imageURI']]
+                    image_url = self.image_files[highlight_obj['imageURI']]
                     highlight.set_thumbnail( image_url, highlight_obj['thumbnailRect'] )
                 end
 

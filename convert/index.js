@@ -672,14 +672,14 @@ async function runExport() {
 async function runAsync() {
 
     // process test TTL
-    const inputTTLFile = 'ttl/test-image.ttl'
-    const outputJSONFile = 'ttl/test.json'
-    const mongoDatabaseName = "dm2_convert_test"
+    // const inputTTLFile = 'ttl/test-image.ttl'
+    // const outputJSONFile = 'ttl/test.json'
+    // const mongoDatabaseName = "dm2_convert_test"
 
     // process production TTL
-    // const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
-    // const outputJSONFile = 'ttl/digitalmappa.json'
-    // const mongoDatabaseName = "dm2_convert"
+    const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
+    const outputJSONFile = 'ttl/digitalmappa.json'
+    const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
