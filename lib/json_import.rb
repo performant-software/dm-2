@@ -87,8 +87,8 @@ class JSONImport
                                 type: "image"
                             }]
                         }
-
-                        thumb_file = ImageProcessing::MiniMagick.source(image_path)
+                        
+                        thumb_file = ImageProcessing::MiniMagick.source(url_for(document.images.first))
                         .resize_to_fill(80, 80)
                         .convert('png')
                         .call
@@ -152,8 +152,11 @@ class JSONImport
 
                 # create a thumbnail for this highlight if it is in SVG
                 if highlight_obj['svg'] 
-                    image_url = self.image_files[highlight_obj['imageURI']]
-                    highlight.set_thumbnail( image_url, highlight_obj['thumbnailRect'] )
+                    document = Document.find(document_id)
+                    image = document.images.first
+                    if image != nil
+                        highlight.set_thumbnail( url_for(image), highlight_obj['thumbnailRect'] )    
+                    end
                 end
 
                 self.highlight_map[highlight_obj['uri']] = highlight.id
