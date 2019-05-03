@@ -12,8 +12,8 @@ class JSONImport
         json_data = self.read_json_file(filepath)
         self.import_users json_data['users']
         self.import_projects json_data['projects']
-        self.import_images( json_data['images'], image_path )
-        self.import_documents json_data['documents']
+        self.import_images json_data['images']
+        self.import_documents( json_data['documents'], image_path )
         self.import_highlights json_data['highlights']
         self.import_links json_data['links']
     end
@@ -56,7 +56,7 @@ class JSONImport
         }
     end
 
-    def import_documents(document_data)
+    def import_documents(document_data, images_path)
         self.document_map = {}
         document_bridge = []
         document_data.each { |document_obj|
@@ -79,8 +79,9 @@ class JSONImport
 
                 if document_kind == 'canvas'
                     document_obj['images'].each { |image_uri|
-                        image_url = self.image_files[image_uri]
-                        document.images.attach(io: open(image_url), filename: "image-for-doc-#{document.id}" )
+                        image_filename = self.image_files[image_uri]
+                        image_path = "#{images_path}/#{image_filename}"
+                        document.images.attach(io: open(image_path), filename: image_filename)
                         document.content = {
                             tileSources: [ {
                                 url: url_for(document.images.first),
@@ -127,13 +128,13 @@ class JSONImport
         }
     end
 
-    def import_images( image_data, images_base_url ) 
+    def import_images( image_data )
         self.image_files = {}
         image_data.each { |image_obj|
-            image_url = URI.escape("#{images_base_url}/#{image_obj['imageFilename']}" )
-            self.image_files[ image_obj['uri'] ] = image_url
+            self.image_files[ image_obj['uri'] ] = image_obj['imageFilename']
         }
     end
+
 
     def import_highlights( highlight_data )
         self.highlight_map = {}
