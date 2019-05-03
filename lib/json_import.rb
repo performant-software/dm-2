@@ -14,7 +14,7 @@ class JSONImport
         self.import_projects json_data['projects']
         self.import_images json_data['images']
         self.import_documents( json_data['documents'], image_path )
-        self.import_highlights( json_data['highlights'], images_path )
+        self.import_highlights( json_data['highlights'], image_path )
         self.import_links json_data['links']
     end
 
