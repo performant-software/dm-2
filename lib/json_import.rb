@@ -153,11 +153,16 @@ class JSONImport
 
                 # create a thumbnail for this highlight if it is in SVG
                 if highlight_obj['svg'] 
-                    image_filename = self.image_files[ highlight_obj['imageURI'] ]
-                    if image_filename != nil
-                        image_path = "#{images_path}/#{image_filename}"
-                        highlight.set_thumbnail( image_path, highlight_obj['thumbnailRect'] )    
-                    end
+                    begin
+                        image_filename = self.image_files[ highlight_obj['imageURI'] ]
+                        if image_filename != nil
+                            image_path = "#{images_path}/#{image_filename}"
+                            highlight.set_thumbnail( image_path, highlight_obj['thumbnailRect'] )    
+                        end    
+                    rescue Exception => e 
+                        # log error and continue
+                        Rails.logger.info( "Unable to create thumbnail with URI: #{highlight_obj['imageURI']} Reason: #{e}")
+                    end        
                 end
 
                 self.highlight_map[highlight_obj['uri']] = highlight.id
