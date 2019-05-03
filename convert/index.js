@@ -264,7 +264,28 @@ async function createNodes(dataFile) {
         // special handling for image filenames which also happen to be URIs in this TTL
         if( triple.subject.value.startsWith('image:') ) {
             const imageURI = triple.subject.value
-            const imageFile = imageURI.replace( /^image:/, '' ).replace( /.PNG$/, '.png' ).replace( /.JPG$/, '.jpg' ).replace( /.JPEG$/, '.jpg' ).replace(/%20/g, ' ')
+            // Escape in the manner of AWS S3
+            const imageFile = imageURI
+                .replace( /^image:/, '' )
+                .replace(/%20/g,' ')
+                .replace(/%/g,'%25')
+                .replace(/@/g,'%40')
+                .replace(/#/g,'%23')
+                .replace(/\$/g,'%24')
+                .replace(/\^/g,'%5E')
+                .replace(/&/g,'%26')
+                .replace(/\+/g,'%2B')
+                .replace(/=/g,'%3D')
+                .replace(/\|/g,'%7C')
+                .replace(/\\/g,'%5C')
+                .replace(/:/g,'%3A')
+                .replace(/\?/g,'%3F')
+                .replace(/</g,'%3C')
+                .replace(/>/g,'%3E')
+                .replace(/`/g,'%60')
+                .replace(/,/g,'%2C')
+                .replace(/ /g,'+')
+
             nodes[subject][imageFilename] = imageFile
         }
 
