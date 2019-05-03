@@ -14,7 +14,7 @@ class JSONImport
         self.import_projects json_data['projects']
         self.import_images json_data['images']
         self.import_documents( json_data['documents'], image_path )
-        self.import_highlights json_data['highlights']
+        self.import_highlights( json_data['highlights'], images_path )
         self.import_links json_data['links']
     end
 
@@ -89,7 +89,7 @@ class JSONImport
                             }]
                         }
                         
-                        thumb_file = ImageProcessing::MiniMagick.source(url_for(document.images.first))
+                        thumb_file = ImageProcessing::MiniMagick.source(image_path) #url_for(document.images.first))
                         .resize_to_fill(80, 80)
                         .convert('png')
                         .call
@@ -136,7 +136,7 @@ class JSONImport
     end
 
 
-    def import_highlights( highlight_data )
+    def import_highlights( highlight_data, images_path )
         self.highlight_map = {}
         highlight_data.each { |highlight_obj|
             document_id = self.document_map[highlight_obj['documentURI']]
@@ -153,10 +153,10 @@ class JSONImport
 
                 # create a thumbnail for this highlight if it is in SVG
                 if highlight_obj['svg'] 
-                    document = Document.find(document_id)
-                    image = document.images.first
-                    if image != nil
-                        highlight.set_thumbnail( url_for(image), highlight_obj['thumbnailRect'] )    
+                    image_filename = self.image_files[ highlight_obj['imageURI'] ]
+                    if image_filename != nil
+                        image_path = "#{images_path}/#{image_filename}"
+                        highlight.set_thumbnail( image_path, highlight_obj['thumbnailRect'] )    
                     end
                 end
 
