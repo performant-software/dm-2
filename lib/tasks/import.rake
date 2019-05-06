@@ -7,11 +7,11 @@ namespace :import do
 
    task :test => :environment do
       json_import = JSONImport.new
-      json_import.load('http://tempdm2.s3-website-us-east-1.amazonaws.com/test.json', 'https://s3.amazonaws.com/tempdm2/app-images')
+      json_import.load('http://tempdm2.s3-website-us-east-1.amazonaws.com/test.json', 'http://s3.amazonaws.com/tempdm2/app-images')
    end
 
    task :mappa => :environment do
       json_import = JSONImport.new
-      json_import.load('http://tempdm2.s3-website-us-east-1.amazonaws.com/digitalmappa.json', 'https://s3.amazonaws.com/tempdm2/app-images')
+      json_import.load('http://tempdm2.s3-website-us-east-1.amazonaws.com/digitalmappa.json', 'http://s3.amazonaws.com/tempdm2/app-images')
    end
 end
