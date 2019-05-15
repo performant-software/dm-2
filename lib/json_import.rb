@@ -8,13 +8,13 @@ class JSONImport
         self.unguessable_password = 'pass12345'
     end
 
-	def load(filepath,image_dir)
+	def load(filepath,image_path)
         json_data = self.read_json_file(filepath)
         self.import_users json_data['users']
         self.import_projects json_data['projects']
         self.import_images json_data['images']
-        self.import_documents( json_data['documents'], image_dir )
-        self.import_highlights json_data['highlights']
+        self.import_documents( json_data['documents'], image_path )
+        self.import_highlights( json_data['highlights'], image_path )
         self.import_links json_data['links']
     end
 
@@ -28,7 +28,7 @@ class JSONImport
                 user.name = user_obj['name']
                 user.email = user_obj['email']
                 user.password = self.unguessable_password
-                user.approved = true
+                user.approved = false
                 user.save!                
             end
 
@@ -81,18 +81,24 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        document.images.attach(io: File.open(image_path), filename: image_filename)
-                        image_content = {
+                        document.images.attach(io: open(image_path), filename: image_filename)
+                        document.content = {
                             tileSources: [ {
                                 url: url_for(document.images.first),
                                 type: "image"
                             }]
                         }
-                        document.content = image_content
+                        
+                        thumb_file = ImageProcessing::MiniMagick.source(image_path) #url_for(document.images.first))
+                        .resize_to_fill(80, 80)
+                        .convert('png')
+                        .call
+                        document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
+
                         document.save!
                     }
                 end
-                document_bridge.push( { doc: document, obj: document_obj })
+                document_bridge.push( { doc: document.id, obj: document_obj })
             rescue Exception => e 
                 # log error and continue
                 Rails.logger.info( "Unable to load document with URI: #{document_obj['uri']} Reason: #{e}")
@@ -101,7 +107,7 @@ class JSONImport
 
         # now that everything has ids, move docs to the correct place in the tree
         document_bridge.each { |bridge|
-            document = bridge[:doc]
+            document = Document.find(bridge[:doc])
             document_obj = bridge[:obj]            
             if document_obj['parentType'] != 'Project'
                 document.parent_type = 'Document'
@@ -122,14 +128,15 @@ class JSONImport
         }
     end
 
-    def import_images( image_data ) 
+    def import_images( image_data )
         self.image_files = {}
         image_data.each { |image_obj|
             self.image_files[ image_obj['uri'] ] = image_obj['imageFilename']
         }
     end
 
-    def import_highlights( highlight_data )
+
+    def import_highlights( highlight_data, images_path )
         self.highlight_map = {}
         highlight_data.each { |highlight_obj|
             document_id = self.document_map[highlight_obj['documentURI']]
@@ -143,6 +150,21 @@ class JSONImport
                     document_id: document_id
                 })
                 highlight.save!
+
+                # create a thumbnail for this highlight if it is in SVG
+                if highlight_obj['svg'] 
+                    begin
+                        image_filename = self.image_files[ highlight_obj['imageURI'] ]
+                        if image_filename != nil
+                            image_path = "#{images_path}/#{image_filename}"
+                            highlight.set_thumbnail( image_path, highlight_obj['thumbnailRect'] )    
+                        end    
+                    rescue Exception => e 
+                        # log error and continue
+                        Rails.logger.info( "Unable to create thumbnail with URI: #{highlight_obj['imageURI']} Reason: #{e}")
+                    end        
+                end
+
                 self.highlight_map[highlight_obj['uri']] = highlight.id
             end
         }
@@ -171,16 +193,8 @@ class JSONImport
     end
 
 
-	def read_json_file( filepath )
-		buf = []
-		File.open(filepath, "r") do |f|
-		  f.each_line do |line|
-		    buf.push line
-		  end
-		end
-
-		json_string = buf.join
-		JSON.parse(json_string)
+	def read_json_file( url )
+        JSON.parse open(url).read
 	end
 
 end

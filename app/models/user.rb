@@ -17,7 +17,8 @@ class User < ActiveRecord::Base
       User.first.update({admin: true, approved: true})
     end
 
-    AdminMailer.new_user_waiting_for_approval(email).deliver
+    # TODO 
+    # AdminMailer.new_user_waiting_for_approval(email).deliver
   end
 
   def inactive_message

@@ -38,6 +38,7 @@ const imageDocumentNode = convertURI("http://www.shared-canvas.org/ns/Canvas")
 const imageDocumentName = w3Label
 const imageWidth = convertURI("http://www.w3.org/2003/12/exif/ns#width")
 const imageHeight = convertURI("http://www.w3.org/2003/12/exif/ns#height")
+const imageFilename = convertURI("http://www.digitalmappa.org/ImageFilename")
 
 const imageNode = convertURI("http://purl.org/dc/dcmitype/Image")
 
@@ -159,14 +160,9 @@ function parseImageDocument( node ) {
 }
 
 function parseImage( node ) {
-    // Examples: image:40615860_10217291030455677_4752239145311535104_n_jpg
-    // image:Screen%20Shot%202017-07-29%20at%203_18_51%20PM_png
-    const imageFilename = node.uri.replace( /^image:/, '' ).replace( /_(png|PNG)$/, '.png' ).replace( /_(jpg|JPG)$/, '.jpg' ).replace( /_(jpeg|JPEG)$/, '.jpg' ).replace(/%20/g, ' ')
-    // TODO get thumbnail images
-
     const obj = {
         uri: node.uri,
-        imageFilename
+        imageFilename: node[imageFilename]
     }
     return obj
 }
@@ -184,7 +180,8 @@ async function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
         excerpt: 'Highlight',
-        color: yellow500
+        color: yellow500,
+        svg: true
     }
     // convert SVG object to FabricJS JSON
     const svg = `<svg>${node[svgContent]}</svg>`
@@ -209,6 +206,15 @@ function parseTextQuoteSelector( node ) {
         target: node.uri,
         excerpt: node[textQuoteExcerpt],
         color: yellow500
+    }
+    return obj  
+}
+
+function parseSpecificResource( node ) {
+    const obj = {
+        uri: node.uri,
+        selectorURI: node[resourceSelector], 
+        sourceURI: node[resourceSource]
     }
     return obj  
 }
@@ -255,8 +261,36 @@ async function createNodes(dataFile) {
 
         if( !nodes[subject] ) nodes[subject] = { uri: subject }
 
+        // special handling for image filenames which also happen to be URIs in this TTL
+        if( triple.subject.value.startsWith('image:') ) {
+            const imageURI = triple.subject.value
+            // Escape in the manner of AWS S3
+            const imageFile = imageURI
+                .replace( /^image:/, '' )
+                .replace(/%20/g,' ')
+                .replace(/%/g,'%25')
+                .replace(/@/g,'%40')
+                .replace(/#/g,'%23')
+                .replace(/\$/g,'%24')
+                .replace(/\^/g,'%5E')
+                .replace(/&/g,'%26')
+                .replace(/\+/g,'%2B')
+                .replace(/=/g,'%3D')
+                .replace(/\|/g,'%7C')
+                .replace(/\\/g,'%5C')
+                .replace(/:/g,'%3A')
+                .replace(/\?/g,'%3F')
+                .replace(/</g,'%3C')
+                .replace(/>/g,'%3E')
+                .replace(/`/g,'%60')
+                .replace(/,/g,'%2C')
+                .replace(/ /g,'+')
+
+            nodes[subject][imageFilename] = imageFile
+        }
+
         if( predicate === nodeType ) {
-            // only accept node type valus in the vocab
+            // only accept node type values in the vocab
             if( typeVocab.includes( objectValue ) ) {
                 nodes[subject][predicate] = objectValue 
             } 
@@ -281,6 +315,7 @@ async function parseMostThings() {
     const documents = await mongoDB.collection('documents')
     const images = await mongoDB.collection('images')
     const highlights = await mongoDB.collection('highlights')
+    const specificResources = await mongoDB.collection('specificResources')
     let annotations = []
 
     // document schema for parsing HTML -> ProseMirror JSON
@@ -310,6 +345,9 @@ async function parseMostThings() {
             case annotationNode:
                 annotations.push( parseAnnotation(node) )
                 break
+            case specificResource:
+                await specificResources.insertOne( parseSpecificResource(node) )
+                break
             case svgSelector:
                 await highlights.insertOne( await parseSVGSelector(node) )
                 break
@@ -330,7 +368,6 @@ async function parseLinks(annotationBuffer) {
     const links = await mongoDB.collection('links')
     const images = await mongoDB.collection('images')
     const documents = await mongoDB.collection('documents')
-    const highlights = await mongoDB.collection('highlights')
     const annotations = await mongoDB.collection('annotations')
     const linkBuffer = []
 
@@ -358,8 +395,8 @@ async function parseLinks(annotationBuffer) {
                 doomedAnnotations.push(annotation)
             } else {
                 // these two together make a link
-                const linkA = await parseAnnotationLink( bodyNode, highlights, nodes ) 
-                const linkB = await parseAnnotationLink( targetNode, highlights, nodes )
+                const linkA = await parseAnnotationLink( bodyNode, nodes ) 
+                const linkB = await parseAnnotationLink( targetNode, nodes )
                 if( linkA && linkB ) {
                     linkBuffer.push( {
                         linkUriA: linkA.uri, 
@@ -475,16 +512,69 @@ async function addDocumentsToProjects() {
     logger.info(`Found ${highlightResult.deletedCount} unlinked highlights.`)
 }
 
+async function scaleSVGs() {
+    const highlights = await mongoDB.collection('highlights')
+    const highlightsBuffer = await collectionToArray('highlights')
+    const documentMap = await collectionToHash('documents','uri')
+
+    for( let i=0; i < highlightsBuffer.length; i++ ) {
+        let highlight = highlightsBuffer[i]
+        let target = highlight.target      
+        if( highlight.svg ) {
+            const document = documentMap[highlight.documentURI]
+            if( document ) {
+                const scaleFactor = 2000.0 / document.width 
+                    
+                // scale the svg
+                let shape = JSON.parse(target)        
+                shape.scaleX = shape.scaleX * scaleFactor
+                shape.scaleY = shape.scaleY * scaleFactor
+                shape.left = shape.left * scaleFactor
+                shape.top = shape.top * scaleFactor
+
+                // record the thumbnail info
+                highlight.imageURI = document.images[0]
+                highlight.thumbnailRect = {
+                    left: shape.left,
+                    top: shape.top,
+                    width: shape.width * scaleFactor,
+                    height: shape.height * scaleFactor
+                }
+
+                // write object back into mongo 
+                highlight.target = JSON.stringify(shape) 
+                await highlights.replaceOne( { uri: highlight.uri }, highlight )
+            }
+        }
+    }
+}
+
 async function createGraph() {
     logger.info("Parsing most of the things...")
     let annotationBuffer = await parseMostThings()
     logger.info("Parsing links...")
     await parseLinks( annotationBuffer )
-    logger.info("Add Documents to Projects...")
+    logger.info("Link highlights to documents...")
+    await linkHighlightsToDocuments()
+    logger.info("Scale SVGs...")
+    await scaleSVGs()
+    logger.info("Add documents to projects...")
     await addDocumentsToProjects()
 }
 
-async function parseAnnotationLink( node, highlights, nodes ) {
+async function linkHighlightsToDocuments() {
+    const highlights = await mongoDB.collection('highlights')
+    const specificResourceBuffer = await collectionToArray('specificResources')
+
+    for( let i=0; i < specificResourceBuffer.length; i++ ) {
+        const { sourceURI, selectorURI } = specificResourceBuffer[i]
+        if( sourceURI && selectorURI ) {
+            await highlights.updateOne( { uri: selectorURI }, { $set: { documentURI: sourceURI }})
+        } 
+    }
+}
+
+async function parseAnnotationLink( node, nodes ) {
     let uri, linkType
     if( node[nodeType] === specificResource ) {
         const resourceSourceQ = { uri: node[resourceSource] }
@@ -492,7 +582,6 @@ async function parseAnnotationLink( node, highlights, nodes ) {
         const source = await nodes.findOne(resourceSourceQ)
         const selector = await nodes.findOne(resourceSelectorQ)  
         if( source && selector ) {
-            await highlights.updateOne( resourceSelectorQ, { $set: { documentURI: source.uri }})
             uri = selector.uri
             linkType = 'Highlight'    
         } else {
@@ -512,14 +601,72 @@ async function dropCollections() {
     })
 }
 
+async function collectionToArray(collectionName) {
+    const coll = await mongoDB.collection(collectionName)
+    const cursor = await coll.find({})
+    return await cursor.toArray()    
+}
 
-async function serializeGraph(outputJSONFile) {
-    async function collectionToArray(collectionName) {
-        const coll = await mongoDB.collection(collectionName)
-        const cursor = await coll.find({})
-        return await cursor.toArray()    
+async function collectionToHash(collectionName, key) {
+    let arr = await collectionToArray(collectionName)  
+    let hash = {}
+    arr.forEach( obj => { hash[obj[key]] = obj })
+    return hash
+}
+
+function addUnique( array, item ) {
+    if( !array.includes(item) ) array.push(item)
+}
+
+async function serializeProject( projectURI, outputJSONFile ) {
+
+    const documents = await collectionToArray('documents')
+    const highlights = await collectionToArray('highlights')
+    const links = await collectionToArray('links')
+
+    const images = await collectionToHash('images','uri')
+    const users = await collectionToHash('users','uri')
+    const projects = await collectionToHash('projects','uri')
+
+    const targetProject = projects[projectURI]
+    const projectOwner = users[ targetProject.userURI ]
+    const dm2Graph = {
+        users: [ projectOwner ],
+        documents: [],
+        images: [],
+        projects: [ targetProject ],
+        highlights: [],
+        links: []
     }
 
+    // delete all documents that aren't in the target project
+    documents.forEach( document => {
+        if( document.projectURI === projectURI ) {
+            dm2Graph.documents.push(document)
+            if( document.images ) { 
+                document.images.forEach( imageURI => {
+                   addUnique( dm2Graph.images, images[imageURI] )
+                })
+            }
+            highlights.forEach( highlight => {
+                if( document.uri === highlight.documentURI ) {
+                    dm2Graph.highlights.push( highlight )
+                }
+            })
+            links.forEach( link => {
+                if( (link.linkTypeA === 'Document' && link.linkUriA === document.uri) ||
+                    (link.linkTypeB === 'Document' && link.linkUriB === document.uri)    )  {
+                    addUnique( dm2Graph.links, link )
+                }
+            })                        
+        }        
+    })
+
+    fs.writeFileSync(outputJSONFile, JSON.stringify(dm2Graph)) 
+}
+
+async function serializeGraph(outputJSONFile) {
+    
     const dm2Graph = {
         users: await collectionToArray('users'),
         documents: await collectionToArray('documents'),
@@ -543,14 +690,9 @@ async function runExport() {
 
 async function runAsync() {
 
-    // process test TTL
-    // const inputTTLFile = 'ttl/test-image.ttl'
-    // const outputJSONFile = 'ttl/test.json'
-    // const mongoDatabaseName = "dm2_convert_test"
-
     // process production TTL
-    const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
-    const outputJSONFile = 'ttl/test-mappa.json'
+    const inputTTLFile = 'ttl/5.8.19-app.digitalmappa.org.ttl'
+    const outputJSONFile = 'ttl/5.8.19-digitalmappa.json'
     const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
