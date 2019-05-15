@@ -681,25 +681,18 @@ async function serializeGraph(outputJSONFile) {
 
 async function runExport() {
     const outputJSONFile = 'ttl/test.json'
-    const mongoDatabaseName = "dm2_convert"
+    const mongoDatabaseName = "dm2_convert_test"
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
-    // just Old English Facs
-    await serializeProject('urn:uuid:5jb712oxclgh13fhpitydiu6871sbbyxs8c', outputJSONFile)
-    // await serializeGraph(outputJSONFile)
+    await serializeGraph(outputJSONFile)
     await mongoClient.close()
 }
 
 async function runAsync() {
 
-    // process test TTL
-    // const inputTTLFile = 'ttl/test-image.ttl'
-    // const outputJSONFile = 'ttl/test.json'
-    // const mongoDatabaseName = "dm2_convert_test"
-
     // process production TTL
-    const inputTTLFile = 'ttl/app.digitalmappa.org.ttl'
-    const outputJSONFile = 'ttl/digitalmappa.json'
+    const inputTTLFile = 'ttl/5.8.19-app.digitalmappa.org.ttl'
+    const outputJSONFile = 'ttl/5.8.19-digitalmappa.json'
     const mongoDatabaseName = "dm2_convert"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
