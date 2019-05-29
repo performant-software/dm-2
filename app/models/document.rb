@@ -4,7 +4,7 @@ class Document < Linkable
   belongs_to :project, touch: true
   belongs_to :locked_by, class_name: 'User', optional: true
   belongs_to :parent, polymorphic: true, optional: true
-  has_many :highlights, dependent: :delete_all
+  has_many :highlights, dependent: :destroy
   has_many_attached :images
   has_many :documents, as: :parent, dependent: :destroy
   has_many :document_folders, as: :parent, dependent: :destroy
