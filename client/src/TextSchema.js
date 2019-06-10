@@ -150,7 +150,7 @@ export const marks = {
     attrs: {fontSize: {default: 'normal'}},
     parseDOM: [{tag: "span", getAttrs(dom) {
       let styleAttr = dom.getAttribute("style")
-      let matches = styleAttr.match(fontSizeRegEx);
+      let matches = styleAttr ? styleAttr.match(fontSizeRegEx) : null;
       let fontSize = matches && matches.length > 1 ? matches[1] : {};
       return { fontSize }
     }}], 
