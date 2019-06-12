@@ -30,6 +30,7 @@ body {
 }
 .ProseMirror td, .ProseMirror th {
   vertical-align: top;
+  padding: 5px;
   border: 1px gray solid;
   box-sizing: border-box;
   position: relative;

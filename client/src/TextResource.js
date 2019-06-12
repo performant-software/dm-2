@@ -30,7 +30,7 @@ import { toggleMark } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
 import { undo, redo } from "prosemirror-history"
 import { keymap } from "prosemirror-keymap"
-import {tableEditing, columnResizing, tableNodes, fixTables} from "prosemirror-tables"
+import {tableEditing, columnResizing, tableNodes } from "prosemirror-tables"
 import { goToNextCell } from "prosemirror-tables"
 
 import { schema } from './TextSchema';
