@@ -5,6 +5,10 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+.dm-highlight .selected {
+  border: 2px solid blue;
+}
+
 .ProseMirror-menubar {
   min-height: 48px !important;
 }

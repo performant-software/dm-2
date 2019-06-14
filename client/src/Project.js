@@ -6,6 +6,7 @@ import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
 import { closeDeleteDialog, confirmDeleteDialog, layoutOptions } from './modules/documentGrid';
+import { selectHighlight } from './modules/textEditor';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import Navigation from './Navigation';
@@ -35,13 +36,30 @@ class Project extends Component {
     }
   }
 
+  selectTextHighlight(document_id, highlight_id) {
+    if (this.props.highlightSelectModes[document_id]) {
+      this.props.selectHighlight(document_id, highlight_id);
+    }
+    // if the clicked highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
+    else if (this.props.selectedHighlights[document_id] !== highlight_id) {
+      this.setFocusHighlight(document_id, highlight_id);
+    }
+  }
+
   showRollover(document_id, highlight_id) {
+    // if the hovered highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
+    if (this.props.selectedHighlights[document_id] === highlight_id) return;
     const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
     if( !existingPopover ) {
       this.activateRolloverTimer( () => {
         const target = this.createTarget(document_id, highlight_id)
-        target.rollover = true
-        this.props.selectTarget(target);  
+        if (target) {
+          target.rollover = true
+          this.props.selectTarget(target);
+        }
+        else {
+          console.log('tried to show rollover for a non-existent target', document_id, highlight_id);
+        }
       })
     }
   }
@@ -88,6 +106,7 @@ class Project extends Component {
 
   componentDidMount() {
     window.setFocusHighlight = this.setFocusHighlight.bind(this);
+    window.selectTextHighlight = this.selectTextHighlight.bind(this);
     window.showRollover = this.showRollover.bind(this);
     window.hideRollover = this.hideRollover.bind(this);
     if (this.props.match.params.slug !== 'new') {
@@ -116,17 +135,17 @@ class Project extends Component {
   renderDialogLayers() {
     return (
       <div>
-        <LinkInspectorPopupLayer 
-          targets={this.props.selectedTargets} 
-          closeHandler={this.props.closeTarget} 
-          mouseDownHandler={this.props.promoteTarget} 
-          openDocumentIds={this.props.openDocumentIds} 
-          writeEnabled={this.props.writeEnabled} 
-          sidebarWidth={this.props.sidebarWidth} 
+        <LinkInspectorPopupLayer
+          targets={this.props.selectedTargets}
+          closeHandler={this.props.closeTarget}
+          mouseDownHandler={this.props.promoteTarget}
+          openDocumentIds={this.props.openDocumentIds}
+          writeEnabled={this.props.writeEnabled}
+          sidebarWidth={this.props.sidebarWidth}
         />
-        <SearchResultsPopupLayer 
-          openDocumentIds={this.props.openDocumentIds} 
-          sidebarWidth={this.props.sidebarWidth} 
+        <SearchResultsPopupLayer
+          openDocumentIds={this.props.openDocumentIds}
+          sidebarWidth={this.props.sidebarWidth}
         />
         { this.renderDeleteDialog() }
         <ProjectSettingsDialog />
@@ -134,27 +153,33 @@ class Project extends Component {
     );
   }
 
+  getSelectedHighlight(document_id) {
+    return this.props.selectedHighlights[document_id];
+  }
+
   renderDocumentViewer = (document,index) => {
     const key = `${document.id}-${document.timeOpened}`;
     return (
-      <DocumentViewer 
-        key={key} 
-        index={index} 
-        document_id={document.id}  
-        timeOpened={document.timeOpened} 
-        resourceName={document.title} 
-        document_kind={document.document_kind} 
-        content={document.content} 
-        highlight_map={document.highlight_map} 
-        image_thumbnail_urls={document.image_thumbnail_urls} 
-        image_urls={document.image_urls} 
-        linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}} 
-        writeEnabled={this.props.writeEnabled} 
+      <DocumentViewer
+        key={key}
+        index={index}
+        document_id={document.id}
+        timeOpened={document.timeOpened}
+        resourceName={document.title}
+        document_kind={document.document_kind}
+        content={document.content}
+        highlight_map={document.highlight_map}
+        getHighlightMap={function() {return document.highlight_map;}}
+        image_thumbnail_urls={document.image_thumbnail_urls}
+        image_urls={document.image_urls}
+        linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}}
+        writeEnabled={this.props.writeEnabled}
         locked={document.locked}
         lockedByUserName={document.locked_by_user_name}
         lockedByMe={document.locked_by_me}
         numRows={this.numRows}
         firstTarget={document.firstTarget}
+        getSelectedHighlight={this.getSelectedHighlight.bind(this)}
       />
     );
   }
@@ -170,11 +195,11 @@ class Project extends Component {
     }
     this.numRows = newNumRows;
 
-    const gridInnerStyle = { 
-      margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`, 
-      display: 'flex', 
-      flexWrap: 'wrap', 
-      overflow: 'hidden' 
+    const gridInnerStyle = {
+      margin: `72px 8px 0 ${this.props.sidebarWidth + 8}px`,
+      display: 'flex',
+      flexWrap: 'wrap',
+      overflow: 'hidden'
     }
 
     return (
@@ -182,8 +207,8 @@ class Project extends Component {
         id='document-grid-main'
         ref={el => {this.mainContainer = el;}}
         onMouseMove={event => {this.mouseX = event.clientX; this.mouseY = event.clientY;}}
-      >          
-        <div 
+      >
+        <div
           id='document-grid-inner'
           style={gridInnerStyle}
         >
@@ -203,13 +228,13 @@ class Project extends Component {
           onTitleChange={(event, newValue) => {this.props.updateProject(projectId, {title: newValue});}}
           isLoading={loading}
         />
-        <TableOfContents 
+        <TableOfContents
           showSettings={adminEnabled}
           settingsClick={this.props.showSettings}
-          sidebarWidth={sidebarWidth} 
-          contentsChildren={contentsChildren} 
-          openDocumentIds={openDocumentIds} 
-          writeEnabled={writeEnabled} 
+          sidebarWidth={sidebarWidth}
+          contentsChildren={contentsChildren}
+          openDocumentIds={openDocumentIds}
+          writeEnabled={writeEnabled}
         />
         { this.renderDialogLayers() }
         { this.renderDocumentGrid() }
@@ -238,7 +263,9 @@ const mapStateToProps = state => ({
   deleteDialogSubmit: state.documentGrid.deleteDialogSubmit,
   currentLayout:      layoutOptions[state.documentGrid.currentLayout],
   selectedTargets:    state.annotationViewer.selectedTargets,
-  sidebarTarget:      state.annotationViewer.sidebarTarget
+  sidebarTarget:      state.annotationViewer.sidebarTarget,
+  highlightSelectModes: state.textEditor.highlightSelectModes,
+  selectedHighlights: state.textEditor.selectedHighlights
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -251,7 +278,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   closeDeleteDialog,
   confirmDeleteDialog,
   showSettings,
-  hideSettings
+  hideSettings,
+  selectHighlight
 }, dispatch);
 
 export default connect(

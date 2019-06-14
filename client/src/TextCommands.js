@@ -1,3 +1,5 @@
+import { chainCommands } from 'prosemirror-commands';
+
 function markApplies(doc, ranges, type) {
     for (let i = 0; i < ranges.length; i++) {
         let {$from, $to} = ranges[i]
@@ -35,12 +37,30 @@ export function addMark(markType, attrs) {
     }
 }
 
-export function removeMark(markType) {
+export function removeMark(markType, uid) {
     return function(state, dispatch) {
         let {empty, $cursor, ranges} = state.selection
-        if ((empty && !$cursor) || !markApplies(state.doc, ranges, markType)) return false
+        if (!uid && ((empty && !$cursor) || !markApplies(state.doc, ranges, markType))) return false
         if (dispatch) {
-            if ($cursor) {
+            if (markType && uid) {
+              let transform = null;
+              state.doc.descendants((node, position) => {
+                node.marks.forEach(mark => {
+                  if (mark.type.name === markType.name && mark.attrs.highlightUid === uid) {
+                    if (transform) {
+                      // chain removal steps for additional marks onto the first step in the transform
+                      transform.removeMark(position, position + node.nodeSize, mark);
+                    }
+                    else {
+                      transform = state.tr.removeMark(position, position + node.nodeSize, mark);
+                    }
+                  }
+                });
+              });
+              if (transform) dispatch(transform);
+            }
+            // no longer used for deleting highlights
+            else if ($cursor) {
                 dispatch(state.tr.removeStoredMark(markType))
             } else {
                 let has = false, tr = state.tr
