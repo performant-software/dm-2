@@ -4,6 +4,7 @@
   "scripts": {
     "postdeploy": "bundle exec rake db:migrate"
   },
+  "repository": "https://github.com/performant-software/dm-2",
   "env": {
     "LANG": {
       "required": true

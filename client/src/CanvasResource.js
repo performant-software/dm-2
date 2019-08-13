@@ -24,7 +24,7 @@ import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
 
-// overlay these modules 
+// overlay these modules
 openSeaDragonFabricOverlay(OpenSeadragon, fabric);
 
 // from https://stackoverflow.com/a/48343346/6126327 - show consistent stroke width regardless of object scaling
@@ -86,13 +86,13 @@ class CanvasResource extends Component {
     let tileSources = (content && content.tileSources) ? content.tileSources : [];
     let imageUrlForThumbnail = null
     const firstTileSource = tileSources[0];
-    
+
     if (firstTileSource) {
       imageUrlForThumbnail = this.openTileSource(firstTileSource)
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
-    } 
+    }
 
     viewer.addHandler('update-viewport', () => {
       if (!this.viewportUpdatedForPageYet) {
@@ -112,7 +112,7 @@ class CanvasResource extends Component {
       overlay.resize();
       overlay.resizecanvas();
     });
-    
+
     viewer.addHandler('page', () => {
       this.markObjectsDirtyNextUpdate = true;
     });
@@ -122,6 +122,9 @@ class CanvasResource extends Component {
     viewer.addHandler('zoom', event => {
       const max = this.osdViewer.viewport.getMaxZoom();
       const min = this.osdViewer.viewport.getMinZoom();
+      //JONAH const exponential_range = (value-Math.log1p(value));  // flattens out default exponential zoom. zoom now fairly linear -Jonah
+      //JONAH this.osdViewer.viewport.zoomTo(min + ((max - min) * exponential_range));
+      // this sets the zoom control based on zoom level (when adjusted through mouse wheel)
       this.props.setZoomControl(this.getInstanceKey(), Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
     });
 
@@ -141,8 +144,8 @@ class CanvasResource extends Component {
       if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
           if (highlight_id && imageUrlForThumbnail) {
-            const highlightCoords = event.target._isMarker ? 
-              this.computeMarkerThumbBounds(event.target) : 
+            const highlightCoords = event.target._isMarker ?
+              this.computeMarkerThumbBounds(event.target) :
               event.target.aCoords
             updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
             setHighlightThumbnail(highlight_id, imageUrlForThumbnail, highlightCoords, event.target.toSVG());
@@ -150,16 +153,16 @@ class CanvasResource extends Component {
       }
     });
 
-    // rollover highlights 
+    // rollover highlights
     overlay.fabricCanvas().on('mouse:over', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
         window.showRollover(this.props.document_id, event.target._highlightUid);
-      } 
+      }
     });
     overlay.fabricCanvas().on('mouse:out', function(event) {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
         window.hideRollover(event.target._highlightUid);
-      } 
+      }
     }.bind(this));
 
     // process paths created with pencil tool
@@ -171,11 +174,11 @@ class CanvasResource extends Component {
         path.perPixelTargetFind = true;
         this.overlay.fabricCanvas().setActiveObject(path);
         addHighlight(
-          document_id, 
-          highlightUid, 
-          JSON.stringify(path.toJSON(['_highlightUid', '_isMarker'])), 
-          this.overlay.fabricCanvas().freeDrawingBrush.color, 
-          'Pencil highlight', 
+          document_id,
+          highlightUid,
+          JSON.stringify(path.toJSON(['_highlightUid', '_isMarker'])),
+          this.overlay.fabricCanvas().freeDrawingBrush.color,
+          'Pencil highlight',
           savedHighlight => {
             setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());
           });
@@ -209,8 +212,8 @@ class CanvasResource extends Component {
       let resourceURL = firstTileSource.replace('http:', 'https:')
       imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png'
       this.props.setImageUrl(key, imageUrlForThumbnail);
-      checkTileSource( 
-        resourceURL, 
+      checkTileSource(
+        resourceURL,
         (validResourceURL) => { this.osdViewer.open(validResourceURL) },
         (errorResponse) => { console.log( errorResponse ) }
       )
@@ -231,7 +234,7 @@ class CanvasResource extends Component {
         }
       }
       if( targetHighLight ) {
-        const target = JSON.parse(targetHighLight.target) 
+        const target = JSON.parse(targetHighLight.target)
         const x = target.left / fabricViewportScale
         const y = target.top / fabricViewportScale
         const w = target.width / fabricViewportScale
@@ -301,7 +304,7 @@ class CanvasResource extends Component {
         if( this.checkDoubleClick() ) {
           this.endLineMode();
         } else {
-          this.drawLine(this.pointerCoords);
+          this.drawLine(this.pointerCoords, true);
         }
         break;
       default:
@@ -312,9 +315,13 @@ class CanvasResource extends Component {
   canvasMouseMove(o) {
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
+    if (this.currentMode === 'lineDraw') {
+      //this.pointerCoords = this.overlay.fabricCanvas().getPointer(o.e);
+      //this.drawLine(this.pointerCoords, false);
+    }
+
     if( this.newShape && this.isMouseDown ) {
       const mouse = this.overlay.fabricCanvas().getPointer(o.e);
-
       switch(this.currentMode) {
         case 'rect':
           if(mouse.x < this.pointerCoords.x) {
@@ -340,17 +347,21 @@ class CanvasResource extends Component {
           break;
         default:
           break;
-  
+
       }
     }
   }
 
   canvasMouseUp() {
-    if( this.currentMode !== 'rect' && this.currentMode !== 'circle' ) return;
+    if( this.currentMode !== 'rect' && this.currentMode !== 'circle') {
+      if( this.currentMode !== 'edit' && this.currentMode !== 'colorize' && this.currentMode !== 'pan' && this.currentMode !== 'lineDraw') {
+        this.panClick(); // jonah *** change here the current mode to 'pan'
+      }
+      return;
+    }
 
     // needed for new shape to respond to mouse clicks
     this.osdViewer.forceRedraw();
-
     const label = this.currentMode === 'rect' ? 'Rectangular highlight' : 'Circular highlight';
     this.isMouseDown = false;
     const key = this.getInstanceKey();
@@ -372,7 +383,7 @@ class CanvasResource extends Component {
             svg
           );
       });
-    
+    this.panClick(); // jonah *** change here the current mode to 'pan'
     this.newShape = null;
   }
 
@@ -408,7 +419,7 @@ class CanvasResource extends Component {
     if( this.lastTime ) {
       const currentTime = Date.now();
       const elapsedTime = currentTime - this.lastTime;
-      this.lastTime = currentTime;  
+      this.lastTime = currentTime;
       return ( elapsedTime < doubleClickTimeout );
     } else {
       this.lastTime = Date.now();
@@ -416,7 +427,10 @@ class CanvasResource extends Component {
     }
   }
 
-  drawLine(pointer) {
+  drawLine(pointer, activeShape) {
+    // draw first segment normally
+    // draw a line connecting most recent segment to current mouse position
+    // on click add that line to points array
     const key = this.getInstanceKey();
     const lineOptions = {
       fill: 'transparent',
@@ -426,26 +440,28 @@ class CanvasResource extends Component {
     };
 
     if( this.lineInProgress ) {
-      if (this.lineInProgress.radius) {
+      if (this.lineInProgress.radius) { // drawing first line segment
         // if we have a circle, replace it with a line
         const centerPoint = this.lineInProgress.getCenterPoint();
         const oldCircle = this.lineInProgress;
         this.lineInProgress = new fabric.Polyline(
-          [{ x: centerPoint.x, y: centerPoint.y}, { x: pointer.x, y: pointer.y }], 
+          [{ x: centerPoint.x, y: centerPoint.y}, { x: pointer.x, y: pointer.y }],
           lineOptions
         );
-        this.overlay.fabricCanvas().remove(oldCircle);
-        this.overlay.fabricCanvas().add(this.lineInProgress);  
-      } 
+          this.overlay.fabricCanvas().remove(oldCircle);
+          this.overlay.fabricCanvas().add(this.lineInProgress);
+      }
       else {
         // otherwise, add to the line
-        const oldPolyline = this.lineInProgress;
-        const points = oldPolyline.points.concat({ x: pointer.x, y: pointer.y });
-        this.lineInProgress = new fabric.Polyline( points, lineOptions );
-        this.overlay.fabricCanvas().remove(oldPolyline);
-        this.overlay.fabricCanvas().add(this.lineInProgress);  
-      }          
-    } 
+        // if we are just hovering make a line
+          const oldPolyline = this.lineInProgress;
+          const points = oldPolyline.points.concat({ x: pointer.x, y: pointer.y });
+          this.lineInProgress = new fabric.Polyline( points, lineOptions );
+          this.overlay.fabricCanvas().remove(oldPolyline);
+          this.overlay.fabricCanvas().add(this.lineInProgress);
+          console.log("drawing line in progress "+ pointer.x, pointer.y);
+      }
+    }
     else {
       // start with a circle
       let radius = markerRadius / this.overlay.fabricCanvas().getZoom()
@@ -540,10 +556,11 @@ class CanvasResource extends Component {
           aCoords,
           svg
         );
-    });      
+    });
     this.lineInProgress = null;
     this.overlay.fabricCanvas().defaultCursor = 'default';
     this.osdViewer.forceRedraw();
+    this.panClick(); // jonah *** change here the current mode to 'pan'
   }
 
   addShape(fabricObject) {
@@ -572,14 +589,14 @@ class CanvasResource extends Component {
       object.lockMovementY = true;
       object.hasControls = false;
     } else {
-      if( !object._isMarker ) { 
+      if( !object._isMarker ) {
         object.lockScalingX = false;
         object.lockScalingY = false;
         object.lockRotation = false;
         object.lockScalingFlip = false;
         object.lockSkewingX = false;
         object.lockSkewingY = false;
-        object.lockUniScaling = false;  
+        object.lockUniScaling = false;
         object.hasControls = true;
       }
       object.lockMovementX = false;
@@ -604,7 +621,6 @@ class CanvasResource extends Component {
   panClick() {
     // deselect highlight to ensure resize handles behave properly
     this.overlay.fabricCanvas().discardActiveObject();
-
     this.stopDrawing()
     this.lockCanvasObjects(true);
     this.currentMode = 'pan';
@@ -691,7 +707,8 @@ class CanvasResource extends Component {
     if (this.osdViewer && this.osdViewer.viewport) {
       const max = this.osdViewer.viewport.getMaxZoom();
       const min = this.osdViewer.viewport.getMinZoom();
-      this.osdViewer.viewport.zoomTo(min + ((max - min) * value));
+      const exponential_range = (value-Math.log1p(value));  // flattens out default exponential zoom. zoom now fairly linear -Jonah
+      this.osdViewer.viewport.zoomTo(min + ((max - min) * exponential_range));
     }
   }
 
@@ -732,7 +749,6 @@ class CanvasResource extends Component {
     if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
     }
-
     // don't render highlights if they are hidden
     if( !lockedByMe && this.overlay ) {
       const canvas = this.overlay.fabricCanvas()
@@ -744,7 +760,7 @@ class CanvasResource extends Component {
         }
       }
     }
-    
+
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
         <div style={{ display: (mode || !globalCanvasDisplay) ? 'none' : 'flex', flexDirection: 'column', width: '100%' }}>
@@ -761,10 +777,10 @@ class CanvasResource extends Component {
                 }}
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
-              <IconButton tooltip='Pan the image.' onClick={this.panClick.bind(this)} style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Open highlight and navigate image.' onClick={this.panClick.bind(this)} style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <PanTool />
               </IconButton>
-              <IconButton tooltip='Move and resize shapes.' onClick={this.editShapeClick.bind(this)} style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Select and change highlight shape.' onClick={this.editShapeClick.bind(this)} style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
                 <CropFree />
               </IconButton>
               <IconButton tooltip='Draw rectangular shapes.' onClick={this.rectClick.bind(this)} style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
@@ -794,11 +810,11 @@ class CanvasResource extends Component {
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
-            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.1} value={this.props.zoomControls[key] || 0} onChange={this.zoomControlChange.bind(this)} />
+            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.01} value={this.props.zoomControls[key] || 0} onChange={this.zoomControlChange.bind(this)} />
             <div id={this.osdId} style={{ flexGrow: 1 }}></div>
           </div>
         </div>
-        <AddImageLayer 
+        <AddImageLayer
           editorKey={key}
           writeEnabled={writeEnabled}
           image_urls={image_urls}
