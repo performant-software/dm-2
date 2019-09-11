@@ -39,7 +39,7 @@ class JSONImport
     def import_projects(project_data)
         self.project_map = {}
         project_data.each { |project_obj|
-            user_id = self.user_map[project_obj['userURI']]
+            user_id = self.user_map[project_obj['userURI']] || 1  # assign to admin if no user record
             project = Project.new( {
                 title: project_obj['name'],
                 description: project_obj['description'],
