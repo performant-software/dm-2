@@ -81,21 +81,24 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        document.images.attach(io: open(image_path), filename: image_filename)
-                        document.content = {
-                            tileSources: [ {
-                                url: url_for(document.images.first),
-                                type: "image"
-                            }]
-                        }
-                        
-                        thumb_file = ImageProcessing::MiniMagick.source(image_path) #url_for(document.images.first))
-                        .resize_to_fill(80, 80)
-                        .convert('png')
-                        .call
-                        document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
-
-                        document.save!
+                        if File.exist?(image_path)
+                            document.images.attach(io: open(image_path), filename: image_filename)
+                            document.content = {
+                                tileSources: [ {
+                                    url: url_for(document.images.first),
+                                    type: "image"
+                                }]
+                            }
+                            
+                            thumb_file = ImageProcessing::MiniMagick.source(image_path) #url_for(document.images.first))
+                            .resize_to_fill(80, 80)
+                            .convert('png')
+                            .call
+                            document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
+                            document.save!
+                        else
+                            Rails.logger.info( "Image file not found: #{image_path}")
+                        end
                     }
                 end
                 document_bridge.push( { doc: document.id, obj: document_obj })
