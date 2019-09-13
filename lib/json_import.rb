@@ -81,7 +81,7 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        if File.exist?(image_path)
+                        begin
                             document.images.attach(io: open(image_path), filename: image_filename)
                             document.content = {
                                 tileSources: [ {
@@ -96,9 +96,10 @@ class JSONImport
                             .call
                             document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
                             document.save!
-                        else
-                            Rails.logger.info( "Image file not found: #{image_path}")
-                        end
+                        rescue Exception => e 
+                            # log error and continue
+                            Rails.logger.info( "Unable to load document with URI: #{document_obj['uri']} Reason: #{e}")
+                        end                        
                     }
                 end
                 document_bridge.push( { doc: document.id, obj: document_obj })

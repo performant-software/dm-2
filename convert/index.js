@@ -697,9 +697,9 @@ async function runExport() {
 async function runAsync() {
 
     // process production TTL
-    const inputTTLFile = 'ttl/2019-08-20T180000.ttl'
-    const outputJSONFile = 'ttl/2019-08-20T180000.json'
-    const mongoDatabaseName = "dm2_convert"
+    const inputTTLFile = 'ttl/Digital_Grave_2019-06-27T13_49_00/project.ttl'
+    const outputJSONFile = 'ttl/diggrave.json'
+    const mongoDatabaseName = "dm2_import"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
