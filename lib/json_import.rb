@@ -4,8 +4,7 @@ class JSONImport
     attr_accessor :unguessable_password, :user_map, :project_map, :document_map, :highlight_map, :image_files, :document_to_project_map
 
     def initialize
-        # TODO randomly generate on each run a strong password
-        self.unguessable_password = 'pass12345'
+        self.unguessable_password = 'fB0s51GdUYqo'
     end
 
 	def load(filepath,image_path)
