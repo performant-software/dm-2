@@ -16,6 +16,7 @@
     "prosemirror-schema-basic": "^1.0.0",
     "prosemirror-schema-list": "^1.0.0",
     "prosemirror-state": "^1.1.0",
+    "prosemirror-tables": "^0.8.1",
     "prosemirror-transform": "^1.0.10",
     "prosemirror-view": "^1.2.0",
     "react": "^16.4.1",
