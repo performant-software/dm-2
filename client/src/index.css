@@ -18,6 +18,10 @@ body {
   outline: none;
 }
 
+.ProseMirror p {
+  margin: 2px;
+}
+
 .ProseMirror .tableWrapper {
   overflow-x: auto;
 }
