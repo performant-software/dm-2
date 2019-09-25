@@ -179,8 +179,8 @@ function parseAnnotation( node ) {
 async function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
-        excerpt: 'Highlight',
-        color: yellow500,
+        excerpt: '     ',
+        color: '#82b1ff',
         svg: true
     }
     // convert SVG object to FabricJS JSON
@@ -192,7 +192,7 @@ async function parseSVGSelector( node ) {
                 let shape = fabObj[0].toJSON()
                 shape._highlightUid = node.uri
                 shape.fill = "transparent"
-                shape.stroke = yellow500
+                shape.stroke = '#82b1ff'
                 resolve(shape)
             })        
         }
