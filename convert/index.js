@@ -179,7 +179,7 @@ function parseAnnotation( node ) {
 async function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
-        excerpt: '     ',
+        excerpt: '  ---   ',
         color: '#82b1ff',
         svg: true
     }
@@ -697,8 +697,8 @@ async function runExport() {
 async function runAsync() {
 
     // process production TTL
-    const inputTTLFile = 'ttl/Digital_Grave_2019-06-27T13_49_00/project.ttl'
-    const outputJSONFile = 'ttl/diggrave.json'
+    const inputTTLFile = 'ttl/2019-08-20T180000.ttl'
+    const outputJSONFile = 'ttl/sims.json'
     const mongoDatabaseName = "dm2_import"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
