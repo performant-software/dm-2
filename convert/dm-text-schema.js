@@ -1,12 +1,12 @@
-import {Schema} from "prosemirror-model"
-import {textStyle} from "./TextStyleMarkSpec"
+const { Schema } = require('prosemirror-model');
+const {textStyle} = require("./dm-text-style-mark-spec");
 
 const pDOM = ["p", 0], blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
       preDOM = ["pre", ["code", 0]], brDOM = ["br"]
 
 // :: Object
 // [Specs](#model.NodeSpec) for the nodes defined in this schema.
-export const nodes = {
+const nodes = {
   // :: NodeSpec The top level document node.
   doc: {
     content: "block+"
@@ -107,7 +107,7 @@ export const nodes = {
 const emDOM = ["em", 0], strongDOM = ["strong", 0], codeDOM = ["code", 0]
 
 // :: Object [Specs](#model.MarkSpec) for the marks in the schema.
-export const marks = {
+const marks = {
   // :: MarkSpec A link. Has `href` and `title` attributes. `title`
   // defaults to the empty string. Rendered and parsed as an `<a>`
   // element.
@@ -174,4 +174,4 @@ export const marks = {
 //
 // To reuse elements from this schema, extend or read from its
 // `spec.nodes` and `spec.marks` [properties](#model.Schema.spec).
-export const schema = new Schema({nodes, marks})
+module.exports.schema = new Schema({nodes, marks})

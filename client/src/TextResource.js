@@ -30,6 +30,8 @@ import { toggleMark } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
 import { undo, redo } from "prosemirror-history"
 import { keymap } from "prosemirror-keymap"
+import {tableEditing, columnResizing, tableNodes } from "prosemirror-tables"
+import { goToNextCell } from "prosemirror-tables"
 
 import { schema } from './TextSchema';
 import { addMark, removeMark } from './TextCommands';
@@ -104,12 +106,21 @@ class TextResource extends Component {
     }
 
     const marks = schema.spec.marks.addBefore('link', 'highlight', highlightSpec)
+    let nodes = addListNodes( schema.spec.nodes, 'paragraph block*', 'block')
+    nodes = nodes.append( tableNodes({
+        tableGroup: "block",
+        cellContent: "block+",
+        cellAttributes: {
+          background: {
+            default: null,
+            getFromDOM(dom) { return dom.style.backgroundColor || null },
+            setDOMAttr(value, attrs) { if (value) attrs.style = (attrs.style || "") + `background-color: ${value};` }
+          }
+        }
+    }))
 
     // create schema based on prosemirror-schema-basic
-    return new Schema({
-      nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
-      marks: marks
-    });
+    return new Schema({ nodes, marks });
   }
 
   getEditorState() {
@@ -132,9 +143,16 @@ class TextResource extends Component {
       menuBar: false
     });
 
-    // add keyboard commands
+    // add table and history commands
     plugins.push( 
-      keymap({"Mod-z": undo, "Mod-y": redo})
+      columnResizing(),
+      tableEditing(),
+      keymap({
+        "Mod-z": undo, 
+        "Mod-y": redo, 
+        "Tab": goToNextCell(1),
+        "Shift-Tab": goToNextCell(-1)
+      })
     );
 
     // create a new editor state
@@ -286,6 +304,10 @@ class TextResource extends Component {
           }
         }
       }
+
+      // to allow resize of tables
+      document.execCommand("enableObjectResizing", false, false)
+      document.execCommand("enableInlineTableEditing", false, false)
 
       this.setState( { ...this.state, editorView });
     }
