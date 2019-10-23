@@ -499,6 +499,10 @@ export function updatePermission(id, permissionLevel) {
   }
 }
 
+export function checkInAll() {
+  // TODO
+}
+
 export function toggleDeleteConfirmation() {
   return function(dispatch) {
     dispatch({

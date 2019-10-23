@@ -1,8 +1,8 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy, :search]
+  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in]
   before_action :validate_user_approved, only: [:create]
 
-  before_action only: [:update, :destroy] do
+  before_action only: [:update, :destroy, :check_in] do
     validate_user_admin(@project)
   end
 
@@ -63,6 +63,11 @@ class ProjectsController < ApplicationController
     documents = Document.where( project_id: params['id'] )
     results = documents.search_for( params['q'] ).limit(100)
     render json: results.map { |result| result.to_obj }
+  end
+
+  # GET /projects/1/check_in
+  def check_in
+    @project.check_in_all!
   end
 
   private

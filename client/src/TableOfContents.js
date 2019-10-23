@@ -13,6 +13,7 @@ import LinkableList from './LinkableList';
 import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
 import { Toolbar, ToolbarGroup, FlatButton, Drawer, IconButton } from 'material-ui';
 import Settings from 'material-ui/svg-icons/action/settings';
+import MoveToInbox from 'material-ui/svg-icons/content/move-to-inbox';
 import { clearSelection } from './modules/annotationViewer'
 
 class TableOfContents extends Component {
@@ -47,6 +48,7 @@ class TableOfContents extends Component {
                     icon={<CreateNewFolder />}
                     onClick={() => {this.props.createFolder(projectId, 'Project');}}
                   />
+                    <IconButton onClick={this.props.settingsClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><MoveToInbox /></IconButton>
                   { showSettings && 
                     <IconButton onClick={this.props.settingsClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><Settings /></IconButton>
                   }
