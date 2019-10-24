@@ -3,10 +3,11 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
-import { loadProject, updateProject, showSettings, hideSettings } from './modules/project';
+import { loadProject, updateProject, showSettings, hideSettings, checkInAll } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
-import { closeDeleteDialog, confirmDeleteDialog, layoutOptions } from './modules/documentGrid';
+import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar } from './modules/documentGrid';
 import Dialog from 'material-ui/Dialog';
+import Snackbar from 'material-ui/Snackbar';
 import FlatButton from 'material-ui/FlatButton';
 import Navigation from './Navigation';
 import ProjectSettingsDialog from './ProjectSettingsDialog';
@@ -193,6 +194,18 @@ class Project extends Component {
     );
   }
 
+  renderSnackbar() {
+    const { snackBarMessage, snackBarOpen, updateSnackBar } = this.props    
+    return (
+      <Snackbar
+        open={ snackBarOpen }
+        message={ snackBarMessage ? snackBarMessage : ""}
+        autoHideDuration={2000}
+        onRequestClose={ () => { updateSnackBar(false,null) } }
+      />
+    ) 
+  }
+
   render() {
     const { title, projectId, loading, adminEnabled, sidebarWidth, contentsChildren, openDocumentIds, writeEnabled } = this.props
     return (
@@ -206,6 +219,7 @@ class Project extends Component {
         <TableOfContents 
           showSettings={adminEnabled}
           settingsClick={this.props.showSettings}
+          checkInAllClick={ () => this.props.checkInAll(projectId) }
           sidebarWidth={sidebarWidth} 
           contentsChildren={contentsChildren} 
           openDocumentIds={openDocumentIds} 
@@ -213,6 +227,7 @@ class Project extends Component {
         />
         { this.renderDialogLayers() }
         { this.renderDocumentGrid() }
+        { this.renderSnackbar() }
       </div>
     );
   }
@@ -236,6 +251,8 @@ const mapStateToProps = state => ({
   deleteDialogTitle:  state.documentGrid.deleteDialogTitle,
   deleteDialogBody:   state.documentGrid.deleteDialogBody,
   deleteDialogSubmit: state.documentGrid.deleteDialogSubmit,
+  snackBarOpen:       state.documentGrid.snackBarOpen,
+  snackBarMessage:    state.documentGrid.snackBarMessage,
   currentLayout:      layoutOptions[state.documentGrid.currentLayout],
   selectedTargets:    state.annotationViewer.selectedTargets,
   sidebarTarget:      state.annotationViewer.sidebarTarget
@@ -251,7 +268,9 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   closeDeleteDialog,
   confirmDeleteDialog,
   showSettings,
-  hideSettings
+  checkInAll,
+  updateSnackBar,
+  hideSettings,
 }, dispatch);
 
 export default connect(

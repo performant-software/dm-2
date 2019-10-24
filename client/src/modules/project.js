@@ -1,5 +1,6 @@
 import { push, replace } from 'react-router-redux';
 import { CLOSE_SEARCH_POPUP } from './search'
+import { CHECK_IN_DOCS } from './documentGrid'
 
 export const TEXT_RESOURCE_TYPE = 'text';
 export const CANVAS_RESOURCE_TYPE = 'canvas';
@@ -499,8 +500,38 @@ export function updatePermission(id, permissionLevel) {
   }
 }
 
-export function checkInAll() {
-  // TODO
+export function checkInAll(projectID) {
+  return function(dispatch) {
+    fetch(`/projects/${projectID}/check_in`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST'
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(status => {
+      dispatch({
+        type: CHECK_IN_DOCS,
+        projectId: projectID,
+        docIDs: status.checked_in_docs,
+      });
+    })
+    .catch(() => dispatch({
+      type: POST_ERRORED
+    }));
+  };
 }
 
 export function toggleDeleteConfirmation() {

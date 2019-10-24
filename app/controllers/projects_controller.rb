@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :update, :destroy, :search, :check_in]
   before_action :validate_user_approved, only: [:create]
 
-  before_action only: [:update, :destroy, :check_in] do
+  before_action only: [:update, :destroy] do
     validate_user_admin(@project)
   end
 
@@ -67,7 +67,8 @@ class ProjectsController < ApplicationController
 
   # GET /projects/1/check_in
   def check_in
-    @project.check_in_all!
+    checked_in_doc_ids = @project.check_in_all(current_user)
+    render json: { checked_in_docs: checked_in_doc_ids }
   end
 
   private

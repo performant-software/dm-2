@@ -18,14 +18,17 @@ class Project < ApplicationRecord
     }
   end
 
-  def check_in_all!(user=nil)
+  def check_in_all(user)
+    checked_in_doc_ids = []
     self.documents.each { |document|
-      if !user || user.id == document.locked_by then
+      if user.id == document.locked_by_id then
         document.locked = false
-        document.locked_by = nil
+        document.locked_by_id = nil
         document.save!
+        checked_in_doc_ids.push(document.id)
       end
     }
+    checked_in_doc_ids
   end
 
   def can_read
