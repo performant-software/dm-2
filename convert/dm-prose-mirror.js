@@ -1,5 +1,5 @@
 const { Schema } = require('prosemirror-model');
-const { schema } = require('prosemirror-schema-basic');
+const { schema } = require('./dm-text-schema');
 const { addListNodes } = require('prosemirror-schema-list');
 
 function createDocumentSchema() {

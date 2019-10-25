@@ -4,8 +4,7 @@ class JSONImport
     attr_accessor :unguessable_password, :user_map, :project_map, :document_map, :highlight_map, :image_files, :document_to_project_map
 
     def initialize
-        # TODO randomly generate on each run a strong password
-        self.unguessable_password = 'pass12345'
+        self.unguessable_password = 'fB0s51GdUYqo'
     end
 
 	def load(filepath,image_path)
@@ -39,7 +38,7 @@ class JSONImport
     def import_projects(project_data)
         self.project_map = {}
         project_data.each { |project_obj|
-            user_id = self.user_map[project_obj['userURI']]
+            user_id = self.user_map[project_obj['userURI']] || 1  # assign to admin if no user record
             project = Project.new( {
                 title: project_obj['name'],
                 description: project_obj['description'],
@@ -81,21 +80,25 @@ class JSONImport
                     document_obj['images'].each { |image_uri|
                         image_filename = self.image_files[image_uri]
                         image_path = "#{images_path}/#{image_filename}"
-                        document.images.attach(io: open(image_path), filename: image_filename)
-                        document.content = {
-                            tileSources: [ {
-                                url: url_for(document.images.first),
-                                type: "image"
-                            }]
-                        }
-                        
-                        thumb_file = ImageProcessing::MiniMagick.source(image_path) #url_for(document.images.first))
-                        .resize_to_fill(80, 80)
-                        .convert('png')
-                        .call
-                        document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
-
-                        document.save!
+                        begin
+                            document.images.attach(io: open(image_path), filename: image_filename)
+                            document.content = {
+                                tileSources: [ {
+                                    url: url_for(document.images.first),
+                                    type: "image"
+                                }]
+                            }
+                            
+                            thumb_file = ImageProcessing::MiniMagick.source(image_path) #url_for(document.images.first))
+                            .resize_to_fill(80, 80)
+                            .convert('png')
+                            .call
+                            document.thumbnail.attach(io: thumb_file, filename: "thumbnail-for-document-#{document.id}.png")
+                            document.save!
+                        rescue Exception => e 
+                            # log error and continue
+                            Rails.logger.info( "Unable to load document with URI: #{document_obj['uri']} Reason: #{e}")
+                        end                        
                     }
                 end
                 document_bridge.push( { doc: document.id, obj: document_obj })

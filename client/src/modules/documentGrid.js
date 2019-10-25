@@ -31,6 +31,8 @@ export const MOVE_DOCUMENT = 'document_grid/MOVE_DOCUMENT';
 export const MOVE_DOCUMENT_SUCCESS = 'document_grid/MOVE_DOCUMENT_SUCCESS';
 export const MOVE_DOCUMENT_ERRORED = 'document_grid/MOVE_DOCUMENT_ERRORED';
 export const UPDATE_DOCUMENT = 'document_grid/UPDATE_CONTENT';
+export const CHECK_IN_DOCS = 'document_grid/CHECK_IN_DOCS';
+export const UPDATE_SNACK_BAR = 'document_grid/UPDATE_SNACK_BAR';
 export const PATCH_SUCCESS = 'document_grid/PATCH_SUCCESS';
 export const PATCH_ERRORED = 'document_grid/PATCH_ERRORED';
 export const NEW_DOCUMENT = 'document_grid/NEW_DOCUMENT';
@@ -68,6 +70,8 @@ const initialState = {
   deleteDialogSubmit: 'Delete',
   deleteDialogPayload: null,
   deleteDialogKind: null,
+  snackBarOpen: false,
+  snackBarMessage: null,
   currentLayout: 2
 };
 
@@ -115,6 +119,36 @@ export default function(state = initialState, action) {
         loading: false,
         errored: true
       }
+
+    case CHECK_IN_DOCS: {
+      const nextOpenDocs = [ ...state.openDocuments ]
+      nextOpenDocs.forEach( resource => {
+        if( action.docIDs.find( docID => docID === resource.document_id ) ) {
+          resource.locked=false
+          resource.locked_by_me=false
+          resource.locked_by_user_name=null
+        }
+      })
+
+      const numDocs = action.docIDs.length
+      const snackBarMessage = numDocs > 0 ? `Checked in ${numDocs} documents.` : "All your documents are checked in."
+
+      return {
+        ...state,
+        snackBarOpen: true,
+        snackBarMessage,
+        openDocuments: nextOpenDocs
+      };
+    }
+
+    case UPDATE_SNACK_BAR: {
+      const { snackBarOpen, snackBarMessage } = action
+      return {
+        ...state,
+        snackBarOpen,
+        snackBarMessage       
+      }
+    }
 
     case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
@@ -977,6 +1011,16 @@ export function moveDocumentWindow(dragIndex, moveIndex) {
       type: MOVE_DOCUMENT_WINDOW,
       dragIndex,
       moveIndex
+    });
+  };
+}
+
+export function updateSnackBar(snackBarOpen,snackBarMessage) {
+  return function(dispatch) {
+    dispatch({
+      type: UPDATE_SNACK_BAR,
+      snackBarMessage, 
+      snackBarOpen
     });
   };
 }

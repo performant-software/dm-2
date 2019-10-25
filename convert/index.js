@@ -179,22 +179,28 @@ function parseAnnotation( node ) {
 async function parseSVGSelector( node ) {
     let obj = {
         uri: node.uri,
-        excerpt: 'Highlight',
-        color: yellow500,
+        excerpt: '  ---   ',
+        color: '#82b1ff',
         svg: true
     }
     // convert SVG object to FabricJS JSON
     const svg = `<svg>${node[svgContent]}</svg>`
 
     let shape = await new Promise(resolve => {
-        fabric.loadSVGFromString(svg, (fabObj) => { 
-            let shape = fabObj[0].toJSON()
-            shape._highlightUid = node.uri
-            shape.fill = "transparent"
-            shape.stroke = yellow500
-            resolve(shape)
-        })    
-    });
+        try {
+            fabric.loadSVGFromString(svg, (fabObj) => { 
+                let shape = fabObj[0].toJSON()
+                shape._highlightUid = node.uri
+                shape.fill = "transparent"
+                shape.stroke = '#82b1ff'
+                resolve(shape)
+            })        
+        }
+        catch(err) {
+            logger.log('error', `Unable to parse SVG for node ${node.uri}, error:\n${err}`);
+            resolve({})
+        }
+    })
 
     obj.target = JSON.stringify(shape)
     return obj  
@@ -691,9 +697,9 @@ async function runExport() {
 async function runAsync() {
 
     // process production TTL
-    const inputTTLFile = 'ttl/5.8.19-app.digitalmappa.org.ttl'
-    const outputJSONFile = 'ttl/5.8.19-digitalmappa.json'
-    const mongoDatabaseName = "dm2_convert"
+    const inputTTLFile = 'ttl/2019-08-20T180000.ttl'
+    const outputJSONFile = 'ttl/sims.json'
+    const mongoDatabaseName = "dm2_import"
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
