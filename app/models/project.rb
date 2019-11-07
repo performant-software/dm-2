@@ -18,6 +18,19 @@ class Project < ApplicationRecord
     }
   end
 
+  def check_in_all(user)
+    checked_in_doc_ids = []
+    self.documents.each { |document|
+      if user.id == document.locked_by_id then
+        document.locked = false
+        document.locked_by_id = nil
+        document.save!
+        checked_in_doc_ids.push(document.id)
+      end
+    }
+    checked_in_doc_ids
+  end
+
   def can_read
     self.users.merge(UserProjectPermission.read)
   end

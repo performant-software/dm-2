@@ -3,13 +3,17 @@ export const CLOSE_EDITOR = 'textEditor/CLOSE_EDITOR';
 export const SET_HIGHLIGHT_COLOR = 'textEditor/SET_HIGHLIGHT_COLOR';
 export const HIDE_COLOR_PICKER = 'textEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'textEditor/TOGGLE_COLOR_PICKER';
+export const SET_HIGHLIGHT_SELECT_MODE = 'textEditor/SET_HIGHLIGHT_SELECT_MODE';
+export const SELECT_HIGHLIGHT = 'textEditor/SELECT_HIGHLIGHT';
 
 const initialState = {
   editorStates: {},
   highlightColors: {},
   displayColorPickers: {},
   loading: false,
-  errored: false
+  errored: false,
+  highlightSelectModes: {},
+  selectedHighlights: {}
 };
 
 export default function(state = initialState, action) {
@@ -54,6 +58,22 @@ export default function(state = initialState, action) {
         displayColorPickers: updatedToggleDisplayColorPickers
       };
 
+    case SET_HIGHLIGHT_SELECT_MODE:
+      let updatedHighlightSelectModes = Object.assign({}, state.highlightSelectModes);
+      updatedHighlightSelectModes[action.editorKey] = action.value;
+      return {
+        ...state,
+        highlightSelectModes: updatedHighlightSelectModes
+      };
+
+    case SELECT_HIGHLIGHT:
+      let updatedSelectedHighlights = Object.assign({}, state.selectedHighlights);
+      updatedSelectedHighlights[action.editorKey] = action.highlightKey;
+      return {
+        ...state,
+        selectedHighlights: updatedSelectedHighlights
+      };
+
     default:
       return state;
   }
@@ -71,7 +91,7 @@ export function updateEditorState(editorKey, editorState) {
 
 export function closeEditor(editorKey) {
   return function(dispatch) {
-    dispatch({
+    return dispatch({
       type: CLOSE_EDITOR,
       editorKey
     });
@@ -94,10 +114,44 @@ export function setTextHighlightColor(editorKey, highlightColor) {
 
 export function toggleTextColorPicker(editorKey) {
   return function(dispatch) {
-    console.log(editorKey);
     dispatch({
       type: TOGGLE_COLOR_PICKER,
       editorKey
+    });
+  }
+}
+
+export function setHighlightSelectMode(editorKey, value) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: SET_HIGHLIGHT_SELECT_MODE,
+      editorKey,
+      value
+    });
+    // deselect when leaving highlight-select-mode
+    if (!value) {
+      dispatch({
+        type: SELECT_HIGHLIGHT,
+        editorKey,
+        highlightKey: null
+      });
+      window.setTimeout(() => {
+        dispatch({
+          type: UPDATE_EDITOR_STATE,
+          editorKey,
+          editorState: getState().textEditor.editorStates[editorKey]
+        });
+      }, 500)
+    }
+  }
+}
+
+export function selectHighlight(editorKey, highlightKey) {
+  return function(dispatch) {
+    dispatch({
+      type: SELECT_HIGHLIGHT,
+      editorKey,
+      highlightKey // pass null to this parameter to deselect
     });
   }
 }

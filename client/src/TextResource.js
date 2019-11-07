@@ -19,10 +19,11 @@ import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
+import CropFree from 'material-ui/svg-icons/image/crop-free';
 
 import { Schema, DOMSerializer } from 'prosemirror-model';
-import { EditorState, TextSelection } from 'prosemirror-state';
-import { EditorView } from 'prosemirror-view';
+import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
+import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
 
 import { addListNodes, wrapInList } from 'prosemirror-schema-list';
@@ -36,7 +37,7 @@ import { goToNextCell } from "prosemirror-tables"
 import { schema } from './TextSchema';
 import { addMark, removeMark } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker } from './modules/textEditor';
+import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
@@ -66,10 +67,10 @@ class TextResource extends Component {
       linkDialogBuffer: "",
       linkDialogBufferInvalid: false,
       createHyperlink: null,
-    } 
+    }
 
-    this.state = { 
-      editorView: null, 
+    this.state = {
+      editorView: null,
       documentSchema: this.createDocumentSchema(),
       ...this.initialLinkDialogState
     };
@@ -80,11 +81,12 @@ class TextResource extends Component {
     const instanceKey = this.getInstanceKey();
 
     const toDOM = function(mark) {
-      const color = this.props.highlight_map[mark.attrs.highlightUid] ? this.props.highlight_map[mark.attrs.highlightUid].color : (mark.attrs.tempColor || this.props.highlightColors[instanceKey]);
+      const highlightInfo = this.props.getHighlightMap()[mark.attrs.highlightUid];
+      const color = highlightInfo ? highlightInfo.color : (mark.attrs.tempColor || this.props.highlightColors[instanceKey]);
       const properties = {
-        class: 'dm-highlight', 
-        style: `background: ${color};`, 
-        onclick: `window.setFocusHighlight('${document_id}', '${mark.attrs.highlightUid}')`,
+        class: `dm-highlight ${instanceKey}-${mark.attrs.highlightUid}`,
+        style: `background: ${color};`,
+        onclick: `window.selectTextHighlight('${document_id}', '${mark.attrs.highlightUid}')`,
         onmouseenter: `window.showRollover('${document_id}', '${mark.attrs.highlightUid}')`,
         onmouseleave: `window.hideRollover('${mark.attrs.highlightUid}')`
       };
@@ -126,7 +128,7 @@ class TextResource extends Component {
   getEditorState() {
     const { editorStates, document_id } = this.props;
     const existingEditorState = editorStates[document_id];
- 
+
     if( !existingEditorState ) {
       return this.createEditorState();
     } else {
@@ -154,6 +156,26 @@ class TextResource extends Component {
         "Shift-Tab": goToNextCell(-1)
       })
     );
+
+    const highlightSelectPlugin = new Plugin({
+      props: {
+        decorations: function(state) {
+          let decorations = [];
+          const selectedHighlight = this.props.getSelectedHighlight(this.props.document_id);
+          if (selectedHighlight) {
+            state.doc.descendants((node, position) => {
+              node.marks.forEach(mark => {
+                if (mark.type.name === this.state.documentSchema.marks.highlight.name && mark.attrs.highlightUid === selectedHighlight)
+                  decorations.push(Decoration.node(position, position + node.nodeSize, {class: 'selected'}));
+              });
+            });
+          }
+          return DecorationSet.create(state.doc, decorations);
+        }.bind(this)
+      }
+    });
+
+    plugins.push(highlightSelectPlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
@@ -215,7 +237,7 @@ class TextResource extends Component {
       const markType = this.state.documentSchema.marks.link;
       const editorState = this.getEditorState();
       const cmd = addMark( markType, { href: url } );
-      cmd( editorState, this.state.editorView.dispatch );  
+      cmd( editorState, this.state.editorView.dispatch );
     }
     this.setState( {...this.state, linkDialogOpen: true, createHyperlink } );
   }
@@ -241,11 +263,19 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onHighlightSelectMode() {
+    const document_id = this.props.document_id;
+    this.props.setHighlightSelectMode(document_id, !this.props.highlightSelectModes[document_id]);
+  }
+
   onDeleteHighlight() {
-    const markType = this.state.documentSchema.marks.highlight;
-    const editorState = this.getEditorState();
-    const cmd = removeMark( markType );
-    cmd( editorState, this.state.editorView.dispatch );    
+    const selectedHighlight = this.props.selectedHighlights[this.props.document_id];
+    if (selectedHighlight) {
+      const markType = this.state.documentSchema.marks.highlight;
+      const editorState = this.getEditorState();
+      const cmd = removeMark( markType, selectedHighlight );
+      cmd( editorState, this.state.editorView.dispatch );
+    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -254,10 +284,10 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     if (editorState && nextProps.editorStates ) {
      const nextEditorState = nextProps.editorStates[this.props.document_id];
-     if( this.state.editorView && nextEditorState !== editorState ) {
-        this.state.editorView.updateState(nextEditorState);
+     if( this.state.editorView && nextEditorState ) {
+       this.state.editorView.updateState(nextEditorState);
      }
-    }      
+    }
   }
 
   isEditable = () => {
@@ -267,13 +297,13 @@ class TextResource extends Component {
 
   createEditorView = (element) => {
     if( !this.state.editorView ) {
-      const editorState = this.getEditorState();      
+      const editorState = this.getEditorState();
       const editorView = new EditorView(element, {
         state: editorState,
         dispatchTransaction: this.dispatchTransaction,
         handlePaste: this.handlePaste,
         editable: this.isEditable
-      });    
+      });
 
       // if a highlight is targeted, locate it in props
       if( this.props.firstTarget ) {
@@ -289,7 +319,7 @@ class TextResource extends Component {
           // find the highlight position in the doc
           let targetPosition
           editorState.doc.descendants( (node, pos) => {
-            if( targetPosition ) return false 
+            if( targetPosition ) return false
             if( node.marks.find( mark => { return mark.attrs.highlightUid === targetHighlight.target } ) )
               targetPosition = pos
           })
@@ -300,7 +330,7 @@ class TextResource extends Component {
               // parent node is the highlight span
               domNode.parentNode.scrollIntoView({block: "center"})
               window.scrollTo(0,0)
-            } 
+            }
           }
         }
       }
@@ -366,6 +396,8 @@ class TextResource extends Component {
     const { steps } = tx;
     const { document_id } = this.props;
     let alteredHighlights = [];
+    let effectedMarks = [];
+    let possibleNewMarks = [];
     const editorState = this.getEditorState();
     steps.forEach(step => {
       // save new highlight
@@ -383,7 +415,7 @@ class TextResource extends Component {
             to += 1;
           }
         }
-        const effectedMarks = this.collectHighlights(editorState.doc, from, to);
+        effectedMarks = effectedMarks.concat(this.collectHighlights(editorState.doc, from, to));
         const additionTo = step.to + (tx.doc.nodeSize - tx.before.nodeSize);
         const possibleNewMarks = this.collectHighlights(tx.doc, step.from, additionTo);
         possibleNewMarks.forEach(mark => {
@@ -391,46 +423,51 @@ class TextResource extends Component {
             this.createHighlight(mark, tx.doc.slice(step.from, additionTo), serializer);
           }
         });
-        if (effectedMarks.length > 0) {
-          let removedMarks = effectedMarks.slice(0);
-          tx.doc.descendants(node => {
-            node.marks.forEach(mark => {
-              if (mark.type.name === this.state.documentSchema.marks.highlight.name) {
-                const effectedIndex = effectedMarks.indexOf(mark);
-                if (effectedIndex >= 0) {
-                  if (this.props.highlight_map[mark.attrs.highlightUid] && serializer.serializeNode(node).textContent !== this.props.highlight_map[mark.attrs.highlightUid].excerpt) {
-                    alteredHighlights.push({
-                      id: this.props.highlight_map[mark.attrs.highlightUid].id,
-                      excerpt: serializer.serializeNode(node).textContent
-                    });
-                  }
-                  removedMarks.splice(effectedIndex, 1); // the mark remains, so exclude it from the list of removed marks
-                }
-              }
-            });
-          });
-          if (removedMarks.length > 0) {
-            postponeCallback = true;
-            postContentChanges = false;
-            this.props.openDeleteDialog(
-              'Removing highlight' + (removedMarks.length > 1 ? 's' : ''),
-              'Deleting the selected text will destroy ' + (removedMarks.length > 1 ? (removedMarks.length) + ' highlights and their ' : 'a highlight and its ') + 'links.',
-              'Destroy ' + (removedMarks.length > 1 ? (removedMarks.length) + ' highlights' : 'highlight'),
-              {
-                transaction: tx,
-                document_id,
-                highlights: removedMarks.map(mark => this.props.highlight_map[mark.attrs.highlightUid]),
-                highlightsToDuplicate: this.highlightsToDuplicate.slice(0),
-                alteredHighlights
-              },
-              TEXT_HIGHLIGHT_DELETE
-            );
-          }
-        }
       }
     });
+    if (effectedMarks.length > 0) {
+      let removedMarks = effectedMarks.slice(0);
+      tx.doc.descendants(node => {
+        node.marks.forEach(mark => {
+          if (mark.type.name === this.state.documentSchema.marks.highlight.name) {
+            const effectedIndex = effectedMarks.indexOf(mark);
+            if (effectedIndex >= 0) {
+              if (this.props.highlight_map[mark.attrs.highlightUid] && serializer.serializeNode(node).textContent !== this.props.highlight_map[mark.attrs.highlightUid].excerpt) {
+                alteredHighlights.push({
+                  id: this.props.highlight_map[mark.attrs.highlightUid].id,
+                  excerpt: serializer.serializeNode(node).textContent
+                });
+              }
+              removedMarks.splice(effectedIndex, 1); // the mark remains, so exclude it from the list of removed marks
+            }
+          }
+        });
+      });
+      let toRemoveUids = [];
+      for (let i = 0; i < removedMarks.length; i++) {
+        const uid = removedMarks[i].attrs.highlightUid;
+        if (toRemoveUids.indexOf(uid) < 0) toRemoveUids.push(uid);
+      }
+      if (toRemoveUids.length > 0) {
+        postponeCallback = true;
+        postContentChanges = false;
+        this.props.openDeleteDialog(
+          'Removing highlight' + (toRemoveUids.length > 1 ? 's' : ''),
+          'Are you sure you want to destroy ' + (toRemoveUids.length > 1 ? (toRemoveUids.length) + ' highlights and their ' : 'a highlight and its ') + 'links?',
+          'Destroy ' + (toRemoveUids.length > 1 ? (toRemoveUids.length) + ' highlights' : 'highlight'),
+          {
+            transaction: tx,
+            document_id,
+            highlights: toRemoveUids.map(uid => this.props.highlight_map[uid]),
+            highlightsToDuplicate: this.highlightsToDuplicate.slice(0),
+            alteredHighlights
+          },
+          TEXT_HIGHLIGHT_DELETE
+        );
+      }
+    }
     if (postContentChanges && tx.before.content !== tx.doc.content)
-      this.scheduleContentUpdate(tx.doc) 
+      this.scheduleContentUpdate(tx.doc)
     if (!postponeCallback) {
       if (this.highlightsToDuplicate.length > 0) {
         this.props.duplicateHighlights(this.highlightsToDuplicate, document_id);
@@ -476,7 +513,7 @@ class TextResource extends Component {
   }
 
   renderToolbar() {
-    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker } = this.props;
+    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, highlightSelectModes, selectedHighlights } = this.props;
 
     if( !this.isEditable() ) return <div></div>;
     const instanceKey = this.getInstanceKey();
@@ -487,7 +524,19 @@ class TextResource extends Component {
           <HighlightColorSelect
             highlightColor={highlightColors[instanceKey]}
             displayColorPicker={displayColorPickers[instanceKey]}
-            setHighlightColor={(color) => {setTextHighlightColor(instanceKey, color);}}
+            setHighlightColor={function(color) {
+              setTextHighlightColor(instanceKey, color);
+              const selectedHighlight = this.props.selectedHighlights[this.props.document_id];
+              if (selectedHighlight) {
+                // TODO: make this less heavy handed; following the highlight update, we recreate the schema and state to force prosemirror to rerender the necessary dom elements with the updated highlight data
+                this.props.updateHighlight(this.props.highlight_map[selectedHighlight].id, {color})
+                .then(function() {
+                  this.props.closeEditor(this.props.document_id);
+                  this.setState({documentSchema: this.createDocumentSchema()});
+                  this.createEditorState();
+                }.bind(this));
+              }
+            }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
           />
           <IconButton onClick={this.onHighlight} tooltip='Highlight a passage of text.'>
@@ -512,7 +561,17 @@ class TextResource extends Component {
           <IconButton onClick={this.onOrderedList.bind(this)} tooltip='Create a numbered list.'>
             <FormatListNumbered />
           </IconButton>
-          <IconButton onClick={this.onDeleteHighlight.bind(this)} tooltip='Delete selected highlight.'>
+          <IconButton
+            style={{backgroundColor: highlightSelectModes[this.props.document_id] ? 'rgb(188, 188, 188)' : 'initial'}}
+            onClick={this.onHighlightSelectMode.bind(this)} tooltip='Select a highlight.'
+          >
+            <CropFree />
+          </IconButton>
+          <IconButton
+            onClick={this.onDeleteHighlight.bind(this)}
+            tooltip='Delete selected highlight.'
+            disabled={!selectedHighlights[this.props.document_id]}
+          >
             <DeleteForever />
           </IconButton>
         </ToolbarGroup>
@@ -531,12 +590,12 @@ class TextResource extends Component {
     if( url && url.length > 0 && validURLRegex.test( url ) ) {
       this.state.createHyperlink( url );
       this.setState({
-        ...this.state, 
+        ...this.state,
         ...this.initialLinkDialogState
-      });  
+      });
     } else {
       this.setState({ ...this.state, linkDialogBufferInvalid: true });
-    }    
+    }
   }
 
   renderLinkDialog() {
@@ -571,7 +630,7 @@ class TextResource extends Component {
     );
   }
 
-  render() {    
+  render() {
     const editorViewWrapperStyle = {
       flexGrow: '1', display: 'flex', flexDirection: 'column', overflowY: 'scroll', overflowX: 'hidden'
     };
@@ -594,7 +653,9 @@ class TextResource extends Component {
 const mapStateToProps = state => ({
   editorStates: state.textEditor.editorStates,
   highlightColors: state.textEditor.highlightColors,
-  displayColorPickers: state.textEditor.displayColorPickers
+  displayColorPickers: state.textEditor.displayColorPickers,
+  highlightSelectModes: state.textEditor.highlightSelectModes,
+  selectedHighlights: state.textEditor.selectedHighlights
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -604,9 +665,12 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   duplicateHighlights,
   setTextHighlightColor,
   toggleTextColorPicker,
+  setHighlightSelectMode,
+  selectHighlight,
   updateDocument,
   openDeleteDialog,
-  setGlobalCanvasDisplay
+  setGlobalCanvasDisplay,
+  closeEditor
 }, dispatch);
 
 export default connect(

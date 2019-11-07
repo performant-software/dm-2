@@ -1,6 +1,6 @@
 import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
 import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
-import {updateEditorState} from './textEditor';
+import {updateEditorState, selectHighlight, setHighlightSelectMode} from './textEditor';
 import {deleteFolder} from './folders';
 import {setAddTileSourceMode,  UPLOAD_SOURCE_TYPE} from './canvasEditor';
 
@@ -31,6 +31,8 @@ export const MOVE_DOCUMENT = 'document_grid/MOVE_DOCUMENT';
 export const MOVE_DOCUMENT_SUCCESS = 'document_grid/MOVE_DOCUMENT_SUCCESS';
 export const MOVE_DOCUMENT_ERRORED = 'document_grid/MOVE_DOCUMENT_ERRORED';
 export const UPDATE_DOCUMENT = 'document_grid/UPDATE_CONTENT';
+export const CHECK_IN_DOCS = 'document_grid/CHECK_IN_DOCS';
+export const UPDATE_SNACK_BAR = 'document_grid/UPDATE_SNACK_BAR';
 export const PATCH_SUCCESS = 'document_grid/PATCH_SUCCESS';
 export const PATCH_ERRORED = 'document_grid/PATCH_ERRORED';
 export const NEW_DOCUMENT = 'document_grid/NEW_DOCUMENT';
@@ -68,6 +70,8 @@ const initialState = {
   deleteDialogSubmit: 'Delete',
   deleteDialogPayload: null,
   deleteDialogKind: null,
+  snackBarOpen: false,
+  snackBarMessage: null,
   currentLayout: 2
 };
 
@@ -116,6 +120,36 @@ export default function(state = initialState, action) {
         errored: true
       }
 
+    case CHECK_IN_DOCS: {
+      const nextOpenDocs = [ ...state.openDocuments ]
+      nextOpenDocs.forEach( resource => {
+        if( action.docIDs.find( docID => docID === resource.document_id ) ) {
+          resource.locked=false
+          resource.locked_by_me=false
+          resource.locked_by_user_name=null
+        }
+      })
+
+      const numDocs = action.docIDs.length
+      const snackBarMessage = numDocs > 0 ? `Checked in ${numDocs} documents.` : "All your documents are checked in."
+
+      return {
+        ...state,
+        snackBarOpen: true,
+        snackBarMessage,
+        openDocuments: nextOpenDocs
+      };
+    }
+
+    case UPDATE_SNACK_BAR: {
+      const { snackBarOpen, snackBarMessage } = action
+      return {
+        ...state,
+        snackBarOpen,
+        snackBarMessage       
+      }
+    }
+
     case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
@@ -141,7 +175,7 @@ export default function(state = initialState, action) {
         ...state,
         openDocuments: preCloseDocumentsCopy
       };
-      
+
     case DELETE_SUCCESS:
       const targetID = action.documentId.toString();
       const openDocuments = state.openDocuments.filter( openDocument => ( openDocument.id.toString() !== targetID ) )
@@ -197,8 +231,22 @@ export default function(state = initialState, action) {
         openDocuments: duplicatesUpdatedOpenDocuments
       }
 
-    case DELETE_HIGHLIGHT_SUCCESS:
     case UPDATE_HIGHLIGHT_SUCCESS:
+      let hResourceIndex = state.openDocuments.findIndex(resource => resource.id === action.document_id);
+      let hUpdatedOpenDocuments = state.openDocuments.slice(0);
+      if (hResourceIndex >= 0) {
+        let hUpdatedResource = Object.assign(hUpdatedOpenDocuments[hResourceIndex], {});
+        if (hUpdatedResource.highlight_map[action.highlight_id])
+          hUpdatedResource.highlight_map[action.highlight_id].color = action.color;
+        hUpdatedOpenDocuments.splice(hResourceIndex, 1, hUpdatedResource);
+      }
+      return {
+        ...state,
+        openDocuments: hUpdatedOpenDocuments,
+        loading: false
+      }
+
+    case DELETE_HIGHLIGHT_SUCCESS:
       return {
         ...state,
         loading: false
@@ -403,7 +451,7 @@ export function updateHighlight(id, attributes) {
       type: UPDATE_HIGHLIGHT
     });
 
-    fetch(`/highlights/${id}`, {
+    return fetch(`/highlights/${id}`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -425,7 +473,10 @@ export function updateHighlight(id, attributes) {
     .then(response => response.json())
     .then(highlight => {
       dispatch({
-        type: UPDATE_HIGHLIGHT_SUCCESS
+        type: UPDATE_HIGHLIGHT_SUCCESS,
+        color: highlight.color,
+        highlight_id: highlight.uid,
+        document_id: highlight.document_id
       });
       const sidebarTarget = getState().annotationViewer.sidebarTarget;
       if (sidebarTarget && ((+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id) || sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false))) {
@@ -568,7 +619,7 @@ export function moveDocument(documentId, destination_id, position ) {
         'uid': localStorage.getItem('uid')
       },
       method: 'PATCH',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         document: {
           destination_id,
           position
@@ -589,7 +640,7 @@ export function moveDocument(documentId, destination_id, position ) {
     .catch(() => dispatch({
       type: MOVE_DOCUMENT_ERRORED
     }));
-  }  
+  }
 }
 
 export function updateDocument(documentId, attributes, options) {
@@ -626,6 +677,10 @@ export function updateDocument(documentId, attributes, options) {
         type: PATCH_SUCCESS,
         document
       });
+      if (options && options.adjustLock && attributes.locked === false) {
+        dispatch(selectHighlight(documentId, null));
+        dispatch(setHighlightSelectMode(documentId, false));
+      }
       if (options && options.refreshLists) {
         if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
           dispatch(loadProject(getState().project.id));
@@ -881,14 +936,14 @@ export function closeDeleteDialog() {
 
 // close any documents found in these folders
 export function closeDocumentFolders( folders ) {
-  return function(dispatch, getState) {    
+  return function(dispatch, getState) {
     const openDocuments = getState().documentGrid.openDocuments
     openDocuments.forEach( (document) => {
-      const found = folders.find( folderID => folderID === document.parent_id ) 
+      const found = folders.find( folderID => folderID === document.parent_id )
       if( found ) {
         dispatch(closeDocumentTargets(document.id));
         dispatch(closeDocument(document.id));
-        dispatch(refreshTargetByDocumentID(document.id)); 
+        dispatch(refreshTargetByDocumentID(document.id));
       }
     })
   }
@@ -909,6 +964,7 @@ export function confirmDeleteDialog() {
           payload.alteredHighlights.forEach(highlight => {
             dispatch(updateHighlight(highlight.id, {excerpt: highlight.excerpt}));
           });
+          dispatch(selectHighlight(payload.document_id, null));
         }
         dispatch(closeDeleteDialog());
         break;
@@ -955,6 +1011,16 @@ export function moveDocumentWindow(dragIndex, moveIndex) {
       type: MOVE_DOCUMENT_WINDOW,
       dragIndex,
       moveIndex
+    });
+  };
+}
+
+export function updateSnackBar(snackBarOpen,snackBarMessage) {
+  return function(dispatch) {
+    dispatch({
+      type: UPDATE_SNACK_BAR,
+      snackBarMessage, 
+      snackBarOpen
     });
   };
 }
