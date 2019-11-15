@@ -93,11 +93,7 @@ class AddImageLayer extends Component {
       content: newContent
     });
 
-    if( addTileSourceMode === UPLOAD_SOURCE_TYPE ) {
-      this.props.openTileSource(newContent.tileSources[0])
-    } else {
-      this.props.openTileSource(this.state.newTileSourceValue)
-    }
+    this.props.openTileSource(newContent.tileSources[0])
 
   }
 
