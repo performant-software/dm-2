@@ -5,6 +5,7 @@ const Sequelize = require('sequelize');
 const imageScaleFactor = 2.065
 const imageOffset = 5
 const imageToSVGScaleFactor = 0.5693
+const postgresConnectionURL = 'postgres://XXXX' // don't check in credentials.
 
 function createHightlightsTable(sequelize) {
     class Highlights extends Sequelize.Model {}
@@ -62,14 +63,26 @@ async function testTransform(sequelize) {
 
 async function main() {
 
-    const sequelize = new Sequelize('dm2_staging', 'nick', '', {
-        host: 'localhost',
-        dialect: 'postgres',
+    // for local debugging
+    // const sequelize = new Sequelize('dm2_staging', 'nick', '', {
+    //     host: 'localhost',
+    //     dialect: 'postgres',
+    //     define: {
+    //       timestamps: false
+    //     }
+    // })
+
+    const sequelize = new Sequelize( 
+      postgresConnectionURL,
+      {
+        native: true,
+        ssl: true,
         define: {
           timestamps: false
         }
-    })
-    
+      }
+    )
+
     // await testTransform(sequelize)
     await transformAllHighlights(sequelize)
     

@@ -8,6 +8,7 @@
     "jsdom": "^14.0.0",
     "mongodb": "^3.1.13",
     "pg": "^7.7.1",
+    "pg-native": "^3.0.0",
     "prosemirror-model": "^1.6.3",
     "prosemirror-schema-basic": "^1.0.0",
     "prosemirror-schema-list": "^1.0.1",
