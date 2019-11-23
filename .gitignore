@@ -20,6 +20,5 @@
 .vscode
 .idea
 convert/node_modules
-convert/config.json
 
 latest.dump
