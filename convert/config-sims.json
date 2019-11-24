@@ -1,0 +1,8 @@
+{
+    "mongoDatabaseURL": "mongodb://localhost:27017/",
+    "mongoDatabaseName": "sims-import",
+    "logFile": "log/sims-import.log",
+    "inputTTLFile": "ttl/2019-08-20T180000.ttl",
+    "outputJSONFile": "ttl/sims-11.23.19.json"  
+}
+
