@@ -65,7 +65,9 @@ class DocumentsController < ApplicationController
   # PATCH/PUT /documents/1/move
   def move
     p = document_move_params    
-    @document.move_to(p[:position],p[:destination_id])
+    destination_id = p[:destination_id].nil? ? @document.project_id : p[:destination_id]
+    destination_type =  p[:destination_id].nil? ? "Project" : "DocumentFolder"
+    @document.move_to(p[:position],destination_id,destination_type)
   end
   
   # PUT /documents/1/add_images
