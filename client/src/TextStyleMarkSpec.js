@@ -28,16 +28,21 @@ function textStyleMarkAttributes() {
 
 function cssToMarkAttr( styleAttribute ) {
     if( !styleAttribute ) return null
+
+    const cssExpressions = styleAttribute.split(';')
     let foundStyles = {}
-    for( let styleKey of Object.keys(supportedTextStyles) ) {
-        const cssKey = supportedTextStyles[styleKey].cssKey
-        const styleRegEx = new RegExp(`${cssKey}:\\s*([^;]*)`)
-        let matches = styleAttribute.match(styleRegEx)
-        let value = matches && matches.length > 1 ? matches[1] : null;  
-        if( value ) {
-            foundStyles[styleKey] = value
-        }
+    for( const cssExpression of cssExpressions ) {
+        for( let styleKey of Object.keys(supportedTextStyles) ) {
+            const cssKey = supportedTextStyles[styleKey].cssKey
+            const styleRegEx = new RegExp(`^\\s*${cssKey}:\\s*([^;]*)`)
+            let matches = cssExpression.match(styleRegEx)
+            let value = matches && matches.length > 1 ? matches[1] : null;  
+            if( value ) {
+                foundStyles[styleKey] = value
+            }
+        }    
     }
+
     return foundStyles
 }
 

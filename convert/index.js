@@ -8,9 +8,6 @@ const { JSDOM } = jsdom
 const fabric = require('fabric').fabric
 const MongoClient = require('mongodb').MongoClient
 
-const mongoDatabaseURL = "mongodb://localhost:27017/"
-const logFile = 'log/ttl-test.log'
-
 // Global resources
 var logger, mongoDB, mongoClient
 
@@ -102,6 +99,40 @@ function parseProject( node ) {
         documents: node[projectDocumentList]   // Project table of contents (doesn't include annotations)
     }
     return obj
+}
+
+async function createVirtualMappaProject(virtualMappaDocs) {
+
+    const users = await mongoDB.collection('users')
+    const projects = await mongoDB.collection('projects')
+    const documents = await mongoDB.collection('documents')
+
+    mappaDocuments = []
+    for( const documentName of virtualMappaDocs ) {
+        const mappaDoc = await documents.findOne({name: documentName})
+        if( mappaDoc ) {
+            mappaDocuments.push(mappaDoc.uri)
+        } else {
+            logger.log('error', `Could not find VM doc: ${documentName}`);
+        }
+    }
+
+    const userURI = "urn:uuid:Yi4CL2UxGE34QoAeiMMbWfk9RPU6kUoM"
+    const userObj = {
+        uri: userURI,
+        name: "Martin Foys",
+        email: "mkfoys@gmail.com"
+    }
+    await users.insertOne( userObj )
+
+    const projectObj = {
+        uri: "urn:uuid:yXelO7BV8dgrxQHl8qt52cTd3Ckl0QNe",
+        name: "Virtual Mappa",
+        userURI: userURI,
+        description: "",
+        documents: mappaDocuments
+    }
+    await projects.insertOne( projectObj )
 }
 
 function parseTextDocument( dmSchema, node ) {
@@ -225,7 +256,7 @@ function parseSpecificResource( node ) {
     return obj  
 }
 
-function setupLogging() {
+function setupLogging(logFile) {
     logger = winston.createLogger({
         format: winston.format.printf(info => { return `${info.message}` }),
         transports: [
@@ -555,9 +586,16 @@ async function scaleSVGs() {
     }
 }
 
-async function createGraph() {
+async function createGraph(virtualMappaDocs) {
     logger.info("Parsing most of the things...")
     let annotationBuffer = await parseMostThings()
+
+    // virtual mappa's TTL file is missing its project entry, create it manually.
+    if( virtualMappaDocs ) {
+        logger.info("Create Virtual Mappa project...")
+        await createVirtualMappaProject(virtualMappaDocs);
+    }
+
     logger.info("Parsing links...")
     await parseLinks( annotationBuffer )
     logger.info("Link highlights to documents...")
@@ -685,21 +723,22 @@ async function serializeGraph(outputJSONFile) {
     fs.writeFileSync(outputJSONFile, JSON.stringify(dm2Graph))  
 }
 
+function loadConfig() {
+    const configJSON = fs.readFileSync('convert/config.json', "utf8");
+    return JSON.parse(configJSON);
+}
+
 async function runExport() {
-    const outputJSONFile = 'ttl/test.json'
-    const mongoDatabaseName = "dm2_convert_test"
+    const { mongoDatabaseURL, mongoDatabaseName, outputJSONFile } = loadConfig();
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
     await serializeGraph(outputJSONFile)
     await mongoClient.close()
 }
 
-async function runAsync() {
+async function runAsync(config) {
 
-    // process production TTL
-    const inputTTLFile = 'ttl/2019-08-20T180000.ttl'
-    const outputJSONFile = 'ttl/sims.json'
-    const mongoDatabaseName = "dm2_import"
+    const { mongoDatabaseURL, mongoDatabaseName, inputTTLFile, outputJSONFile, virtualMappaDocs } = config
 
     mongoClient = await MongoClient.connect(mongoDatabaseURL)
     mongoDB = await mongoClient.db(mongoDatabaseName)   
@@ -711,18 +750,19 @@ async function runAsync() {
     await createNodes(inputTTLFile)
 
     logger.info("Creating DM2 Graph...")
-    await createGraph()
+    await createGraph(virtualMappaDocs)
 
     await serializeGraph(outputJSONFile)
     await mongoClient.close()
 }
 
 function main() {
-    setupLogging();
+    const config = loadConfig();
+    setupLogging(config.logFile);
     logger.info("Starting TTL processing...")
 
-    // runExport().then( () => {
-    runAsync().then(() => {
+    // runExport(config).then( () => {
+    runAsync(config).then(() => {
         logger.info("TTL Processing completed.")   
     }, (err) => {
         logger.error(`${err}: ${err.stack}`)  

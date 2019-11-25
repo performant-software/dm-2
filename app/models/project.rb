@@ -20,7 +20,8 @@ class Project < ApplicationRecord
 
   def check_in_all(user)
     checked_in_doc_ids = []
-    self.documents.each { |document|
+    docs = Document.where(project_id: self.id)
+    docs.each { |document|
       if user.id == document.locked_by_id then
         document.locked = false
         document.locked_by_id = nil
