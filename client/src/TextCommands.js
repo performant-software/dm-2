@@ -30,7 +30,7 @@ export function addMark(markType, attrs) {
                     let {$from, $to} = ranges[i]
                     tr.addMark($from.pos, $to.pos, markType.create(attrs))
                 }
-                dispatch(tr.scrollIntoView())
+                dispatch(tr) 
             }
         }
         return true
