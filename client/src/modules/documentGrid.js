@@ -167,7 +167,10 @@ export default function(state = initialState, action) {
 
     case CLOSE_DOCUMENT:
       let preCloseDocumentsCopy = state.openDocuments.slice(0);
-      let toCloseIndex = state.openDocuments.findIndex(resource => resource.id.toString() === action.documentId.toString());
+      let toCloseIndex = state.openDocuments.findIndex(resource => {
+        return ( resource.id.toString() === action.documentId.toString() &&
+                 resource.timeOpened === action.timeOpened )
+      });
       if (toCloseIndex >= 0) {
         preCloseDocumentsCopy.splice(toCloseIndex, 1);
       }
@@ -859,11 +862,12 @@ export function createCanvasDocument(parentId, parentType, callback) {
   }
 }
 
-export function closeDocument(documentId) {
+export function closeDocument(documentId, timeOpened) {
   return function(dispatch) {
     dispatch({
       type: CLOSE_DOCUMENT,
-      documentId
+      documentId,
+      timeOpened
     });
   };
 }
@@ -942,7 +946,7 @@ export function closeDocumentFolders( folders ) {
       const found = folders.find( folderID => folderID === document.parent_id )
       if( found ) {
         dispatch(closeDocumentTargets(document.id));
-        dispatch(closeDocument(document.id));
+        dispatch(closeDocument(document.id,document.timeOpened));
         dispatch(refreshTargetByDocumentID(document.id));
       }
     })

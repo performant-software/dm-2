@@ -111,7 +111,7 @@ class DocumentViewer extends Component {
   }
 
   onCloseDocument() {
-    this.props.closeDocument(this.props.document_id)
+    this.props.closeDocument(this.props.document_id, this.props.timeOpened)
     this.props.closeDocumentTargets(this.props.document_id)
   }
 
