@@ -13,7 +13,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
 Technical Overview
 ---------------
 
-DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It has out the box support for storing images either on Amazon S3 or on the local disk. It also utilizes the SendGrid service for outbound SMTP. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and relases are issued on the GitHub repo at https://github.com/performant-software/dm-2 . 
+DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It utilizes the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and relases are issued on the GitHub repo at https://github.com/performant-software/dm-2 . 
 
 
 Heroku Installation
