@@ -35,19 +35,18 @@ To install DM2 on Heroku, create a new app and point it at this respository. You
 
 You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. See aws.amazon.com for more information.
 
+Here are some default settings for provisioning a production server:
+* LANG=en_US.UTF-8
+* RACK_ENV=production
+* RAILS_ENV=production
+* RAILS_LOG_TO_STDOUT=enabled
+* RAILS_SERVE_STATIC_FILES=enabled
+* SECRET_KEY_BASE can be skipped.
+
 Once these things are done, migrate the database using the following command:
 
     heroku run rake db:migrate
 
-Here are some default settings for provisioning a production server:
-
-LANG=en_US.UTF-8
-RACK_ENV=production
-RAILS_ENV=production
-RAILS_LOG_TO_STDOUT=enabled
-RAILS_SERVE_STATIC_FILES=enabled
-
-SECRET_KEY_BASE can be skipped.
 
 DM2 should now be up and running on your Heroku instance! 
 
