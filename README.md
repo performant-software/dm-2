@@ -39,6 +39,16 @@ Once these things are done, migrate the database using the following command:
 
     heroku run rake db:migrate
 
+Here are some default settings for provisioning a production server:
+
+LANG=en_US.UTF-8
+RACK_ENV=production
+RAILS_ENV=production
+RAILS_LOG_TO_STDOUT=enabled
+RAILS_SERVE_STATIC_FILES=enabled
+
+SECRET_KEY_BASE can be skipped.
+
 DM2 should now be up and running on your Heroku instance! 
 
 The first user account created is automatically given admin powers. Thereafter, that user can grant other users access and privledges using the Admin menu in the top right corner of the interface. 
