@@ -19,6 +19,7 @@
 .byebug_history
 .vscode
 .idea
+.ruby-version
 convert/node_modules
 
 latest.dump
