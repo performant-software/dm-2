@@ -81,5 +81,5 @@ test:
 production:
   <<: *default
   database: dm2_production
-  username: dm2
+  username: <%= ENV['DM2_DATABASE_USER'] %>
   password: <%= ENV['DM2_DATABASE_PASSWORD'] %>
