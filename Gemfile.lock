@@ -82,8 +82,13 @@ GEM
     devise_token_auth (1.1.0)
       devise (> 3.5.2, < 4.7)
       rails (>= 4.2.0, < 6)
+    dotenv (2.7.5)
+    dotenv-rails (2.7.5)
+      dotenv (= 2.7.5)
+      railties (>= 3.2, < 6.1)
     erubi (1.8.0)
     ffi (1.10.0)
+    foreman (0.87.0)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
     i18n (1.6.0)
@@ -192,6 +197,8 @@ DEPENDENCIES
   byebug
   devise (~> 4.6.1)
   devise_token_auth (~> 1.0)
+  dotenv-rails
+  foreman
   image_processing (~> 1.2)
   listen (>= 3.0.5, < 3.2)
   pg (>= 0.18, < 2.0)
@@ -208,4 +215,4 @@ RUBY VERSION
    ruby 2.5.7p206
 
 BUNDLED WITH
-   2.0.2
+   2.1.4
