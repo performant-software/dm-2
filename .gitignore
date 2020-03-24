@@ -23,3 +23,5 @@
 convert/node_modules
 
 latest.dump
+# Ignore application configuration
+/config/application.yml
