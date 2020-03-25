@@ -85,4 +85,4 @@ Rails.application.configure do
 end
 
 Rails.application.routes.default_url_options[:host] = ENV['HOSTNAME']
-Rails.application.routes.default_url_options[:protocol] = 'https'
+Rails.application.routes.default_url_options[:protocol] = 'http'
