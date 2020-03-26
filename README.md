@@ -102,3 +102,15 @@ Installation without the Heroku tool set is possible but requires setup specific
     PORT=3001 && bundle exec puma -C config/puma.rb
 
 
+Active Storage
+-------------
+
+Active storage is used to handle the uploading/downloading of files. Files can either be stored locally on the disk or on a file storage service, such as Amazon S3. For ease of toggling in different environments, the file storage service can be specified as an environment variable in the `application.yml` file.
+
+    ACTIVE_STORAGE_SERVICE: 'local'
+    ACTIVE_STORAGE_SERVICE: 'amazon'
+    
+To convert an existing application to use a different file storage service, a rake task exists to downloading the files from the current storage and upload them to the new storage:
+
+    bundle exec rake active_storage:aws_to_local
+    bundle exec rake active_storage:local_to_aws
