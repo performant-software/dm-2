@@ -41,7 +41,7 @@ Here are some default settings for provisioning a production server:
 * RAILS_ENV=production
 * RAILS_LOG_TO_STDOUT=enabled
 * RAILS_SERVE_STATIC_FILES=enabled
-* SECRET_KEY_BASE can be skipped.
+* SECRET_KEY_BASE: this variable is used to encrypt the passwords on your DM2 instance, so it is important to keep it secure and unguessable. Here's a good site for generating a secret key: https://www.grc.com/passwords.htm
 
 Once these things are done, migrate the database using the following command:
 
