@@ -15,7 +15,7 @@ class Document < Linkable
   after_create :tree_check
   before_destroy :destroyer
 
-  MAX_IMAGE_SIZE = 100 # MB
+  MAX_IMAGE_SIZE = 300 # MB
 
   pg_search_scope :search_for, against: %i(title search_text)
 
