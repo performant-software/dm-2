@@ -84,6 +84,9 @@ GEM
       rails (>= 4.2.0, < 6)
     erubi (1.8.0)
     ffi (1.10.0)
+    figaro (1.1.1)
+      thor (~> 0.14)
+    foreman (0.87.0)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
     i18n (1.6.0)
@@ -192,6 +195,8 @@ DEPENDENCIES
   byebug
   devise (~> 4.6.1)
   devise_token_auth (~> 1.0)
+  figaro
+  foreman
   image_processing (~> 1.2)
   listen (>= 3.0.5, < 3.2)
   pg (>= 0.18, < 2.0)
@@ -208,4 +213,4 @@ RUBY VERSION
    ruby 2.5.7p206
 
 BUNDLED WITH
-   2.0.2
+   2.1.4
