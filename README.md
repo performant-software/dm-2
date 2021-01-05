@@ -87,6 +87,49 @@ Note that this runs two servers, one on port 3000 for Ruby on Rails and one on 3
 
 Please note that the development environment stores files on local disk in the /storage directory by default. You can configure different storage solutions in config/storage.yml. See the Rails ActiveStorage documentation for more details.
 
+Heroku Production Environment 
+-------------
+Start by adding a remote repository for your Heroku application and deploying your code.
+```
+heroku git:remote -a <app-name>
+git push heroku master
+```
+
+#### Configure Heroku buildpacks
+The activestorage-preview buildpack will install Image Magick and FFMPEG to allow transformation of images and videos.
+```
+heroku/ruby
+heroku/nodejs
+https://github.com/heroku/heroku-buildpack-activestorage-preview
+```
+
+#### Set environment variables
+Set the `HOSTNAME` environment variable to the host of your Heroku application. For example, if you're application is hosted at https://my-project.herokuapp.com, you would set the `HOSTNAME` variable to "my-project.herokuapp.com".
+
+By default, the production environment will use AWS as the Active Storage service. This will require the following environment variables to be set:
+
+```
+AWS_ACCESS_KEY_ID
+AWS_BUCKET
+AWS_REGION
+AWS_SECRET_ACCESS_KEY
+```
+
+It is possible use local storage, however this is only recommended for testing purposes, as Heroku does not have a persistant file system. This can be done by setting the `ACTIVE_STORAGE_SERVICE` variable to "local".
+
+#### Run migrations
+To setup the initial database run migrations.
+
+```
+heroku run bundle exec rake db:migrate
+```
+
+#### Create admin user account
+Using the Rails console, create an admin user. The admin user account can be used to create accounts for actual users, then removed.
+
+```ruby
+User.create!(email: 'admin@example.com', password: '<my-password>', password_confirmation: '<my-password>', admin: true)
+```
 
 Installation without Heroku Toolset
 -------------
