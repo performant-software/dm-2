@@ -43,10 +43,24 @@ Here are some default settings for provisioning a production server:
 * RAILS_SERVE_STATIC_FILES=enabled
 * SECRET_KEY_BASE: this variable is used to encrypt the passwords on your DM2 instance, so it is important to keep it secure and unguessable. Here's a good site for generating a secret key: https://www.grc.com/passwords.htm
 
+Set the `HOSTNAME` environment variable to the host of your Heroku application. For example, if you're application is hosted at https://my-project.herokuapp.com, you would set the `HOSTNAME` variable to "my-project.herokuapp.com".
+
+By default, the production environment will use AWS as the Active Storage service. This will require the following environment variables to be set:
+
+```
+AWS_ACCESS_KEY_ID
+AWS_BUCKET
+AWS_REGION
+AWS_SECRET_ACCESS_KEY
+```
+
+It is possible use local storage, however this is only recommended for testing purposes, as Heroku does not have a persistant file system. This can be done by setting the `ACTIVE_STORAGE_SERVICE` variable to "local".
+
 Once these things are done, migrate the database using the following command:
 
-    heroku run rake db:migrate
-
+```
+heroku run rake db:migrate && heroku run rake db:seed
+```
 
 DM2 should now be up and running on your Heroku instance! 
 
@@ -86,7 +100,6 @@ Note that this runs two servers, one on port 3000 for Ruby on Rails and one on 3
 6) Visit http://localhost:3000 to view the application. 
 
 Please note that the development environment stores files on local disk in the /storage directory by default. You can configure different storage solutions in config/storage.yml. See the Rails ActiveStorage documentation for more details.
-
 
 Installation without Heroku Toolset
 -------------

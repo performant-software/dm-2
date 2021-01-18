@@ -2,45 +2,53 @@
   "name": "dm-2",
   "description": "",
   "scripts": {
-    "postdeploy": "bundle exec rake db:migrate"
+    "postdeploy": "bundle exec rake db:migrate && bundle exec rake db:seed"
   },
   "repository": "https://github.com/performant-software/dm-2",
   "env": {
     "LANG": {
-      "required": true
+      "required": true,
+      "value": "en_US.UTF-8"
     },
     "RACK_ENV": {
-      "required": true
+      "required": true,
+      "value": "production"
     },
     "RAILS_ENV": {
-      "required": true
+      "required": true,
+      "value": "production"
     },
     "RAILS_LOG_TO_STDOUT": {
-      "required": true
+      "required": true,
+      "value": "enabled"
     },
     "RAILS_SERVE_STATIC_FILES": {
-      "required": true
+      "required": true,
+      "value": "enabled"
     },
     "SECRET_KEY_BASE": {
       "required": true
     },
-    "AWS_ACCESS_KEY_ID": {
+    "HOSTNAME": {
       "required": true
+    },
+    "ACTIVE_STORAGE_SERVICE": {
+      "required": false
+    },
+    "AWS_ACCESS_KEY_ID": {
+      "required": false
     },
     "AWS_SECRET_ACCESS_KEY": {
-      "required": true
+      "required": false
     },
     "AWS_REGION": {
-      "required": true
+      "required": false
     },
     "AWS_BUCKET": {
-      "required": true
+      "required": false
     }
   },
   "formation": {
-    "worker": {
-      "quantity": 1
-    },
     "web": {
       "quantity": 1
     }
@@ -50,10 +58,13 @@
   ],
   "buildpacks": [
     {
+      "url": "heroku/ruby"
+    },
+    {
       "url": "heroku/nodejs"
     },
     {
-      "url": "heroku/ruby"
+      "url": "https://github.com/heroku/heroku-buildpack-activestorage-preview"
     }
   ]
 }
