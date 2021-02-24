@@ -6,7 +6,7 @@ class DocumentsController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create] do
+  before_action only: [:create, :lock] do
     validate_user_write(@project)
   end
   before_action only: [:move] do
