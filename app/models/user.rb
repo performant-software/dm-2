@@ -12,6 +12,8 @@ class User < ActiveRecord::Base
   scope :is_admin, -> { where(admin: true) }
 
   after_create :after_user_create
+  before_destroy :unlock_documents
+
   def after_user_create
     if User.count == 1
       User.first.update({admin: true, approved: true})
@@ -51,5 +53,11 @@ class User < ActiveRecord::Base
 
   def can_admin(project)
     self.admin? || self.adminable_projects.include?(project)
+  end
+
+  def unlock_documents
+    Document
+      .where(locked_by_id: self.id)
+      .update_all(locked_by_id: nil, locked: false)
   end
 end
