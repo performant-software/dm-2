@@ -33,7 +33,7 @@ To install DM2 on Heroku, create a new app and point it at this respository. You
 * SENDGRID_PASSWORD
 * SENDGRID_USERNAME
 
-You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. See aws.amazon.com for more information.
+You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket.  See aws.amazon.com for more information.
 
 Here are some default settings for provisioning a production server:
 * LANG=en_US.UTF-8
