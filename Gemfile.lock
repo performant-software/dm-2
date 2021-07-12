@@ -190,7 +190,7 @@ PLATFORMS
 
 DEPENDENCIES
   active_model_serializers
-  aws-sdk-s3
+  aws-sdk-s3 (~> 1.35.0)
   bootsnap
   byebug
   devise (~> 4.6.1)
