@@ -11,8 +11,8 @@ import TextField from 'material-ui/TextField';
 import Close from 'material-ui/svg-icons/navigation/close';
 import Done from 'material-ui/svg-icons/action/done';
 import ModeComment from 'material-ui/svg-icons/editor/mode-comment';
-import { yellow100, orange100, red100, purple100, blue100, lightGreen100  } from 'material-ui/styles/colors';
-import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700, grey400 } from 'material-ui/styles/colors';
+import { yellow100, orange100, red100, purple100, blue100, lightBlue100, green100, lightGreen100  } from 'material-ui/styles/colors';
+import { yellow500, orange300, redA100, purpleA100, lightBlueA100, blueA100, lightGreenA700, lightGreenA100, grey400 } from 'material-ui/styles/colors';
 
 import LinkInspector from './LinkInspector';
 import { updateHighlight } from './modules/documentGrid';
@@ -39,8 +39,10 @@ class LinkInspectorPopup extends Component {
     if( color === orange300) return  orange100
     if( color === redA100) return red100
     if( color === purpleA100) return purple100
+    if( color === lightBlueA100) return lightBlue100
     if( color === blueA100) return blue100
-    if( color === lightGreenA700) return lightGreen100
+    if( color === lightGreenA700) return green100
+    if( color === lightGreenA100) return lightGreen100
     return grey400;
   }
 
