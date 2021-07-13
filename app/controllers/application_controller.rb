@@ -46,8 +46,8 @@ class ApplicationController < ActionController::API
   end
 
   def validate_document_lock(document)
-    if document.locked_by == nil || document.locked_by.id != current_user.id
-      head :fobidden
+    if document.locked_by != nil && document.locked_by.id != current_user.id
+      head :forbidden
       return false
     else
       return true
