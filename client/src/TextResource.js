@@ -83,6 +83,7 @@ class TextResource extends Component {
       }
     }
     // TODO: Make sure changed data shared across all docs with this doc's ID
+    // and check that a second instance still works when first instance closed
   }
   
   createDocumentSchema() {
