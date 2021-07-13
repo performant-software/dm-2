@@ -55,6 +55,13 @@ class TableOfContents extends Component {
                 </ToolbarGroup>
               </Toolbar>
             }
+            {!writeEnabled && (
+              <Toolbar noGutter={true} style={{marginLeft: 10, background: white}}>
+                <ToolbarGroup >
+                  <IconButton onClick={this.onCloseProject} ><ArrowBack /></IconButton>
+                </ToolbarGroup>
+              </Toolbar>
+            )}
             <LinkableList 
               items={contentsChildren} 
               inContents={true} 
