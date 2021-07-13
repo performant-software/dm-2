@@ -548,14 +548,17 @@ export function createTextDocument(parentId, parentType, callback) {
 
     // Annotation title handling
     let title =  parentType === 'Document' ? 'New Annotation' : 'Untitled Document';
-    if (getState().annotationViewer
-    && Array.isArray(getState().annotationViewer.selectedTargets)
-    && getState().annotationViewer.selectedTargets.length > 0) {
+    if (
+      parentType === 'Document' 
+      && getState().annotationViewer
+      && Array.isArray(getState().annotationViewer.selectedTargets)
+      && getState().annotationViewer.selectedTargets.length > 0
+    ) {
       getState().annotationViewer.selectedTargets.forEach(target => {
         if (target.document_id === parentId) {
           title = `Annotation for ${target.document_title}`;
         }
-      })
+      });
     }
 
     fetch('/documents', {
