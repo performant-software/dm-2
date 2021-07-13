@@ -540,7 +540,7 @@ export function duplicateHighlights(highlights, document_id) {
 }
 
 
-export function createTextDocument(parentId, parentType, callback) {
+export function createTextDocument(parentId, parentType, isAnnotation, callback) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -558,7 +558,7 @@ export function createTextDocument(parentId, parentType, callback) {
       },
       method: 'POST',
       body: JSON.stringify({
-        title: 'Untitled Document',
+        title: isAnnotation ? 'New Annotation' : 'Untitled Document',
         project_id: getState().project.id,
         document_kind: TEXT_RESOURCE_TYPE,
         content: {type: 'doc', content: [{"type":"paragraph","content":[]}]},
@@ -595,8 +595,9 @@ export function createTextDocument(parentId, parentType, callback) {
 }
 
 export function createTextDocumentWithLink(origin, parentId = null, parentType = null) {
+  const isAnnotation = true;
   return function(dispatch) {
-    dispatch(createTextDocument(parentId, parentType, document => {
+    dispatch(createTextDocument(parentId, parentType, isAnnotation, document => {
       dispatch(addLink(origin, {
         linkable_id: document.id,
         linkable_type: 'Document'
