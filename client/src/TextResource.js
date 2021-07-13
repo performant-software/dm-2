@@ -79,9 +79,12 @@ class TextResource extends Component {
   componentDidUpdate(prevProps) {
     // Unhide highlights if toggling lock state
      if (this.props.writeEnabled !== prevProps.writeEnabled || this.props.lockedByMe !== prevProps.lockedByMe){
-      if ( prevProps.highlightsHidden[this.props.document_id]) {
+      if (prevProps.highlightsHidden[this.props.document_id]) {
         this.props.toggleTextHighlights(this.props.document_id, false);
       }
+    }
+    if (this.props.highlightsHidden[this.props.document_id] !== prevProps.highlightsHidden[this.props.document_id]) {
+      this.createEditorState();
     }
   }
   
