@@ -48,8 +48,9 @@ class Project extends Component {
   }
 
   showRollover(document_id, highlight_id) {
-    // if the hovered highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
-    if (this.props.selectedHighlights[document_id] === highlight_id) return;
+    // if this doc's highlights are hidden, or the hovered highlight is currently selected,
+    // don't proceed with the normal popover behavior to facilitate editing the highlighted text
+    if (this.props.highlightsHidden[document_id] || this.props.selectedHighlights[document_id] === highlight_id) return;
     const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
     if( !existingPopover ) {
       this.activateRolloverTimer( () => {
@@ -282,7 +283,8 @@ const mapStateToProps = state => ({
   selectedTargets:    state.annotationViewer.selectedTargets,
   sidebarTarget:      state.annotationViewer.sidebarTarget,
   highlightSelectModes: state.textEditor.highlightSelectModes,
-  selectedHighlights: state.textEditor.selectedHighlights
+  selectedHighlights: state.textEditor.selectedHighlights,
+  highlightsHidden:   state.textEditor.highlightsHidden,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({

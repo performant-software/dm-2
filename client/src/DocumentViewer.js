@@ -14,7 +14,8 @@ import VisibilityOff from 'material-ui/svg-icons/action/visibility-off';
 import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocumentWindow, layoutOptions } from './modules/documentGrid';
-import { toggleHighlights } from './modules/canvasEditor'
+import { toggleCanvasHighlights } from './modules/canvasEditor';
+import { toggleTextHighlights } from './modules/textEditor';
 import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
@@ -100,7 +101,7 @@ class DocumentViewer extends Component {
   }
 
   onToggleHighlights() {
-    const key = this.getInstanceKey()
+    const key = this.props.document_kind === 'canvas' ?  this.getInstanceKey() : this.props.document_id;
     const currentState = this.props.highlightsHidden[key] === true ? true : false
     this.props.toggleHighlights( key, !currentState )
   }
@@ -122,7 +123,8 @@ class DocumentViewer extends Component {
       height: '20px'
     };
     const buttonStyle = Object.assign({ margin: '2px' }, iconStyle);
-    const highlightsHidden = this.props.highlightsHidden[this.getInstanceKey()] 
+    const key = this.props.document_kind === 'canvas' ?  this.getInstanceKey() : this.props.document_id;
+    const highlightsHidden = this.props.highlightsHidden[key];
 
     return (
       this.props.connectDragSource(
@@ -141,9 +143,16 @@ class DocumentViewer extends Component {
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
             />
-            { this.props.document_kind === 'canvas' && !this.isEditable() &&
+            { !this.isEditable() &&
               <IconButton tooltip='Toggle highlights' onClick={this.onToggleHighlights.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
-                { highlightsHidden ? <VisibilityOff color='#FFF' /> : <Visibility color='#FFF' /> }
+                { highlightsHidden 
+                  ? <VisibilityOff
+                      color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'}
+                    /> 
+                  : <Visibility
+                      color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'}
+                    /> 
+                }
               </IconButton>
             }
             <IconButton tooltip='Close document' onClick={this.onCloseDocument.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
@@ -228,12 +237,12 @@ const mapStateToProps = state => ({
   highlightsHidden: state.canvasEditor.highlightsHidden
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch, props) => bindActionCreators({
   updateDocument,
   closeDocument,
   moveDocumentWindow,
   closeDocumentTargets,
-  toggleHighlights
+  toggleHighlights: props.document_kind === 'canvas' ? toggleCanvasHighlights : toggleTextHighlights,
 }, dispatch);
 
 export default connect(

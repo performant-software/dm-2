@@ -76,6 +76,12 @@ class TextResource extends Component {
     };
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.highlightsHidden !== prevProps.highlightsHidden) {
+      this.setState({documentSchema: this.createDocumentSchema()});
+    }
+  }
+  
   createDocumentSchema() {
     const { document_id } = this.props;
     const instanceKey = this.getInstanceKey();
@@ -176,6 +182,26 @@ class TextResource extends Component {
     });
 
     plugins.push(highlightSelectPlugin);
+
+    const toggleHighlightsPlugin = new Plugin({
+      props: {
+        decorations: function(state) {
+          let decorations = [];
+          const highlightsHidden = !this.isEditable() && this.props.highlightsHidden[document_id];
+          if (highlightsHidden) {
+            state.doc.descendants((node, position) => {
+              node.marks.forEach(mark => {
+                if (mark.type.name === this.state.documentSchema.marks.highlight.name)
+                  decorations.push(Decoration.node(position, position + node.nodeSize, { class: 'hidden' }));
+              });
+            });
+          }
+          return DecorationSet.create(state.doc, decorations);
+        }.bind(this)
+      }
+    });
+
+    plugins.push(toggleHighlightsPlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
@@ -653,6 +679,7 @@ class TextResource extends Component {
 const mapStateToProps = state => ({
   editorStates: state.textEditor.editorStates,
   highlightColors: state.textEditor.highlightColors,
+  highlightsHidden: state.textEditor.highlightsHidden,
   displayColorPickers: state.textEditor.displayColorPickers,
   highlightSelectModes: state.textEditor.highlightSelectModes,
   selectedHighlights: state.textEditor.selectedHighlights
