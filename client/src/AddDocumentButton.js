@@ -25,7 +25,7 @@ export default class AddDocumentButton extends Component {
           onRequestClose={this.props.closeDocumentPopover}
          >
           <Menu>
-            <MenuItem primaryText='Document' onClick={() => {
+            <MenuItem primaryText='Text' onClick={() => {
               this.props.textClick();
               this.props.closeDocumentPopover();
             }} />
