@@ -540,11 +540,23 @@ export function duplicateHighlights(highlights, document_id) {
 }
 
 
-export function createTextDocument(parentId, parentType, isAnnotation, callback) {
+export function createTextDocument(parentId, parentType, callback) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
     });
+
+    // Annotation title handling
+    let title =  parentType === 'Document' ? 'New Annotation' : 'Untitled Document';
+    if (getState().annotationViewer
+    && Array.isArray(getState().annotationViewer.selectedTargets)
+    && getState().annotationViewer.selectedTargets.length > 0) {
+      getState().annotationViewer.selectedTargets.forEach(target => {
+        if (target.document_id === parentId) {
+          title = `Annotation for ${target.document_title}`;
+        }
+      })
+    }
 
     fetch('/documents', {
       headers: {
@@ -558,7 +570,7 @@ export function createTextDocument(parentId, parentType, isAnnotation, callback)
       },
       method: 'POST',
       body: JSON.stringify({
-        title: isAnnotation ? 'New Annotation' : 'Untitled Document',
+        title,
         project_id: getState().project.id,
         document_kind: TEXT_RESOURCE_TYPE,
         content: {type: 'doc', content: [{"type":"paragraph","content":[]}]},
@@ -595,9 +607,8 @@ export function createTextDocument(parentId, parentType, isAnnotation, callback)
 }
 
 export function createTextDocumentWithLink(origin, parentId = null, parentType = null) {
-  const isAnnotation = true;
   return function(dispatch) {
-    dispatch(createTextDocument(parentId, parentType, isAnnotation, document => {
+    dispatch(createTextDocument(parentId, parentType, document => {
       dispatch(addLink(origin, {
         linkable_id: document.id,
         linkable_type: 'Document'
