@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { GithubPicker } from 'react-color';
-import { yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700 } from 'material-ui/styles/colors';
+import { yellow500, orange300, redA100, purpleA100, blueA100, cyanA100, lightGreenA700, lightGreenA200 } from 'material-ui/styles/colors';
 
 export default class HighlightColorSelect extends Component {
   render() {
@@ -12,7 +12,8 @@ export default class HighlightColorSelect extends Component {
         {this.props.displayColorPicker &&
           <div style={{position: 'absolute'}}>
             <GithubPicker
-              colors={[yellow500, orange300, redA100, purpleA100, blueA100, lightGreenA700, 'white', 'black']}
+              width="250px"
+              colors={[yellow500, orange300, redA100, purpleA100, blueA100, cyanA100, lightGreenA700, lightGreenA200, 'white', 'black']}
               color={this.props.highlightColor}
               onChange={color => {this.props.setHighlightColor(color.hex);}}
             />
