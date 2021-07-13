@@ -37,7 +37,7 @@ import { goToNextCell } from "prosemirror-tables"
 import { schema } from './TextSchema';
 import { addMark, removeMark } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
+import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor, toggleTextHighlights } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
@@ -77,8 +77,11 @@ class TextResource extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.highlightsHidden !== prevProps.highlightsHidden) {
-      this.setState({documentSchema: this.createDocumentSchema()});
+    // Unhide highlights if toggling lock state
+     if (this.props.writeEnabled !== prevProps.writeEnabled || this.props.lockedByMe !== prevProps.lockedByMe){
+      if ( prevProps.highlightsHidden[this.props.document_id]) {
+        this.props.toggleTextHighlights(this.props.document_id, false);
+      }
     }
   }
   
@@ -697,6 +700,7 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   openDeleteDialog,
   setGlobalCanvasDisplay,
+  toggleTextHighlights,
   closeEditor
 }, dispatch);
 
