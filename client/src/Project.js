@@ -38,12 +38,15 @@ class Project extends Component {
   }
 
   selectTextHighlight(document_id, highlight_id) {
-    if (this.props.highlightSelectModes[document_id]) {
-      this.props.selectHighlight(document_id, highlight_id);
-    }
-    // if the clicked highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
-    else if (this.props.selectedHighlights[document_id] !== highlight_id) {
-      this.setFocusHighlight(document_id, highlight_id);
+    // Don't show highlight's popover if doc's highlights are hidden
+    if (!this.props.highlightsHidden[document_id]) {
+      if (this.props.highlightSelectModes[document_id]) {
+        this.props.selectHighlight(document_id, highlight_id);
+      }
+      // if the clicked highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
+      else if (this.props.selectedHighlights[document_id] !== highlight_id) {
+        this.setFocusHighlight(document_id, highlight_id);
+      }
     }
   }
 
