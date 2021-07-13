@@ -37,7 +37,7 @@ import { goToNextCell } from "prosemirror-tables"
 import { schema } from './TextSchema';
 import { addMark, removeMark } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
+import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor, toggleTextHighlights } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
@@ -77,9 +77,12 @@ class TextResource extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.highlightsHidden !== prevProps.highlightsHidden) {
-      this.setState({documentSchema: this.createDocumentSchema()});
+    if (this.props.writeEnabled !== prevProps.writeEnabled || this.props.lockedByMe !== prevProps.lockedByMe){
+      if ( prevProps.highlightsHidden[this.getInstanceKey()]) {
+        this.props.toggleTextHighlights(this.getInstanceKey(), false);
+      }
     }
+    // TODO: Make sure changed data shared across all docs with this doc's ID
   }
   
   createDocumentSchema() {
@@ -92,8 +95,8 @@ class TextResource extends Component {
       const properties = {
         class: `dm-highlight ${instanceKey}-${mark.attrs.highlightUid}`,
         style: `background: ${color};`,
-        onclick: `window.selectTextHighlight('${document_id}', '${mark.attrs.highlightUid}')`,
-        onmouseenter: `window.showRollover('${document_id}', '${mark.attrs.highlightUid}')`,
+        onclick: `window.selectTextHighlight('${document_id}', '${mark.attrs.highlightUid}', '${instanceKey}')`,
+        onmouseenter: `window.showRollover('${document_id}', '${mark.attrs.highlightUid}', '${instanceKey}')`,
         onmouseleave: `window.hideRollover('${mark.attrs.highlightUid}')`
       };
       properties['data-highlight-uid'] = mark.attrs.highlightUid;
@@ -132,8 +135,8 @@ class TextResource extends Component {
   }
 
   getEditorState() {
-    const { editorStates, document_id } = this.props;
-    const existingEditorState = editorStates[document_id];
+    const { editorStates } = this.props;
+    const existingEditorState = editorStates[this.getInstanceKey()];
 
     if( !existingEditorState ) {
       return this.createEditorState();
@@ -144,6 +147,7 @@ class TextResource extends Component {
 
   createEditorState() {
     const document_id = this.props.document_id;
+    const key = this.getInstanceKey();
     const dmSchema = this.state.documentSchema;
 
     let plugins = exampleSetup({
@@ -167,7 +171,7 @@ class TextResource extends Component {
       props: {
         decorations: function(state) {
           let decorations = [];
-          const selectedHighlight = this.props.getSelectedHighlight(this.props.document_id);
+          const selectedHighlight = this.props.getSelectedHighlight(document_id);
           if (selectedHighlight) {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
@@ -187,7 +191,7 @@ class TextResource extends Component {
       props: {
         decorations: function(state) {
           let decorations = [];
-          const highlightsHidden = !this.isEditable() && this.props.highlightsHidden[document_id];
+          const highlightsHidden = !this.isEditable() && this.props.highlightsHidden[key];
           if (highlightsHidden) {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
@@ -210,7 +214,7 @@ class TextResource extends Component {
       selection: TextSelection.create(doc, 0),
       plugins
     })
-    this.props.updateEditorState(document_id, editorState);
+    this.props.updateEditorState(this.getInstanceKey(), editorState);
     return editorState;
   }
 
@@ -309,7 +313,7 @@ class TextResource extends Component {
     // EditorView instance and update local state for this component
     const editorState = this.getEditorState();
     if (editorState && nextProps.editorStates ) {
-     const nextEditorState = nextProps.editorStates[this.props.document_id];
+     const nextEditorState = nextProps.editorStates[this.getInstanceKey()];
      if( this.state.editorView && nextEditorState ) {
        this.state.editorView.updateState(nextEditorState);
      }
@@ -411,7 +415,7 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const nextEditorState = editorState.apply(tx);
       this.state.editorView.updateState(nextEditorState);
-      this.props.updateEditorState(this.props.document_id, nextEditorState);
+      this.props.updateEditorState(this.getInstanceKey(), nextEditorState);
     }.bind(this));
   };
 
@@ -697,7 +701,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   openDeleteDialog,
   setGlobalCanvasDisplay,
-  closeEditor
+  closeEditor,
+  toggleTextHighlights
 }, dispatch);
 
 export default connect(

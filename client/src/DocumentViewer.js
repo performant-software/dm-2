@@ -101,7 +101,7 @@ class DocumentViewer extends Component {
   }
 
   onToggleHighlights() {
-    const key = this.props.document_kind === 'canvas' ?  this.getInstanceKey() : this.props.document_id;
+    const key = this.getInstanceKey();
     const currentState = this.props.highlightsHidden[key] === true ? true : false
     this.props.toggleHighlights( key, !currentState )
   }
@@ -123,8 +123,7 @@ class DocumentViewer extends Component {
       height: '20px'
     };
     const buttonStyle = Object.assign({ margin: '2px' }, iconStyle);
-    const key = this.props.document_kind === 'canvas' ?  this.getInstanceKey() : this.props.document_id;
-    const highlightsHidden = this.props.highlightsHidden[key];
+    const highlightsHidden = this.props.highlightsHidden[this.getInstanceKey()];
 
     return (
       this.props.connectDragSource(

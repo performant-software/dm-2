@@ -960,6 +960,7 @@ export function confirmDeleteDialog() {
       case TEXT_HIGHLIGHT_DELETE:
         const { editorStates } = getState().textEditor;
         if (payload.transaction && payload.document_id) {
+          // TODO: Don't use Doc ID for state
           const newState = editorStates[payload.document_id].apply(payload.transaction);
           dispatch(updateEditorState(payload.document_id, newState));
           dispatch(updateDocument(payload.document_id, {content: {type: 'doc', content: payload.transaction.doc.content}}));
