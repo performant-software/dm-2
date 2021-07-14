@@ -9,7 +9,7 @@ body {
   border: 2px solid blue;
 }
 
-.dm-highlight .hidden {
+.highlights-hidden .dm-highlight {
   background-color: white !important;
 }
 

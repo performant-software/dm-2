@@ -37,7 +37,7 @@ import { goToNextCell } from "prosemirror-tables"
 import { schema } from './TextSchema';
 import { addMark, removeMark } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor, toggleTextHighlights } from './modules/textEditor';
+import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
 import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
 
@@ -74,16 +74,6 @@ class TextResource extends Component {
       documentSchema: this.createDocumentSchema(),
       ...this.initialLinkDialogState
     };
-  }
-
-  componentDidUpdate(prevProps) {
-    if (this.props.writeEnabled !== prevProps.writeEnabled || this.props.lockedByMe !== prevProps.lockedByMe){
-      if ( prevProps.highlightsHidden[this.getInstanceKey()]) {
-        this.props.toggleTextHighlights(this.getInstanceKey(), false);
-      }
-    }
-    // TODO: Make sure changed data shared across all docs with this doc's ID
-    // and check that a second instance still works when first instance closed
   }
   
   createDocumentSchema() {
@@ -136,8 +126,8 @@ class TextResource extends Component {
   }
 
   getEditorState() {
-    const { editorStates } = this.props;
-    const existingEditorState = editorStates[this.getInstanceKey()];
+    const { editorStates, document_id } = this.props;
+    const existingEditorState = editorStates[document_id];
 
     if( !existingEditorState ) {
       return this.createEditorState();
@@ -188,26 +178,6 @@ class TextResource extends Component {
 
     plugins.push(highlightSelectPlugin);
 
-    const toggleHighlightsPlugin = new Plugin({
-      props: {
-        decorations: function(state) {
-          let decorations = [];
-          const highlightsHidden = !this.isEditable() && this.props.highlightsHidden[key];
-          if (highlightsHidden) {
-            state.doc.descendants((node, position) => {
-              node.marks.forEach(mark => {
-                if (mark.type.name === this.state.documentSchema.marks.highlight.name)
-                  decorations.push(Decoration.node(position, position + node.nodeSize, { class: 'hidden' }));
-              });
-            });
-          }
-          return DecorationSet.create(state.doc, decorations);
-        }.bind(this)
-      }
-    });
-
-    plugins.push(toggleHighlightsPlugin);
-
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
     const editorState = EditorState.create({
@@ -215,7 +185,7 @@ class TextResource extends Component {
       selection: TextSelection.create(doc, 0),
       plugins
     })
-    this.props.updateEditorState(this.getInstanceKey(), editorState);
+    this.props.updateEditorState(document_id, editorState);
     return editorState;
   }
 
@@ -314,7 +284,7 @@ class TextResource extends Component {
     // EditorView instance and update local state for this component
     const editorState = this.getEditorState();
     if (editorState && nextProps.editorStates ) {
-     const nextEditorState = nextProps.editorStates[this.getInstanceKey()];
+     const nextEditorState = nextProps.editorStates[this.props.document_id];
      if( this.state.editorView && nextEditorState ) {
        this.state.editorView.updateState(nextEditorState);
      }
@@ -416,7 +386,7 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const nextEditorState = editorState.apply(tx);
       this.state.editorView.updateState(nextEditorState);
-      this.props.updateEditorState(this.getInstanceKey(), nextEditorState);
+      this.props.updateEditorState(this.props.document_id, nextEditorState);
     }.bind(this));
   };
 
@@ -703,7 +673,6 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   openDeleteDialog,
   setGlobalCanvasDisplay,
   closeEditor,
-  toggleTextHighlights
 }, dispatch);
 
 export default connect(

@@ -75,14 +75,6 @@ export default function(state = initialState, action) {
         ...state,
         selectedHighlights: updatedSelectedHighlights
       };
-
-    case TOGGLE_HIGHLIGHTS:
-      let highlightsHidden = Object.assign({}, state.highlightsHidden);
-      highlightsHidden[action.editorKey] = action.value;
-      return {
-        ...state,
-        highlightsHidden
-      };
   
     default:
       return state;
@@ -164,21 +156,4 @@ export function selectHighlight(editorKey, highlightKey) {
       highlightKey // pass null to this parameter to deselect
     });
   }
-}
-
-export function toggleTextHighlights(editorKey, value) {
-  return function(dispatch, getState) {
-    dispatch({
-      type: TOGGLE_HIGHLIGHTS,
-      editorKey,
-      value
-    });
-    window.setTimeout(() => {
-      dispatch({
-        type: UPDATE_EDITOR_STATE,
-        editorKey,
-        editorState: getState().textEditor.editorStates[editorKey]
-      });
-    }, 100);
-  };
 }
