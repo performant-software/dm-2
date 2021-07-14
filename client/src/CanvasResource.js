@@ -302,9 +302,11 @@ class CanvasResource extends Component {
 
       case 'lineDraw':
         if( this.checkDoubleClick() ) {
+          this.drawLine(this.pointerCoords, true);
           this.endLineMode();
         } else {
           this.drawLine(this.pointerCoords, true);
+          this.prevLineEndPoint = this.pointerCoords;
         }
         break;
       default:
@@ -315,9 +317,9 @@ class CanvasResource extends Component {
   canvasMouseMove(o) {
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
-    if (this.currentMode === 'lineDraw') {
-      //this.pointerCoords = this.overlay.fabricCanvas().getPointer(o.e);
-      //this.drawLine(this.pointerCoords, false);
+    if (this.currentMode === 'lineDraw' && this.lineInProgress) {
+      this.pointerCoords = this.overlay.fabricCanvas().getPointer(o.e);
+      this.drawLine(this.pointerCoords, false);
     }
 
     if( this.newShape && this.isMouseDown ) {
@@ -450,16 +452,25 @@ class CanvasResource extends Component {
         );
           this.overlay.fabricCanvas().remove(oldCircle);
           this.overlay.fabricCanvas().add(this.lineInProgress);
-      }
-      else {
-        // otherwise, add to the line
+      } else if (this.prevLineEndPoint && !activeShape) {
         // if we are just hovering make a line
+        const oldHoverLine = this.hoverLine;
+        this.hoverLine = new fabric.Polyline(
+          [{ x: this.prevLineEndPoint.x, y: this.prevLineEndPoint.y}, { x: pointer.x, y: pointer.y }],
+          lineOptions
+        );
+        this.overlay.fabricCanvas().remove(oldHoverLine);
+        this.overlay.fabricCanvas().add(this.hoverLine);
+        
+      } else {
+        // otherwise, add to the line
           const oldPolyline = this.lineInProgress;
+          const oldHoverLine = this.hoverLine;
           const points = oldPolyline.points.concat({ x: pointer.x, y: pointer.y });
           this.lineInProgress = new fabric.Polyline( points, lineOptions );
+          this.overlay.fabricCanvas().remove(oldHoverLine);
           this.overlay.fabricCanvas().remove(oldPolyline);
           this.overlay.fabricCanvas().add(this.lineInProgress);
-          console.log("drawing line in progress "+ pointer.x, pointer.y);
       }
     }
     else {
