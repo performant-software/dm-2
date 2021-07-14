@@ -24,7 +24,16 @@ const FolderContents = props => {
     default:
       if (props.contents.length > 0) {
         return (
-          <LinkableList items={props.contents} openDocumentIds={props.openDocumentIds} writeEnabled={props.writeEnabled} allDraggable={props.allDraggable} insideFolder={true} inContents={true} parentFolderId={props.parentFolderId} />
+          <LinkableList
+            items={props.contents}
+            openDocumentIds={props.openDocumentIds}
+            writeEnabled={props.writeEnabled}
+            adminEnabled={props.adminEnabled}
+            allDraggable={props.allDraggable}
+            insideFolder={true}
+            inContents={true}
+            parentFolderId={props.parentFolderId}
+          />
         );
       }
       return <p style={{ color: grey600 }}>Empty</p>;
@@ -55,7 +64,7 @@ class DocumentFolder extends Component {
               return 0;
             }}
           />
-          {this.props.isOpen && this.props.writeEnabled &&
+          {this.props.isOpen && this.props.adminEnabled &&
             <IconButton
               style={{ width: '18px', height: '18px', padding: '0' }}
               iconStyle={{ width: '18px', height: '18px' }}
@@ -74,7 +83,14 @@ class DocumentFolder extends Component {
           }
         </div>
         {this.props.isOpen &&
-          <FolderContents contents={this.props.contents} writeEnabled={this.props.writeEnabled} allDraggable={this.props.isDraggable} openDocumentIds={this.props.openDocumentIds} parentFolderId={this.props.item.id} />
+          <FolderContents
+            contents={this.props.contents}
+            writeEnabled={this.props.writeEnabled}
+            adminEnabled={this.props.adminEnabled}
+            allDraggable={this.props.isDraggable}
+            openDocumentIds={this.props.openDocumentIds}
+            parentFolderId={this.props.item.id}
+          />
         }
       </LinkableSummary>
     );

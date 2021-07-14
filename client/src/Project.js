@@ -142,6 +142,7 @@ class Project extends Component {
           mouseDownHandler={this.props.promoteTarget}
           openDocumentIds={this.props.openDocumentIds}
           writeEnabled={this.props.writeEnabled}
+          adminEnabled={this.props.adminEnabled}
           sidebarWidth={this.props.sidebarWidth}
         />
         <SearchResultsPopupLayer
@@ -242,7 +243,7 @@ class Project extends Component {
           isLoading={loading}
         />
         <TableOfContents
-          showSettings={adminEnabled}
+          adminEnabled={adminEnabled}
           settingsClick={this.props.showSettings}
           checkInAllClick={ () => this.props.checkInAll(projectId) }
           sidebarWidth={sidebarWidth} 

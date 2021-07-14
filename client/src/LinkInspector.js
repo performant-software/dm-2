@@ -16,7 +16,12 @@ import DraggableLinkIcon from './DraggableLinkIcon';
 const LinkList = function(props) {
   if (props.items && props.items.length > 0) {
     return (
-      <LinkableList items={props.items} writeEnabled={props.writeEnabled} openDocumentIds={props.openDocumentIds} />
+      <LinkableList
+        items={props.items}
+        writeEnabled={props.writeEnabled}
+        adminEnabled={props.adminEnabled}
+        openDocumentIds={props.openDocumentIds}
+      />
     );
   }
   return null;
@@ -126,7 +131,16 @@ class LinkInspector extends Component {
     const buttonId = `addNewDocumentButton-${this.props.idString}`;
     return (
       <div style={{ marginBottom: '8px' }}>
-        <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
+        <LinkArea
+          items={items}
+          openDocumentIds={this.props.openDocumentIds}
+          loading={target.loading}
+          document_id={target.document_id}
+          highlight_id={target.highlight_id}
+          addLink={this.props.addLink}
+          writeEnabled={this.props.writeEnabled}
+          adminEnabled={this.props.adminEnabled}
+        />
         {this.props.writeEnabled && 
           <div>
             <RaisedButton
