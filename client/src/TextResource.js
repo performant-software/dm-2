@@ -138,7 +138,6 @@ class TextResource extends Component {
 
   createEditorState() {
     const document_id = this.props.document_id;
-    const key = this.getInstanceKey();
     const dmSchema = this.state.documentSchema;
 
     let plugins = exampleSetup({
@@ -654,7 +653,6 @@ class TextResource extends Component {
 const mapStateToProps = state => ({
   editorStates: state.textEditor.editorStates,
   highlightColors: state.textEditor.highlightColors,
-  highlightsHidden: state.textEditor.highlightsHidden,
   displayColorPickers: state.textEditor.displayColorPickers,
   highlightSelectModes: state.textEditor.highlightSelectModes,
   selectedHighlights: state.textEditor.selectedHighlights

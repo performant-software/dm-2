@@ -5,12 +5,10 @@ export const HIDE_COLOR_PICKER = 'textEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'textEditor/TOGGLE_COLOR_PICKER';
 export const SET_HIGHLIGHT_SELECT_MODE = 'textEditor/SET_HIGHLIGHT_SELECT_MODE';
 export const SELECT_HIGHLIGHT = 'textEditor/SELECT_HIGHLIGHT';
-export const TOGGLE_HIGHLIGHTS = 'canvasEditor/TOGGLE_HIGHLIGHTS';
 
 const initialState = {
   editorStates: {},
   highlightColors: {},
-  highlightsHidden: {},
   displayColorPickers: {},
   loading: false,
   errored: false,

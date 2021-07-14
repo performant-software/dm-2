@@ -237,7 +237,7 @@ const mapStateToProps = state => ({
   highlightsHidden: state.canvasEditor.highlightsHidden
 });
 
-const mapDispatchToProps = (dispatch, props) => bindActionCreators({
+const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   closeDocument,
   moveDocumentWindow,
