@@ -75,7 +75,7 @@ class TextResource extends Component {
       ...this.initialLinkDialogState
     };
   }
-
+  
   createDocumentSchema() {
     const { document_id } = this.props;
     const instanceKey = this.getInstanceKey();
@@ -86,8 +86,8 @@ class TextResource extends Component {
       const properties = {
         class: `dm-highlight ${instanceKey}-${mark.attrs.highlightUid}`,
         style: `background: ${color};`,
-        onclick: `window.selectTextHighlight('${document_id}', '${mark.attrs.highlightUid}')`,
-        onmouseenter: `window.showRollover('${document_id}', '${mark.attrs.highlightUid}')`,
+        onclick: `window.selectTextHighlight('${document_id}', '${mark.attrs.highlightUid}', '${instanceKey}')`,
+        onmouseenter: `window.showRollover('${document_id}', '${mark.attrs.highlightUid}', '${instanceKey}')`,
         onmouseleave: `window.hideRollover('${mark.attrs.highlightUid}')`
       };
       properties['data-highlight-uid'] = mark.attrs.highlightUid;
@@ -161,7 +161,7 @@ class TextResource extends Component {
       props: {
         decorations: function(state) {
           let decorations = [];
-          const selectedHighlight = this.props.getSelectedHighlight(this.props.document_id);
+          const selectedHighlight = this.props.getSelectedHighlight(document_id);
           if (selectedHighlight) {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
@@ -670,7 +670,7 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   openDeleteDialog,
   setGlobalCanvasDisplay,
-  closeEditor
+  closeEditor,
 }, dispatch);
 
 export default connect(

@@ -9,6 +9,10 @@ body {
   border: 2px solid blue;
 }
 
+.highlights-hidden .dm-highlight {
+  background-color: white !important;
+}
+
 .ProseMirror-menubar {
   min-height: 48px !important;
 }

@@ -152,7 +152,7 @@ export function setIsPencilMode(editorKey, isPencilMode) {
   }
 }
 
-export function toggleHighlights(editorKey, value) {
+export function toggleCanvasHighlights(editorKey, value) {
   return function(dispatch) {
     dispatch({
       type: TOGGLE_HIGHLIGHTS,

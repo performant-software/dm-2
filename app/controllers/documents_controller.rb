@@ -47,7 +47,7 @@ class DocumentsController < ApplicationController
     if @document.locked_by == nil || @document.locked_by.id == current_user.id
       @document.destroy    
     else
-      head :fobidden
+      head :forbidden
     end
   end
 

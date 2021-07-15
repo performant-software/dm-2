@@ -5,6 +5,7 @@ export const HIDE_COLOR_PICKER = 'textEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'textEditor/TOGGLE_COLOR_PICKER';
 export const SET_HIGHLIGHT_SELECT_MODE = 'textEditor/SET_HIGHLIGHT_SELECT_MODE';
 export const SELECT_HIGHLIGHT = 'textEditor/SELECT_HIGHLIGHT';
+export const TOGGLE_HIGHLIGHTS = 'textEditor/TOGGLE_HIGHLIGHTS';
 
 const initialState = {
   editorStates: {},
@@ -13,7 +14,8 @@ const initialState = {
   loading: false,
   errored: false,
   highlightSelectModes: {},
-  selectedHighlights: {}
+  selectedHighlights: {},
+  highlightsHidden: {},
 };
 
 export default function(state = initialState, action) {
@@ -73,7 +75,15 @@ export default function(state = initialState, action) {
         ...state,
         selectedHighlights: updatedSelectedHighlights
       };
-
+  
+    case TOGGLE_HIGHLIGHTS:
+      let highlightsHidden = { ...state.highlightsHidden };
+      highlightsHidden[action.editorKey] = action.value;
+      return {
+        ...state,
+        highlightsHidden
+      };
+  
     default:
       return state;
   }
@@ -154,4 +164,14 @@ export function selectHighlight(editorKey, highlightKey) {
       highlightKey // pass null to this parameter to deselect
     });
   }
+}
+
+export function toggleTextHighlights(editorKey, value) {
+  return function(dispatch) {
+    dispatch({
+      type: TOGGLE_HIGHLIGHTS,
+      editorKey,
+      value
+    });
+  };
 }
