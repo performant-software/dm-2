@@ -190,7 +190,6 @@ class TextResource extends Component {
         decorations: function(state) {
           let decorations = [];
           const targetHighlights = this.state.targetHighlights;
-          console.log(targetHighlights);
           if (targetHighlights && targetHighlights.length > 0) {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
@@ -338,7 +337,6 @@ class TextResource extends Component {
       let targetHighlight = null;
       // if a highlight is targeted, locate it in props
       if( this.props.firstTarget ) {
-        console.log(this.props.firstTarget);
         for( let key in this.props.highlight_map ) {
           let currentHighlight = this.props.highlight_map[key]
           if( currentHighlight.id === this.props.firstTarget ) {
@@ -373,7 +371,7 @@ class TextResource extends Component {
       this.setState(prevState => (
         { 
           ...prevState,
-          targetHighlights: targetHighlight !== null ? [...prevState.targetHighlights, targetHighlight.target] : prevState.targetHighlights,
+          targetHighlights: targetHighlight !== null ? [...prevState.targetHighlights, targetHighlight.target] : [],
           editorView
         }
       ));
