@@ -81,6 +81,19 @@ class DocumentViewer extends Component {
     this.titleChangeDelayMs = 800;
 
     this.elementRef = React.createRef();
+
+    this.state = {
+      resourceName: this.props.resourceName,
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.resourceName !== prevProps.resourceName) {
+      this.setState({
+        resourceName: this.props.resourceName,
+      });
+      this.props.updateDocument(this.props.document_id, {title: this.props.resourceName}, {refreshLists: true});
+    }
   }
 
   componentDidMount() {
@@ -93,6 +106,9 @@ class DocumentViewer extends Component {
   }
 
   onChangeTitle = (event, newValue) => {
+    this.setState({
+      resourceName: newValue,
+    })
     window.clearTimeout(this.titleChangeTimeout);
     this.titleChangeTimeout = window.setTimeout(() => {
       this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
@@ -137,6 +153,7 @@ class DocumentViewer extends Component {
               autoComplete='off'
               inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
               defaultValue={this.props.resourceName}
+              value={this.state.resourceName}
               underlineShow={false}
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
