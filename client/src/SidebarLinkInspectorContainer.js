@@ -16,7 +16,13 @@ class SidebarLinkInspectorContainer extends Component {
           onClick={this.props.closeSidebarTarget}
           id='returnToTOCButton'
         />
-        <LinkInspector target={this.props.target} openDocumentIds={this.props.openDocumentIds} id='sidebarLinkInspector' writeEnabled={this.props.writeEnabled} />
+        <LinkInspector
+          target={this.props.target}
+          openDocumentIds={this.props.openDocumentIds}
+          id='sidebarLinkInspector'
+          writeEnabled={this.props.writeEnabled}
+          adminEnabled={this.props.adminEnabled}
+        />
       </div>
     );
   }

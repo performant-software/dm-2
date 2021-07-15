@@ -10,7 +10,7 @@ import {NativeTypes} from 'react-dnd-html5-backend';
 import { parseIIIFManifest } from './modules/iiif';
 
 const ListTargetInner = props => {
-  const { isFolder, isOver, writeEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
+  const { isFolder, isOver, writeEnabled, adminEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
   if (isFolder) {
     let contents = openFolderContents[item.id];
     return <DocumentFolder
@@ -18,6 +18,7 @@ const ListTargetInner = props => {
       inContents={true}
       isDraggable={allDraggable}
       writeEnabled={writeEnabled}
+      adminEnabled={adminEnabled}
       openDocumentIds={openDocumentIds}
       isOpen={contents}
       isOver={isOver}

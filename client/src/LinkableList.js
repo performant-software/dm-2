@@ -12,7 +12,7 @@ import ListDropTarget from './ListDropTarget';
 class LinkableList extends Component {
 
   renderFolder(item, buoyancyTarget, targetParentId, targetParentType) {
-    const { allDraggable, inContents, writeEnabled, openDocumentIds, openFolderContents } = this.props;
+    const { allDraggable, inContents, writeEnabled, adminEnabled, openDocumentIds, openFolderContents } = this.props;
     const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
     let contents = openFolderContents[item.id];
@@ -44,6 +44,7 @@ class LinkableList extends Component {
           inContents={true}
           isDraggable={allDraggable}
           writeEnabled={writeEnabled}
+          adminEnabled={adminEnabled}
           openDocumentIds={openDocumentIds}
           isOpen={contents}
           contents={contents}

@@ -16,7 +16,7 @@ import MoveToInbox from 'material-ui/svg-icons/content/move-to-inbox';
 class TableOfContents extends Component {
 
   render() {
-    const { sidebarWidth, sidebarOpen, showSettings, projectId, contentsChildren, openDocumentIds, writeEnabled } = this.props
+    const { sidebarWidth, sidebarOpen, adminEnabled, projectId, contentsChildren, openDocumentIds, writeEnabled } = this.props
 
     return (
       <Drawer open={sidebarOpen} width={sidebarWidth}>
@@ -40,7 +40,7 @@ class TableOfContents extends Component {
                     onClick={() => {this.props.createFolder(projectId, 'Project');}}
                   />
                     <IconButton onClick={this.props.checkInAllClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><MoveToInbox /></IconButton>
-                  { showSettings && 
+                  { adminEnabled && 
                     <IconButton onClick={this.props.settingsClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><Settings /></IconButton>
                   }
                 </ToolbarGroup>
@@ -52,6 +52,7 @@ class TableOfContents extends Component {
               openDocumentIds={openDocumentIds} 
               allDraggable={writeEnabled} 
               writeEnabled={writeEnabled} 
+              adminEnabled={adminEnabled}
             />
           </div>
         </div>
