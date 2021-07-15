@@ -14,7 +14,8 @@ import VisibilityOff from 'material-ui/svg-icons/action/visibility-off';
 import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocumentWindow, layoutOptions } from './modules/documentGrid';
-import { toggleHighlights } from './modules/canvasEditor';
+import { toggleCanvasHighlights } from './modules/canvasEditor';
+import { toggleTextHighlights } from './modules/textEditor';
 import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
@@ -201,7 +202,7 @@ class DocumentViewer extends Component {
           flexShrink: '1'
         }}
         zDepth={2}
-        className={this.props.document_kind !== 'canvas' && highlightsHidden ? 'highlights-hidden' : ''}
+        className={this.props.document_kind !== 'canvas' && !this.isEditable() && highlightsHidden ? 'highlights-hidden' : ''}
       >
         {connectDropTarget(
           <div style={{
@@ -230,19 +231,19 @@ DocumentViewer = DragSource(
   collectDrop
 )(DocumentViewer));
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state, ownProps) => ({
   openDocuments: state.documentGrid.openDocuments,
   currentLayout: layoutOptions[state.documentGrid.currentLayout],
   sidebarWidth:  state.project.sidebarWidth,
-  highlightsHidden: state.canvasEditor.highlightsHidden
+  highlightsHidden: ownProps.document_kind === 'canvas' ? state.canvasEditor.highlightsHidden : state.textEditor.highlightsHidden,
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch, props) => bindActionCreators({
   updateDocument,
   closeDocument,
   moveDocumentWindow,
   closeDocumentTargets,
-  toggleHighlights,
+  toggleHighlights: props.document_kind === 'canvas' ? toggleCanvasHighlights : toggleTextHighlights,
 }, dispatch);
 
 export default connect(

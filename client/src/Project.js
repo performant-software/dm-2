@@ -38,7 +38,7 @@ class Project extends Component {
   }
 
   selectTextHighlight(document_id, highlight_id, key) {
-    if (!(key && this.props.highlightsHidden[key])) {
+    if (!(key && this.props.highlightsHidden && this.props.highlightsHidden[key])) {
       if (this.props.highlightSelectModes[document_id]) {
         this.props.selectHighlight(document_id, highlight_id);
       }
@@ -52,7 +52,7 @@ class Project extends Component {
   showRollover(document_id, highlight_id, key) {
     // if this doc's highlights are hidden, or the hovered highlight is currently selected,
     // don't proceed with the normal popover behavior to facilitate editing the highlighted text
-    if ((key && this.props.highlightsHidden[key]) || this.props.selectedHighlights[document_id] === highlight_id) return;
+    if ((key && this.props.highlightsHidden && this.props.highlightsHidden[key]) || this.props.selectedHighlights[document_id] === highlight_id) return;
     const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
     if( !existingPopover ) {
       this.activateRolloverTimer( () => {
