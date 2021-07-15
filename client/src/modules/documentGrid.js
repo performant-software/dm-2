@@ -546,6 +546,21 @@ export function createTextDocument(parentId, parentType, callback) {
       type: NEW_DOCUMENT
     });
 
+    // Annotation title handling
+    let title =  parentType === 'Document' ? 'New Annotation' : 'Untitled Document';
+    if (
+      parentType === 'Document' 
+      && getState().annotationViewer
+      && Array.isArray(getState().annotationViewer.selectedTargets)
+      && getState().annotationViewer.selectedTargets.length > 0
+    ) {
+      getState().annotationViewer.selectedTargets.forEach(target => {
+        if (target.document_id === parentId) {
+          title = `Annotation for ${target.document_title}`;
+        }
+      });
+    }
+
     fetch('/documents', {
       headers: {
         'Accept': 'application/json',
@@ -558,7 +573,7 @@ export function createTextDocument(parentId, parentType, callback) {
       },
       method: 'POST',
       body: JSON.stringify({
-        title: 'Untitled Document',
+        title,
         project_id: getState().project.id,
         document_kind: TEXT_RESOURCE_TYPE,
         content: {type: 'doc', content: [{"type":"paragraph","content":[]}]},
