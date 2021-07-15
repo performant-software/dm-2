@@ -393,7 +393,20 @@ class CanvasResource extends Component {
     const jsonBlob = {objects: []};
     for (const highlightUid in highlight_map) {
       const highlight = highlight_map[highlightUid];
-      jsonBlob.objects.push(JSON.parse(highlight.target));
+      const parsedHighlight = JSON.parse(highlight.target);
+      if( this.props.firstTarget ) {
+        if( highlight.id === this.props.firstTarget ) {
+          parsedHighlight.shadow = new fabric.Shadow({
+            color: 'blue',
+            blur: 10,
+          });
+          for (let i = 0; i < 3; i += 1) {
+            // Copy the object 3 times to make the glow more visible
+            jsonBlob.objects.push(parsedHighlight);
+          }
+        }
+      }
+      jsonBlob.objects.push(parsedHighlight);
     }
     const jsonString = JSON.stringify(jsonBlob);
     const zoom = overlay.fabricCanvas().getZoom();

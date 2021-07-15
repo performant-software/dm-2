@@ -9,6 +9,10 @@ body {
   border: 2px solid blue;
 }
 
+.dm-highlight .targeted {
+  outline: 2px dotted blue;
+}
+
 .highlights-hidden .dm-highlight {
   background-color: white !important;
 }
