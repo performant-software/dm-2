@@ -72,10 +72,17 @@ class TextResource extends Component {
     this.state = {
       editorView: null,
       documentSchema: this.createDocumentSchema(),
+      targetHighlights: [],
       ...this.initialLinkDialogState
     };
   }
   
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.targetHighlights !== prevState.targetHighlights) {
+      this.createEditorState();
+    }
+  }
+
   createDocumentSchema() {
     const { document_id } = this.props;
     const instanceKey = this.getInstanceKey();
@@ -176,6 +183,29 @@ class TextResource extends Component {
     });
 
     plugins.push(highlightSelectPlugin);
+
+
+    const highlightTargetPlugin = new Plugin({
+      props: {
+        decorations: function(state) {
+          let decorations = [];
+          const targetHighlights = this.state.targetHighlights;
+          console.log(targetHighlights);
+          if (targetHighlights && targetHighlights.length > 0) {
+            state.doc.descendants((node, position) => {
+              node.marks.forEach(mark => {
+                if (mark.type.name === this.state.documentSchema.marks.highlight.name && targetHighlights.includes(mark.attrs.highlightUid)) {
+                  decorations.push(Decoration.node(position, position + node.nodeSize, {class: 'targeted'}));
+                }
+              });
+            });
+          }
+          return DecorationSet.create(state.doc, decorations);
+        }.bind(this)
+      }
+    });
+
+    plugins.push(highlightTargetPlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
@@ -305,9 +335,10 @@ class TextResource extends Component {
         editable: this.isEditable
       });
 
+      let targetHighlight = null;
       // if a highlight is targeted, locate it in props
       if( this.props.firstTarget ) {
-        let targetHighlight = null;
+        console.log(this.props.firstTarget);
         for( let key in this.props.highlight_map ) {
           let currentHighlight = this.props.highlight_map[key]
           if( currentHighlight.id === this.props.firstTarget ) {
@@ -339,7 +370,13 @@ class TextResource extends Component {
       document.execCommand("enableObjectResizing", false, false)
       document.execCommand("enableInlineTableEditing", false, false)
 
-      this.setState( { ...this.state, editorView });
+      this.setState(prevState => (
+        { 
+          ...prevState,
+          targetHighlights: targetHighlight !== null ? [...prevState.targetHighlights, targetHighlight.target] : prevState.targetHighlights,
+          editorView
+        }
+      ));
     }
   }
 
