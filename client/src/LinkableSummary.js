@@ -24,11 +24,19 @@ class Summary extends Component {
     this.singleClickTimeout = null;
     this.doubleClickCutoffMs = 400;
 
-    const defaultBgColor = this.props.item.linkItem ? 'white' : grey100;
+    this.defaultBgColor = this.props.item.linkItem ? 'white' : grey100;
 
     this.state = {
-      backgroundColor: this.props.isOpen && this.props.item.document_kind !== 'folder' ? grey800 : defaultBgColor,
+      backgroundColor: this.props.isOpen && this.props.item.document_kind !== 'folder' ? grey800 : this.defaultBgColor,
     };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.isOpen !== this.props.isOpen) {
+      this.setState({
+        backgroundColor: this.props.isOpen && this.props.item.document_kind !== 'folder' ? grey800 : this.defaultBgColor,
+      })
+    }
   }
 
   renderRightIcon() {
