@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   post '/document_folders/:id/add_tree' => 'document_folders#add_tree'
   get '/projects/:id/search' => 'projects#search'
   post '/projects/:id/check_in' => 'projects#check_in'
+  patch '/links/:id/move' => 'links#move'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?

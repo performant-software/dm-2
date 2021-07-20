@@ -45,6 +45,10 @@ class DocumentsController < ApplicationController
   # DELETE /documents/1
   def destroy
     if @document.locked_by == nil || @document.locked_by.id == current_user.id
+      @links = Link.where(:linkable_b_type => 'Document', :linkable_b_id => @document.document_id)
+      @links.each { |link|
+        link.remove_self_from_order
+      }
       @document.destroy    
     else
       head :forbidden
