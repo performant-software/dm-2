@@ -10,7 +10,9 @@ body {
 }
 
 .dm-highlight .targeted {
-  outline: 2px dotted blue;
+  box-shadow: 0 0px 8px blue, 0 0px 8px blue, 0 0px 8px blue;
+  z-index: 1;
+  position: relative;
 }
 
 .highlights-hidden .dm-highlight {
