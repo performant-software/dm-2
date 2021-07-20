@@ -39,16 +39,23 @@ class Link < ApplicationRecord
     }
 
     bum_links.each { |link| 
-      link.remove_self_from_order
+      link.renumber_all(true)
       link.destroy 
     }
   end
 
-  def remove_self_from_order
-    siblings = Link.where.not(:id => self.id).where(
-      :linkable_a_id => self.linkable_a_id,
-      :linkable_a_type => "Highlight"
-    ).sort_by(&:position)
+  def renumber_all(remove_self)
+    if remove_self == true
+      siblings = Link.where.not(:id => self.id).where(
+        :linkable_a_id => self.linkable_a_id,
+        :linkable_a_type => "Highlight"
+      ).sort_by(&:position)
+    else
+      siblings = Link.where(
+        :linkable_a_id => self.linkable_a_id,
+        :linkable_a_type => "Highlight"
+      ).sort_by(&:position)
+    end
 
     # renumber them in a single transaction
     ActiveRecord::Base.transaction do    
@@ -91,6 +98,7 @@ class Link < ApplicationRecord
       }
       self.position = target_position
       self.save!
+      self.renumber_all(false)
     end
   end
 

@@ -47,7 +47,7 @@ class DocumentsController < ApplicationController
     if @document.locked_by == nil || @document.locked_by.id == current_user.id
       @links = Link.where(:linkable_b_type => 'Document', :linkable_b_id => @document.document_id)
       @links.each { |link|
-        link.remove_self_from_order
+        link.renumber_all(true)
       }
       @document.destroy    
     else

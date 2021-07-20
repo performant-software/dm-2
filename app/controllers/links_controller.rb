@@ -46,7 +46,7 @@ class LinksController < ApplicationController
 
   # DELETE /links/1
   def destroy
-    @link.remove_self_from_order
+    @link.renumber_all(true)
     @link.destroy
   end
 
