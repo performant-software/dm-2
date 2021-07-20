@@ -44,6 +44,10 @@ class HighlightsController < ApplicationController
 
   # DELETE /highlights/1
   def destroy
+    @links = Link.where(:linkable_b_type => 'Highlight', :linkable_b_id => @highlight.id)
+    @links.each { |link|
+      link.renumber_all(true)
+    }
     @highlight.destroy
   end
 
