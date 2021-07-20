@@ -26,6 +26,7 @@ class LinksController < ApplicationController
   # POST /links
   def create
     @link = Link.new(new_link_params)
+    @link.move_to(0) # Start at position 0
 
     if @link.save
       render json: @link, status: :created, location: @link
@@ -34,17 +35,18 @@ class LinksController < ApplicationController
     end
   end
 
-  # PATCH/PUT /links/1
-  # def update
-  #   if @link.update(link_params)
-  #     render json: @link
-  #   else
-  #     render json: @link.errors, status: :unprocessable_entity
-  #   end
-  # end
+
+  # PATCH/PUT /links/1/move
+  def move
+    @link = Link.find(params[:id])
+    p = link_move_params
+    @link.move_to(p[:position])
+  end
+  
 
   # DELETE /links/1
   def destroy
+    @link.renumber_all(true)
     @link.destroy
   end
 
@@ -60,7 +62,8 @@ class LinksController < ApplicationController
       params.require(:link).permit(:linkable_a_id, :linkable_a_type, :linkable_b_id, :linkable_b_type)
     end
 
-    # def link_params
-    #   params.require(:link).permit()
-    # end
+    def link_move_params
+      params.require(:link).permit(:position)
+    end
+
 end

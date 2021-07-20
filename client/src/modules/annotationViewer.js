@@ -14,11 +14,16 @@ export const CLOSE_DOCUMENT_TARGETS = 'annotationViewer/CLOSE_DOCUMENT_TARGETS';
 export const PROMOTE_TARGET = 'annotationViewer/PROMOTE_TARGET';
 export const CLEAR_SELECTION = 'annotationViewer/CLEAR_SELECTION';
 export const DELETE_LINK_SUCCESS = 'annotationViewer/DELETE_LINK_SUCCESS';
+export const ADD_LINK_SUCCESS = 'annotationViewer/ADD_LINK_SUCCESS';
+export const MOVE_LINK = 'annotationViewer/MOVE_LINK';
+export const MOVE_LINK_SUCCESS = 'annotationViewer/MOVE_LINK_SUCCESS';
+export const MOVE_LINK_ERRORED = 'annotationViewer/MOVE_LINK_ERRORED';
 
 const initialState = {
   selectedTargets: [],
   sidebarTarget: null,
-  sidebarLoading: true
+  sidebarLoading: true,
+  addedLinkId: null,
 };
 
 export default function(state = initialState, action) {
@@ -178,6 +183,33 @@ export default function(state = initialState, action) {
         selectedTargets: nextSelectedTargets
       };
 
+    case ADD_LINK_SUCCESS:
+      return {
+        ...state,
+        addedLink: {
+          id: action.payload.id,
+          target: action.payload.target,
+        }
+      };
+
+    case MOVE_LINK:
+      return {
+        ...state,
+        sidebarLoading: true
+      };
+
+    case MOVE_LINK_SUCCESS:
+      return {
+        ...state,
+        sidebarLoading: false
+      };
+
+    case MOVE_LINK_ERRORED:
+      return {
+        ...state,
+        sidebarLoading: false
+      };
+      
     default:
       return state;
   }
@@ -366,7 +398,7 @@ export function clearSelection() {
   }
 }
 
-export function addLink(origin, linked) {
+export function addLink(origin, linked, newLinkPosition) {
   return function(dispatch, getState) {
     fetch('/links', {
       headers: {
@@ -392,7 +424,8 @@ export function addLink(origin, linked) {
       }
       return response;
     })
-    .then(() => {
+    .then(response => response.json())
+    .then((newLink) => {
       const sidebarTarget = getState().annotationViewer.sidebarTarget;
       if (sidebarTarget) {
         let { highlight_id, document_id } = sidebarTarget;
@@ -412,6 +445,15 @@ export function addLink(origin, linked) {
         else if ((origin.linkable_type === 'Document' && origin.linkable_id === document_id) || (linked.linkable_type === 'Document' && linked.linkable_id === document_id))
           dispatch(refreshTarget(index));
       });
+      if (newLinkPosition) {
+        dispatch({
+          type: ADD_LINK_SUCCESS,
+          payload: {
+            id: newLink.id,
+            target: newLinkPosition,
+          },
+        });
+      }
     })
     .catch(() => {
       // TODO
@@ -445,8 +487,71 @@ export function deleteLink(doomedLinkID) {
         link_id: doomedLinkID
       });
     })
+    .then(() => {
+      // Update positions in UI
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && sidebarTarget.highlight_id) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.highlight_id) {
+          dispatch(refreshTarget(index));
+        }
+      });
+    })
     .catch(() => {
       //  TODO
     });
   };
+}
+
+export function moveLink(linkId, targetId, position) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: MOVE_LINK
+    });
+    return fetch(`/links/${linkId}/move`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        link: {
+          position
+        }
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(() => {
+      // Update positions in UI
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && sidebarTarget.highlight_id) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.highlight_id) {
+          dispatch(refreshTarget(index));
+        }
+      });
+    })
+    .then(() => {
+      dispatch({
+        type: MOVE_LINK_SUCCESS
+      });
+    })
+    .catch(() => dispatch({
+      type: MOVE_LINK_ERRORED
+    }));
+  }
 }
