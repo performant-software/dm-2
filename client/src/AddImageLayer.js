@@ -93,7 +93,7 @@ class AddImageLayer extends Component {
       content: newContent
     });
 
-    this.props.openTileSource(newContent.tileSources[0])
+    this.props.openTileSources(newContent.tileSources)
 
   }
 

@@ -79,10 +79,11 @@ class DocumentsController < ApplicationController
     @document.images.attach(document_params[:images])
 
     if @document.valid_images?
-      @document.images.each { |image|
+      if @document.title == 'Untitled Image'
+        image = @document.images[0]
         imagetitle, _, _ = image.filename.to_s.rpartition('.')
         @document.update(title: imagetitle)
-      }
+      end
       render json: @document 
     else
       render json: @document.errors, status: :unprocessable_entity

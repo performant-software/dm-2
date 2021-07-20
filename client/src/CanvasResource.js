@@ -16,6 +16,7 @@ import Edit from 'material-ui/svg-icons/image/edit';
 import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
+import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
@@ -78,7 +79,9 @@ class CanvasResource extends Component {
       maxZoomPixelRatio: maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
       gestureSettingsMouse: { clickToZoom: false },
-      showNavigator: true
+      showNavigator: true,
+      sequenceMode: true,
+      preserveViewport: true,
     });
 
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
@@ -88,7 +91,7 @@ class CanvasResource extends Component {
     const firstTileSource = tileSources[0];
 
     if (firstTileSource) {
-      imageUrlForThumbnail = this.openTileSource(firstTileSource)
+      imageUrlForThumbnail = this.openTileSources(tileSources)
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
@@ -192,20 +195,27 @@ class CanvasResource extends Component {
     };
   }
 
-  openTileSource(firstTileSource) {
+  openTileSources(tileSources) {
     const key = this.getInstanceKey()
-    let imageUrlForThumbnail
+    let imageUrlForThumbnail;
+    let firstTileSource = tileSources[0];
 
     if (firstTileSource.type === 'image' && firstTileSource.url) {
       imageUrlForThumbnail = firstTileSource.url
       // don't force ssl for localhost
       if( imageUrlForThumbnail.match(/^http:\/\/localhost/) ) {
         this.props.setImageUrl(key, imageUrlForThumbnail);
-        this.osdViewer.open({ type: 'image', url: imageUrlForThumbnail })
+        if (tileSources.length > 1) {
+          const newTileSources = [{ type: 'image', url: imageUrlForThumbnail }, ...tileSources.slice(1)]
+          this.osdViewer.open(newTileSources);
+        } else this.osdViewer.open([{ type: 'image', url: imageUrlForThumbnail }]);
       } else {
         const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
         this.props.setImageUrl(key, tileSourceSSL);
-        this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+        if (tileSources.length > 1) {
+          const newTileSources = [{ type: 'image', url: tileSourceSSL }, ...tileSources.slice(1)]
+          this.osdViewer.open(newTileSources);
+        } else this.osdViewer.open([{ type: 'image', url: tileSourceSSL }]);
       }
     }
     else {
@@ -214,7 +224,12 @@ class CanvasResource extends Component {
       this.props.setImageUrl(key, imageUrlForThumbnail);
       checkTileSource(
         resourceURL,
-        (validResourceURL) => { this.osdViewer.open(validResourceURL) },
+        (validResourceURL) => { 
+          if (tileSources.length > 1) {
+            const newTileSources = [validResourceURL, ...tileSources.slice(1)]
+            this.osdViewer.open(newTileSources);
+          } else this.osdViewer.open([validResourceURL]);
+        },
         (errorResponse) => { console.log( errorResponse ) }
       )
     }
@@ -742,7 +757,7 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, highlightsHidden, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
+    const { document_id, content, image_thumbnail_urls, addTileSourceMode, setAddTileSourceMode, image_urls, highlightsHidden, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
     const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
@@ -828,9 +843,11 @@ class CanvasResource extends Component {
               <IconButton tooltip='Delete selected highlight.' onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
                 <DeleteForever />
               </IconButton>
-              {/* <IconButton tooltip='Add more layers to image.' onClick={() => {setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);}} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton tooltip='Add more layers to image.' onClick={() => {
+                  setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
+                }} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
                 <AddToPhotos />
-              </IconButton> */}
+              </IconButton>
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
@@ -845,7 +862,7 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
-          openTileSource={this.openTileSource.bind(this)}
+          openTileSources={this.openTileSources.bind(this)}
         />
       </div>
     );
