@@ -107,7 +107,11 @@ class LinkInspector extends Component {
   getItemList() {
     const links = this.props.target.links_to;
     if( links && links.length > 0 ) {
-      return links.map( (link) => {
+      return links.sort((linkA, linkB) => {
+        if (linkA.position < linkB.position) return -1;
+        else if (linkA.position > linkB.position) return 1;
+        return 0;
+      }).map( (link) => {
         const linkID = link.document_id + (link.highlight_id ? '-' + link.highlight_id : '');
         return { 
           ...link, 
