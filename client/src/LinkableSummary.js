@@ -12,7 +12,7 @@ import IconButton from 'material-ui/IconButton';
 import Avatar from 'material-ui/Avatar';
 import Link from 'material-ui/svg-icons/content/link';
 
-import { grey100, grey400, grey800, white, black } from 'material-ui/styles/colors';
+import { grey100, grey300, grey400, grey800, white, black } from 'material-ui/styles/colors';
 
 import { TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE } from './modules/project';
 import { openDocument } from './modules/documentGrid';
@@ -23,6 +23,20 @@ class Summary extends Component {
 
     this.singleClickTimeout = null;
     this.doubleClickCutoffMs = 400;
+
+    this.defaultBgColor = this.props.item.linkItem ? 'white' : grey100;
+
+    this.state = {
+      backgroundColor: this.props.isOpen && this.props.item.document_kind !== 'folder' ? grey800 : this.defaultBgColor,
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.isOpen !== this.props.isOpen) {
+      this.setState({
+        backgroundColor: this.props.isOpen && this.props.item.document_kind !== 'folder' ? grey800 : this.defaultBgColor,
+      })
+    }
   }
 
   renderRightIcon() {
@@ -47,7 +61,7 @@ class Summary extends Component {
         <IconButton
           onClick={()=>{ item.removeLinkCallback(item)} }
         >
-          <HighlightOff  style={{margin:10}}/>
+          <HighlightOff  style={{margin:10}} color={this.props.isOpen ? white : black} />
         </IconButton>
       )
     } else {
@@ -59,6 +73,20 @@ class Summary extends Component {
     const {  document_kind, thumbnail_url, linkItem } = this.props.item;
     return (
       <ListItem
+        onMouseEnter={() => {
+          if(linkItem) {
+            this.setState({
+              backgroundColor: grey300,
+            });
+          }
+        }}
+        onMouseLeave={() => {
+          if(linkItem) {
+            this.setState({
+              backgroundColor: 'white',
+            });
+          }
+        }}
         leftAvatar={document_kind === 'folder' ? null :
           <Avatar
             src={document_kind === CANVAS_RESOURCE_TYPE ? thumbnail_url : null}
@@ -80,10 +108,13 @@ class Summary extends Component {
           borderColor: grey400,
           margin: '0 8px',
           color: this.props.isOpen ? white : black,
-          backgroundColor: this.props.isOpen && document_kind !== 'folder' ? grey800 : grey100,
+          backgroundColor: this.props.isOpen && document_kind !== 'folder' ? grey800 : this.state.backgroundColor,
           cursor: this.props.isDragging ? '-webkit-grabbing' : '-webkit-grab',
           maxWidth: `${this.props.sidebarWidth - 20}px`
-        } : null}
+        } : {
+          color: this.props.isOpen ? white : black,
+          backgroundColor: this.props.isOpen && document_kind !== 'folder' ? grey800 : this.state.backgroundColor,
+        }}
         innerDivStyle={this.props.isDraggable && !linkItem ? {
           paddingLeft: '64px'
         } : null}

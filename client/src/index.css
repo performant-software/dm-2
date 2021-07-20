@@ -9,6 +9,12 @@ body {
   border: 2px solid blue;
 }
 
+.dm-highlight .targeted {
+  box-shadow: 0 0px 8px blue, 0 0px 8px blue, 0 0px 8px blue;
+  z-index: 1;
+  position: relative;
+}
+
 .highlights-hidden .dm-highlight {
   background-color: white !important;
 }
