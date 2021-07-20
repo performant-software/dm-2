@@ -56,14 +56,14 @@ class Summary extends Component {
   }
 
   render() {
-    const {  document_kind, thumbnail_url } = this.props.item;
+    const {  document_kind, thumbnail_url, linkItem } = this.props.item;
     return (
       <ListItem
         leftAvatar={document_kind === 'folder' ? null :
           <Avatar
             src={document_kind === CANVAS_RESOURCE_TYPE ? thumbnail_url : null}
             icon={document_kind === TEXT_RESOURCE_TYPE ? <TextFields /> : null}
-            style={this.props.isDraggable ? {
+            style={this.props.isDraggable && !linkItem ? {
               left: '8px',
               borderRadius: '0'
             } : {
@@ -74,7 +74,7 @@ class Summary extends Component {
         leftIcon={document_kind === 'folder' ? (this.props.isOpen ? <ArrowDown /> : <ArrowRight />) : null}
         rightIcon={ this.renderRightIcon() }
         rightIconButton={ this.renderRightButton() }
-        style={this.props.isDraggable ? {
+        style={this.props.isDraggable && !linkItem ? {
           borderStyle: 'solid',
           borderWidth: this.props.borderBold ? '2px' : '1px',
           borderColor: grey400,
@@ -84,7 +84,7 @@ class Summary extends Component {
           cursor: this.props.isDragging ? '-webkit-grabbing' : '-webkit-grab',
           maxWidth: `${this.props.sidebarWidth - 20}px`
         } : null}
-        innerDivStyle={this.props.isDraggable ? {
+        innerDivStyle={this.props.isDraggable && !linkItem ? {
           paddingLeft: '64px'
         } : null}
         onClick={event => {
@@ -112,6 +112,8 @@ const summarySource = {
       linkable_id: props.item.highlight_id || props.item.document_id,
       linkable_type: props.item.highlight_id ? 'Highlight' : 'Document',
       isFolder: props.isFolder,
+      isLinkItem: props.item.linkItem,
+      link_id: props.item.link_id,
       descendant_folder_ids: props.isFolder ? props.item.descendant_folder_ids : null,
       existingParentId: props.item.parent_id,
       existingParentType: props.item.parent_type

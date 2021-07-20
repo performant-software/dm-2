@@ -55,7 +55,7 @@ class LinkableList extends Component {
   }
 
   renderItem(item, buoyancyTarget, targetParentId, targetParentType) {
-    const { allDraggable, inContents, writeEnabled, openDocumentIds } = this.props;
+    const { inContents, writeEnabled, openDocumentIds } = this.props;
     const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
     let primaryText = item.document_title;
@@ -64,7 +64,7 @@ class LinkableList extends Component {
       
     return (
       <div key={itemKey}>
-        {inContents && writeEnabled &&
+        {writeEnabled &&
           <ListDropTarget 
             {...this.props} 
             buoyancyTarget={buoyancyTarget}
@@ -78,7 +78,7 @@ class LinkableList extends Component {
           writeEnabled={writeEnabled}
           noMargin={inContents && writeEnabled}
           key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
-          isDraggable={allDraggable}
+          isDraggable={writeEnabled}
           isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
           handleClick={() => {this.props.openDocument(item.document_id, item.highlight_id)}}
           // TODO use this for rename function
@@ -92,9 +92,17 @@ class LinkableList extends Component {
   }
 
   render() {
-    const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId } = this.props;
-    const targetParentId = insideFolder ? parentFolderId : projectId 
-    const targetParentType = insideFolder ? 'DocumentFolder' : 'Project' 
+    const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId, highlightId } = this.props;
+    let targetParentId = projectId;
+    let targetParentType = 'Project';
+    if (insideFolder) {
+      targetParentId = parentFolderId;
+      targetParentType = 'DocumentFolder';
+    }
+    else if (!inContents) {
+      targetParentId = highlightId;
+      targetParentType = 'Highlight';
+    }
 
     return (
       <List style={{paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
@@ -106,7 +114,7 @@ class LinkableList extends Component {
               return this.renderItem(item, index, targetParentId, targetParentType);
             }
           })}
-          {inContents && writeEnabled &&
+          {writeEnabled &&
             <ListDropTarget 
               {...this.props} 
               buoyancyTarget={items.length} 

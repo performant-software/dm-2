@@ -21,6 +21,7 @@ const LinkList = function(props) {
         writeEnabled={props.writeEnabled}
         adminEnabled={props.adminEnabled}
         openDocumentIds={props.openDocumentIds}
+        highlightId={props.highlight_id}
       />
     );
   }
@@ -75,16 +76,18 @@ function collect(connect, monitor) {
 
 class LinkDropTarget extends Component {
   render() {
-    return this.props.connectDropTarget(
+    return (
       <div style={{marginTop: '8px'}}>
         <div style={{maxWidth: '350px', maxHeight: '450px', margin: 10, overflowY: 'auto'}}>
           <LinkList {...this.props} />
         </div>
-        <div style={{ height: '64px', margin: '0 8px 8px 8px', padding: '0 16px', borderRadius: '4px', border: `1px ${this.props.isOver ? 'black' : grey400} dashed`, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {!this.props.isOver &&
-            <Subheader style={{ fontStyle: 'italic', padding: '0' }}>Drop link here.</Subheader>
-          }
-        </div>
+        {(this.props.connectDropTarget(
+          <div style={{ height: '64px', margin: '0 8px 8px 8px', padding: '0 16px', borderRadius: '4px', border: `1px ${this.props.isOver ? 'black' : grey400} dashed`, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {!this.props.isOver &&
+              <Subheader style={{ fontStyle: 'italic', padding: '0' }}>Drop link here.</Subheader>
+            }
+          </div>
+        ))}
       </div>
     );
   }
