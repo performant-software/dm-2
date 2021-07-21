@@ -5,6 +5,7 @@ import ActiveStorageProvider from 'react-activestorage-provider';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 import CircularProgress from 'material-ui/CircularProgress';
+import FlatButton from 'material-ui/FlatButton';
 
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
@@ -177,7 +178,7 @@ class AddImageLayer extends Component {
   }
 
   render() {
-    const { document_id, writeEnabled, addTileSourceMode } = this.props;
+    const { document_id, writeEnabled, addTileSourceMode, content } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
 
     if( !writeEnabled || !tileSourceMode ) return null;
@@ -237,7 +238,9 @@ class AddImageLayer extends Component {
                 </div> 
             }   
 
-          {/* TODO display cancel only when adding layers <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} /> */}       
+{content.tileSources && content.tileSources.length > 0 && (
+          <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} />     
+)}  
         </div>
     );
   }
