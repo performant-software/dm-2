@@ -781,6 +781,10 @@ class CanvasResource extends Component {
       height: '18px'
     }
 
+    const tooltipStyle = {
+      pointerEvents: 'none',
+    }
+
     let editable = ( writeEnabled && lockedByMe );
     const mode = addTileSourceMode[document_id];
     const highlightHidden = !editable && highlightsHidden[key]
@@ -816,36 +820,94 @@ class CanvasResource extends Component {
                 }}
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
-              <IconButton tooltip='Open highlight and navigate image.' onClick={this.panClick.bind(this)} style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Open highlight and navigate image."
+                onClick={this.panClick.bind(this)}
+                style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <PanTool />
               </IconButton>
-              <IconButton tooltip='Select and change highlight shape.' onClick={this.editShapeClick.bind(this)} style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Select and change highlight shape."
+                onClick={this.editShapeClick.bind(this)}
+                style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <CropFree />
               </IconButton>
-              <IconButton tooltip='Draw rectangular shapes.' onClick={this.rectClick.bind(this)} style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw rectangular shapes."
+                onClick={this.rectClick.bind(this)}
+                style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <CropSquare />
               </IconButton>
-              <IconButton tooltip='Draw circular shapes.' onClick={this.circleClick.bind(this)} style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw circular shapes."
+                onClick={this.circleClick.bind(this)}
+                style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <PanoramaFishEye />
               </IconButton>
-              <IconButton tooltip='Add markers.' onClick={this.markerClick.bind(this)} style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Add markers."
+                onClick={this.markerClick.bind(this)}
+                style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <Place />
               </IconButton>
-              <IconButton tooltip='Enter free drawing mode.' onClick={this.pencilClick.bind(this)} style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Enter free drawing mode."
+                onClick={this.pencilClick.bind(this)}
+                style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <Edit />
               </IconButton>
-              <IconButton tooltip='Draw lines.' onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw lines."
+                onClick={this.lineClick.bind(this)}
+                style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <ShowChart />
               </IconButton>
-              <IconButton tooltip='Change the color of a shape.' onClick={this.colorizeClick.bind(this)} style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Change the color of a shape."
+                onClick={this.colorizeClick.bind(this)}
+                style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <Colorize />
               </IconButton>
-              <IconButton tooltip='Delete selected highlight.' onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Delete selected highlight."
+                onClick={this.deleteHighlightClick.bind(this)}
+                style={iconBackdropStyleSpaced}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <DeleteForever />
               </IconButton>
-              <IconButton tooltip='Add more layers to image.' onClick={() => {
-                  setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
-                }} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Add more layers to image."
+                onClick={() => setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE)}
+                style={iconBackdropStyleSpaced}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
                 <AddToPhotos />
               </IconButton>
             </div>
