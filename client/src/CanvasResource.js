@@ -17,10 +17,19 @@ import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
+import ArrowForward from 'material-ui/svg-icons/navigation/arrow-forward';
+import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
-import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
+import {
+  addHighlight,
+  updateHighlight,
+  setHighlightThumbnail,
+  openDeleteDialog,
+  CANVAS_HIGHLIGHT_DELETE,
+  moveLayer,
+} from './modules/documentGrid';
 import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
@@ -60,6 +69,20 @@ class CanvasResource extends Component {
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
+
+    this.state = {
+      currentPage: 0,
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.content && this.props.content 
+        && prevProps.content.tileSources !== this.props.content.tileSources) {
+      this.openTileSources(this.props.content.tileSources);
+    }
+    if (prevProps.pageToChange !== this.props.pageToChange) {
+      this.osdViewer.goToPage(this.props.pageToChange);
+    }
   }
 
   componentDidMount() {
@@ -116,8 +139,11 @@ class CanvasResource extends Component {
       overlay.resizecanvas();
     });
 
-    viewer.addHandler('page', () => {
+    viewer.addHandler('page', (event) => {
       this.markObjectsDirtyNextUpdate = true;
+      this.setState({
+        currentPage: event.page,
+      });
     });
 
     viewer.addHandler('open', this.onOpen.bind(this) );
@@ -742,6 +768,14 @@ class CanvasResource extends Component {
 
   }
 
+  moveLayerClick(direction) {
+    this.props.moveLayer({
+      documentId: this.props.document_id,
+      origin: this.state.currentPage,
+      direction,
+    });
+  }
+
   zoomControlChange(event, value) {
     if (this.osdViewer && this.osdViewer.viewport) {
       const max = this.osdViewer.viewport.getMaxZoom();
@@ -826,6 +860,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <PanTool />
               </IconButton>
@@ -835,6 +870,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <CropFree />
               </IconButton>
@@ -844,6 +880,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <CropSquare />
               </IconButton>
@@ -853,6 +890,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <PanoramaFishEye />
               </IconButton>
@@ -862,6 +900,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <Place />
               </IconButton>
@@ -871,6 +910,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <Edit />
               </IconButton>
@@ -880,6 +920,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <ShowChart />
               </IconButton>
@@ -889,6 +930,7 @@ class CanvasResource extends Component {
                 style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <Colorize />
               </IconButton>
@@ -898,6 +940,7 @@ class CanvasResource extends Component {
                 style={iconBackdropStyleSpaced}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <DeleteForever />
               </IconButton>
@@ -907,8 +950,29 @@ class CanvasResource extends Component {
                 style={iconBackdropStyleSpaced}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
+                disabled={this.props.loading}
               >
                 <AddToPhotos />
+              </IconButton>
+              <IconButton
+                disabled={(this.state && this.state.currentPage === 0) || this.props.loading}
+                tooltip="Move layer backward."
+                onClick={() => this.moveLayerClick(-1)}
+                style={iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <ArrowBack />
+              </IconButton>
+              <IconButton
+                disabled={!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1) || this.props.loading}
+                tooltip="Move layer forward."
+                onClick={() => this.moveLayerClick(1)}
+                style={iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <ArrowForward />
               </IconButton>
             </div>
           }
@@ -939,7 +1003,9 @@ const mapStateToProps = state => ({
   imageURLs: state.canvasEditor.imageURLs,
   isPencilMode: state.canvasEditor.isPencilMode,
   zoomControls: state.canvasEditor.zoomControls,
-  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay
+  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay,
+  pageToChange: state.canvasEditor.pageToChange,
+  loading: state.documentGrid.loading,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -952,7 +1018,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   toggleCanvasColorPicker,
   setIsPencilMode,
   setZoomControl,
-  openDeleteDialog
+  openDeleteDialog,
+  moveLayer,
 }, dispatch);
 
 export default connect(

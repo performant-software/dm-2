@@ -10,6 +10,7 @@ export const TOGGLE_HIGHLIGHTS = 'canvasEditor/TOGGLE_HIGHLIGHTS';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
+export const PAGE_TO_CHANGE = 'canvasEditor/PAGE_TO_CHANGE';
 
 const initialState = {
   highlightColors: {},
@@ -19,7 +20,8 @@ const initialState = {
   imageURLs: {},
   isPencilMode: {},
   zoomControls: {},
-  globalCanvasDisplay: true
+  globalCanvasDisplay: true,
+  pageToChange: null,
 };
 
 export default function(state = initialState, action) {
@@ -92,6 +94,12 @@ export default function(state = initialState, action) {
       return {
         ...state,
         highlightsHidden
+      };
+    
+    case PAGE_TO_CHANGE:
+      return {
+        ...state,
+        pageToChange: action.pageToChange,
       };
 
     default:

@@ -1,5 +1,5 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock]
+  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock, :move_layer]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
@@ -88,6 +88,33 @@ class DocumentsController < ApplicationController
     else
       render json: @document.errors, status: :unprocessable_entity
     end 
+  end
+
+  # PATCH /documents/1/move_layer
+  #   :origin - The array index of the layer to move
+  #   :direction - Should be -1 for backward, 1 for forward
+  def move_layer
+    content = @document[:content]
+    origin = Integer(params[:origin]) rescue nil
+    direction = Integer(params[:direction]) rescue nil
+    if origin.nil? || origin < 0 || ![-1, 1].include?(direction)
+      render status: :bad_request
+    elsif content["tileSources"]
+      destination = origin + direction
+      size = content["tileSources"].length()
+      if origin >= size || destination >= size || destination < 0
+        render status: :bad_request
+      else
+        temp = content["tileSources"][origin].dup
+        content["tileSources"][origin] = content["tileSources"][destination]
+        content["tileSources"][destination] = temp
+        if @document.save!
+          render json: @document
+        else
+          render json: @document.errors
+        end
+      end
+    end
   end
 
   # POST /documents/1/set_thumbnail
