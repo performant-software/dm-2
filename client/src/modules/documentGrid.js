@@ -112,12 +112,7 @@ export default function(state = initialState, action) {
       }
 
     case OPEN_DOCUMENT_ERRORED:
-    case PATCH_ERRORED:
-      return {
-        ...state,
-        loading: false,
-      };
-    
+    case PATCH_ERRORED:    
     case POST_ERRORED:
     case DELETE_ERRORED:
     case DELETE_HIGHLIGHT_ERRORED:
@@ -161,11 +156,6 @@ export default function(state = initialState, action) {
     }
 
     case PATCH_SUCCESS:
-      return {
-        ...state,
-        loading: false,
-      };
-    
     case REPLACE_DOCUMENT:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
