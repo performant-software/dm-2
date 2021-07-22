@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   post '/projects/:id/check_in' => 'projects#check_in'
   patch '/links/:id/move' => 'links#move'
   patch '/documents/:id/move_layer' => 'documents#move_layer'
+  patch '/documents/:id/delete_layer' => 'documents#delete_layer'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?

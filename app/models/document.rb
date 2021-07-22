@@ -31,6 +31,31 @@ class Document < Linkable
     self.images.each { |image| image.purge }
   end
 
+  def purge_image_by_tilesource!(tile_source)
+    if !tile_source.is_a?(String) && tile_source.has_key?("url")
+      tile_source_url = tile_source["url"]
+    else
+      tile_source_url = tile_source
+    end
+    hostname = ENV['HOSTNAME']
+    if tile_source_url.include?(hostname)
+      spl = tile_source_url.split(hostname)
+      tile_source_url = '/' + spl[1]
+    elsif /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url)
+      capt = /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url).captures
+      tile_source_url =  '/' + capt[-1]
+    else
+      spl = tile_source_url.split('/')
+      tile_source_url = '/' + spl[3...(spl.length)].join('/')
+    end
+    self.images.each { |image|
+      url = polymorphic_url(image, :only_path => true)
+      if url == tile_source_url
+        image.purge
+      end
+    }
+  end
+
   def tree_check
     add_to_tree unless @import_mode
   end

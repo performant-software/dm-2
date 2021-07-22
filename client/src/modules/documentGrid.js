@@ -48,6 +48,7 @@ export const ADD_IMAGE_SUCCESS = 'document_grid/ADD_IMAGE_SUCCESS';
 export const ADD_IMAGE_ERRORED = 'document_grid/ADD_IMAGE_ERRORED';
 export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
 export const MOVE_DOCUMENT_WINDOW = 'document_grid/MOVE_DOCUMENT_WINDOW';
+export const CANVAS_LAYER_DELETE = 'document_grid/CANVAS_LAYER_DELETE';
 
 
 export const layoutOptions = [
@@ -1002,7 +1003,12 @@ export function confirmDeleteDialog() {
         }
         dispatch(closeDeleteDialog());
         break;
-
+      
+      case CANVAS_LAYER_DELETE:
+        dispatch(deleteLayer(payload));
+        dispatch(closeDeleteDialog());
+        break;
+      
       case DOCUMENT_DELETE:
         dispatch(deleteDocument(payload.documentId));
         dispatch(closeDeleteDialog());
@@ -1100,6 +1106,69 @@ export function moveLayer({ documentId, origin, direction }) {
       dispatch({
         type: PAGE_TO_CHANGE,
         pageToChange: origin + direction,
+      });
+      dispatch({
+        type: PATCH_SUCCESS,
+        document
+      });
+    })
+    .catch(() => dispatch({
+      type: PATCH_ERRORED
+    }));
+  }
+}
+
+
+export function deleteLayer({ documentId, layer }) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: UPDATE_DOCUMENT
+    });
+
+    fetch(`/documents/${documentId}/delete_layer`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        layer,
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
+        dispatch(loadProject(getState().project.id));
+      }
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
+          dispatch(refreshTarget(index));
+        }
+      });
+      dispatch({
+        type: REPLACE_DOCUMENT,
+        document
+      });
+    })
+    .then(() => {
+      dispatch({
+        type: PAGE_TO_CHANGE,
+        pageToChange: 0,
       });
       dispatch({
         type: PATCH_SUCCESS,

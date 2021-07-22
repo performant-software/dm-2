@@ -6,7 +6,6 @@ import { fabric } from 'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
 import { openSeaDragonFabricOverlay } from 'openseadragon-fabricjs-overlay/openseadragon-fabricjs-overlay';
 import Slider from 'material-ui/Slider';
 import IconButton from 'material-ui/IconButton';
-
 import PanTool from 'material-ui/svg-icons/action/pan-tool';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
 import CropSquare from 'material-ui/svg-icons/image/crop-square';
@@ -17,10 +16,18 @@ import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
+import RemoveFromPhotos from './icons/RemoveFromPhotos';
 import { LayerBackward, LayerForward } from 'react-bootstrap-icons';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
-
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
+import {
+  setCanvasHighlightColor,
+  toggleCanvasColorPicker,
+  setImageUrl,
+  setIsPencilMode,
+  setAddTileSourceMode,
+  UPLOAD_SOURCE_TYPE,
+  setZoomControl
+} from './modules/canvasEditor';
 import {
   addHighlight,
   updateHighlight,
@@ -28,6 +35,7 @@ import {
   openDeleteDialog,
   CANVAS_HIGHLIGHT_DELETE,
   moveLayer,
+  CANVAS_LAYER_DELETE,
 } from './modules/documentGrid';
 import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -775,6 +783,19 @@ class CanvasResource extends Component {
     });
   }
 
+  deleteLayerClick() {
+    this.props.openDeleteDialog(
+      'Deleting layer',
+      `This will delete layer ${this.state.currentPage} from the stack.`,
+      'Delete layer',
+      {
+        documentId: this.props.document_id,
+        layer: this.state.currentPage,
+      },
+      CANVAS_LAYER_DELETE
+    );
+  }
+
   zoomControlChange(event, value) {
     if (this.osdViewer && this.osdViewer.viewport) {
       const max = this.osdViewer.viewport.getMaxZoom();
@@ -987,6 +1008,16 @@ class CanvasResource extends Component {
                 tooltipStyles={tooltipStyle}
               >
                 <LayerBackward size={16} />
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || loading}
+                tooltip="Delete layer"
+                onClick={this.deleteLayerClick.bind(this)}
+                style={iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <RemoveFromPhotos />
               </IconButton>
             </div>
           }

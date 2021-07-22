@@ -1,5 +1,5 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock, :move_layer]
+  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock, :move_layer, :delete_layer]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
@@ -92,7 +92,7 @@ class DocumentsController < ApplicationController
 
   # PATCH /documents/1/move_layer
   #   :origin - The array index of the layer to move
-  #   :direction - Should be -1 for backward, 1 for forward
+  #   :direction - Must be -1 for backward, 1 for forward
   def move_layer
     content = @document[:content]
     origin = Integer(params[:origin]) rescue nil
@@ -111,7 +111,31 @@ class DocumentsController < ApplicationController
         if @document.save!
           render json: @document
         else
-          render json: @document.errors
+          render json: @document.errors,  status: 500
+        end
+      end
+    end
+  end
+
+  # PATCH /documents/1/delete_layer
+  #   :layer - The array index of the layer to delete
+  def delete_layer
+    content = @document[:content]
+    layer = Integer(params[:layer]) rescue nil
+    if layer.nil? || layer < 0
+      render status: :bad_request
+    elsif content["tileSources"]
+      size = content["tileSources"].length()
+      if layer >= size
+        render status: :bad_request
+      else
+        tile_source = content["tileSources"][layer]
+        @document.purge_image_by_tilesource!(tile_source)
+        content["tileSources"].delete_at(layer)
+        if @document.save!
+          render json: @document
+        else
+          render json: @document.errors, status: 500
         end
       end
     end
