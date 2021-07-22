@@ -107,7 +107,25 @@ class Document < Linkable
   end
 
   def image_urls
-    self.images.collect { |image| url_for image }
+    urls = self.images.collect { |image| url_for image }
+    if self[:content] && self[:content]["tileSources"]
+      ordered_urls = []
+      self[:content]["tileSources"].each {|tileSource|
+        if tileSource["url"] && urls.include?(tileSource["url"])
+          ordered_urls.push(tileSource["url"])
+        elsif tileSource && urls.include?(tileSource)
+          ordered_urls.push(tileSource)
+        end
+      }
+      urls.each { |url| 
+        if !ordered_urls.include?(url)
+          ordered_urls.push(url)
+        end
+      }
+      return ordered_urls
+    else
+      return urls
+    end
   end
 
   def image_thumbnail_urls
