@@ -17,8 +17,7 @@ import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
-import ArrowForward from 'material-ui/svg-icons/navigation/arrow-forward';
-import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
+import { LayerBackward, LayerForward } from 'react-bootstrap-icons';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 
 import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
@@ -791,7 +790,23 @@ class CanvasResource extends Component {
   }
 
   render() {
-    const { document_id, content, image_thumbnail_urls, addTileSourceMode, setAddTileSourceMode, image_urls, highlightsHidden, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
+    const {
+      loading,
+      document_id,
+      content,
+      image_thumbnail_urls,
+      addTileSourceMode,
+      setAddTileSourceMode,
+      image_urls,
+      highlightsHidden,
+      displayColorPickers,
+      highlightColors,
+      toggleCanvasColorPicker,
+      setCanvasHighlightColor,
+      writeEnabled,
+      lockedByMe,
+      globalCanvasDisplay
+    } = this.props;
     const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
@@ -822,6 +837,7 @@ class CanvasResource extends Component {
     let editable = ( writeEnabled && lockedByMe );
     const mode = addTileSourceMode[document_id];
     const highlightHidden = !editable && highlightsHidden[key]
+    const hasLayers = content && content.tileSources && Array.isArray(content.tileSources) && content.tileSources.length > 1;
 
     if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
@@ -855,124 +871,122 @@ class CanvasResource extends Component {
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
               <IconButton
-                tooltip="Open highlight and navigate image."
+                tooltip="Open highlight and navigate image"
                 onClick={this.panClick.bind(this)}
                 style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <PanTool />
               </IconButton>
               <IconButton
-                tooltip="Select and change highlight shape."
+                tooltip="Select and change highlight shape"
                 onClick={this.editShapeClick.bind(this)}
                 style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <CropFree />
               </IconButton>
               <IconButton
-                tooltip="Draw rectangular shapes."
+                tooltip="Draw rectangular shapes"
                 onClick={this.rectClick.bind(this)}
                 style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <CropSquare />
               </IconButton>
               <IconButton
-                tooltip="Draw circular shapes."
+                tooltip="Draw circular shapes"
                 onClick={this.circleClick.bind(this)}
                 style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <PanoramaFishEye />
               </IconButton>
               <IconButton
-                tooltip="Add markers."
+                tooltip="Add markers"
                 onClick={this.markerClick.bind(this)}
                 style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <Place />
               </IconButton>
               <IconButton
-                tooltip="Enter free drawing mode."
+                tooltip="Enter free drawing mode"
                 onClick={this.pencilClick.bind(this)}
                 style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <Edit />
               </IconButton>
               <IconButton
-                tooltip="Draw lines."
+                tooltip="Draw lines"
                 onClick={this.lineClick.bind(this)}
                 style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <ShowChart />
               </IconButton>
               <IconButton
-                tooltip="Change the color of a shape."
+                tooltip="Change the color of a shape"
                 onClick={this.colorizeClick.bind(this)}
                 style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <Colorize />
               </IconButton>
               <IconButton
-                tooltip="Delete selected highlight."
+                tooltip="Delete selected highlight"
                 onClick={this.deleteHighlightClick.bind(this)}
                 style={iconBackdropStyleSpaced}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <DeleteForever />
               </IconButton>
               <IconButton
-                tooltip="Add more layers to image."
+                tooltip="Add more layers to image"
                 onClick={() => setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE)}
                 style={iconBackdropStyleSpaced}
                 iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
-                disabled={this.props.loading}
+                disabled={loading}
               >
                 <AddToPhotos />
               </IconButton>
               <IconButton
-                disabled={(this.state && this.state.currentPage === 0) || this.props.loading}
-                tooltip="Move layer backward."
+                disabled={!hasLayers || (this.state && this.state.currentPage === 0) || loading}
+                tooltip="Move layer up"
                 onClick={() => this.moveLayerClick(-1)}
                 style={iconBackdropStyle}
-                iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
               >
-                <ArrowBack />
+                <LayerForward size={16} />
               </IconButton>
               <IconButton
-                disabled={!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1) || this.props.loading}
-                tooltip="Move layer forward."
+                disabled={!hasLayers || !(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1) || loading}
+                tooltip="Move layer down"
                 onClick={() => this.moveLayerClick(1)}
                 style={iconBackdropStyle}
-                iconStyle={iconStyle}
                 tooltipStyles={tooltipStyle}
               >
-                <ArrowForward />
+                <LayerBackward size={16} />
               </IconButton>
             </div>
           }
