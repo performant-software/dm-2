@@ -1,6 +1,8 @@
 class Link < ApplicationRecord
   belongs_to :linkable_a, polymorphic: true, touch: true
   belongs_to :linkable_b, polymorphic: true, touch: true
+  has_many :highlights_links, :dependent => :destroy
+  has_many :links, through: :highlights_links
 
   # This script deletes links that have been orphaned from Documents and Highlight targets
   def self.destroy_dead_links!
@@ -45,61 +47,53 @@ class Link < ApplicationRecord
   end
 
   def renumber_all(remove_self)
-    if remove_self == true
-      siblings = Link.where.not(:id => self.id).where(
-        :linkable_a_id => self.linkable_a_id,
-        :linkable_a_type => "Highlight"
-      ).sort_by(&:position)
-    else
-      siblings = Link.where(
-        :linkable_a_id => self.linkable_a_id,
-        :linkable_a_type => "Highlight"
-      ).sort_by(&:position)
-    end
+    self.highlights_links.each { |hll| 
+      if remove_self == true
+        siblings = HighlightsLink.where(
+          :highlight_id => hll.highlight_id
+        ).where.not(
+          :link_id => self.id
+        ).sort_by(&:position)
+      else
+        siblings = HighlightsLink.where(:highlight_id => hll.highlight_id).sort_by(&:position)
+      end
 
-    # renumber them in a single transaction
-    ActiveRecord::Base.transaction do    
+      # renumber them in a single transaction
+      ActiveRecord::Base.transaction do
+        i = 0
+        siblings.each { |sibling|
+          sibling.position = i
+          i = i + 1
+          sibling.save!
+        }
+      end
+    }
+  end
+
+  def renumber(siblings)
+    ActiveRecord::Base.transaction do
       i = 0
       siblings.each { |sibling|
         sibling.position = i
         i = i + 1
         sibling.save!
       }
-    end        
+    end
   end
 
-  def move_to(target_position)
-    unless target_position == self.position || (self.position != -1 && target_position == self.position + 1)
-      siblings = Link.where(
-        :linkable_a_id => self.linkable_a_id,
-        :linkable_a_type => "Highlight"
-      ).sort_by(&:position)
-
-      if target_position > self.position
-        target_position = target_position - 1
-      end
-      if target_position >= siblings.count
-        target_position = siblings.count-1
-      elsif target_position < 0
-        target_position = 0
-      end
-      
-      siblings.each { |sibling|
-        if sibling.id != self.id
-          if self.position == -1
-            sibling.position = sibling.position + 1
-          elsif sibling.position >= target_position && sibling.position < self.position
-            sibling.position = sibling.position + 1
-          elsif sibling.position <= target_position && sibling.position > self.position
-            sibling.position = sibling.position - 1
-          end
-          sibling.save!
+  def move_to(target_position, highlight_id)
+    siblings = HighlightsLink.where(:highlight_id => highlight_id).sort_by(&:position)
+  
+    siblings.each { |sibling|
+      if sibling.link_id == self.id
+        sibling.position = target_position
+      else
+        if sibling.position >= target_position
+          sibling.position = sibling.position + 1
         end
-      }
-      self.position = target_position
-      self.save!
-      self.renumber_all(false)
-    end
+      end
+    }
+    renumber(siblings.sort_by(&:position))
   end
 
 end

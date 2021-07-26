@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_19_143944) do
+ActiveRecord::Schema.define(version: 2021_07_23_182432) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
@@ -78,6 +78,16 @@ ActiveRecord::Schema.define(version: 2021_07_19_143944) do
     t.index ["document_id"], name: "index_highlights_on_document_id"
   end
 
+  create_table "highlights_links", force: :cascade do |t|
+    t.bigint "highlight_id", null: false
+    t.bigint "link_id", null: false
+    t.integer "position", default: -1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["highlight_id"], name: "index_highlights_links_on_highlight_id"
+    t.index ["link_id"], name: "index_highlights_links_on_link_id"
+  end
+
   create_table "links", force: :cascade do |t|
     t.string "linkable_a_type"
     t.bigint "linkable_a_id"
@@ -85,7 +95,6 @@ ActiveRecord::Schema.define(version: 2021_07_19_143944) do
     t.bigint "linkable_b_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "position", default: -1, null: false
     t.index ["linkable_a_type", "linkable_a_id"], name: "index_links_on_linkable_a_type_and_linkable_a_id"
     t.index ["linkable_b_type", "linkable_b_id"], name: "index_links_on_linkable_b_type_and_linkable_b_id"
   end

@@ -26,7 +26,28 @@ class LinksController < ApplicationController
   # POST /links
   def create
     @link = Link.new(new_link_params)
-    @link.move_to(0) # Start at position 0
+
+    # Create highlights associations with positions
+    if @link.linkable_a_type == 'Highlight'
+      if @link.save
+        @link.highlights_links.create(
+          :link_id => @link[:id], 
+          :highlight_id => @link.linkable_a_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity
+      end
+    end
+    if @link.linkable_b_type == 'Highlight'
+      if @link.save
+        @link.highlights_links.create(
+          :link_id => @link[:id], 
+          :highlight_id => @link.linkable_b_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity
+      end
+    end
 
     if @link.save
       render json: @link, status: :created, location: @link
@@ -39,8 +60,8 @@ class LinksController < ApplicationController
   # PATCH/PUT /links/1/move
   def move
     @link = Link.find(params[:id])
-    p = link_move_params
-    @link.move_to(p[:position])
+    pp = request.parameters
+    @link.move_to(pp[:position], pp["targetId"])
   end
   
 
@@ -60,10 +81,6 @@ class LinksController < ApplicationController
     # Only allow a trusted parameter "white list" through.
     def new_link_params
       params.require(:link).permit(:linkable_a_id, :linkable_a_type, :linkable_b_id, :linkable_b_type)
-    end
-
-    def link_move_params
-      params.require(:link).permit(:position)
     end
 
 end

@@ -149,9 +149,9 @@ function collect(connect, monitor) {
 class ListDropTarget extends Component {
   componentDidUpdate(prevProps) {
     if (this.props.addedLink !== prevProps.addedLink) {
-      const { id, target } = this.props.addedLink;
-      if (target === this.props.buoyancyTarget) {
-        this.props.moveLink(id, null, target+1);
+      const { id, highlight_id, position } = this.props.addedLink;
+      if (position === this.props.buoyancyTarget) {
+        this.props.moveLink(id, highlight_id, position + 1);
       }
     }
   }

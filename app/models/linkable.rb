@@ -17,8 +17,6 @@ class Linkable < ApplicationRecord
     target_obj = target.to_obj
     # include link id so we can access it directly later
     target_obj[:link_id] = link.id
-    # position in the list of links
-    target_obj[:position] = link.position
     target_obj
   end
 
