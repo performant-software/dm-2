@@ -19,6 +19,14 @@ body {
   background-color: white !important;
 }
 
+.highlights-hidden .dm-highlight .targeted {
+	box-shadow: none !important;
+}
+
+.highlights-hidden  .dm-highlight .selected {
+  border: none !important;
+}
+
 .ProseMirror-menubar {
   min-height: 48px !important;
 }
