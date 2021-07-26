@@ -90,9 +90,6 @@ class CanvasResource extends Component {
     if (prevProps.pageToChange !== this.props.pageToChange) {
       this.osdViewer.goToPage(this.props.pageToChange);
     }
-  }
-
-  componentDidUpdate(prevProps) {
     if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
       && !this.props.highlightsHidden[this.getInstanceKey()]) {
       this.osdViewer.raiseEvent( 'update-viewport', {} );
