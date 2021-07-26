@@ -23,7 +23,7 @@ const initialState = {
   selectedTargets: [],
   sidebarTarget: null,
   sidebarLoading: true,
-  addedLinkId: null,
+  addedLink: {},
 };
 
 export default function(state = initialState, action) {
@@ -188,7 +188,8 @@ export default function(state = initialState, action) {
         ...state,
         addedLink: {
           id: action.payload.id,
-          target: action.payload.target,
+          highlight_id: action.payload.highlight_id,
+          position: action.payload.position,
         }
       };
 
@@ -450,7 +451,8 @@ export function addLink(origin, linked, newLinkPosition) {
           type: ADD_LINK_SUCCESS,
           payload: {
             id: newLink.id,
-            target: newLinkPosition,
+            highlight_id: newLink.linkable_a.highlight_id || newLink.linkable_b.highlight_id,
+            position: newLinkPosition,
           },
         });
       }
@@ -522,9 +524,8 @@ export function moveLink(linkId, targetId, position) {
       },
       method: 'PATCH',
       body: JSON.stringify({
-        link: {
-          position
-        }
+        targetId,
+        position
       })
     })
     .then(response => {

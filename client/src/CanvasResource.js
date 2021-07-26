@@ -92,6 +92,13 @@ class CanvasResource extends Component {
     }
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
+      && !this.props.highlightsHidden[this.getInstanceKey()]) {
+      this.osdViewer.raiseEvent( 'update-viewport', {} );
+    }
+  }
+
   componentDidMount() {
     const {content, highlight_map, document_id, setCanvasHighlightColor, setAddTileSourceMode, updateHighlight, addHighlight, setHighlightThumbnail} = this.props;
     this.highlight_map = highlight_map;

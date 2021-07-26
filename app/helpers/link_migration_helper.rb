@@ -1,15 +1,22 @@
 module LinkMigrationHelper
-  # One time migration function for 20210719143944_add_position_to_links.rb
+  # One time migration function for 20210723160125_add_links_to_highlights.rb
   def self.migrate_link_position!
-    Link.all.each { |link| 
-      if link.position == -1 && link.linkable_a_type == "Highlight" then
-        links = Link.where(:linkable_a_id => link.linkable_a_id, :linkable_a_type => "Highlight")
-        i = 0
-        links.each { |matchlink|
-          matchlink.update(:position => i)
+    Highlight.all.each { |highlight|
+      i = 0
+      all_links = highlight.a_links + highlight.b_links
+      all_links.each {|link|
+        unless HighlightsLink.where(
+          :link_id => link[:id], 
+          :highlight_id => highlight[:id]
+        ).count > 0
+          highlight.highlights_links.create(
+            :link_id => link[:id], 
+            :highlight_id => highlight[:id],
+            :position => i
+          )
           i = i + 1
-        }
-      end
+        end
+      }
     }
   end
 end
