@@ -2,6 +2,13 @@ require 'mini_magick'
 
 class Highlight < Linkable
   belongs_to :document, touch: true
+  has_many :highlights_links, :dependent => :destroy
+  has_many :links, through: :highlights_links
+
+  def links_to
+    all_links = self.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| Link.where(:id => hll.link_id).first }
+    all_links.map { |link| self.to_link_obj(link) }.compact
+  end
 
   def highlight_id
     self.id
