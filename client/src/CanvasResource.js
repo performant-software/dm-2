@@ -143,7 +143,7 @@ class CanvasResource extends Component {
           window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
           overlay.fabricCanvas().discardActiveObject();
       } else if (this.currentMode === 'edit' && event && event.target._isTarget) {
-        for (let i = 0; i < 3; i++){ // For some reason it's necessary to do this multiple tiems
+        for (let i = 0; i < 3; i++){ // For some reason it's necessary to do this multiple times
           overlay.fabricCanvas().forEachObject((obj) => {
             if (obj && obj._isTargetChild) {
               overlay.fabricCanvas().remove(obj);
