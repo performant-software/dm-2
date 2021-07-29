@@ -81,6 +81,9 @@ class TextResource extends Component {
     if (this.state.targetHighlights !== prevState.targetHighlights) {
       this.createEditorState();
     }
+    if (this.props.content !== prevProps.content) {
+      this.createEditorState();
+    }
   }
 
   createDocumentSchema() {
@@ -133,8 +136,8 @@ class TextResource extends Component {
   }
 
   getEditorState() {
-    const { editorStates, document_id } = this.props;
-    const existingEditorState = editorStates[document_id];
+    const { editorStates } = this.props;
+    const existingEditorState = editorStates[this.getInstanceKey()];
 
     if( !existingEditorState ) {
       return this.createEditorState();
@@ -168,7 +171,7 @@ class TextResource extends Component {
       props: {
         decorations: function(state) {
           let decorations = [];
-          const selectedHighlight = this.props.getSelectedHighlight(document_id);
+          const selectedHighlight = this.props.getSelectedHighlight(this.getInstanceKey());
           if (selectedHighlight) {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
@@ -213,7 +216,7 @@ class TextResource extends Component {
       selection: TextSelection.create(doc, 0),
       plugins
     })
-    this.props.updateEditorState(document_id, editorState);
+    this.props.updateEditorState(this.getInstanceKey(), editorState);
     return editorState;
   }
 
@@ -293,12 +296,12 @@ class TextResource extends Component {
   }
 
   onHighlightSelectMode() {
-    const document_id = this.props.document_id;
-    this.props.setHighlightSelectMode(document_id, !this.props.highlightSelectModes[document_id]);
+    const key = this.getInstanceKey();
+    this.props.setHighlightSelectMode(key, !this.props.highlightSelectModes[key]);
   }
 
   onDeleteHighlight() {
-    const selectedHighlight = this.props.selectedHighlights[this.props.document_id];
+    const selectedHighlight = this.props.selectedHighlights[this.getInstanceKey()];
     if (selectedHighlight) {
       const markType = this.state.documentSchema.marks.highlight;
       const editorState = this.getEditorState();
@@ -312,7 +315,7 @@ class TextResource extends Component {
     // EditorView instance and update local state for this component
     const editorState = this.getEditorState();
     if (editorState && nextProps.editorStates ) {
-     const nextEditorState = nextProps.editorStates[this.props.document_id];
+     const nextEditorState = nextProps.editorStates[this.getInstanceKey()];
      if( this.state.editorView && nextEditorState ) {
        this.state.editorView.updateState(nextEditorState);
      }
@@ -339,7 +342,7 @@ class TextResource extends Component {
       if( this.props.firstTarget ) {
         for( let key in this.props.highlight_map ) {
           let currentHighlight = this.props.highlight_map[key]
-          if( currentHighlight.id === this.props.firstTarget ) {
+          if( currentHighlight.uid === this.props.firstTarget ) {
             targetHighlight = currentHighlight
             break
           }
@@ -420,7 +423,7 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const nextEditorState = editorState.apply(tx);
       this.state.editorView.updateState(nextEditorState);
-      this.props.updateEditorState(this.props.document_id, nextEditorState);
+      this.props.updateEditorState(this.getInstanceKey(), nextEditorState);
     }.bind(this));
   };
 
@@ -495,7 +498,9 @@ class TextResource extends Component {
             document_id,
             highlights: toRemoveUids.map(uid => this.props.highlight_map[uid]),
             highlightsToDuplicate: this.highlightsToDuplicate.slice(0),
-            alteredHighlights
+            alteredHighlights,
+            instanceKey: this.getInstanceKey(),
+            timeOpened: this.props.timeOpened,
           },
           TEXT_HIGHLIGHT_DELETE
         );
@@ -516,14 +521,18 @@ class TextResource extends Component {
   }
 
   scheduleContentUpdate(doc) {
-    const delay = 3000; // milliseconds
+    const delay = 500; // milliseconds
     const content = doc.content;
     const search_text = this.toSearchText(doc)
     if (this.scheduledContentUpdate) {
       window.clearTimeout(this.scheduledContentUpdate);
     }
     this.scheduledContentUpdate = window.setTimeout(function() {
-      this.props.updateDocument(this.props.document_id, {content: {type: 'doc', content}, search_text});
+      this.props.updateDocument(
+        this.props.document_id,
+        {content: {type: 'doc', content}, search_text},
+        { refreshDocumentContent: true, timeOpened: this.props.timeOpened },
+      );
     }.bind(this), delay);
   }
 
@@ -561,12 +570,12 @@ class TextResource extends Component {
             displayColorPicker={displayColorPickers[instanceKey]}
             setHighlightColor={function(color) {
               setTextHighlightColor(instanceKey, color);
-              const selectedHighlight = this.props.selectedHighlights[this.props.document_id];
+              const selectedHighlight = this.props.selectedHighlights[instanceKey];
               if (selectedHighlight) {
                 // TODO: make this less heavy handed; following the highlight update, we recreate the schema and state to force prosemirror to rerender the necessary dom elements with the updated highlight data
                 this.props.updateHighlight(this.props.highlight_map[selectedHighlight].id, {color})
                 .then(function() {
-                  this.props.closeEditor(this.props.document_id);
+                  this.props.closeEditor(instanceKey);
                   this.setState({documentSchema: this.createDocumentSchema()});
                   this.createEditorState();
                 }.bind(this));
@@ -597,7 +606,7 @@ class TextResource extends Component {
             <FormatListNumbered />
           </IconButton>
           <IconButton
-            style={{backgroundColor: highlightSelectModes[this.props.document_id] ? 'rgb(188, 188, 188)' : 'initial'}}
+            style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
             onClick={this.onHighlightSelectMode.bind(this)} tooltip='Select a highlight.'
           >
             <CropFree />
@@ -605,7 +614,7 @@ class TextResource extends Component {
           <IconButton
             onClick={this.onDeleteHighlight.bind(this)}
             tooltip='Delete selected highlight.'
-            disabled={!selectedHighlights[this.props.document_id]}
+            disabled={!selectedHighlights[instanceKey]}
           >
             <DeleteForever />
           </IconButton>

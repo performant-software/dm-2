@@ -39,11 +39,11 @@ class Project extends Component {
 
   selectTextHighlight(document_id, highlight_id, key) {
     if (!(key && this.props.highlightsHidden && this.props.highlightsHidden[key])) {
-      if (this.props.highlightSelectModes[document_id]) {
-        this.props.selectHighlight(document_id, highlight_id);
+      if (this.props.highlightSelectModes[key]) {
+        this.props.selectHighlight(key, highlight_id);
       }
       // if the clicked highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
-      else if (this.props.selectedHighlights[document_id] !== highlight_id) {
+      else if (this.props.selectedHighlights[key] !== highlight_id) {
         this.setFocusHighlight(document_id, highlight_id);
       }
     }
@@ -52,7 +52,7 @@ class Project extends Component {
   showRollover(document_id, highlight_id, key) {
     // if this doc's highlights are hidden, or the hovered highlight is currently selected,
     // don't proceed with the normal popover behavior to facilitate editing the highlighted text
-    if ((key && this.props.highlightsHidden && this.props.highlightsHidden[key]) || this.props.selectedHighlights[document_id] === highlight_id) return;
+    if ((key && this.props.highlightsHidden && this.props.highlightsHidden[key]) || this.props.selectedHighlights[key] === highlight_id) return;
     const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
     if( !existingPopover ) {
       this.activateRolloverTimer( () => {
@@ -158,8 +158,8 @@ class Project extends Component {
     );
   }
 
-  getSelectedHighlight(document_id) {
-    return this.props.selectedHighlights[document_id];
+  getSelectedHighlight(key) {
+    return this.props.selectedHighlights[key];
   }
 
   renderDocumentViewer = (document,index) => {

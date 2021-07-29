@@ -186,7 +186,8 @@ class DocumentViewer extends Component {
     return (
       <DocumentStatusBar 
         document_id={document_id}
-        document_kind={document_kind} 
+        document_kind={document_kind}
+        instanceKey={this.getInstanceKey()}
         locked={locked}
         lockedByUserName={lockedByUserName}
         lockedByMe={lockedByMe}
