@@ -95,7 +95,13 @@ class LinkableList extends Component {
           key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
           isDraggable={writeEnabled}
           isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
-          handleClick={() => {this.props.openDocument(item.document_id, item.highlight_id)}}
+          handleClick={() => {
+            if (item.document_kind === 'text') {
+              this.props.openDocument(item.document_id, item.highlight_uid)
+            } else {
+              this.props.openDocument(item.document_id, item.highlight_id)
+            }
+          }}
           // TODO use this for rename function
           handleDoubleClick={() => {}}
           // handleDoubleClick={() => {this.props.selectSidebarTarget(item);}}

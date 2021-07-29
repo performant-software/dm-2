@@ -49,7 +49,10 @@ class DocumentStatusBar extends Component {
                 style={{margin: '10px'}}
                 label={label}
                 onClick={() => {
-                    this.props.updateDocument(this.props.document_id, { locked: !this.props.locked }, {adjustLock: true} )
+                    this.props.updateDocument(this.props.document_id, { locked: !this.props.locked }, {
+                        adjustLock: true,
+                        instanceKey: this.props.instanceKey,
+                    } )
                 }}            
             ></RaisedButton>
         );
