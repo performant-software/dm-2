@@ -27,7 +27,29 @@ class Linkable < ApplicationRecord
 
   def add_link_to(linked)
     unless self.links_to.include? linked #TODO: make more efficient, e.g. by validating uniqueness
-      link = Link.create(linkable_a: self, linkable_b: linked)
+      link = Link.create(
+        linkable_a_id: self.id,
+        linkable_a_type: self.class.to_s,
+        linkable_b_id: linked.linkable_b_id,
+        linkable_b_type: linked.linkable_b_type,
+      )
+      # Create highlights associations with positions
+      if self.class.to_s == 'Highlight'
+        if link.save
+          link.highlights_links.create(
+            :link_id => link[:id], 
+            :highlight_id => link.linkable_a_id,
+          )
+        end
+      end
+      if linked.linkable_b_type == 'Highlight'
+        if link.save
+          link.highlights_links.create(
+            :link_id => link[:id], 
+            :highlight_id => link.linkable_b_id,
+          )
+        end
+      end
     end
   end
 

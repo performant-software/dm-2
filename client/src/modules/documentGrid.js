@@ -49,6 +49,7 @@ export const ADD_IMAGE_ERRORED = 'document_grid/ADD_IMAGE_ERRORED';
 export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
 export const MOVE_DOCUMENT_WINDOW = 'document_grid/MOVE_DOCUMENT_WINDOW';
 export const CANVAS_LAYER_DELETE = 'document_grid/CANVAS_LAYER_DELETE';
+export const REFRESH_DOCUMENTS = 'document_grid/REFRESH_DOCUMENTS';
 
 
 export const layoutOptions = [
@@ -157,6 +158,22 @@ export default function(state = initialState, action) {
     }
 
     case PATCH_SUCCESS:
+    case REFRESH_DOCUMENTS:
+      let preRefreshDocumentsCopy = state.openDocuments.slice(0);
+      state.openDocuments.forEach((document, index) => {
+        if (+document.id === +action.document.id 
+            && action.timeOpened 
+            && document.timeOpened !== action.timeOpened) {
+          const { timeOpened } = document;
+          preRefreshDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
+        }
+      });
+      return {
+        ...state,
+        loading: false,
+        openDocuments: preRefreshDocumentsCopy
+      };
+    
     case REPLACE_DOCUMENT:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
@@ -667,6 +684,16 @@ export function moveDocument(documentId, destination_id, position ) {
   }
 }
 
+export function refreshDocuments(document, timeOpened) {
+  return function(dispatch) {
+    dispatch({
+      type: REFRESH_DOCUMENTS,
+      document,
+      timeOpened,
+    });
+  }
+}
+
 export function updateDocument(documentId, attributes, options) {
   return function(dispatch, getState) {
     dispatch({
@@ -701,9 +728,15 @@ export function updateDocument(documentId, attributes, options) {
         type: PATCH_SUCCESS,
         document
       });
-      if (options && options.adjustLock && attributes.locked === false) {
-        dispatch(selectHighlight(documentId, null));
-        dispatch(setHighlightSelectMode(documentId, false));
+      if (options && options.adjustLock) {
+        dispatch({
+          type: REPLACE_DOCUMENT,
+          document
+        });
+        if (attributes.locked === false && options.instanceKey) {
+          dispatch(selectHighlight(options.instanceKey, null));
+          dispatch(setHighlightSelectMode(options.instanceKey, false));
+        }
       }
       if (options && options.refreshLists) {
         if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
@@ -718,6 +751,9 @@ export function updateDocument(documentId, attributes, options) {
             dispatch(refreshTarget(index));
           }
         });
+      }
+      if (options && options.refreshDocumentContent && options.timeOpened) {
+        dispatch(refreshDocuments(document, options.timeOpened))
       }
     })
     .catch(() => dispatch({
@@ -980,16 +1016,20 @@ export function confirmDeleteDialog() {
     switch (getState().documentGrid.deleteDialogKind) {
       case TEXT_HIGHLIGHT_DELETE:
         const { editorStates } = getState().textEditor;
-        if (payload.transaction && payload.document_id) {
-          const newState = editorStates[payload.document_id].apply(payload.transaction);
-          dispatch(updateEditorState(payload.document_id, newState));
-          dispatch(updateDocument(payload.document_id, {content: {type: 'doc', content: payload.transaction.doc.content}}));
+        if (payload.transaction && payload.document_id && payload.instanceKey) {
+          const newState = editorStates[payload.instanceKey].apply(payload.transaction);
+          dispatch(updateEditorState(payload.instanceKey, newState));
+          dispatch(updateDocument(
+            payload.document_id,
+            {content: {type: 'doc', content: payload.transaction.doc.content}},
+            { refreshDocumentContent: payload.timeOpened ? true : false, timeOpened: payload.timeOpened }
+          ));
           dispatch(deleteHighlights(payload.highlights));
           if (payload.highlightsToDuplicate.length > 0) dispatch(duplicateHighlights(payload.highlightsToDuplicate, payload.document_id));
           payload.alteredHighlights.forEach(highlight => {
             dispatch(updateHighlight(highlight.id, {excerpt: highlight.excerpt}));
           });
-          dispatch(selectHighlight(payload.document_id, null));
+          dispatch(selectHighlight(payload.instanceKey, null));
         }
         dispatch(closeDeleteDialog());
         break;

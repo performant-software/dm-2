@@ -7,7 +7,16 @@ class Highlight < Linkable
 
   def links_to
     all_links = self.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| Link.where(:id => hll.link_id).first }
-    all_links.map { |link| self.to_link_obj(link) }.compact
+    result = all_links.map { |link| self.to_link_obj(link) }.compact
+    result.each {|r| 
+      if r[:highlight_id]
+        hl = Highlight.where(:id => r[:highlight_id]).first
+        if !hl.nil?
+          r[:highlight_uid] = hl.uid
+        end
+      end
+    }
+    result
   end
 
   def highlight_id

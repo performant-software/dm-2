@@ -175,13 +175,21 @@ class CanvasResource extends Component {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
           window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
           overlay.fabricCanvas().discardActiveObject();
+      } else if (this.currentMode === 'edit' && event && event.target._isTarget) {
+        for (let i = 0; i < 3; i++){ // For some reason it's necessary to do this multiple times
+          overlay.fabricCanvas().forEachObject((obj) => {
+            if (obj && obj._isTargetChild) {
+              overlay.fabricCanvas().remove(obj);
+            }
+          });
+        }
       }
     });
     overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
     overlay.fabricCanvas().on('mouse:up', this.canvasMouseUp.bind(this) );
     overlay.fabricCanvas().on('object:modified', event => {
-      if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
+      if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid && !event.target._isTargetChild ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
           if (highlight_id && imageUrlForThumbnail) {
             const highlightCoords = event.target._isMarker ?
@@ -448,14 +456,19 @@ class CanvasResource extends Component {
       const parsedHighlight = JSON.parse(highlight.target);
       if( this.props.firstTarget ) {
         if( highlight.id === this.props.firstTarget ) {
-          parsedHighlight.shadow = new fabric.Shadow({
-            color: 'blue',
-            blur: 10,
-          });
           for (let i = 0; i < 3; i += 1) {
             // Copy the object 3 times to make the glow more visible
-            jsonBlob.objects.push(parsedHighlight);
+            jsonBlob.objects.push({ ...parsedHighlight,
+              selectable: false,
+              hoverCursor: 'default',
+              _isTargetChild: true,
+              shadow: new fabric.Shadow({
+                color: 'blue',
+                blur: 10,
+              }),
+            });
           }
+          parsedHighlight._isTarget = true;
         }
       }
       jsonBlob.objects.push(parsedHighlight);
@@ -471,7 +484,7 @@ class CanvasResource extends Component {
         object.strokeWidth = strokeWidth / zoom;
         object.dirty = true;
         object.perPixelTargetFind = true;
-        object.selectable = true;
+        if (!object._isTargetChild) object.selectable = true;
 
         if (!this.props.writeEnabled) {
           object.hoverCursor = 'default';
