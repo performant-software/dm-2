@@ -813,7 +813,7 @@ class CanvasResource extends Component {
   deleteLayerClick() {
     this.props.openDeleteDialog(
       'Deleting layer',
-      `This will delete layer ${this.state.currentPage + 1} from the stack.`,
+      `This will delete layer ${this.state.currentPage + 1}, ${this.getLayerName(this.state.currentPage)}, from the stack.`,
       'Delete layer',
       {
         documentId: this.props.document_id,

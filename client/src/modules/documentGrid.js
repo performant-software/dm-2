@@ -120,7 +120,7 @@ export default function(state = initialState, action) {
       }
 
     case OPEN_DOCUMENT_ERRORED:
-    case PATCH_ERRORED:    
+    case PATCH_ERRORED:
     case POST_ERRORED:
     case DELETE_ERRORED:
     case DELETE_HIGHLIGHT_ERRORED:
