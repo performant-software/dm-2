@@ -1138,37 +1138,38 @@ class CanvasResource extends Component {
                     <span className="current-tile-name">
                       {`: ${!editingLayerName ? currentLayerName : ''}`}
                     </span>
-                    {editingLayerName && (
-                      <TextField
-                        name={`layer${this.state.currentPage}-name`}
-                        disabled={loading}
-                        value={this.state.layerName}
-                        inputStyle={{
-                          color: 'white',
-                          fontSize: '0.8rem',
-                          paddingLeft: '5px',
-                        }}
-                        style={{
-                          flexGrow: '1',
-                          overflow: 'hidden',
-                          borderBottom: '1px solid white',
-                          height: '24px',
-                          width: 'auto',
-                          maxWidth: '100%',
-                        }}
-                        underlineShow={false}
-                        autoComplete='off'
-                        onChange={this.onChangeLayerName.bind(this)}
-                      />
-                    )}
                   </div>
+                  {editingLayerName && (
+                    <TextField
+                      name={`layer${this.state.currentPage}-name`}
+                      disabled={loading}
+                      value={this.state.layerName}
+                      inputStyle={{
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        paddingLeft: '5px',
+                        flex: '1 1 auto',
+                      }}
+                      style={{
+                        overflow: 'hidden',
+                        borderBottom: '1px solid white',
+                        height: '24px',
+                        width: 'auto',
+                        flex: '1 1 auto',
+                        maxWidth: '100%',
+                      }}
+                      underlineShow={false}
+                      autoComplete='off'
+                      onChange={this.onChangeLayerName.bind(this)}
+                    />
+                  )}
                   {!editingLayerName && (
                     <IconButton
                       disabled={loading}
                       tooltip="Edit layer name"
                       type="button"
                       onClick={this.editLayerNameClick.bind(this)}
-                      style={{ ...floatingIconBackdropStyle, width: 'auto', height: 'auto' }}
+                      style={{ width: '16px', height: 'auto', paddingLeft: '3px' }}
                       iconStyle={smallIconStyle}
                       tooltipStyles={tooltipStyle}
                     >

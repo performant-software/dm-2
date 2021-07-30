@@ -36,7 +36,7 @@ body {
   display: flex;
   align-items: center;
   height: 18px;
-  flex-grow: 1;
+  padding-right: 3px;
 }
 
 .current-tile-page {
@@ -51,9 +51,12 @@ body {
 .tile-name-form {
   display: flex;
   text-overflow: ellipsis;
-  padding: 1px 0px;
   width: 100%;
+  flex: 0 1 auto;
+  align-items: center;
+  height: 18px;
 }
+
 .ProseMirror-menubar {
   min-height: 48px !important;
 }
