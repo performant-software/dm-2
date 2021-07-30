@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "canvas": "2.7.0",
+    "deep-equal": "^2.0.5",
     "history": "^4.7.2",
     "jsdom": "^11.8.0",
     "material-ui": "^0.20.0",

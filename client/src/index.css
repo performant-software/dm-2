@@ -27,6 +27,21 @@ body {
   border: none !important;
 }
 
+.current-tile {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+  margin-left: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: 18px;
+}
+.current-tile-page {
+  font-weight: bold;
+  color: white;
+}
+
 .ProseMirror-menubar {
   min-height: 48px !important;
 }

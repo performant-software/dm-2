@@ -1,5 +1,16 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock, :move_layer, :delete_layer]
+  before_action :set_document, only: [
+    :show,
+    :update,
+    :move,
+    :destroy,
+    :add_images,
+    :set_thumbnail,
+    :lock,
+    :move_layer,
+    :delete_layer,
+    :rename_layer
+  ]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
@@ -114,6 +125,8 @@ class DocumentsController < ApplicationController
           render json: @document.errors,  status: 500
         end
       end
+    else
+      render status: :bad_request
     end
   end
 
@@ -131,6 +144,11 @@ class DocumentsController < ApplicationController
       else
         tile_source = content["tileSources"][layer]
         @document.purge_image_by_tilesource!(tile_source)
+        if tile_source.is_a?(String) && tile_source.end_with?(".json") && content.has_key?("iiifTileNames")
+          content["iiifTileNames"].delete_if {|tile_name_obj|
+            tile_name_obj["url"] == tile_source
+          }
+        end
         content["tileSources"].delete_at(layer)
         if @document.save!
           render json: @document
@@ -138,6 +156,34 @@ class DocumentsController < ApplicationController
           render json: @document.errors, status: 500
         end
       end
+    else
+      render status: :bad_request
+    end
+  end
+
+  # PATCH /documents/1/rename_layer
+  #   :layer - The array index of the layer to delete
+  #   :name - The new name for that layer
+  def rename_layer
+    content = @document[:content]
+    layer = Integer(params[:layer]) rescue nil
+    new_name = params[:name]
+    if layer.nil? || layer < 0 || new_name.nil?
+      render status: :bad_request
+    elsif content["tileSources"]
+      size = content["tileSources"].length()
+      if layer >= size
+        render status: :bad_request
+      else
+        @document.rename_tile_source!(layer, new_name)
+        if @document.save!
+          render json: @document
+        else
+          render json: @document.errors, status: 500
+        end
+      end
+    else
+      render status: :bad_request
     end
   end
 

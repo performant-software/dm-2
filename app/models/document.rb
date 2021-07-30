@@ -56,6 +56,31 @@ class Document < Linkable
     }
   end
 
+  def rename_tile_source!(layer, new_name)
+    tile_source = self.content["tileSources"][layer]
+    if !tile_source.is_a?(String)
+      new_tile_source = tile_source
+      new_tile_source["name"] = new_name
+      self.content["tileSources"][layer] = new_tile_source
+    elsif tile_source.end_with?(".json")
+      self.content["iiifTileNames"].each {|tile_name_obj|
+        if tile_name_obj["url"] == tile_source
+          tile_name_obj["name"] = new_name
+        end
+      }
+    else
+      new_tile_source = {
+        "url" => tile_source,
+        "name" => new_name,
+        "type"=>"image",
+        "useCanvas" => true,
+        "crossOriginPolicy" => false,
+        "ajaxWithCredentials" => false
+      }
+      self.content["tileSources"][layer] = new_tile_source
+    end
+  end
+
   def tree_check
     add_to_tree unless @import_mode
   end

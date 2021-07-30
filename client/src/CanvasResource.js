@@ -17,6 +17,8 @@ import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
 import RemoveFromPhotos from './icons/RemoveFromPhotos';
+import Done from 'material-ui/svg-icons/action/done';
+import Cancel from 'material-ui/svg-icons/navigation/close';
 import { LayerBackward, LayerForward } from 'react-bootstrap-icons';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
 import {
@@ -26,7 +28,8 @@ import {
   setIsPencilMode,
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
-  setZoomControl
+  setZoomControl,
+  toggleEditLayerName,
 } from './modules/canvasEditor';
 import {
   addHighlight,
@@ -36,10 +39,13 @@ import {
   CANVAS_HIGHLIGHT_DELETE,
   moveLayer,
   CANVAS_LAYER_DELETE,
+  renameLayer,
 } from './modules/documentGrid';
 import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
+import TextField from 'material-ui/TextField';
+import deepEqual from 'deep-equal';
 
 // overlay these modules
 openSeaDragonFabricOverlay(OpenSeadragon, fabric);
@@ -79,16 +85,18 @@ class CanvasResource extends Component {
 
     this.state = {
       currentPage: 0,
+      layerName: '',
     };
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.content && this.props.content 
-        && prevProps.content.tileSources !== this.props.content.tileSources) {
+        && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
       this.openTileSources(this.props.content.tileSources);
+      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
     }
-    if (prevProps.pageToChange !== this.props.pageToChange) {
-      this.osdViewer.goToPage(this.props.pageToChange);
+    if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
+      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
     }
     if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
       && !this.props.highlightsHidden[this.getInstanceKey()]) {
@@ -154,6 +162,7 @@ class CanvasResource extends Component {
       this.markObjectsDirtyNextUpdate = true;
       this.setState({
         currentPage: event.page,
+        layerName: this.getLayerName(event.page),
       });
     });
 
@@ -797,6 +806,7 @@ class CanvasResource extends Component {
       documentId: this.props.document_id,
       origin: this.state.currentPage,
       direction,
+      editorKey: this.getInstanceKey(),
     });
   }
 
@@ -808,9 +818,70 @@ class CanvasResource extends Component {
       {
         documentId: this.props.document_id,
         layer: this.state.currentPage,
+        editorKey: this.getInstanceKey(),
       },
       CANVAS_LAYER_DELETE
     );
+  }
+
+  editLayerNameClick() {
+    this.props.toggleEditLayerName({
+      editorKey: this.getInstanceKey(),
+      value: true,
+    });
+    this.setState({
+      layerName: this.getLayerName(this.state.currentPage),
+    })
+  }
+
+  cancelEditLayerName() {
+    this.props.toggleEditLayerName({
+      editorKey: this.getInstanceKey(),
+      value: false,
+    });
+  }
+
+  getLayerName(page) {
+    const { content } = this.props;
+    const currentLayer = content.tileSources[page];
+    let currentLayerName = 'Untitled image layer';
+    if (typeof currentLayer === 'string' && currentLayer.includes('.json')) {
+      if (content.iiifTileNames && content.iiifTileNames.find(tile => tile.url === currentLayer)) {
+        currentLayerName = content.iiifTileNames.find(tile => tile.url === currentLayer).name;
+      } else {
+        currentLayerName = 'IIIF layer';
+      }
+    } else if (typeof currentLayer === 'string' && currentLayer.includes('http')) {
+      const url = currentLayer;
+      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
+    } else if (currentLayer && currentLayer.name) {
+      currentLayerName = currentLayer.name;
+    } else if (currentLayer && currentLayer.url) {
+      const url = currentLayer.url;
+      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
+    }
+    return currentLayerName;
+  }
+
+  onChangeLayerName(event, newValue) {
+    this.setState({
+      layerName: newValue,
+    })
+  }
+
+  submitLayerName(e) {
+    e.preventDefault();
+    const target = e.currentTarget[`layer${this.state.currentPage}-name`];
+    let layerNamePayload = {};
+    if (target && target.value) {
+      layerNamePayload = {
+        documentId: this.props.document_id,
+        layer: this.state.currentPage,
+        name: target.value,
+        editorKey: this.getInstanceKey(),
+      };
+      this.props.renameLayer(layerNamePayload);
+    }
   }
 
   zoomControlChange(event, value) {
@@ -843,7 +914,7 @@ class CanvasResource extends Component {
       setCanvasHighlightColor,
       writeEnabled,
       lockedByMe,
-      globalCanvasDisplay
+      globalCanvasDisplay,
     } = this.props;
     const key = this.getInstanceKey();
 
@@ -863,10 +934,22 @@ class CanvasResource extends Component {
     const iconBackdropStyleSpaced = Object.assign({}, iconBackdropStyle);
     iconBackdropStyleSpaced.marginLeft = '12px';
 
+    const floatingIconBackdropStyle = {
+      width: '16px',
+      height: '16px',
+      paddingTop: '2px',
+      paddingLeft: '5px',
+    };
+
     const iconStyle = {
       width: '18px',
       height: '18px'
-    }
+    };
+
+    const smallIconStyle = {
+      width: '16px',
+      height: '16px',
+    };
 
     const tooltipStyle = {
       pointerEvents: 'none',
@@ -891,6 +974,9 @@ class CanvasResource extends Component {
         }
       }
     }
+    
+    const currentLayerName = this.getLayerName(this.state.currentPage);
+    const editingLayerName = this.props.editingLayerName[key];
 
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
@@ -1036,6 +1122,80 @@ class CanvasResource extends Component {
               >
                 <RemoveFromPhotos />
               </IconButton>
+              {hasLayers && (
+                <form style={{ display: 'flex' }} onSubmit={this.submitLayerName.bind(this)}>
+                  <div
+                    className="current-tile"
+                    style={editingLayerName ? {} : { overflow: 'hidden' }}
+                  >
+                    <span className="current-tile-page">
+                      {this.state.currentPage+1}
+                    </span>
+                    <span>
+                      {`: ${!editingLayerName ? currentLayerName : ''}`}
+                    </span>
+                    {editingLayerName && (
+                      <TextField
+                        name={`layer${this.state.currentPage}-name`}
+                        disabled={loading}
+                        value={this.state.layerName}
+                        inputStyle={{
+                          color: 'white',
+                          fontSize: '0.8rem',
+                          paddingLeft: '5px',
+                        }}
+                        style={{
+                          flexGrow: '1',
+                          borderBottom: '1px solid white',
+                          height: '24px',
+                        }}
+                        underlineShow={false}
+                        autoComplete='off'
+                        onChange={this.onChangeLayerName.bind(this)}
+                      />
+                    )}
+                  </div>
+                  {!editingLayerName && (
+                    <IconButton
+                      disabled={loading}
+                      tooltip="Edit layer name"
+                      type="button"
+                      onClick={this.editLayerNameClick.bind(this)}
+                      style={floatingIconBackdropStyle}
+                      iconStyle={smallIconStyle}
+                      tooltipStyles={tooltipStyle}
+                    >
+                      <Edit color="white" />
+                    </IconButton>
+                  )}
+                  {editingLayerName && (
+                    <>
+                      <IconButton
+                        disabled={loading}
+                        tooltip="Save"
+                        type="submit"
+                        style={floatingIconBackdropStyle}
+                        iconStyle={smallIconStyle}
+                        tooltipStyles={tooltipStyle}
+                      >
+                        <Done color="green" />
+                      </IconButton>
+                      <IconButton
+                        disabled={loading}
+                        tooltip="Cancel"
+                        type="button"
+                        onClick={this.cancelEditLayerName.bind(this)}
+                        style={floatingIconBackdropStyle}
+                        iconStyle={smallIconStyle}
+                        tooltipStyles={tooltipStyle}
+                      >
+                        <Cancel color="red" />
+                      </IconButton>
+                    </>
+                  )}
+                </form>
+              )}
+
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
@@ -1068,6 +1228,7 @@ const mapStateToProps = state => ({
   globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay,
   pageToChange: state.canvasEditor.pageToChange,
   loading: state.documentGrid.loading,
+  editingLayerName: state.canvasEditor.editingLayerName,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -1082,6 +1243,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   setZoomControl,
   openDeleteDialog,
   moveLayer,
+  renameLayer,
+  toggleEditLayerName,
 }, dispatch);
 
 export default connect(

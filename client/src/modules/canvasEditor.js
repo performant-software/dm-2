@@ -11,6 +11,9 @@ export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
 export const PAGE_TO_CHANGE = 'canvasEditor/PAGE_TO_CHANGE';
+export const RENAME_LAYER = 'canvasEditor/RENAME_LAYER';
+export const RENAME_LAYER_SUCCESS = 'canvasEditor/RENAME_LAYER_SUCCESS';
+export const TOGGLE_EDIT_LAYER_NAME = 'canvasEditor/TOGGLE_EDIT_LAYER_NAME';
 
 const initialState = {
   highlightColors: {},
@@ -21,7 +24,8 @@ const initialState = {
   isPencilMode: {},
   zoomControls: {},
   globalCanvasDisplay: true,
-  pageToChange: null,
+  pageToChange: {},
+  editingLayerName: {},
 };
 
 export default function(state = initialState, action) {
@@ -97,9 +101,25 @@ export default function(state = initialState, action) {
       };
     
     case PAGE_TO_CHANGE:
+      let updatedPageToChange = Object.assign({}, state.pageToChange);
+      updatedPageToChange[action.editorKey] = action.pageToChange;
       return {
         ...state,
-        pageToChange: action.pageToChange,
+        pageToChange: updatedPageToChange,
+      };
+    
+    case TOGGLE_EDIT_LAYER_NAME:
+      let updatedEditingLayerName = Object.assign({}, state.editingLayerName);
+      updatedEditingLayerName[action.editorKey] = action.value;
+      return {
+        ...state,
+        editingLayerName: updatedEditingLayerName,
+      };
+    
+    case RENAME_LAYER_SUCCESS:
+      return {
+        ...state,
+        loading: false,
       };
 
     default:
@@ -185,6 +205,26 @@ export function setGlobalCanvasDisplay(value) {
     dispatch({
       type: SET_GLOBAL_CANVAS_DISPLAY,
       value
+    });
+  }
+}
+
+export function changePage({ editorKey, page }) {
+  return function(dispatch) {
+    dispatch({
+      type: PAGE_TO_CHANGE,
+      pageToChange: page,
+      editorKey,
+    });
+  }
+}
+
+export function toggleEditLayerName({ editorKey, value }) {
+  return function(dispatch) {
+    dispatch({
+      type: TOGGLE_EDIT_LAYER_NAME,
+      editorKey,
+      value,
     });
   }
 }
