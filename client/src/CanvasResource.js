@@ -1123,7 +1123,11 @@ class CanvasResource extends Component {
                 <RemoveFromPhotos />
               </IconButton>
               {hasLayers && (
-                <form style={{ display: 'flex' }} onSubmit={this.submitLayerName.bind(this)}>
+                <form 
+                  className="tile-name-form"
+                  onSubmit={this.submitLayerName.bind(this)}
+                  style={editingLayerName ? {} : { overflow: 'hidden' }}
+                >
                   <div
                     className="current-tile"
                     style={editingLayerName ? {} : { overflow: 'hidden' }}
@@ -1131,7 +1135,7 @@ class CanvasResource extends Component {
                     <span className="current-tile-page">
                       {this.state.currentPage+1}
                     </span>
-                    <span>
+                    <span className="current-tile-name">
                       {`: ${!editingLayerName ? currentLayerName : ''}`}
                     </span>
                     {editingLayerName && (
@@ -1146,8 +1150,11 @@ class CanvasResource extends Component {
                         }}
                         style={{
                           flexGrow: '1',
+                          overflow: 'hidden',
                           borderBottom: '1px solid white',
                           height: '24px',
+                          width: 'auto',
+                          maxWidth: '100%',
                         }}
                         underlineShow={false}
                         autoComplete='off'
@@ -1161,7 +1168,7 @@ class CanvasResource extends Component {
                       tooltip="Edit layer name"
                       type="button"
                       onClick={this.editLayerNameClick.bind(this)}
-                      style={floatingIconBackdropStyle}
+                      style={{ ...floatingIconBackdropStyle, width: 'auto', height: 'auto' }}
                       iconStyle={smallIconStyle}
                       tooltipStyles={tooltipStyle}
                     >

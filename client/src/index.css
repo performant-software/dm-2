@@ -36,12 +36,24 @@ body {
   display: flex;
   align-items: center;
   height: 18px;
+  flex-grow: 1;
 }
+
 .current-tile-page {
   font-weight: bold;
   color: white;
 }
 
+.current-tile-name {
+  overflow: hidden;
+}
+
+.tile-name-form {
+  display: flex;
+  text-overflow: ellipsis;
+  padding: 1px 0px;
+  width: 100%;
+}
 .ProseMirror-menubar {
   min-height: 48px !important;
 }
