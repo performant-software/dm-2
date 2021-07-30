@@ -79,6 +79,8 @@ class CanvasResource extends Component {
     super(props);
     this.osdId =`openseadragon-${this.props.document_id}-${Date.now()}`;
     this.osdViewer = null;
+    this.upButton = null;
+    this.downButton = null;
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
@@ -89,7 +91,7 @@ class CanvasResource extends Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (prevProps.content && this.props.content 
         && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
       this.openTileSources(this.props.content.tileSources);
@@ -97,6 +99,23 @@ class CanvasResource extends Component {
     }
     if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+    }
+    if (prevState.currentPage !== this.state.currentPage) {
+      if (this.upButton && this.state.currentPage <= 0) {
+        this.upButton.disable();
+      } else {
+        this.upButton.enable();
+      }
+      if (this.downButton && !(
+          this.props.content
+          && this.props.content.tileSources
+          && this.state
+          && this.state.currentPage !== (this.props.content.tileSources.length-1)
+        )) {
+        this.downButton.disable();
+      } else {
+        this.downButton.enable();
+      }
     }
     if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
       && !this.props.highlightsHidden[this.getInstanceKey()]) {
@@ -114,7 +133,7 @@ class CanvasResource extends Component {
 
     const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
-      prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
+      prefixUrl: '/images/',
       showNavigationControl: false,
       tileSources: [],
       minZoomImageRatio: minZoomImageRatio,
@@ -123,9 +142,46 @@ class CanvasResource extends Component {
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true,
       sequenceMode: true,
+      showSequenceControl: false,
       preserveViewport: true,
     });
-
+    const btns = [];
+    const upButton = this.upButton = new OpenSeadragon.Button({
+      tooltip: "Previous layer",
+      srcRest: "/images/up_rest.png",
+      srcGroup: "/images/up_grouphover.png",
+      srcHover: "/images/up_hover.png",
+      srcDown: "/images/up_pressed.png",
+      onRelease: (e) => {
+        viewer.goToPage(this.state.currentPage - 1);
+        if (this.state && this.state.currentPage <= 0) {
+          e.eventSource.disable();
+        }
+      },
+    });
+    const downButton = this.downButton = new OpenSeadragon.Button({
+      tooltip: "Next layer",
+      srcRest: "/images/down_rest.png",
+      srcGroup: "/images/down_grouphover.png",
+      srcHover: "/images/down_hover.png",
+      srcDown: "/images/down_pressed.png",
+      onRelease: (e) => {
+        viewer.goToPage(this.state.currentPage + 1);
+        if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
+          e.eventSource.disable();
+        }
+      },
+    });
+    upButton.disable();
+    if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
+      downButton.disable();
+    }
+    btns.push(upButton, downButton);
+    const URButtonGroup = new OpenSeadragon.ButtonGroup({ buttons: btns });
+    viewer.addControl(URButtonGroup.element, {
+      anchor: OpenSeadragon.ControlAnchor.TOP_LEFT
+    });
+    
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
 
     let tileSources = (content && content.tileSources) ? content.tileSources : [];
@@ -1169,7 +1225,7 @@ class CanvasResource extends Component {
                       tooltip="Edit layer name"
                       type="button"
                       onClick={this.editLayerNameClick.bind(this)}
-                      style={{ width: '16px', height: 'auto', paddingLeft: '3px' }}
+                      style={{ width: '16px', height: 'auto', paddingLeft: '2px' }}
                       iconStyle={smallIconStyle}
                       tooltipStyles={tooltipStyle}
                     >
