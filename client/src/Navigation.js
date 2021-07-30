@@ -11,7 +11,7 @@ import MenuItem from 'material-ui/MenuItem';
 import CircularProgress from 'material-ui/CircularProgress';
 import Divider from 'material-ui/Divider';
 import DropDownMenu from 'material-ui/DropDownMenu';
-import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
+import NavigationArrowUpward from 'material-ui/svg-icons/navigation/arrow-upward';
 import MenuIcon from 'material-ui/svg-icons/navigation/menu';
 import MoreVert from 'material-ui/svg-icons/navigation/more-vert';
 import IconButton from 'material-ui/IconButton';
@@ -83,10 +83,7 @@ class Navigation extends Component {
           </div>}
           showMenuIconButton={!this.props.isHome}
           iconElementLeft={this.props.isHome ? (<div />) : (
-            <>
-              <IconButton onClick={this.onCloseProject} ><ArrowBack color="white" /></IconButton>
-              <IconButton onClick={this.props.toggleSidebar} ><MenuIcon color="white" /></IconButton>
-            </>
+            <IconButton onClick={this.props.toggleSidebar} ><MenuIcon color="white" /></IconButton>
           )}
           iconElementRight={
             <div>
@@ -113,6 +110,9 @@ class Navigation extends Component {
                 labelPosition='before'
                 onClick={event => {this.props.toggleAuthMenu(event.currentTarget);}}
               />
+              {!this.props.isHome && (
+                <IconButton onClick={this.onCloseProject} ><NavigationArrowUpward color="white" /></IconButton>
+              )}
             </div>
           }
           style={{position: 'fixed', top: 0, zIndex: 9999}}
