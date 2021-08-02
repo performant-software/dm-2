@@ -3,7 +3,7 @@ module TextHighlightHelper
   def self.patch_text_highlights!
     highlights = Highlight.all
     highlights.each {|h|
-      if h.uid.include?("text_highlight") && (h.uid != h.target)
+      if !h.uid.nil? && h.uid.include?("text_highlight") && (h.uid != h.target)
         h.update(:target => h.uid)
       end
     }
