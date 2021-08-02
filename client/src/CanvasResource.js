@@ -109,6 +109,12 @@ class CanvasResource extends Component {
         this.osdViewer.removeControl(this.imageLayerControls);
       }
     }
+    if (this.layerSelect 
+        && prevProps.content && this.props.content 
+        && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
+      this.refreshLayerSelect(this.props.content.tileSources);
+      this.layerSelect.selectedIndex = this.state.currentPage;
+    }
     if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
     }
@@ -395,7 +401,12 @@ class CanvasResource extends Component {
         (errorResponse) => { console.log( errorResponse ) }
       )
     }
+    this.refreshLayerSelect(tileSources);
 
+    return imageUrlForThumbnail;
+  }
+
+  refreshLayerSelect(tileSources) {
     while (this.layerSelect.firstChild) {
       this.layerSelect.removeChild(this.layerSelect.lastChild);
     }
@@ -405,8 +416,6 @@ class CanvasResource extends Component {
       opt.label = `${index+1}: ${this.getLayerName(index)}`;
       this.layerSelect.appendChild(opt);
     });
-
-    return imageUrlForThumbnail;
   }
 
   onControlsEnter(e) {
