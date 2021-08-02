@@ -81,6 +81,8 @@ class CanvasResource extends Component {
     this.osdViewer = null;
     this.upButton = null;
     this.downButton = null;
+    this.layerSelect = null;
+    this.imageLayerControls = null;
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
@@ -96,26 +98,19 @@ class CanvasResource extends Component {
         && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
       this.openTileSources(this.props.content.tileSources);
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      const hasLayerControls = this.osdViewer.controls 
+        && this.osdViewer.controls.find(ctrl => ctrl.element.className === 'image-layer-controls');
+      if (this.hasLayers() && !hasLayerControls) {
+        this.osdViewer.addControl(this.imageLayerControls, {
+          anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
+          autoFade: true,
+        });
+      } else if (!this.hasLayers() && hasLayerControls) {
+        this.osdViewer.removeControl(this.imageLayerControls);
+      }
     }
     if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
-    }
-    if (prevState.currentPage !== this.state.currentPage) {
-      if (this.upButton && this.state.currentPage <= 0) {
-        this.upButton.disable();
-      } else {
-        this.upButton.enable();
-      }
-      if (this.downButton && !(
-          this.props.content
-          && this.props.content.tileSources
-          && this.state
-          && this.state.currentPage !== (this.props.content.tileSources.length-1)
-        )) {
-        this.downButton.disable();
-      } else {
-        this.downButton.enable();
-      }
     }
     if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
       && !this.props.highlightsHidden[this.getInstanceKey()]) {
@@ -145,7 +140,8 @@ class CanvasResource extends Component {
       showSequenceControl: false,
       preserveViewport: true,
     });
-    const btns = [];
+    const hasLayers = this.hasLayers();
+
     const upButton = this.upButton = new OpenSeadragon.Button({
       tooltip: "Previous layer",
       srcRest: "/images/up_rest.png",
@@ -159,6 +155,23 @@ class CanvasResource extends Component {
         }
       },
     });
+    const layerSelect = this.layerSelect = OpenSeadragon.makeNeutralElement('select');
+    layerSelect.style = '';
+    layerSelect.className = 'image-layer-select';
+    layerSelect.name = `${this.getInstanceKey()}-layer-select`;
+    layerSelect.addEventListener('change', () => {
+      viewer.goToPage(layerSelect.value);
+    });
+    
+    if (hasLayers) {
+      content.tileSources.forEach((tileSource, index) => {
+        const opt = OpenSeadragon.makeNeutralElement('option');
+        opt.value = index;
+        opt.label = `${index+1}: ${this.getLayerName(index)}`;
+        layerSelect.appendChild(opt);
+      });
+    }
+
     const downButton = this.downButton = new OpenSeadragon.Button({
       tooltip: "Next layer",
       srcRest: "/images/down_rest.png",
@@ -176,12 +189,20 @@ class CanvasResource extends Component {
     if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
       downButton.disable();
     }
-    btns.push(upButton, downButton);
-    const URButtonGroup = new OpenSeadragon.ButtonGroup({ buttons: btns });
-    viewer.addControl(URButtonGroup.element, {
-      anchor: OpenSeadragon.ControlAnchor.TOP_LEFT
-    });
-    
+
+    const wrapper = this.imageLayerControls = OpenSeadragon.makeNeutralElement('div');
+    wrapper.className = 'image-layer-controls';
+    wrapper.appendChild(upButton.element);
+    wrapper.appendChild(layerSelect);
+    wrapper.appendChild(downButton.element);
+
+    if (hasLayers) {
+      viewer.addControl(wrapper, {
+        anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
+        autoFade: true,
+      });
+    }
+
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
 
     let tileSources = (content && content.tileSources) ? content.tileSources : [];
@@ -215,10 +236,29 @@ class CanvasResource extends Component {
     });
 
     viewer.addHandler('page', (event) => {
+      const pageNumber = parseInt(event.page, 10);
+      if (this.upButton && pageNumber <= 0) {
+        this.upButton.disable();
+      } else if (this.upButton) {
+        this.upButton.enable();
+      }
+      if (this.downButton && !(
+          this.props.content
+          && this.props.content.tileSources
+          && pageNumber !== (this.props.content.tileSources.length-1)
+        )) {
+        this.downButton.disable();
+      } else if (this.downButton) {
+        this.downButton.enable();
+      }
+      if (this.layerSelect) {
+        this.layerSelect.selectedIndex = pageNumber;
+      }
+
       this.markObjectsDirtyNextUpdate = true;
       this.setState({
-        currentPage: event.page,
-        layerName: this.getLayerName(event.page),
+        currentPage: pageNumber,
+        layerName: this.getLayerName(pageNumber),
       });
     });
 
@@ -344,7 +384,17 @@ class CanvasResource extends Component {
       )
     }
 
-    return imageUrlForThumbnail
+    while (this.layerSelect.firstChild) {
+      this.layerSelect.removeChild(this.layerSelect.lastChild);
+    }
+    tileSources.forEach((tileSource, index) => {
+      const opt = OpenSeadragon.makeNeutralElement('option');
+      opt.value = index;
+      opt.label = `${index+1}: ${this.getLayerName(index)}`;
+      this.layerSelect.appendChild(opt);
+    });
+
+    return imageUrlForThumbnail;
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
@@ -954,6 +1004,16 @@ class CanvasResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
+  hasLayers() {
+    const { content } = this.props;
+    return (
+      content 
+      && content.tileSources 
+      && Array.isArray(content.tileSources) 
+      && content.tileSources.length > 1
+    );
+  }
+
   render() {
     const {
       loading,
@@ -1014,7 +1074,7 @@ class CanvasResource extends Component {
     let editable = ( writeEnabled && lockedByMe );
     const mode = addTileSourceMode[document_id];
     const highlightHidden = !editable && highlightsHidden[key]
-    const hasLayers = content && content.tileSources && Array.isArray(content.tileSources) && content.tileSources.length > 1;
+    const hasLayers = this.hasLayers();
 
     if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
