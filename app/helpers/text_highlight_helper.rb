@@ -13,7 +13,7 @@ module TextHighlightHelper
   def self.merge_duplicate_highlights!
     highlights = Highlight.all
     highlights.each {|highlight|
-      if highlight[:uid].include?("text_highlight")
+      if !highlight[:uid].nil? && highlight[:uid].include?("text_highlight")
         duplicate_highlights = Highlight.where(:uid => highlight.uid).where.not(:id => highlight.id)
         duplicate_highlights.each {|dh|
           dh.a_links.each {|al|
