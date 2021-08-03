@@ -7205,10 +7205,10 @@ open@^6.3.0:
   version "0.2.0"
   resolved "git://github.com/performant-software/OpenseadragonFabricjsOverlay.git#578d9cbbe7850e101f65e7e99c18e481a470a8dd"
 
-openseadragon@^2.4.1:
-  version "2.4.1"
-  resolved "https://registry.yarnpkg.com/openseadragon/-/openseadragon-2.4.1.tgz#91fda5245558f5e4f939c2173bdf582359154b21"
-  integrity sha512-7fWUnCkGvWcnoRxqeXcg4bSLPApWbI0hHumEZF8K2pziMfPNjvvHL5XB4oQeT2XfrGKfaasVrPe2XqhAr5kogA==
+openseadragon@^2.4.2:
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/openseadragon/-/openseadragon-2.4.2.tgz#f25d833d0ab9941599d65a3e2b44bec546c9f15c"
+  integrity sha512-398KbZwRtOYA6OmeWRY4Q0737NTacQ9Q6whmr9Lp1MNQO3p0eBz5LIASRne+4gwequcSM1vcHcjfy3dIndQziw==
 
 opn@^5.1.0:
   version "5.5.0"
