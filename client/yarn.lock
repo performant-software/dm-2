@@ -7203,7 +7203,7 @@ open@^6.3.0:
 
 "openseadragon-fabricjs-overlay@git://github.com/performant-software/OpenseadragonFabricjsOverlay.git":
   version "0.2.0"
-  resolved "git://github.com/performant-software/OpenseadragonFabricjsOverlay.git#8791f81e99c43298a500dafc30fa16955899bee4"
+  resolved "git://github.com/performant-software/OpenseadragonFabricjsOverlay.git#578d9cbbe7850e101f65e7e99c18e481a470a8dd"
 
 openseadragon@^2.4.1:
   version "2.4.1"

@@ -97,7 +97,11 @@ class CanvasResource extends Component {
     if (prevProps.content && this.props.content 
         && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
       this.openTileSources(this.props.content.tileSources);
-      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      if (this.props.content.tileSources.length !== prevProps.content.tileSources.length) {
+        this.osdViewer.goToPage(0);
+      } else {
+        this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      }
       const hasLayerControls = this.osdViewer.controls 
         && this.osdViewer.controls.find(ctrl => ctrl.element.className === 'image-layer-controls');
       if (this.hasLayers() && !hasLayerControls) {
@@ -113,7 +117,6 @@ class CanvasResource extends Component {
         && prevProps.content && this.props.content 
         && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
       this.refreshLayerSelect(this.props.content.tileSources);
-      this.layerSelect.selectedIndex = this.state.currentPage;
     }
     if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
@@ -156,9 +159,6 @@ class CanvasResource extends Component {
       srcDown: "/images/up_pressed.png",
       onRelease: (e) => {
         viewer.goToPage(this.state.currentPage - 1);
-        if (this.state && this.state.currentPage <= 0) {
-          e.eventSource.disable();
-        }
       },
     });
     const layerSelect = this.layerSelect = OpenSeadragon.makeNeutralElement('select');
@@ -166,7 +166,7 @@ class CanvasResource extends Component {
     layerSelect.className = 'image-layer-select';
     layerSelect.name = `${this.getInstanceKey()}-layer-select`;
     layerSelect.addEventListener('change', () => {
-      viewer.goToPage(layerSelect.value);
+      viewer.goToPage(parseInt(layerSelect.value, 10));
     });
     
     if (hasLayers) {
@@ -186,9 +186,6 @@ class CanvasResource extends Component {
       srcDown: "/images/down_pressed.png",
       onRelease: (e) => {
         viewer.goToPage(this.state.currentPage + 1);
-        if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
-          e.eventSource.disable();
-        }
       },
     });
     upButton.disable();
@@ -407,6 +404,7 @@ class CanvasResource extends Component {
   }
 
   refreshLayerSelect(tileSources) {
+    const selected = this.layerSelect.selectedIndex;
     while (this.layerSelect.firstChild) {
       this.layerSelect.removeChild(this.layerSelect.lastChild);
     }
@@ -416,6 +414,7 @@ class CanvasResource extends Component {
       opt.label = `${index+1}: ${this.getLayerName(index)}`;
       this.layerSelect.appendChild(opt);
     });
+    this.layerSelect.selectedIndex = selected;
   }
 
   onControlsEnter(e) {
