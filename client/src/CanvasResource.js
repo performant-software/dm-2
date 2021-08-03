@@ -86,6 +86,7 @@ class CanvasResource extends Component {
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
+    this.hasOpenedOnce = false;
 
     this.state = {
       currentPage: 0,
@@ -411,7 +412,7 @@ class CanvasResource extends Component {
 
   // if a first target for this window has been specified, pan and zoom to it.
   onOpen() {
-    if( this.props.firstTarget ) {
+    if( this.props.firstTarget && !this.hasOpenedOnce ) {
       let targetHighLight = null;
       for( let key in this.props.highlight_map ) {
         let currentHighlight = this.props.highlight_map[key]
@@ -429,7 +430,8 @@ class CanvasResource extends Component {
         // back out a little so we can see highlight in context
         const targetRect = new OpenSeadragon.Rect(x-0.1,y-0.1,w+0.2,h+0.2)
         const viewport = this.osdViewer.viewport;
-        viewport.fitBoundsWithConstraints( targetRect )
+        viewport.fitBoundsWithConstraints( targetRect );
+        this.hasOpenedOnce = true;
         // console.log(`tr: ${targetRect.toString()} tr2: ${targetRect2.toString()}`)
       }
     }
