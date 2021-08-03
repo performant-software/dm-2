@@ -195,22 +195,14 @@ class CanvasResource extends Component {
 
     const wrapper = this.imageLayerControls = OpenSeadragon.makeNeutralElement('div');
     wrapper.className = 'image-layer-controls';
-    wrapper.appendChild(upButton.element);
+    const buttons = [upButton, downButton];
+    const buttonGroup = new OpenSeadragon.ButtonGroup({ buttons });
+    buttonGroup.element.className = 'layer-button-group';
+    wrapper.appendChild(buttonGroup.element);
     wrapper.appendChild(layerSelect);
-    wrapper.appendChild(downButton.element);
     wrapper.innerTracker = new OpenSeadragon.MouseTracker({
       element: wrapper,
-      enterHandler: this.onControlsEnter.bind(this),
-      exitHandler: this.onControlsExit.bind(this),
     });
-    this.osdViewer.imgLayerCtrlsShouldFade = true;
-    this.osdViewer.controlsFadeBeginTime =
-    OpenSeadragon.now() +
-    this.osdViewer.controlsFadeDelay;
-    setTimeout(() => {
-      this.scheduleFade(wrapper);
-    }, this.osdViewer.controlsFadeDelay );
-
     if (hasLayers) {
       viewer.addControl(wrapper, {
         anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
@@ -415,43 +407,6 @@ class CanvasResource extends Component {
       this.layerSelect.appendChild(opt);
     });
     this.layerSelect.selectedIndex = selected;
-  }
-
-  onControlsEnter(e) {
-    this.osdViewer.imgLayerCtrlsShouldFade = false;
-    OpenSeadragon.setElementOpacity(e.eventSource.element, 1.0, true);
-  };
-
-  onControlsExit(e) {
-    this.osdViewer.imgLayerCtrlsShouldFade = true;
-    this.osdViewer.controlsFadeBeginTime =
-        OpenSeadragon.now() +
-        this.osdViewer.controlsFadeDelay;
-    setTimeout(() => {
-      this.scheduleFade(e.eventSource.element);
-    }, this.osdViewer.controlsFadeDelay );
-  }
-
-  scheduleFade(elem) {
-    OpenSeadragon.requestAnimationFrame(() => {
-      this.updateFade(elem);
-    });
-  }
-
-  updateFade(elem) {
-    if ( this.osdViewer.imgLayerCtrlsShouldFade ) {
-      const currentTime = OpenSeadragon.now();
-      const deltaTime = currentTime - this.osdViewer.controlsFadeBeginTime;
-      let opacity = 1.0 - deltaTime / this.osdViewer.controlsFadeLength;
-      opacity = Math.min(1.0, opacity);
-      opacity = Math.max(0.0, opacity);
-      OpenSeadragon.setElementOpacity(elem, opacity, true);
-      if ( opacity > 0 ) {
-        // fade again
-        this.scheduleFade(elem);
-      }
-    }
-
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
