@@ -17,6 +17,7 @@ export default class LinkInspectorPopupLayer extends Component {
               closeHandler={() => {this.props.closeHandler(target.document_id, target.highlight_id);}}
               onDragHandleMouseDown={() => {this.props.mouseDownHandler(target.document_id, target.highlight_id);}}
               openDocumentIds={this.props.openDocumentIds}
+              openDocuments={this.props.openDocuments}
               writeEnabled={this.props.writeEnabled}
               adminEnabled={this.props.adminEnabled}
               rollover={target.rollover}
