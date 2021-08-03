@@ -162,7 +162,7 @@ class DocumentsController < ApplicationController
   end
 
   # PATCH /documents/1/rename_layer
-  #   :layer - The array index of the layer to delete
+  #   :layer - The array index of the layer to rename
   #   :name - The new name for that layer
   def rename_layer
     content = @document[:content]
