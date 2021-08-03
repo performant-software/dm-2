@@ -2,7 +2,13 @@ import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
 import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
 import {updateEditorState, selectHighlight, setHighlightSelectMode} from './textEditor';
 import {deleteFolder} from './folders';
-import {setAddTileSourceMode,  UPLOAD_SOURCE_TYPE} from './canvasEditor';
+import {
+  setAddTileSourceMode,
+  UPLOAD_SOURCE_TYPE,
+  PAGE_TO_CHANGE,
+  RENAME_LAYER_SUCCESS,
+  TOGGLE_EDIT_LAYER_NAME,
+} from './canvasEditor';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
@@ -48,6 +54,7 @@ export const ADD_IMAGE_SUCCESS = 'document_grid/ADD_IMAGE_SUCCESS';
 export const ADD_IMAGE_ERRORED = 'document_grid/ADD_IMAGE_ERRORED';
 export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
 export const MOVE_DOCUMENT_WINDOW = 'document_grid/MOVE_DOCUMENT_WINDOW';
+export const CANVAS_LAYER_DELETE = 'document_grid/CANVAS_LAYER_DELETE';
 export const REFRESH_DOCUMENTS = 'document_grid/REFRESH_DOCUMENTS';
 
 
@@ -84,6 +91,11 @@ export default function(state = initialState, action) {
     case UPDATE_HIGHLIGHT:
     case DUPLICATE_HIGHLIGHTS:
     case UPDATE_DOCUMENT:
+      return {
+        ...state,
+        loading: true
+      };
+
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
     case MOVE_DOCUMENT:
@@ -732,6 +744,12 @@ export function updateDocument(documentId, attributes, options) {
           dispatch(setHighlightSelectMode(options.instanceKey, false));
         }
       }
+      if (options && options.replaceThisDocument) {
+        dispatch({
+          type: REPLACE_DOCUMENT,
+          document
+        });
+      }
       if (options && options.refreshLists) {
         if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
           dispatch(loadProject(getState().project.id));
@@ -1037,7 +1055,12 @@ export function confirmDeleteDialog() {
         }
         dispatch(closeDeleteDialog());
         break;
-
+      
+      case CANVAS_LAYER_DELETE:
+        dispatch(deleteLayer(payload));
+        dispatch(closeDeleteDialog());
+        break;
+      
       case DOCUMENT_DELETE:
         dispatch(deleteDocument(payload.documentId));
         dispatch(closeDeleteDialog());
@@ -1082,4 +1105,201 @@ export function updateSnackBar(snackBarOpen,snackBarMessage) {
       snackBarOpen
     });
   };
+}
+
+export function moveLayer({ documentId, origin, direction, editorKey }) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: UPDATE_DOCUMENT
+    });
+
+    fetch(`/documents/${documentId}/move_layer`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        origin,
+        direction,
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
+        dispatch(loadProject(getState().project.id));
+      }
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
+          dispatch(refreshTarget(index));
+        }
+      });
+      dispatch({
+        type: REPLACE_DOCUMENT,
+        document
+      });
+    })
+    .then(() => {
+      dispatch({
+        type: PAGE_TO_CHANGE,
+        pageToChange: origin + direction,
+        editorKey,
+      });
+      dispatch({
+        type: PATCH_SUCCESS,
+        document
+      });
+    })
+    .catch(() => dispatch({
+      type: PATCH_ERRORED
+    }));
+  }
+}
+
+
+export function deleteLayer({ documentId, layer, editorKey }) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: UPDATE_DOCUMENT
+    });
+
+    fetch(`/documents/${documentId}/delete_layer`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        layer,
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
+        dispatch(loadProject(getState().project.id));
+      }
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
+          dispatch(refreshTarget(index));
+        }
+      });
+      dispatch({
+        type: REPLACE_DOCUMENT,
+        document
+      });
+    })
+    .then(() => {
+      dispatch({
+        type: PAGE_TO_CHANGE,
+        pageToChange: 0,
+        editorKey,
+      });
+      dispatch({
+        type: PATCH_SUCCESS,
+        document
+      });
+    })
+    .catch(() => dispatch({
+      type: PATCH_ERRORED
+    }));
+  }
+}
+
+
+export function renameLayer({ documentId, layer, name, editorKey }) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: UPDATE_DOCUMENT
+    });
+
+    fetch(`/documents/${documentId}/rename_layer`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'PATCH',
+      body: JSON.stringify({
+        layer,
+        name,
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
+        dispatch(loadProject(getState().project.id));
+      }
+      const sidebarTarget = getState().annotationViewer.sidebarTarget;
+      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
+        dispatch(selectSidebarTarget(sidebarTarget));
+      }
+      getState().annotationViewer.selectedTargets.forEach((target, index) => {
+        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
+          dispatch(refreshTarget(index));
+        }
+      });
+      dispatch({
+        type: REPLACE_DOCUMENT,
+        document
+      });
+    })
+    .then(() => {
+      dispatch({
+        type: PAGE_TO_CHANGE,
+        pageToChange: layer,
+        editorKey,
+      });
+      dispatch({
+        type: TOGGLE_EDIT_LAYER_NAME,
+        editorKey,
+        value: false,
+      });
+      dispatch({
+        type: RENAME_LAYER_SUCCESS,
+      });
+    })
+    .catch(() => dispatch({
+      type: PATCH_ERRORED
+    }));
+  }
 }

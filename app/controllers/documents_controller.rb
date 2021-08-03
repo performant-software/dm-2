@@ -1,5 +1,16 @@
 class DocumentsController < ApplicationController
-  before_action :set_document, only: [:show, :update, :move, :destroy, :add_images, :set_thumbnail, :lock]
+  before_action :set_document, only: [
+    :show,
+    :update,
+    :move,
+    :destroy,
+    :add_images,
+    :set_thumbnail,
+    :lock,
+    :move_layer,
+    :delete_layer,
+    :rename_layer
+  ]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end
@@ -79,14 +90,101 @@ class DocumentsController < ApplicationController
     @document.images.attach(document_params[:images])
 
     if @document.valid_images?
-      @document.images.each { |image|
+      if @document.title == 'Untitled Image'
+        image = @document.images[0]
         imagetitle, _, _ = image.filename.to_s.rpartition('.')
         @document.update(title: imagetitle)
-      }
+      end
       render json: @document 
     else
       render json: @document.errors, status: :unprocessable_entity
     end 
+  end
+
+  # PATCH /documents/1/move_layer
+  #   :origin - The array index of the layer to move
+  #   :direction - Must be -1 for backward, 1 for forward
+  def move_layer
+    content = @document[:content]
+    origin = Integer(params[:origin]) rescue nil
+    direction = Integer(params[:direction]) rescue nil
+    if origin.nil? || origin < 0 || ![-1, 1].include?(direction)
+      render status: :bad_request
+    elsif content["tileSources"]
+      destination = origin + direction
+      size = content["tileSources"].length()
+      if origin >= size || destination >= size || destination < 0
+        render status: :bad_request
+      else
+        temp = content["tileSources"][origin].dup
+        content["tileSources"][origin] = content["tileSources"][destination]
+        content["tileSources"][destination] = temp
+        if @document.save!
+          render json: @document
+        else
+          render json: @document.errors,  status: 500
+        end
+      end
+    else
+      render status: :bad_request
+    end
+  end
+
+  # PATCH /documents/1/delete_layer
+  #   :layer - The array index of the layer to delete
+  def delete_layer
+    content = @document[:content]
+    layer = Integer(params[:layer]) rescue nil
+    if layer.nil? || layer < 0
+      render status: :bad_request
+    elsif content["tileSources"]
+      size = content["tileSources"].length()
+      if layer >= size
+        render status: :bad_request
+      else
+        tile_source = content["tileSources"][layer]
+        @document.purge_image_by_tilesource!(tile_source)
+        if tile_source.is_a?(String) && tile_source.end_with?(".json") && content.has_key?("iiifTileNames")
+          content["iiifTileNames"].delete_if {|tile_name_obj|
+            tile_name_obj["url"] == tile_source
+          }
+        end
+        content["tileSources"].delete_at(layer)
+        if @document.save!
+          render json: @document
+        else
+          render json: @document.errors, status: 500
+        end
+      end
+    else
+      render status: :bad_request
+    end
+  end
+
+  # PATCH /documents/1/rename_layer
+  #   :layer - The array index of the layer to rename
+  #   :name - The new name for that layer
+  def rename_layer
+    content = @document[:content]
+    layer = Integer(params[:layer]) rescue nil
+    new_name = params[:name]
+    if layer.nil? || layer < 0 || new_name.nil?
+      render status: :bad_request
+    elsif content["tileSources"]
+      size = content["tileSources"].length()
+      if layer >= size
+        render status: :bad_request
+      else
+        @document.rename_tile_source!(layer, new_name)
+        if @document.save!
+          render json: @document
+        else
+          render json: @document.errors, status: 500
+        end
+      end
+    else
+      render status: :bad_request
+    end
   end
 
   # POST /documents/1/set_thumbnail

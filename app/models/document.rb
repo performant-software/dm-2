@@ -31,6 +31,56 @@ class Document < Linkable
     self.images.each { |image| image.purge }
   end
 
+  def purge_image_by_tilesource!(tile_source)
+    if !tile_source.is_a?(String) && tile_source.has_key?("url")
+      tile_source_url = tile_source["url"]
+    else
+      tile_source_url = tile_source
+    end
+    hostname = ENV['HOSTNAME']
+    if tile_source_url.include?(hostname)
+      spl = tile_source_url.split(hostname)
+      tile_source_url = '/' + spl[1]
+    elsif /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url)
+      capt = /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url).captures
+      tile_source_url =  '/' + capt[-1]
+    else
+      spl = tile_source_url.split('/')
+      tile_source_url = '/' + spl[3...(spl.length)].join('/')
+    end
+    self.images.each { |image|
+      url = polymorphic_url(image, :only_path => true)
+      if url == tile_source_url
+        image.purge
+      end
+    }
+  end
+
+  def rename_tile_source!(layer, new_name)
+    tile_source = self.content["tileSources"][layer]
+    if !tile_source.is_a?(String)
+      new_tile_source = tile_source
+      new_tile_source["name"] = new_name
+      self.content["tileSources"][layer] = new_tile_source
+    elsif tile_source.end_with?(".json")
+      self.content["iiifTileNames"].each {|tile_name_obj|
+        if tile_name_obj["url"] == tile_source
+          tile_name_obj["name"] = new_name
+        end
+      }
+    else
+      new_tile_source = {
+        "url" => tile_source,
+        "name" => new_name,
+        "type"=>"image",
+        "useCanvas" => true,
+        "crossOriginPolicy" => false,
+        "ajaxWithCredentials" => false
+      }
+      self.content["tileSources"][layer] = new_tile_source
+    end
+  end
+
   def tree_check
     add_to_tree unless @import_mode
   end
@@ -107,7 +157,25 @@ class Document < Linkable
   end
 
   def image_urls
-    self.images.collect { |image| url_for image }
+    urls = self.images.collect { |image| url_for image }
+    if self[:content] && self[:content]["tileSources"]
+      ordered_urls = []
+      self[:content]["tileSources"].each {|tileSource|
+        if tileSource["url"] && urls.include?(tileSource["url"])
+          ordered_urls.push(tileSource["url"])
+        elsif tileSource && urls.include?(tileSource)
+          ordered_urls.push(tileSource)
+        end
+      }
+      urls.each { |url| 
+        if !ordered_urls.include?(url)
+          ordered_urls.push(url)
+        end
+      }
+      return ordered_urls
+    else
+      return urls
+    end
   end
 
   def image_thumbnail_urls

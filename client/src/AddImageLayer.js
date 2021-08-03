@@ -5,12 +5,13 @@ import ActiveStorageProvider from 'react-activestorage-provider';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 import CircularProgress from 'material-ui/CircularProgress';
+import FlatButton from 'material-ui/FlatButton';
 
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import Error from 'material-ui/svg-icons/alert/error';
 
-import { setAddTileSourceMode, setImageUrl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE } from './modules/canvasEditor';
+import { setAddTileSourceMode, setImageUrl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE, changePage } from './modules/canvasEditor';
 import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
 
 const tileSourceTypeLabels = {};
@@ -37,7 +38,10 @@ class AddImageLayer extends Component {
     const newContent = {};
     if (this.props.content) Object.assign(newContent, this.props.content);
     const existingTileSources = newContent.tileSources || [];
+    const existingIiifTileNames = newContent.iiifTileNames || [];
     const shouldSetThumbnail = existingTileSources.length < 1;
+
+    let iiifTileNames = [];
 
     let newTileSources = [];
     switch (addTileSourceMode) {
@@ -50,9 +54,11 @@ class AddImageLayer extends Component {
           });
           this.props.image_urls.forEach(url => {
             if (!existingImageUrls.includes(url)) {
+              const filename = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
               newTileSources.push({
                 type: 'image',
-                url
+                url,
+                name: filename,
               });
             }
           });
@@ -62,12 +68,15 @@ class AddImageLayer extends Component {
         break;
 
       case IMAGE_URL_SOURCE_TYPE:
+        const url = this.state.newTileSourceValue;
+        const filename = url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.'));
         newTileSources.push({
           type: 'image',
-          url: this.state.newTileSourceValue
+          url,
+          name: filename,
         });
         if (shouldSetThumbnail)
-          imageUrlForThumbnail = this.state.newTileSourceValue;
+          imageUrlForThumbnail = url;
         break;
 
       case IIIF_TILE_SOURCE_TYPE:
@@ -75,6 +84,10 @@ class AddImageLayer extends Component {
         if (shouldSetThumbnail) {
           imageUrlForThumbnail = this.state.newTileSourceValue + '/full/!160,160/0/default.png';
         }
+        iiifTileNames.push({
+          name: 'IIIF layer',
+          url: this.state.newTileSourceValue,
+        });
         break;
 
       default:
@@ -89,12 +102,15 @@ class AddImageLayer extends Component {
     }
 
     newContent.tileSources = existingTileSources.concat(newTileSources);
+    newContent.iiifTileNames = existingIiifTileNames.concat(iiifTileNames);
     this.props.updateDocument(this.props.document_id, {
       content: newContent
+    }, { replaceThisDocument: true });
+
+    this.props.changePage({
+      page: newContent.tileSources.length - 1,
+      editorKey: this.props.editorKey,
     });
-
-    this.props.openTileSource(newContent.tileSources[0])
-
   }
 
   renderUploadButton(buttonStyle,iconStyle) {
@@ -110,7 +126,7 @@ class AddImageLayer extends Component {
             }}
             multiple={true}
             onSubmit={document => {
-              replaceDocument(document);
+              replaceDocument({ ...document, locked_by_me: document.locked ? true : false });
               this.addTileSource(UPLOAD_SOURCE_TYPE);
               this.setState( { ...this.state, uploadErrorMessage: null, uploading: false } );
             }}
@@ -177,7 +193,7 @@ class AddImageLayer extends Component {
   }
 
   render() {
-    const { document_id, writeEnabled, addTileSourceMode } = this.props;
+    const { document_id, writeEnabled, addTileSourceMode, content } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
 
     if( !writeEnabled || !tileSourceMode ) return null;
@@ -237,7 +253,9 @@ class AddImageLayer extends Component {
                 </div> 
             }   
 
-          {/* TODO display cancel only when adding layers <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} /> */}       
+{content.tileSources && content.tileSources.length > 0 && (
+          <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} />     
+)}  
         </div>
     );
   }
@@ -253,7 +271,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   updateDocument,
   setImageUrl,
   setDocumentThumbnail,
-  replaceDocument
+  replaceDocument,
+  changePage,
 }, dispatch);
 
 export default connect(

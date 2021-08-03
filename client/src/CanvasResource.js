@@ -6,7 +6,6 @@ import { fabric } from 'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
 import { openSeaDragonFabricOverlay } from 'openseadragon-fabricjs-overlay/openseadragon-fabricjs-overlay';
 import Slider from 'material-ui/Slider';
 import IconButton from 'material-ui/IconButton';
-
 import PanTool from 'material-ui/svg-icons/action/pan-tool';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
 import CropSquare from 'material-ui/svg-icons/image/crop-square';
@@ -16,13 +15,37 @@ import Edit from 'material-ui/svg-icons/image/edit';
 import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
+import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
+import RemoveFromPhotos from './icons/RemoveFromPhotos';
+import Done from 'material-ui/svg-icons/action/done';
+import Cancel from 'material-ui/svg-icons/navigation/close';
+import { LayerBackward, LayerForward } from 'react-bootstrap-icons';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
-
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
-import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
+import {
+  setCanvasHighlightColor,
+  toggleCanvasColorPicker,
+  setImageUrl,
+  setIsPencilMode,
+  setAddTileSourceMode,
+  UPLOAD_SOURCE_TYPE,
+  setZoomControl,
+  toggleEditLayerName,
+} from './modules/canvasEditor';
+import {
+  addHighlight,
+  updateHighlight,
+  setHighlightThumbnail,
+  openDeleteDialog,
+  CANVAS_HIGHLIGHT_DELETE,
+  moveLayer,
+  CANVAS_LAYER_DELETE,
+  renameLayer,
+} from './modules/documentGrid';
 import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
+import TextField from 'material-ui/TextField';
+import deepEqual from 'deep-equal';
 
 // overlay these modules
 openSeaDragonFabricOverlay(OpenSeadragon, fabric);
@@ -56,12 +79,45 @@ class CanvasResource extends Component {
     super(props);
     this.osdId =`openseadragon-${this.props.document_id}-${Date.now()}`;
     this.osdViewer = null;
+    this.upButton = null;
+    this.downButton = null;
+    this.layerSelect = null;
+    this.imageLayerControls = null;
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
+
+    this.state = {
+      currentPage: 0,
+      layerName: '',
+    };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.content && this.props.content 
+        && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
+      this.openTileSources(this.props.content.tileSources);
+      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      const hasLayerControls = this.osdViewer.controls 
+        && this.osdViewer.controls.find(ctrl => ctrl.element.className === 'image-layer-controls');
+      if (this.hasLayers() && !hasLayerControls) {
+        this.osdViewer.addControl(this.imageLayerControls, {
+          anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
+          autoFade: true,
+        });
+      } else if (!this.hasLayers() && hasLayerControls) {
+        this.osdViewer.removeControl(this.imageLayerControls);
+      }
+    }
+    if (this.layerSelect 
+        && prevProps.content && this.props.content 
+        && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
+      this.refreshLayerSelect(this.props.content.tileSources);
+      this.layerSelect.selectedIndex = this.state.currentPage;
+    }
+    if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
+      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+    }
     if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
       && !this.props.highlightsHidden[this.getInstanceKey()]) {
       this.osdViewer.raiseEvent( 'update-viewport', {} );
@@ -78,15 +134,92 @@ class CanvasResource extends Component {
 
     const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
-      prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
+      prefixUrl: '/images/',
       showNavigationControl: false,
       tileSources: [],
       minZoomImageRatio: minZoomImageRatio,
       maxZoomPixelRatio: maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
       gestureSettingsMouse: { clickToZoom: false },
-      showNavigator: true
+      showNavigator: true,
+      sequenceMode: true,
+      showSequenceControl: false,
+      preserveViewport: true,
     });
+    const hasLayers = this.hasLayers();
+
+    const upButton = this.upButton = new OpenSeadragon.Button({
+      tooltip: "Previous layer",
+      srcRest: "/images/up_rest.png",
+      srcGroup: "/images/up_grouphover.png",
+      srcHover: "/images/up_hover.png",
+      srcDown: "/images/up_pressed.png",
+      onRelease: (e) => {
+        viewer.goToPage(this.state.currentPage - 1);
+        if (this.state && this.state.currentPage <= 0) {
+          e.eventSource.disable();
+        }
+      },
+    });
+    const layerSelect = this.layerSelect = OpenSeadragon.makeNeutralElement('select');
+    layerSelect.style = '';
+    layerSelect.className = 'image-layer-select';
+    layerSelect.name = `${this.getInstanceKey()}-layer-select`;
+    layerSelect.addEventListener('change', () => {
+      viewer.goToPage(layerSelect.value);
+    });
+    
+    if (hasLayers) {
+      content.tileSources.forEach((tileSource, index) => {
+        const opt = OpenSeadragon.makeNeutralElement('option');
+        opt.value = index;
+        opt.label = `${index+1}: ${this.getLayerName(index)}`;
+        layerSelect.appendChild(opt);
+      });
+    }
+
+    const downButton = this.downButton = new OpenSeadragon.Button({
+      tooltip: "Next layer",
+      srcRest: "/images/down_rest.png",
+      srcGroup: "/images/down_grouphover.png",
+      srcHover: "/images/down_hover.png",
+      srcDown: "/images/down_pressed.png",
+      onRelease: (e) => {
+        viewer.goToPage(this.state.currentPage + 1);
+        if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
+          e.eventSource.disable();
+        }
+      },
+    });
+    upButton.disable();
+    if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
+      downButton.disable();
+    }
+
+    const wrapper = this.imageLayerControls = OpenSeadragon.makeNeutralElement('div');
+    wrapper.className = 'image-layer-controls';
+    wrapper.appendChild(upButton.element);
+    wrapper.appendChild(layerSelect);
+    wrapper.appendChild(downButton.element);
+    wrapper.innerTracker = new OpenSeadragon.MouseTracker({
+      element: wrapper,
+      enterHandler: this.onControlsEnter.bind(this),
+      exitHandler: this.onControlsExit.bind(this),
+    });
+    this.osdViewer.imgLayerCtrlsShouldFade = true;
+    this.osdViewer.controlsFadeBeginTime =
+    OpenSeadragon.now() +
+    this.osdViewer.controlsFadeDelay;
+    setTimeout(() => {
+      this.scheduleFade(wrapper);
+    }, this.osdViewer.controlsFadeDelay );
+
+    if (hasLayers) {
+      viewer.addControl(wrapper, {
+        anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
+        autoFade: true,
+      });
+    }
 
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
 
@@ -95,7 +228,7 @@ class CanvasResource extends Component {
     const firstTileSource = tileSources[0];
 
     if (firstTileSource) {
-      imageUrlForThumbnail = this.openTileSource(firstTileSource)
+      imageUrlForThumbnail = this.openTileSources(tileSources)
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
@@ -120,8 +253,31 @@ class CanvasResource extends Component {
       overlay.resizecanvas();
     });
 
-    viewer.addHandler('page', () => {
+    viewer.addHandler('page', (event) => {
+      const pageNumber = parseInt(event.page, 10);
+      if (this.upButton && pageNumber <= 0) {
+        this.upButton.disable();
+      } else if (this.upButton) {
+        this.upButton.enable();
+      }
+      if (this.downButton && !(
+          this.props.content
+          && this.props.content.tileSources
+          && pageNumber !== (this.props.content.tileSources.length-1)
+        )) {
+        this.downButton.disable();
+      } else if (this.downButton) {
+        this.downButton.enable();
+      }
+      if (this.layerSelect) {
+        this.layerSelect.selectedIndex = pageNumber;
+      }
+
       this.markObjectsDirtyNextUpdate = true;
+      this.setState({
+        currentPage: pageNumber,
+        layerName: this.getLayerName(pageNumber),
+      });
     });
 
     viewer.addHandler('open', this.onOpen.bind(this) );
@@ -207,20 +363,27 @@ class CanvasResource extends Component {
     };
   }
 
-  openTileSource(firstTileSource) {
+  openTileSources(tileSources) {
     const key = this.getInstanceKey()
-    let imageUrlForThumbnail
+    let imageUrlForThumbnail;
+    let firstTileSource = tileSources[0];
 
     if (firstTileSource.type === 'image' && firstTileSource.url) {
       imageUrlForThumbnail = firstTileSource.url
       // don't force ssl for localhost
       if( imageUrlForThumbnail.match(/^http:\/\/localhost/) ) {
         this.props.setImageUrl(key, imageUrlForThumbnail);
-        this.osdViewer.open({ type: 'image', url: imageUrlForThumbnail })
+        if (tileSources.length > 1) {
+          const newTileSources = [{ type: 'image', url: imageUrlForThumbnail }, ...tileSources.slice(1)]
+          this.osdViewer.open(newTileSources);
+        } else this.osdViewer.open([{ type: 'image', url: imageUrlForThumbnail }]);
       } else {
         const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
         this.props.setImageUrl(key, tileSourceSSL);
-        this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+        if (tileSources.length > 1) {
+          const newTileSources = [{ type: 'image', url: tileSourceSSL }, ...tileSources.slice(1)]
+          this.osdViewer.open(newTileSources);
+        } else this.osdViewer.open([{ type: 'image', url: tileSourceSSL }]);
       }
     }
     else {
@@ -229,12 +392,67 @@ class CanvasResource extends Component {
       this.props.setImageUrl(key, imageUrlForThumbnail);
       checkTileSource(
         resourceURL,
-        (validResourceURL) => { this.osdViewer.open(validResourceURL) },
+        (validResourceURL) => { 
+          if (tileSources.length > 1) {
+            const newTileSources = [validResourceURL, ...tileSources.slice(1)]
+            this.osdViewer.open(newTileSources);
+          } else this.osdViewer.open([validResourceURL]);
+        },
         (errorResponse) => { console.log( errorResponse ) }
       )
     }
+    this.refreshLayerSelect(tileSources);
 
-    return imageUrlForThumbnail
+    return imageUrlForThumbnail;
+  }
+
+  refreshLayerSelect(tileSources) {
+    while (this.layerSelect.firstChild) {
+      this.layerSelect.removeChild(this.layerSelect.lastChild);
+    }
+    tileSources.forEach((tileSource, index) => {
+      const opt = OpenSeadragon.makeNeutralElement('option');
+      opt.value = index;
+      opt.label = `${index+1}: ${this.getLayerName(index)}`;
+      this.layerSelect.appendChild(opt);
+    });
+  }
+
+  onControlsEnter(e) {
+    this.osdViewer.imgLayerCtrlsShouldFade = false;
+    OpenSeadragon.setElementOpacity(e.eventSource.element, 1.0, true);
+  };
+
+  onControlsExit(e) {
+    this.osdViewer.imgLayerCtrlsShouldFade = true;
+    this.osdViewer.controlsFadeBeginTime =
+        OpenSeadragon.now() +
+        this.osdViewer.controlsFadeDelay;
+    setTimeout(() => {
+      this.scheduleFade(e.eventSource.element);
+    }, this.osdViewer.controlsFadeDelay );
+  }
+
+  scheduleFade(elem) {
+    OpenSeadragon.requestAnimationFrame(() => {
+      this.updateFade(elem);
+    });
+  }
+
+  updateFade(elem) {
+    if ( this.osdViewer.imgLayerCtrlsShouldFade ) {
+      const currentTime = OpenSeadragon.now();
+      const deltaTime = currentTime - this.osdViewer.controlsFadeBeginTime;
+      let opacity = 1.0 - deltaTime / this.osdViewer.controlsFadeLength;
+      opacity = Math.min(1.0, opacity);
+      opacity = Math.max(0.0, opacity);
+      OpenSeadragon.setElementOpacity(elem, opacity, true);
+      if ( opacity > 0 ) {
+        // fade again
+        this.scheduleFade(elem);
+      }
+    }
+
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
@@ -747,6 +965,89 @@ class CanvasResource extends Component {
 
   }
 
+  moveLayerClick(direction) {
+    this.props.moveLayer({
+      documentId: this.props.document_id,
+      origin: this.state.currentPage,
+      direction,
+      editorKey: this.getInstanceKey(),
+    });
+  }
+
+  deleteLayerClick() {
+    this.props.openDeleteDialog(
+      'Deleting layer',
+      `This will delete layer ${this.state.currentPage + 1}, ${this.getLayerName(this.state.currentPage)}, from the stack.`,
+      'Delete layer',
+      {
+        documentId: this.props.document_id,
+        layer: this.state.currentPage,
+        editorKey: this.getInstanceKey(),
+      },
+      CANVAS_LAYER_DELETE
+    );
+  }
+
+  editLayerNameClick() {
+    this.props.toggleEditLayerName({
+      editorKey: this.getInstanceKey(),
+      value: true,
+    });
+    this.setState({
+      layerName: this.getLayerName(this.state.currentPage),
+    })
+  }
+
+  cancelEditLayerName() {
+    this.props.toggleEditLayerName({
+      editorKey: this.getInstanceKey(),
+      value: false,
+    });
+  }
+
+  getLayerName(page) {
+    const { content } = this.props;
+    const currentLayer = content.tileSources[page];
+    let currentLayerName = 'Untitled image layer';
+    if (typeof currentLayer === 'string' && currentLayer.includes('.json')) {
+      if (content.iiifTileNames && content.iiifTileNames.find(tile => tile.url === currentLayer)) {
+        currentLayerName = content.iiifTileNames.find(tile => tile.url === currentLayer).name;
+      } else {
+        currentLayerName = 'IIIF layer';
+      }
+    } else if (typeof currentLayer === 'string' && currentLayer.includes('http')) {
+      const url = currentLayer;
+      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
+    } else if (currentLayer && currentLayer.name) {
+      currentLayerName = currentLayer.name;
+    } else if (currentLayer && currentLayer.url) {
+      const url = currentLayer.url;
+      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
+    }
+    return currentLayerName;
+  }
+
+  onChangeLayerName(event, newValue) {
+    this.setState({
+      layerName: newValue,
+    })
+  }
+
+  submitLayerName(e) {
+    e.preventDefault();
+    const target = e.currentTarget[`layer${this.state.currentPage}-name`];
+    let layerNamePayload = {};
+    if (target && target.value) {
+      layerNamePayload = {
+        documentId: this.props.document_id,
+        layer: this.state.currentPage,
+        name: target.value,
+        editorKey: this.getInstanceKey(),
+      };
+      this.props.renameLayer(layerNamePayload);
+    }
+  }
+
   zoomControlChange(event, value) {
     if (this.osdViewer && this.osdViewer.viewport) {
       const max = this.osdViewer.viewport.getMaxZoom();
@@ -761,8 +1062,34 @@ class CanvasResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
+  hasLayers() {
+    const { content } = this.props;
+    return (
+      content 
+      && content.tileSources 
+      && Array.isArray(content.tileSources) 
+      && content.tileSources.length > 1
+    );
+  }
+
   render() {
-    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, highlightsHidden, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
+    const {
+      loading,
+      document_id,
+      content,
+      image_thumbnail_urls,
+      addTileSourceMode,
+      setAddTileSourceMode,
+      image_urls,
+      highlightsHidden,
+      displayColorPickers,
+      highlightColors,
+      toggleCanvasColorPicker,
+      setCanvasHighlightColor,
+      writeEnabled,
+      lockedByMe,
+      globalCanvasDisplay,
+    } = this.props;
     const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
@@ -781,14 +1108,31 @@ class CanvasResource extends Component {
     const iconBackdropStyleSpaced = Object.assign({}, iconBackdropStyle);
     iconBackdropStyleSpaced.marginLeft = '12px';
 
+    const floatingIconBackdropStyle = {
+      width: '16px',
+      height: '16px',
+      paddingTop: '2px',
+      paddingLeft: '5px',
+    };
+
     const iconStyle = {
       width: '18px',
       height: '18px'
+    };
+
+    const smallIconStyle = {
+      width: '16px',
+      height: '16px',
+    };
+
+    const tooltipStyle = {
+      pointerEvents: 'none',
     }
 
     let editable = ( writeEnabled && lockedByMe );
     const mode = addTileSourceMode[document_id];
     const highlightHidden = !editable && highlightsHidden[key]
+    const hasLayers = this.hasLayers();
 
     if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
@@ -804,6 +1148,9 @@ class CanvasResource extends Component {
         }
       }
     }
+    
+    const currentLayerName = this.getLayerName(this.state.currentPage);
+    const editingLayerName = this.props.editingLayerName[key];
 
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
@@ -821,36 +1168,216 @@ class CanvasResource extends Component {
                 }}
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
-              <IconButton tooltip='Open highlight and navigate image.' onClick={this.panClick.bind(this)} style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Open highlight and navigate image"
+                onClick={this.panClick.bind(this)}
+                style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <PanTool />
               </IconButton>
-              <IconButton tooltip='Select and change highlight shape.' onClick={this.editShapeClick.bind(this)} style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Select and change highlight shape"
+                onClick={this.editShapeClick.bind(this)}
+                style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <CropFree />
               </IconButton>
-              <IconButton tooltip='Draw rectangular shapes.' onClick={this.rectClick.bind(this)} style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw rectangular shapes"
+                onClick={this.rectClick.bind(this)}
+                style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <CropSquare />
               </IconButton>
-              <IconButton tooltip='Draw circular shapes.' onClick={this.circleClick.bind(this)} style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw circular shapes"
+                onClick={this.circleClick.bind(this)}
+                style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <PanoramaFishEye />
               </IconButton>
-              <IconButton tooltip='Add markers.' onClick={this.markerClick.bind(this)} style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Add markers"
+                onClick={this.markerClick.bind(this)}
+                style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <Place />
               </IconButton>
-              <IconButton tooltip='Enter free drawing mode.' onClick={this.pencilClick.bind(this)} style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Enter free drawing mode"
+                onClick={this.pencilClick.bind(this)}
+                style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <Edit />
               </IconButton>
-              <IconButton tooltip='Draw lines.' onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw lines"
+                onClick={this.lineClick.bind(this)}
+                style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <ShowChart />
               </IconButton>
-              <IconButton tooltip='Change the color of a shape.' onClick={this.colorizeClick.bind(this)} style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Change the color of a shape"
+                onClick={this.colorizeClick.bind(this)}
+                style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <Colorize />
               </IconButton>
-              <IconButton tooltip='Delete selected highlight.' onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Delete selected highlight"
+                onClick={this.deleteHighlightClick.bind(this)}
+                style={iconBackdropStyleSpaced}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <DeleteForever />
               </IconButton>
-              {/* <IconButton tooltip='Add more layers to image.' onClick={() => {setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);}} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Add more layers to image"
+                onClick={() => setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE)}
+                style={iconBackdropStyleSpaced}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <AddToPhotos />
-              </IconButton> */}
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || (this.state && this.state.currentPage === 0) || loading}
+                tooltip="Move layer up"
+                onClick={() => this.moveLayerClick(-1)}
+                style={iconBackdropStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <LayerForward size={16} />
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || !(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1) || loading}
+                tooltip="Move layer down"
+                onClick={() => this.moveLayerClick(1)}
+                style={iconBackdropStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <LayerBackward size={16} />
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || loading}
+                tooltip="Delete layer"
+                onClick={this.deleteLayerClick.bind(this)}
+                style={iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <RemoveFromPhotos />
+              </IconButton>
+              {hasLayers && (
+                <form 
+                  className="tile-name-form"
+                  onSubmit={this.submitLayerName.bind(this)}
+                  style={editingLayerName ? {} : { overflow: 'hidden' }}
+                >
+                  <div
+                    className="current-tile"
+                    style={editingLayerName ? {} : { overflow: 'hidden' }}
+                  >
+                    <span className="current-tile-page">
+                      {this.state.currentPage+1}
+                    </span>
+                    <span className="current-tile-name">
+                      {`: ${!editingLayerName ? currentLayerName : ''}`}
+                    </span>
+                  </div>
+                  {editingLayerName && (
+                    <TextField
+                      name={`layer${this.state.currentPage}-name`}
+                      disabled={loading}
+                      value={this.state.layerName}
+                      inputStyle={{
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        paddingLeft: '5px',
+                        flex: '1 1 auto',
+                      }}
+                      style={{
+                        overflow: 'hidden',
+                        borderBottom: '1px solid white',
+                        height: '24px',
+                        width: 'auto',
+                        flex: '1 1 auto',
+                        maxWidth: '100%',
+                      }}
+                      underlineShow={false}
+                      autoComplete='off'
+                      onChange={this.onChangeLayerName.bind(this)}
+                    />
+                  )}
+                  {!editingLayerName && (
+                    <IconButton
+                      disabled={loading}
+                      tooltip="Edit layer name"
+                      type="button"
+                      onClick={this.editLayerNameClick.bind(this)}
+                      style={{ width: '16px', height: 'auto', paddingLeft: '2px' }}
+                      iconStyle={smallIconStyle}
+                      tooltipStyles={tooltipStyle}
+                    >
+                      <Edit color="white" />
+                    </IconButton>
+                  )}
+                  {editingLayerName && (
+                    <>
+                      <IconButton
+                        disabled={loading}
+                        tooltip="Save"
+                        type="submit"
+                        style={floatingIconBackdropStyle}
+                        iconStyle={smallIconStyle}
+                        tooltipStyles={tooltipStyle}
+                      >
+                        <Done color="green" />
+                      </IconButton>
+                      <IconButton
+                        disabled={loading}
+                        tooltip="Cancel"
+                        type="button"
+                        onClick={this.cancelEditLayerName.bind(this)}
+                        style={floatingIconBackdropStyle}
+                        iconStyle={smallIconStyle}
+                        tooltipStyles={tooltipStyle}
+                      >
+                        <Cancel color="red" />
+                      </IconButton>
+                    </>
+                  )}
+                </form>
+              )}
+
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
@@ -865,7 +1392,7 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
-          openTileSource={this.openTileSource.bind(this)}
+          openTileSources={this.openTileSources.bind(this)}
         />
       </div>
     );
@@ -880,7 +1407,10 @@ const mapStateToProps = state => ({
   imageURLs: state.canvasEditor.imageURLs,
   isPencilMode: state.canvasEditor.isPencilMode,
   zoomControls: state.canvasEditor.zoomControls,
-  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay
+  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay,
+  pageToChange: state.canvasEditor.pageToChange,
+  loading: state.documentGrid.loading,
+  editingLayerName: state.canvasEditor.editingLayerName,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -893,7 +1423,10 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   toggleCanvasColorPicker,
   setIsPencilMode,
   setZoomControl,
-  openDeleteDialog
+  openDeleteDialog,
+  moveLayer,
+  renameLayer,
+  toggleEditLayerName,
 }, dispatch);
 
 export default connect(

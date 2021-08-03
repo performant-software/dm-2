@@ -153,7 +153,6 @@ class DocumentViewer extends Component {
               style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
               autoComplete='off'
               inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
-              defaultValue={this.props.resourceName}
               value={this.state.resourceName}
               underlineShow={false}
               onChange={this.onChangeTitle}
