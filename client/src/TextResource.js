@@ -147,7 +147,6 @@ class TextResource extends Component {
   }
 
   createEditorState() {
-    const document_id = this.props.document_id;
     const dmSchema = this.state.documentSchema;
 
     let plugins = exampleSetup({
@@ -435,7 +434,6 @@ class TextResource extends Component {
     const { document_id } = this.props;
     let alteredHighlights = [];
     let effectedMarks = [];
-    let possibleNewMarks = [];
     const editorState = this.getEditorState();
     steps.forEach(step => {
       // save new highlight
