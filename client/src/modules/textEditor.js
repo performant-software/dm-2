@@ -11,7 +11,6 @@ const initialState = {
   editorStates: {},
   highlightColors: {},
   displayColorPickers: {},
-  loading: false,
   errored: false,
   highlightSelectModes: {},
   selectedHighlights: {},

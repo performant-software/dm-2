@@ -9,6 +9,7 @@ import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import CircularProgress from 'material-ui/CircularProgress';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 
 import IconButton from 'material-ui/IconButton';
@@ -541,12 +542,13 @@ class TextResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
-  renderDropDownMenu() {
+  renderDropDownMenu(loading) {
     return (
       <DropDownMenu
         value={fontSize['normal']}
         onChange={this.onFontSizeChange.bind(this)}
         autoWidth={false}
+        disabled={loading}
       >
         <MenuItem value={fontSize['small']} primaryText="Small" />
         <MenuItem value={fontSize['normal']} primaryText="Normal" />
@@ -557,7 +559,15 @@ class TextResource extends Component {
   }
 
   renderToolbar() {
-    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, highlightSelectModes, selectedHighlights } = this.props;
+    const { 
+      highlightColors,
+      displayColorPickers,
+      setTextHighlightColor,
+      toggleTextColorPicker,
+      highlightSelectModes,
+      selectedHighlights,
+      loading
+    } = this.props;
 
     if( !this.isEditable() ) return <div></div>;
     const instanceKey = this.getInstanceKey();
@@ -583,38 +593,68 @@ class TextResource extends Component {
             }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
           />
-          <IconButton onClick={this.onHighlight} tooltip='Highlight a passage of text.'>
+          <IconButton
+            onClick={this.onHighlight}
+            tooltip='Highlight a passage of text.'
+            disabled={loading}
+          >
             <BorderColor />
           </IconButton>
-          <IconButton onClick={this.onBold} tooltip='Bold selected text.'>
+          <IconButton
+            onClick={this.onBold}
+            tooltip='Bold selected text.'
+            disabled={loading}
+          >
             <FormatBold />
           </IconButton>
-          <IconButton onClick={this.onItalic} tooltip='Italicize selected text.'>
+          <IconButton
+            onClick={this.onItalic}
+            tooltip='Italicize selected text.'
+            disabled={loading}
+          >
             <FormatItalic />
           </IconButton>
-          <IconButton onClick={this.onUnderline} tooltip='Underline selected text.'>
+          <IconButton
+            onClick={this.onUnderline}
+            tooltip='Underline selected text.'  
+            disabled={loading}
+          >
             <FormatUnderlined />
           </IconButton>
-          { this.renderDropDownMenu() }
-          <IconButton onClick={this.onHyperLink} tooltip='Create a hyperlink.'>
+          { this.renderDropDownMenu(loading) }
+          <IconButton
+            onClick={this.onHyperLink}
+            tooltip='Create a hyperlink.'
+            disabled={loading}
+          >
             <InsertLink />
           </IconButton>
-          <IconButton onClick={this.onBulletList.bind(this)} tooltip='Create a bulleted list.'>
+          <IconButton
+            onClick={this.onBulletList.bind(this)}
+            tooltip='Create a bulleted list.'  
+            disabled={loading}
+          >
             <FormatListBulleted />
           </IconButton>
-          <IconButton onClick={this.onOrderedList.bind(this)} tooltip='Create a numbered list.'>
+          <IconButton
+            onClick={this.onOrderedList.bind(this)}
+            tooltip='Create a numbered list.'
+            disabled={loading}
+          >
             <FormatListNumbered />
           </IconButton>
           <IconButton
             style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
-            onClick={this.onHighlightSelectMode.bind(this)} tooltip='Select a highlight.'
+            onClick={this.onHighlightSelectMode.bind(this)}
+            tooltip='Select a highlight.'
+            disabled={loading}
           >
             <CropFree />
           </IconButton>
           <IconButton
             onClick={this.onDeleteHighlight.bind(this)}
             tooltip='Delete selected highlight.'
-            disabled={!selectedHighlights[instanceKey]}
+            disabled={!selectedHighlights[instanceKey] || loading}
           >
             <DeleteForever />
           </IconButton>
@@ -675,14 +715,19 @@ class TextResource extends Component {
   }
 
   render() {
-    const editorViewWrapperStyle = {
-      flexGrow: '1', display: 'flex', flexDirection: 'column', overflowY: 'scroll', overflowX: 'hidden'
-    };
-
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
-        <div className="editorview-wrapper" style={editorViewWrapperStyle}>
+        <div className="editorview-wrapper">
+          {this.props.loading && this.isEditable() && (
+            <div className="editorview-loading-indicator">
+              <CircularProgress
+                size={100}
+                thickness={10}
+                color="white"
+              />
+            </div>
+          )}
           <ProseMirrorEditorView
             editorView={this.state.editorView}
             createEditorView={this.createEditorView}

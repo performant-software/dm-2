@@ -180,10 +180,20 @@ class DocumentViewer extends Component {
   }
 
   renderStatusBar() {
-    const { document_kind, document_id, locked, lockedByMe, lockedByUserName, resourceName, writeEnabled } = this.props;
+    const {
+      document_kind,
+      document_id,
+      loading,
+      locked,
+      lockedByMe,
+      lockedByUserName,
+      resourceName,
+      writeEnabled
+    } = this.props;
 
     return (
-      <DocumentStatusBar 
+      <DocumentStatusBar
+        loading={loading}
         document_id={document_id}
         document_kind={document_kind}
         instanceKey={this.getInstanceKey()}
@@ -250,6 +260,7 @@ DocumentViewer = DragSource(
 
 const mapStateToProps = (state, ownProps) => ({
   openDocuments: state.documentGrid.openDocuments,
+  loading: state.documentGrid.loading,
   currentLayout: layoutOptions[state.documentGrid.currentLayout],
   sidebarWidth:  state.project.sidebarWidth,
   highlightsHidden: ownProps.document_kind === 'canvas' ? state.canvasEditor.highlightsHidden : state.textEditor.highlightsHidden,

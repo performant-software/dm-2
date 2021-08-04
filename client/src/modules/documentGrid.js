@@ -87,17 +87,25 @@ export default function(state = initialState, action) {
   switch (action.type) {
     case OPEN_DOCUMENT:
     case ADD_HIGHLIGHT:
-    case DELETE_HIGHLIGHT:
-    case UPDATE_HIGHLIGHT:
-    case DUPLICATE_HIGHLIGHTS:
-    case UPDATE_DOCUMENT:
       return {
         ...state,
         loading: true
       };
-
+    case DELETE_HIGHLIGHT:
+    case UPDATE_HIGHLIGHT:
+    case DUPLICATE_HIGHLIGHTS:
+      return {
+        ...state,
+        loading: true
+      };
+    case UPDATE_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
+      return {
+        ...state,
+        loading: true
+      }
+
     case MOVE_DOCUMENT:
       return {
         ...state,
@@ -126,7 +134,7 @@ export default function(state = initialState, action) {
     case DELETE_HIGHLIGHT_ERRORED:
     case UPDATE_HIGHLIGHT_ERRORED:
     case DUPLICATE_HIGHLIGHTS_ERRORED:
-      console.log('document/highlight error!');
+      console.log('duplicate highlight error!');
       return {
         ...state,
         loading: false,
@@ -176,7 +184,6 @@ export default function(state = initialState, action) {
       });
       return {
         ...state,
-        loading: false,
         openDocuments: preRefreshDocumentsCopy
       };
     
@@ -213,7 +220,8 @@ export default function(state = initialState, action) {
       const openDocuments = state.openDocuments.filter( openDocument => ( openDocument.id.toString() !== targetID ) )
       return {
         ...state,
-        openDocuments
+        openDocuments,
+        loading: false,
       };
 
     case CLEAR_RESOURCES:
@@ -260,7 +268,8 @@ export default function(state = initialState, action) {
       });
       return {
         ...state,
-        openDocuments: duplicatesUpdatedOpenDocuments
+        openDocuments: duplicatesUpdatedOpenDocuments,
+        loading: false,
       }
 
     case UPDATE_HIGHLIGHT_SUCCESS:
