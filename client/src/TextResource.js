@@ -15,6 +15,7 @@ import IconButton from 'material-ui/IconButton';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
 import FormatItalic from 'material-ui/svg-icons/editor/format-italic';
 import FormatUnderlined from 'material-ui/svg-icons/editor/format-underlined';
+import FormatStrikethrough from 'material-ui/svg-icons/editor/format-strikethrough';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
@@ -263,6 +264,13 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onStrikethrough = (e) => {
+    e.preventDefault();
+    const markType = this.state.documentSchema.marks.strikethrough;
+    const editorState = this.getEditorState();
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
 
   // markActive(state, type) {
   //   let {from, $from, to, empty} = state.selection
@@ -598,37 +606,40 @@ class TextResource extends Component {
             }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
           />
-          <IconButton onMouseDown={this.onHighlight.bind(this)} tooltip='Highlight a passage of text.'>
+          <IconButton onMouseDown={this.onHighlight.bind(this)} tooltip="Create a highlight">
             <BorderColor />
           </IconButton>
-          <IconButton onMouseDown={this.onBold.bind(this)} tooltip='Bold selected text.'>
+          <IconButton onMouseDown={this.onBold.bind(this)} tooltip="Bold">
             <FormatBold />
           </IconButton>
-          <IconButton onMouseDown={this.onItalic.bind(this)} tooltip='Italicize selected text.'>
+          <IconButton onMouseDown={this.onItalic.bind(this)} tooltip="Italicize">
             <FormatItalic />
           </IconButton>
-          <IconButton onMouseDown={this.onUnderline.bind(this)} tooltip='Underline selected text.'>
+          <IconButton onMouseDown={this.onUnderline.bind(this)} tooltip="Underline">
             <FormatUnderlined />
           </IconButton>
+          <IconButton onMouseDown={this.onStrikethrough.bind(this)} tooltip="Strikethrough">
+            <FormatStrikethrough />
+          </IconButton>
           { this.renderDropDownMenu() }
-          <IconButton onMouseDown={this.onHyperLink.bind(this)} tooltip='Create a hyperlink.'>
+          <IconButton onMouseDown={this.onHyperLink.bind(this)} tooltip="Hyperlink">
             <InsertLink />
           </IconButton>
-          <IconButton onMouseDown={this.onBulletList.bind(this)} tooltip='Create a bulleted list.'>
+          <IconButton onMouseDown={this.onBulletList.bind(this)} tooltip="Bulleted list">
             <FormatListBulleted />
           </IconButton>
-          <IconButton onMouseDown={this.onOrderedList.bind(this)} tooltip='Create a numbered list.'>
+          <IconButton onMouseDown={this.onOrderedList.bind(this)} tooltip="Numbered list">
             <FormatListNumbered />
           </IconButton>
           <IconButton
             style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
-            onMouseDown={this.onHighlightSelectMode.bind(this)} tooltip='Select a highlight.'
+            onMouseDown={this.onHighlightSelectMode.bind(this)} tooltip="Select a highlight"
           >
             <CropFree />
           </IconButton>
           <IconButton
             onMouseDown={this.onDeleteHighlight.bind(this)}
-            tooltip='Delete selected highlight.'
+            tooltip="Delete selected highlight"
             disabled={!selectedHighlights[instanceKey]}
           >
             <DeleteForever />

@@ -136,6 +136,11 @@ export const marks = {
     toDOM() { return ["u", 0] }
   },
 
+  strikethrough: {
+    parseDOM: [{tag: "s"}],
+    toDOM() { return ["s", 0] }
+  },
+
   // TODO how to migrate old mark types to new ones?
   fontSize: {
     attrs: {fontSize: {default: 'normal'}},
