@@ -57,25 +57,27 @@ class HighlightsController < ApplicationController
 
     new_highlights = highlight_entries.collect{ |entry|
       highlight = Highlight.where(uid: entry[:highlightUid], document_id: entry[:documentId]).first
-      if highlight.uid.include?("text_highlight")
-        new_attributes = highlight.attributes.merge({
-          'uid' => entry[:newHighlightUid],
-          'target' => entry[:newHighlightUid], 
-          'document_id' => new_document_id
-        })
-      else
-        new_attributes = highlight.attributes.merge({
-          'uid' => entry[:newHighlightUid], 
-          'document_id' => new_document_id
-        })
+      if !highlight.nil?
+        if highlight.uid.include?("text_highlight")
+          new_attributes = highlight.attributes.merge({
+            'uid' => entry[:newHighlightUid],
+            'target' => entry[:newHighlightUid], 
+            'document_id' => new_document_id
+          })
+        else
+          new_attributes = highlight.attributes.merge({
+            'uid' => entry[:newHighlightUid], 
+            'document_id' => new_document_id
+          })
+        end
+        new_attributes.delete('id')
+        new_highlight = Highlight.create new_attributes
+        all_links = highlight.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| Link.where(:id => hll.link_id).first }
+        all_links.each do |linkable|
+          new_highlight.add_link_from_duplication(linkable, highlight[:id])
+        end
+        new_highlight
       end
-      new_attributes.delete('id')
-      new_highlight = Highlight.create new_attributes
-      all_links = highlight.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| Link.where(:id => hll.link_id).first }
-      all_links.each do |linkable|
-        new_highlight.add_link_from_duplication(linkable, highlight[:id])
-      end
-      new_highlight
     }
 
     render json: new_highlights
