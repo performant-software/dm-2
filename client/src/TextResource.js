@@ -159,8 +159,9 @@ class TextResource extends Component {
       columnResizing(),
       tableEditing(),
       keymap({
-        "Mod-z": undo, 
-        "Mod-y": redo, 
+        "Mod-z": undo,
+        "Mod-y": redo,
+        "Mod-u": this.onUnderlineByKey.bind(this),
         "Tab": goToNextCell(1),
         "Shift-Tab": goToNextCell(-1)
       })
@@ -244,6 +245,12 @@ class TextResource extends Component {
     e.preventDefault();
     const markType = this.state.documentSchema.marks.em;
     const editorState = this.getEditorState();
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onUnderlineByKey = (editorState) => {
+    const markType = this.state.documentSchema.marks.underline;
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
