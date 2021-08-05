@@ -71,6 +71,7 @@ const initialState = {
   layout: DEFAULT_LAYOUT,
   openDocuments: [],
   loading: false,
+  highlightsLoading: false,
   errored: false,
   deleteDialogOpen: false,
   deleteDialogTitle: 'Confirm Delete',
@@ -85,11 +86,16 @@ const initialState = {
 
 export default function(state = initialState, action) {
   switch (action.type) {
-    case OPEN_DOCUMENT:
     case ADD_HIGHLIGHT:
     case DELETE_HIGHLIGHT:
     case UPDATE_HIGHLIGHT:
     case DUPLICATE_HIGHLIGHTS:
+      return {
+        ...state,
+        highlightsLoading: true,
+        loading: true
+      }
+    case OPEN_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
     case MOVE_DOCUMENT:
@@ -120,14 +126,25 @@ export default function(state = initialState, action) {
     case PATCH_ERRORED:
     case POST_ERRORED:
     case DELETE_ERRORED:
-    case DELETE_HIGHLIGHT_ERRORED:
-    case UPDATE_HIGHLIGHT_ERRORED:
-    case DUPLICATE_HIGHLIGHTS_ERRORED:
-      console.log('document/highlight error!');
+      console.log('document error');
       console.log(action.type);
       return {
         ...state,
         loading: false,
+        errored: true
+      }
+
+    
+    case DELETE_HIGHLIGHT_ERRORED:
+    case UPDATE_HIGHLIGHT_ERRORED:
+    case DUPLICATE_HIGHLIGHTS_ERRORED:
+    case ADD_HIGHLIGHT_ERRORED:
+      console.log('highlight error');
+      console.log(action.type);
+      return {
+        ...state,
+        loading: false,
+        highlightsLoading: false,
         errored: true
       }
 
@@ -178,6 +195,7 @@ export default function(state = initialState, action) {
     
     case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
+      console.log(action.type);
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
         if (+document.id === +action.document.id) {
@@ -187,7 +205,7 @@ export default function(state = initialState, action) {
       });
       return {
         ...state,
-        loading: false,
+        loading: state.highlightsLoading,
         openDocuments: preReplaceDocumentsCopy
       };
 
@@ -237,7 +255,8 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: updatedopenDocuments,
-        loading: false
+        loading: false,
+        highlightsLoading: false,
       }
 
     case DUPLICATE_HIGHLIGHTS_SUCCESS:
@@ -260,6 +279,7 @@ export default function(state = initialState, action) {
         ...state,
         openDocuments: duplicatesUpdatedOpenDocuments,
         loading: false,
+        highlightsLoading: false,
       }
 
     case UPDATE_HIGHLIGHT_SUCCESS:
@@ -274,12 +294,14 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: hUpdatedOpenDocuments,
+        highlightsLoading: false,
         loading: false
       }
 
     case DELETE_HIGHLIGHT_SUCCESS:
       return {
         ...state,
+        highlightsLoading: false,
         loading: false
       }
 
