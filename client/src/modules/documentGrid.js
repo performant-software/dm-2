@@ -87,30 +87,19 @@ export default function(state = initialState, action) {
   switch (action.type) {
     case OPEN_DOCUMENT:
     case ADD_HIGHLIGHT:
-      return {
-        ...state,
-        loading: true
-      };
     case DELETE_HIGHLIGHT:
     case UPDATE_HIGHLIGHT:
     case DUPLICATE_HIGHLIGHTS:
-      return {
-        ...state,
-        loading: true
-      };
-    case UPDATE_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
-      return {
-        ...state,
-        loading: true
-      }
-
     case MOVE_DOCUMENT:
       return {
         ...state,
         loading: true
       }
+
+    case UPDATE_DOCUMENT:
+      return state
 
     case OPEN_DOCUMENT_SUCCESS:
     case POST_SUCCESS:
@@ -134,7 +123,8 @@ export default function(state = initialState, action) {
     case DELETE_HIGHLIGHT_ERRORED:
     case UPDATE_HIGHLIGHT_ERRORED:
     case DUPLICATE_HIGHLIGHTS_ERRORED:
-      console.log('duplicate highlight error!');
+      console.log('document/highlight error!');
+      console.log(action.type);
       return {
         ...state,
         loading: false,
@@ -171,7 +161,6 @@ export default function(state = initialState, action) {
       }
     }
 
-    case PATCH_SUCCESS:
     case REFRESH_DOCUMENTS:
       let preRefreshDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
@@ -187,6 +176,7 @@ export default function(state = initialState, action) {
         openDocuments: preRefreshDocumentsCopy
       };
     
+    case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
