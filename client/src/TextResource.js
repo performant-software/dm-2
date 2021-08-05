@@ -74,6 +74,7 @@ class TextResource extends Component {
       editorView: null,
       documentSchema: this.createDocumentSchema(),
       targetHighlights: [],
+      currentScrollTop: 0,
       ...this.initialLinkDialogState
     };
   }
@@ -84,6 +85,12 @@ class TextResource extends Component {
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
+    }
+  }
+
+  onScrollChange (node) {
+    if (node !== null && node.scrollTop !== this.state.currentScrollTop) {
+      this.setState({ currentScrollTop: node.scrollTop });
     }
   }
 
@@ -335,7 +342,7 @@ class TextResource extends Component {
         state: editorState,
         dispatchTransaction: this.dispatchTransaction,
         handlePaste: this.handlePaste,
-        editable: this.isEditable
+        editable: () => this.isEditable() && !this.props.loading,
       });
 
       let targetHighlight = null;
@@ -718,9 +725,17 @@ class TextResource extends Component {
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
-        <div className="editorview-wrapper">
+        <div
+          ref={this.onScrollChange.bind(this)}
+          className="editorview-wrapper" 
+          style={{
+            overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',
+          }}
+        >
           {this.props.loading && this.isEditable() && (
-            <div className="editorview-loading-indicator">
+            <div className="editorview-loading-indicator" style={{
+              top: this.state.currentScrollTop
+            }}>
               <CircularProgress
                 size={100}
                 thickness={10}
