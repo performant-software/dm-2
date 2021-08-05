@@ -67,11 +67,11 @@ class LinkInspectorPopup extends Component {
     this.setState( {...this.state, titleHasFocus: false })
   }
 
-  renderTitle(titleBarColor) {
+  renderTitle(titleBarColor, canEditTitle) {
     const titleBarID = `highlight-title-${this.props.target.uid}`
 
     if( this.props.target.highlight_id ) {
-      if( this.state.titleHasFocus && !this.props.rollover ) {
+      if( canEditTitle && this.state.titleHasFocus && !this.props.rollover ) {
         return (
           <span>
             <TextField
@@ -93,7 +93,7 @@ class LinkInspectorPopup extends Component {
         )    
       } else {
         return(
-          <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: 'black' }} onDoubleClick={this.onTitleFocus.bind(this)}>
+          <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: 'black' }} onDoubleClick={canEditTitle ? this.onTitleFocus.bind(this) : () => {}}>
             {this.state.titleBuffer}
           </span>        
         )  
@@ -127,8 +127,14 @@ class LinkInspectorPopup extends Component {
     const linkInspectorVisible = (writeEnabled && !rollover) || (this.props.target.links_to && this.props.target.links_to.length > 0) 
     const linkInspectorProps = { ...this.props, writeEnabled: writeEnabled && !rollover, adminEnabled }
 
+    const canEditTitle = this.props.writeEnabled && (this.props.target.document_id 
+      ? this.props.openDocuments.some(
+          openDoc => openDoc.id === this.props.target.document_id && openDoc.locked === true
+        )
+      : true);
+
     return (
-      <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={this.state.titleHasFocus || this.props.rollover} >
+      <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={(this.state.titleHasFocus && canEditTitle) || this.props.rollover} >
         <Paper 
           id={this.getInnerID()} 
           zDepth={4} 
@@ -137,7 +143,7 @@ class LinkInspectorPopup extends Component {
           <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
             <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
               <ModeComment style={linkIconStyle}/> 
-              { this.renderTitle(titleBarColor) }      
+              { this.renderTitle(titleBarColor, canEditTitle) }      
             </Subheader>
               <IconButton
               iconStyle={{width: '16px', height: '16px' }}
