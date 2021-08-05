@@ -72,9 +72,9 @@ class HighlightsController < ApplicationController
         end
         new_attributes.delete('id')
         new_highlight = Highlight.create new_attributes
-        all_links = highlight.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| Link.where(:id => hll.link_id).first }
-        all_links.each do |linkable|
-          new_highlight.add_link_from_duplication(linkable, highlight[:id])
+        all_links = highlight.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| { :link => Link.where(:id => hll.link_id).first, :position => hll.position } }
+        all_links.each do |linkable_obj|
+          new_highlight.add_link_from_duplication(linkable_obj[:link], highlight[:id], linkable_obj[:position])
         end
         new_highlight
       end

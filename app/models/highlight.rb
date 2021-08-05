@@ -23,7 +23,7 @@ class Highlight < Linkable
     self.id
   end
 
-  def add_link_from_duplication(linked, original_id)
+  def add_link_from_duplication(linked, original_id, position)
     unless self.links_to.include? linked
       if (linked.linkable_a_id == original_id)
         # linkable_a is the highlight to duplicate
@@ -49,6 +49,7 @@ class Highlight < Linkable
         link.highlights_links.create(
           :link_id => link[:id], 
           :highlight_id => self.id,
+          :position => position,
         )
       end
     end
