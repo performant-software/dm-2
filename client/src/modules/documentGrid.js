@@ -56,6 +56,9 @@ export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
 export const MOVE_DOCUMENT_WINDOW = 'document_grid/MOVE_DOCUMENT_WINDOW';
 export const CANVAS_LAYER_DELETE = 'document_grid/CANVAS_LAYER_DELETE';
 export const REFRESH_DOCUMENTS = 'document_grid/REFRESH_DOCUMENTS';
+export const GET_CURRENT_DOC_CONTENT = 'document_grid/GET_CURRENT_DOC_CONTENT';
+export const GET_CURRENT_DOC_CONTENT_SUCCESS = 'document_grid/GET_CURRENT_DOC_CONTENT_SUCCESS';
+export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CONTENT_ERRORED';
 
 
 export const layoutOptions = [
@@ -88,12 +91,17 @@ export default function(state = initialState, action) {
   switch (action.type) {
     case ADD_HIGHLIGHT:
     case DELETE_HIGHLIGHT:
-    case UPDATE_HIGHLIGHT:
     case DUPLICATE_HIGHLIGHTS:
       return {
         ...state,
         highlightsLoading: true,
         loading: true
+      }
+    case UPDATE_HIGHLIGHT:
+      return {
+        ...state,
+        highlightsLoading: action.shouldStartLoading,
+        loading: action.shouldStartLoading
       }
     case OPEN_DOCUMENT:
     case NEW_DOCUMENT:
@@ -195,14 +203,15 @@ export default function(state = initialState, action) {
     
     case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
-      console.log(action.type);
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
-      state.openDocuments.forEach((document, index) => {
-        if (+document.id === +action.document.id) {
-          const { timeOpened } = document;
-          preReplaceDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
-        }
-      });
+      if (!action.shouldSkipReplacement) {
+        state.openDocuments.forEach((document, index) => {
+          if (+document.id === +action.document.id) {
+            const { timeOpened } = document;
+            preReplaceDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
+          }
+        });
+      }
       return {
         ...state,
         loading: state.highlightsLoading,
@@ -501,7 +510,8 @@ export function deleteHighlights(highlights = []) {
 export function updateHighlight(id, attributes) {
   return function(dispatch, getState) {
     dispatch({
-      type: UPDATE_HIGHLIGHT
+      type: UPDATE_HIGHLIGHT,
+      shouldStartLoading: !Object.prototype.hasOwnProperty.call(attributes, 'excerpt'),
     });
 
     return fetch(`/highlights/${id}`, {
@@ -525,6 +535,9 @@ export function updateHighlight(id, attributes) {
     })
     .then(response => response.json())
     .then(highlight => {
+      if (!Object.prototype.hasOwnProperty.call(attributes, 'excerpt')) {
+        dispatch(refreshCurrentDocContent(highlight.document_id));
+      }
       dispatch({
         type: UPDATE_HIGHLIGHT_SUCCESS,
         color: highlight.color,
@@ -753,7 +766,8 @@ export function updateDocument(documentId, attributes, options) {
     .then(document => {
       dispatch({
         type: PATCH_SUCCESS,
-        document
+        document,
+        shouldSkipReplacement: (!!options && !!options.refreshDocumentContent && !!options.timeOpened),
       });
       if (options && options.adjustLock) {
         dispatch({
@@ -1323,4 +1337,36 @@ export function renameLayer({ documentId, layer, name, editorKey }) {
       type: PATCH_ERRORED
     }));
   }
+}
+
+export function refreshCurrentDocContent(documentId) {
+  return function(dispatch) {
+    dispatch({
+      type: GET_CURRENT_DOC_CONTENT
+    });
+
+    fetch(`/documents/${documentId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => dispatch({
+      type: REPLACE_DOCUMENT,
+      document,
+    }))
+    .catch(() => dispatch({
+      type: GET_CURRENT_DOC_CONTENT_ERRORED
+    }));
+  };
 }
