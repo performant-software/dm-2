@@ -94,9 +94,11 @@ class CanvasResource extends Component {
     };
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (prevProps.content && this.props.content 
-        && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
+        && this.props.content.tileSources && this.props.content.tileSources[0]
+        && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources))
+    {
       this.openTileSources(this.props.content.tileSources);
       if (this.props.content.tileSources.length !== prevProps.content.tileSources.length) {
         this.osdViewer.goToPage(0);
@@ -115,7 +117,7 @@ class CanvasResource extends Component {
       }
     }
     if (this.layerSelect 
-        && prevProps.content && this.props.content 
+        && prevProps.content && this.props.content  && this.props.content.tileSources
         && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
       this.refreshLayerSelect(this.props.content.tileSources);
     }
@@ -355,10 +357,10 @@ class CanvasResource extends Component {
 
   openTileSources(tileSources) {
     const key = this.getInstanceKey()
-    let imageUrlForThumbnail;
+    let imageUrlForThumbnail = '';
     let firstTileSource = tileSources[0];
 
-    if (firstTileSource.type === 'image' && firstTileSource.url) {
+    if (firstTileSource && firstTileSource.type === 'image' && firstTileSource.url) {
       imageUrlForThumbnail = firstTileSource.url
       // don't force ssl for localhost
       if( imageUrlForThumbnail.match(/^http:\/\/localhost/) ) {
@@ -376,7 +378,7 @@ class CanvasResource extends Component {
         } else this.osdViewer.open([{ type: 'image', url: tileSourceSSL }]);
       }
     }
-    else {
+    else if (firstTileSource) {
       let resourceURL = firstTileSource.replace('http:', 'https:')
       imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png'
       this.props.setImageUrl(key, imageUrlForThumbnail);
@@ -397,17 +399,19 @@ class CanvasResource extends Component {
   }
 
   refreshLayerSelect(tileSources) {
-    const selected = this.layerSelect.selectedIndex;
-    while (this.layerSelect.firstChild) {
-      this.layerSelect.removeChild(this.layerSelect.lastChild);
+    if (this.layerSelect) {
+      const selected = this.layerSelect.selectedIndex;
+      while (this.layerSelect.firstChild) {
+        this.layerSelect.removeChild(this.layerSelect.lastChild);
+      }
+      tileSources.forEach((t, index) => {
+        const opt = OpenSeadragon.makeNeutralElement('option');
+        opt.value = index;
+        opt.label = `${index+1}: ${this.getLayerName(index)}`;
+        this.layerSelect.appendChild(opt);
+      });
+      this.layerSelect.selectedIndex = selected;
     }
-    tileSources.forEach((tileSource, index) => {
-      const opt = OpenSeadragon.makeNeutralElement('option');
-      opt.value = index;
-      opt.label = `${index+1}: ${this.getLayerName(index)}`;
-      this.layerSelect.appendChild(opt);
-    });
-    this.layerSelect.selectedIndex = selected;
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
