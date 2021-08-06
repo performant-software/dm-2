@@ -143,6 +143,7 @@ class Project extends Component {
           targets={this.props.selectedTargets}
           closeHandler={this.props.closeTarget}
           mouseDownHandler={this.props.promoteTarget}
+          openDocuments={this.props.openDocuments}
           openDocumentIds={this.props.openDocumentIds}
           writeEnabled={this.props.writeEnabled}
           adminEnabled={this.props.adminEnabled}

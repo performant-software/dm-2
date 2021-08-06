@@ -23,6 +23,38 @@ class Highlight < Linkable
     self.id
   end
 
+  def add_link_from_duplication(linked, original_id, position)
+    unless self.links_to.include? linked
+      if (linked.linkable_a_id == original_id)
+        # linkable_a is the highlight to duplicate
+        # linkable_b is the linked item
+        link = Link.create(
+          linkable_a_id: self.id,
+          linkable_a_type: 'Highlight',
+          linkable_b_id: linked.linkable_b_id,
+          linkable_b_type: linked.linkable_b_type,
+        )
+      else
+        # linkable_b is the highlight to duplicate
+        # linkable_a is the linked item
+        link = Link.create(
+          linkable_a_id: linked.linkable_a_id,
+          linkable_a_type: linked.linkable_a_type,
+          linkable_b_id: self.id,
+          linkable_b_type: 'Highlight',
+        )
+      end
+      if link.save
+        # Create highlights associations with positions
+        link.highlights_links.create(
+          :link_id => link[:id], 
+          :highlight_id => self.id,
+          :position => position,
+        )
+      end
+    end
+  end
+
   def set_thumbnail( image_url, thumb_rect )
     pad_factor = 0.06
     base_image = MiniMagick::Image.open(image_url)

@@ -9,6 +9,7 @@ import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import CircularProgress from 'material-ui/CircularProgress';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 
 import IconButton from 'material-ui/IconButton';
@@ -74,6 +75,7 @@ class TextResource extends Component {
       editorView: null,
       documentSchema: this.createDocumentSchema(),
       targetHighlights: [],
+      currentScrollTop: 0,
       ...this.initialLinkDialogState
     };
   }
@@ -84,6 +86,12 @@ class TextResource extends Component {
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
+    }
+  }
+
+  onScrollChange (node) {
+    if (node !== null && node.scrollTop !== this.state.currentScrollTop) {
+      this.setState({ currentScrollTop: node.scrollTop });
     }
   }
 
@@ -358,7 +366,7 @@ class TextResource extends Component {
         state: editorState,
         dispatchTransaction: this.dispatchTransaction,
         handlePaste: this.handlePaste,
-        editable: this.isEditable
+        editable: () => this.isEditable() && !this.props.loading,
       });
 
       let targetHighlight = null;
@@ -564,12 +572,13 @@ class TextResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
-  renderDropDownMenu() {
+  renderDropDownMenu(loading) {
     return (
       <DropDownMenu
         value={fontSize['normal']}
         onChange={this.onFontSizeChange.bind(this)}
         autoWidth={false}
+        disabled={loading}
       >
         <MenuItem value={fontSize['small']} primaryText="Small" />
         <MenuItem value={fontSize['normal']} primaryText="Normal" />
@@ -580,7 +589,15 @@ class TextResource extends Component {
   }
 
   renderToolbar() {
-    const { highlightColors, displayColorPickers, setTextHighlightColor, toggleTextColorPicker, highlightSelectModes, selectedHighlights } = this.props;
+    const { 
+      highlightColors,
+      displayColorPickers,
+      setTextHighlightColor,
+      toggleTextColorPicker,
+      highlightSelectModes,
+      selectedHighlights,
+      loading
+    } = this.props;
 
     if( !this.isEditable() ) return <div></div>;
     const instanceKey = this.getInstanceKey();
@@ -606,41 +623,75 @@ class TextResource extends Component {
             }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
           />
-          <IconButton onMouseDown={this.onHighlight.bind(this)} tooltip="Create a highlight">
+          <IconButton
+            onMouseDown={this.onHighlight.bind(this)}
+            tooltip="Highlight selected text"
+            disabled={loading}
+          >
             <BorderColor />
           </IconButton>
-          <IconButton onMouseDown={this.onBold.bind(this)} tooltip="Bold">
+          <IconButton
+            onMouseDown={this.onBold.bind(this)}
+            tooltip="Bold"
+            disabled={loading}
+          >
             <FormatBold />
           </IconButton>
-          <IconButton onMouseDown={this.onItalic.bind(this)} tooltip="Italicize">
+          <IconButton
+            onMouseDown={this.onItalic.bind(this)}
+            tooltip="Italicize"
+            disabled={loading}
+          >
             <FormatItalic />
           </IconButton>
-          <IconButton onMouseDown={this.onUnderline.bind(this)} tooltip="Underline">
+          <IconButton
+            onMouseDown={this.onUnderline.bind(this)}
+            tooltip="Underline"  
+            disabled={loading}
+          >
             <FormatUnderlined />
           </IconButton>
-          <IconButton onMouseDown={this.onStrikethrough.bind(this)} tooltip="Strikethrough">
+          <IconButton
+            onMouseDown={this.onStrikethrough.bind(this)}
+            tooltip="Strikethrough"
+            disabled={loading}
+          >
             <FormatStrikethrough />
           </IconButton>
-          { this.renderDropDownMenu() }
-          <IconButton onMouseDown={this.onHyperLink.bind(this)} tooltip="Hyperlink">
+          { this.renderDropDownMenu(loading) }
+          <IconButton
+            onMouseDown={this.onHyperLink.bind(this)}
+            tooltip="Hyperlink"
+            disabled={loading}
+          >
             <InsertLink />
           </IconButton>
-          <IconButton onMouseDown={this.onBulletList.bind(this)} tooltip="Bulleted list">
+          <IconButton
+            onMouseDown={this.onBulletList.bind(this)}
+            tooltip="Bulleted list"  
+            disabled={loading}
+          >
             <FormatListBulleted />
           </IconButton>
-          <IconButton onMouseDown={this.onOrderedList.bind(this)} tooltip="Numbered list">
+          <IconButton
+            onMouseDown={this.onOrderedList.bind(this)}
+            tooltip="Numbered list"
+            disabled={loading}
+          >
             <FormatListNumbered />
           </IconButton>
           <IconButton
             style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
-            onMouseDown={this.onHighlightSelectMode.bind(this)} tooltip="Select a highlight"
+            onMouseDown={this.onHighlightSelectMode.bind(this)}
+            tooltip="Select a highlight"
+            disabled={loading}
           >
             <CropFree />
           </IconButton>
           <IconButton
             onMouseDown={this.onDeleteHighlight.bind(this)}
             tooltip="Delete selected highlight"
-            disabled={!selectedHighlights[instanceKey]}
+            disabled={!selectedHighlights[instanceKey] || loading}
           >
             <DeleteForever />
           </IconButton>
@@ -701,14 +752,27 @@ class TextResource extends Component {
   }
 
   render() {
-    const editorViewWrapperStyle = {
-      flexGrow: '1', display: 'flex', flexDirection: 'column', overflowY: 'scroll', overflowX: 'hidden'
-    };
-
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
-        <div className="editorview-wrapper" style={editorViewWrapperStyle}>
+        <div
+          ref={this.onScrollChange.bind(this)}
+          className="editorview-wrapper" 
+          style={{
+            overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',
+          }}
+        >
+          {this.props.loading && this.isEditable() && (
+            <div className="editorview-loading-indicator" style={{
+              top: this.state.currentScrollTop
+            }}>
+              <CircularProgress
+                size={100}
+                thickness={10}
+                color="white"
+              />
+            </div>
+          )}
           <ProseMirrorEditorView
             editorView={this.state.editorView}
             createEditorView={this.createEditorView}

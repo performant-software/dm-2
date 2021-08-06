@@ -62,6 +62,16 @@ body {
   align-items: center;
 }
 
+.layer-button-group {
+  display: flex !important;
+  flex-direction: column;
+  margin-top: -5px !important;
+}
+
+.layer-button-group div {
+  margin-bottom: -8px !important;
+}
+
 .image-layer-select {
   background: white;
   height: 28px;
@@ -69,13 +79,28 @@ body {
   margin-top: -4px;
 }
 
-.ProseMirror-menubar {
-  min-height: 48px !important;
+.editorview-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  position: relative;
 }
 
-.ProseMirror {
-  /* max-height: 1000px;
-  overflow-y: scroll; */
+.editorview-loading-indicator {
+  left: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.33);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ProseMirror-menubar {
+  min-height: 48px !important;
 }
 
 .ProseMirror:focus {

@@ -86,6 +86,7 @@ class CanvasResource extends Component {
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
+    this.hasOpenedOnce = false;
 
     this.state = {
       currentPage: 0,
@@ -97,7 +98,11 @@ class CanvasResource extends Component {
     if (prevProps.content && this.props.content 
         && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources)) {
       this.openTileSources(this.props.content.tileSources);
-      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      if (this.props.content.tileSources.length !== prevProps.content.tileSources.length) {
+        this.osdViewer.goToPage(0);
+      } else {
+        this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      }
       const hasLayerControls = this.osdViewer.controls 
         && this.osdViewer.controls.find(ctrl => ctrl.element.className === 'image-layer-controls');
       if (this.hasLayers() && !hasLayerControls) {
@@ -113,7 +118,6 @@ class CanvasResource extends Component {
         && prevProps.content && this.props.content 
         && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
       this.refreshLayerSelect(this.props.content.tileSources);
-      this.layerSelect.selectedIndex = this.state.currentPage;
     }
     if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
@@ -156,9 +160,6 @@ class CanvasResource extends Component {
       srcDown: "/images/up_pressed.png",
       onRelease: (e) => {
         viewer.goToPage(this.state.currentPage - 1);
-        if (this.state && this.state.currentPage <= 0) {
-          e.eventSource.disable();
-        }
       },
     });
     const layerSelect = this.layerSelect = OpenSeadragon.makeNeutralElement('select');
@@ -166,7 +167,7 @@ class CanvasResource extends Component {
     layerSelect.className = 'image-layer-select';
     layerSelect.name = `${this.getInstanceKey()}-layer-select`;
     layerSelect.addEventListener('change', () => {
-      viewer.goToPage(layerSelect.value);
+      viewer.goToPage(parseInt(layerSelect.value, 10));
     });
     
     if (hasLayers) {
@@ -186,9 +187,6 @@ class CanvasResource extends Component {
       srcDown: "/images/down_pressed.png",
       onRelease: (e) => {
         viewer.goToPage(this.state.currentPage + 1);
-        if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
-          e.eventSource.disable();
-        }
       },
     });
     upButton.disable();
@@ -198,22 +196,14 @@ class CanvasResource extends Component {
 
     const wrapper = this.imageLayerControls = OpenSeadragon.makeNeutralElement('div');
     wrapper.className = 'image-layer-controls';
-    wrapper.appendChild(upButton.element);
+    const buttons = [upButton, downButton];
+    const buttonGroup = new OpenSeadragon.ButtonGroup({ buttons });
+    buttonGroup.element.className = 'layer-button-group';
+    wrapper.appendChild(buttonGroup.element);
     wrapper.appendChild(layerSelect);
-    wrapper.appendChild(downButton.element);
     wrapper.innerTracker = new OpenSeadragon.MouseTracker({
       element: wrapper,
-      enterHandler: this.onControlsEnter.bind(this),
-      exitHandler: this.onControlsExit.bind(this),
     });
-    this.osdViewer.imgLayerCtrlsShouldFade = true;
-    this.osdViewer.controlsFadeBeginTime =
-    OpenSeadragon.now() +
-    this.osdViewer.controlsFadeDelay;
-    setTimeout(() => {
-      this.scheduleFade(wrapper);
-    }, this.osdViewer.controlsFadeDelay );
-
     if (hasLayers) {
       viewer.addControl(wrapper, {
         anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
@@ -407,6 +397,7 @@ class CanvasResource extends Component {
   }
 
   refreshLayerSelect(tileSources) {
+    const selected = this.layerSelect.selectedIndex;
     while (this.layerSelect.firstChild) {
       this.layerSelect.removeChild(this.layerSelect.lastChild);
     }
@@ -416,48 +407,12 @@ class CanvasResource extends Component {
       opt.label = `${index+1}: ${this.getLayerName(index)}`;
       this.layerSelect.appendChild(opt);
     });
-  }
-
-  onControlsEnter(e) {
-    this.osdViewer.imgLayerCtrlsShouldFade = false;
-    OpenSeadragon.setElementOpacity(e.eventSource.element, 1.0, true);
-  };
-
-  onControlsExit(e) {
-    this.osdViewer.imgLayerCtrlsShouldFade = true;
-    this.osdViewer.controlsFadeBeginTime =
-        OpenSeadragon.now() +
-        this.osdViewer.controlsFadeDelay;
-    setTimeout(() => {
-      this.scheduleFade(e.eventSource.element);
-    }, this.osdViewer.controlsFadeDelay );
-  }
-
-  scheduleFade(elem) {
-    OpenSeadragon.requestAnimationFrame(() => {
-      this.updateFade(elem);
-    });
-  }
-
-  updateFade(elem) {
-    if ( this.osdViewer.imgLayerCtrlsShouldFade ) {
-      const currentTime = OpenSeadragon.now();
-      const deltaTime = currentTime - this.osdViewer.controlsFadeBeginTime;
-      let opacity = 1.0 - deltaTime / this.osdViewer.controlsFadeLength;
-      opacity = Math.min(1.0, opacity);
-      opacity = Math.max(0.0, opacity);
-      OpenSeadragon.setElementOpacity(elem, opacity, true);
-      if ( opacity > 0 ) {
-        // fade again
-        this.scheduleFade(elem);
-      }
-    }
-
+    this.layerSelect.selectedIndex = selected;
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
   onOpen() {
-    if( this.props.firstTarget ) {
+    if( this.props.firstTarget && !this.hasOpenedOnce ) {
       let targetHighLight = null;
       for( let key in this.props.highlight_map ) {
         let currentHighlight = this.props.highlight_map[key]
@@ -475,7 +430,8 @@ class CanvasResource extends Component {
         // back out a little so we can see highlight in context
         const targetRect = new OpenSeadragon.Rect(x-0.1,y-0.1,w+0.2,h+0.2)
         const viewport = this.osdViewer.viewport;
-        viewport.fitBoundsWithConstraints( targetRect )
+        viewport.fitBoundsWithConstraints( targetRect );
+        this.hasOpenedOnce = true;
         // console.log(`tr: ${targetRect.toString()} tr2: ${targetRect2.toString()}`)
       }
     }

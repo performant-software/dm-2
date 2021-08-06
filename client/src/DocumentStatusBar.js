@@ -53,7 +53,8 @@ class DocumentStatusBar extends Component {
                         adjustLock: true,
                         instanceKey: this.props.instanceKey,
                     } )
-                }}            
+                }}
+                disabled={this.props.loading}
             ></RaisedButton>
         );
     }
@@ -86,7 +87,8 @@ class DocumentStatusBar extends Component {
         
         const style = {
             backgroundColor: this.props.document_kind === 'canvas' ? '#424242' : '#ccc',
-            paddingLeft: '7px'
+            paddingLeft: '7px',
+            zIndex: 2,
         }
 
         return ( 

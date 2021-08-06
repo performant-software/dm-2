@@ -56,6 +56,9 @@ export const SET_CURRENT_LAYOUT = 'document_grid/SET_CURRENT_LAYOUT';
 export const MOVE_DOCUMENT_WINDOW = 'document_grid/MOVE_DOCUMENT_WINDOW';
 export const CANVAS_LAYER_DELETE = 'document_grid/CANVAS_LAYER_DELETE';
 export const REFRESH_DOCUMENTS = 'document_grid/REFRESH_DOCUMENTS';
+export const GET_CURRENT_DOC_CONTENT = 'document_grid/GET_CURRENT_DOC_CONTENT';
+export const GET_CURRENT_DOC_CONTENT_SUCCESS = 'document_grid/GET_CURRENT_DOC_CONTENT_SUCCESS';
+export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CONTENT_ERRORED';
 
 
 export const layoutOptions = [
@@ -71,6 +74,7 @@ const initialState = {
   layout: DEFAULT_LAYOUT,
   openDocuments: [],
   loading: false,
+  highlightsLoading: false,
   errored: false,
   deleteDialogOpen: false,
   deleteDialogTitle: 'Confirm Delete',
@@ -85,17 +89,21 @@ const initialState = {
 
 export default function(state = initialState, action) {
   switch (action.type) {
-    case OPEN_DOCUMENT:
     case ADD_HIGHLIGHT:
     case DELETE_HIGHLIGHT:
-    case UPDATE_HIGHLIGHT:
     case DUPLICATE_HIGHLIGHTS:
-    case UPDATE_DOCUMENT:
       return {
         ...state,
+        highlightsLoading: true,
         loading: true
-      };
-
+      }
+    case UPDATE_HIGHLIGHT:
+      return {
+        ...state,
+        highlightsLoading: action.shouldStartLoading,
+        loading: action.shouldStartLoading
+      }
+    case OPEN_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
     case MOVE_DOCUMENT:
@@ -103,6 +111,9 @@ export default function(state = initialState, action) {
         ...state,
         loading: true
       }
+
+    case UPDATE_DOCUMENT:
+      return state
 
     case OPEN_DOCUMENT_SUCCESS:
     case POST_SUCCESS:
@@ -123,13 +134,25 @@ export default function(state = initialState, action) {
     case PATCH_ERRORED:
     case POST_ERRORED:
     case DELETE_ERRORED:
-    case DELETE_HIGHLIGHT_ERRORED:
-    case UPDATE_HIGHLIGHT_ERRORED:
-    case DUPLICATE_HIGHLIGHTS_ERRORED:
-      console.log('document/highlight error!');
+      console.log('document error');
+      console.log(action.type);
       return {
         ...state,
         loading: false,
+        errored: true
+      }
+
+    
+    case DELETE_HIGHLIGHT_ERRORED:
+    case UPDATE_HIGHLIGHT_ERRORED:
+    case DUPLICATE_HIGHLIGHTS_ERRORED:
+    case ADD_HIGHLIGHT_ERRORED:
+      console.log('highlight error');
+      console.log(action.type);
+      return {
+        ...state,
+        loading: false,
+        highlightsLoading: false,
         errored: true
       }
 
@@ -163,7 +186,6 @@ export default function(state = initialState, action) {
       }
     }
 
-    case PATCH_SUCCESS:
     case REFRESH_DOCUMENTS:
       let preRefreshDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
@@ -176,21 +198,23 @@ export default function(state = initialState, action) {
       });
       return {
         ...state,
-        loading: false,
         openDocuments: preRefreshDocumentsCopy
       };
     
+    case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
       let preReplaceDocumentsCopy = state.openDocuments.slice(0);
-      state.openDocuments.forEach((document, index) => {
-        if (+document.id === +action.document.id) {
-          const { timeOpened } = document;
-          preReplaceDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
-        }
-      });
+      if (!action.shouldSkipReplacement) {
+        state.openDocuments.forEach((document, index) => {
+          if (+document.id === +action.document.id) {
+            const { timeOpened } = document;
+            preReplaceDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
+          }
+        });
+      }
       return {
         ...state,
-        loading: false,
+        loading: state.highlightsLoading,
         openDocuments: preReplaceDocumentsCopy
       };
 
@@ -213,7 +237,8 @@ export default function(state = initialState, action) {
       const openDocuments = state.openDocuments.filter( openDocument => ( openDocument.id.toString() !== targetID ) )
       return {
         ...state,
-        openDocuments
+        openDocuments,
+        loading: false,
       };
 
     case CLEAR_RESOURCES:
@@ -239,7 +264,8 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: updatedopenDocuments,
-        loading: false
+        loading: false,
+        highlightsLoading: false,
       }
 
     case DUPLICATE_HIGHLIGHTS_SUCCESS:
@@ -260,7 +286,9 @@ export default function(state = initialState, action) {
       });
       return {
         ...state,
-        openDocuments: duplicatesUpdatedOpenDocuments
+        openDocuments: duplicatesUpdatedOpenDocuments,
+        loading: false,
+        highlightsLoading: false,
       }
 
     case UPDATE_HIGHLIGHT_SUCCESS:
@@ -275,12 +303,14 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: hUpdatedOpenDocuments,
+        highlightsLoading: false,
         loading: false
       }
 
     case DELETE_HIGHLIGHT_SUCCESS:
       return {
         ...state,
+        highlightsLoading: false,
         loading: false
       }
 
@@ -480,7 +510,8 @@ export function deleteHighlights(highlights = []) {
 export function updateHighlight(id, attributes) {
   return function(dispatch, getState) {
     dispatch({
-      type: UPDATE_HIGHLIGHT
+      type: UPDATE_HIGHLIGHT,
+      shouldStartLoading: !Object.prototype.hasOwnProperty.call(attributes, 'excerpt'),
     });
 
     return fetch(`/highlights/${id}`, {
@@ -504,6 +535,9 @@ export function updateHighlight(id, attributes) {
     })
     .then(response => response.json())
     .then(highlight => {
+      if (!Object.prototype.hasOwnProperty.call(attributes, 'excerpt')) {
+        dispatch(refreshCurrentDocContent(highlight.document_id));
+      }
       dispatch({
         type: UPDATE_HIGHLIGHT_SUCCESS,
         color: highlight.color,
@@ -732,7 +766,8 @@ export function updateDocument(documentId, attributes, options) {
     .then(document => {
       dispatch({
         type: PATCH_SUCCESS,
-        document
+        document,
+        shouldSkipReplacement: (!!options && !!options.refreshDocumentContent && !!options.timeOpened),
       });
       if (options && options.adjustLock) {
         dispatch({
@@ -1302,4 +1337,36 @@ export function renameLayer({ documentId, layer, name, editorKey }) {
       type: PATCH_ERRORED
     }));
   }
+}
+
+export function refreshCurrentDocContent(documentId) {
+  return function(dispatch) {
+    dispatch({
+      type: GET_CURRENT_DOC_CONTENT
+    });
+
+    fetch(`/documents/${documentId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => dispatch({
+      type: REPLACE_DOCUMENT,
+      document,
+    }))
+    .catch(() => dispatch({
+      type: GET_CURRENT_DOC_CONTENT_ERRORED
+    }));
+  };
 }
