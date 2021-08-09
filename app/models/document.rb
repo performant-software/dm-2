@@ -146,8 +146,30 @@ class Document < Linkable
     nil
   end
 
+  def download_to_file(uri)
+    stream = open(uri, "rb")
+    return stream if stream.respond_to?(:path) # Already file-like
+  
+    # Workaround when open(uri) doesn't return File
+    Tempfile.new.tap do |file|
+      file.binmode
+      IO.copy_stream(stream, file)
+      stream.close
+      file.rewind
+    end
+  end
+  
   def add_thumbnail( image_url )
-    processed = ImageProcessing::MiniMagick.source(open(image_url))
+    begin
+      # Try with PNG
+      opened = download_to_file(image_url)
+    rescue OpenURI::HTTPError
+      # Only JPG is required for IIIF level 1 compliance,
+      # so if we get back a 400 error, use JPG for thumbnail
+      with_jpg = image_url.sub('.png', '.jpg')
+      opened = download_to_file(with_jpg)
+    end
+    processed = ImageProcessing::MiniMagick.source(opened)
       .resize_to_fill(80, 80)
       .convert('png')
       .call
