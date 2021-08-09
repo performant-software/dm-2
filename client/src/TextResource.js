@@ -264,6 +264,12 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  preventFirefoxUShortcut = (e) => {
+    if (e.metaKey && e.key === 'u') {
+      e.preventDefault();
+    }
+  }
+
   onUnderline = (e) => {
     e.preventDefault();
     const markType = this.state.documentSchema.marks.underline;
@@ -761,6 +767,7 @@ class TextResource extends Component {
           style={{
             overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',
           }}
+          onKeyDown={this.preventFirefoxUShortcut.bind(this)}
         >
           {this.props.loading && this.isEditable() && (
             <div className="editorview-loading-indicator" style={{
