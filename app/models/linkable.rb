@@ -17,6 +17,13 @@ class Linkable < ApplicationRecord
     target_obj = target.to_obj
     # include link id so we can access it directly later
     target_obj[:link_id] = link.id
+    # include highlight uid if applicable
+    if !target_obj[:highlight_id].nil?
+      hl = Highlight.where(:id => target_obj[:highlight_id]).first
+      if !hl.nil?
+        target_obj[:highlight_uid] = hl.uid
+      end
+    end
     target_obj
   end
 
