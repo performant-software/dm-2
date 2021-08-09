@@ -47,8 +47,9 @@ class DocumentFolder extends Component {
         <div style={{ display: 'flex' }}>
           <TextField
             autoComplete='off'
-            inputStyle={{ color: grey900, height: '20px' }}
-            style={{ flexGrow: '1', height: '20px', cursor: 'text' }}
+            inputStyle={{ color: grey900, height: 'auto' }}
+            className="folder-name-textfield"
+            multiLine={true}
             id={'folderTitleField-' + this.props.item.id}
             defaultValue={this.props.item.document_title}
             disabled={!this.props.writeEnabled}
