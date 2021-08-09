@@ -171,6 +171,7 @@ class TextResource extends Component {
         "Mod-z": undo,
         "Mod-y": redo,
         "Mod-u": this.onUnderlineByKey.bind(this),
+        "Mod-X": this.onStrikethroughByKey.bind(this),
         "Tab": goToNextCell(1),
         "Shift-Tab": goToNextCell(-1)
       })
@@ -282,6 +283,12 @@ class TextResource extends Component {
     e.preventDefault();
     const markType = this.state.documentSchema.marks.strikethrough;
     const editorState = this.getEditorState();
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onStrikethroughByKey = (editorState) => {
+    const markType = this.state.documentSchema.marks.strikethrough;
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
