@@ -33,6 +33,8 @@ To install DM2 on Heroku, create a new app and point it at this respository. You
 * SENDGRID_PASSWORD
 * SENDGRID_USERNAME
 
+You also need to activate the node.js buildpack at your Heroku application settings.
+
 You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. See aws.amazon.com for more information.
 
 Here are some default settings for provisioning a production server:
@@ -53,6 +55,7 @@ AWS_BUCKET
 AWS_REGION
 AWS_SECRET_ACCESS_KEY
 ```
+
 
 It is possible use local storage, however this is only recommended for testing purposes, as Heroku does not have a persistant file system. This can be done by setting the `ACTIVE_STORAGE_SERVICE` variable to "local".
 
