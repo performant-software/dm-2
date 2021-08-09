@@ -1,5 +1,3 @@
-import { chainCommands } from 'prosemirror-commands';
-
 function markApplies(doc, ranges, type) {
     for (let i = 0; i < ranges.length; i++) {
         let {$from, $to} = ranges[i]

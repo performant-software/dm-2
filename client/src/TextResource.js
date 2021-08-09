@@ -16,6 +16,7 @@ import IconButton from 'material-ui/IconButton';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
 import FormatItalic from 'material-ui/svg-icons/editor/format-italic';
 import FormatUnderlined from 'material-ui/svg-icons/editor/format-underlined';
+import FormatStrikethrough from 'material-ui/svg-icons/editor/format-strikethrough';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
@@ -155,7 +156,6 @@ class TextResource extends Component {
   }
 
   createEditorState() {
-    const document_id = this.props.document_id;
     const dmSchema = this.state.documentSchema;
 
     let plugins = exampleSetup({
@@ -168,8 +168,9 @@ class TextResource extends Component {
       columnResizing(),
       tableEditing(),
       keymap({
-        "Mod-z": undo, 
-        "Mod-y": redo, 
+        "Mod-z": undo,
+        "Mod-y": redo,
+        "Mod-u": this.onUnderlineByKey.bind(this),
         "Tab": goToNextCell(1),
         "Shift-Tab": goToNextCell(-1)
       })
@@ -232,7 +233,8 @@ class TextResource extends Component {
     return document.textBetween(0,document.textContent.length+1, ' ');
   }
 
-  onHighlight = () => {
+  onHighlight = (e) => {
+    e.preventDefault();
     const markType = this.state.documentSchema.marks.highlight;
     const { document_id } = this.props;
     const editorState = this.getEditorState();
@@ -240,27 +242,49 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
-  onBold = () => {
+  onBold = (e) => {
+    e.preventDefault();
     const markType = this.state.documentSchema.marks.strong;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
-  onItalic = () => {
+  onItalic = (e) => {
+    e.preventDefault();
     const markType = this.state.documentSchema.marks.em;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
-  onUnderline = () => {
+  onUnderlineByKey = (editorState) => {
+    const markType = this.state.documentSchema.marks.underline;
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  preventFirefoxUShortcut = (e) => {
+    if (e.metaKey && e.key === 'u') {
+      e.preventDefault();
+    }
+  }
+
+  onUnderline = (e) => {
+    e.preventDefault();
     const markType = this.state.documentSchema.marks.underline;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onStrikethrough = (e) => {
+    e.preventDefault();
+    const markType = this.state.documentSchema.marks.strikethrough;
+    const editorState = this.getEditorState();
+    const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
 
   // markActive(state, type) {
   //   let {from, $from, to, empty} = state.selection
@@ -268,7 +292,8 @@ class TextResource extends Component {
   //   else return state.doc.rangeHasMark(from, to, type)
   // }
 
-  onHyperLink = () => {
+  onHyperLink = (e) => {
+    e.preventDefault();
 
     // http://prosemirror.net/examples/menu/
     // is the caret in a hyperlink presently?
@@ -282,14 +307,16 @@ class TextResource extends Component {
     this.setState( {...this.state, linkDialogOpen: true, createHyperlink } );
   }
 
-  onOrderedList() {
+  onOrderedList(e) {
+    e.preventDefault();
     const orderedListNodeType = this.state.documentSchema.nodes.ordered_list;
     const editorState = this.getEditorState();
     const cmd = wrapInList( orderedListNodeType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
-  onBulletList() {
+  onBulletList(e) {
+    e.preventDefault();
     const bulletListNodeType = this.state.documentSchema.nodes.bullet_list;
     const editorState = this.getEditorState();
     const cmd = wrapInList( bulletListNodeType );
@@ -297,18 +324,21 @@ class TextResource extends Component {
   }
 
   onFontSizeChange(e,i,fontSize) {
+    e.preventDefault();
     const textStyleMarkType = this.state.documentSchema.marks.textStyle;
     const editorState = this.getEditorState();
     const cmd = fontSize ? addMark( textStyleMarkType, { fontSize } ) : removeMark( textStyleMarkType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
-  onHighlightSelectMode() {
+  onHighlightSelectMode(e) {
+    e.preventDefault();
     const key = this.getInstanceKey();
     this.props.setHighlightSelectMode(key, !this.props.highlightSelectModes[key]);
   }
 
-  onDeleteHighlight() {
+  onDeleteHighlight(e) {
+    e.preventDefault();
     const selectedHighlight = this.props.selectedHighlights[this.getInstanceKey()];
     if (selectedHighlight) {
       const markType = this.state.documentSchema.marks.highlight;
@@ -443,7 +473,6 @@ class TextResource extends Component {
     const { document_id } = this.props;
     let alteredHighlights = [];
     let effectedMarks = [];
-    let possibleNewMarks = [];
     const editorState = this.getEditorState();
     steps.forEach(step => {
       // save new highlight
@@ -580,7 +609,7 @@ class TextResource extends Component {
     const instanceKey = this.getInstanceKey();
 
     return (
-      <Toolbar style={{ minHeight: '55px' }}>
+      <Toolbar style={{ minHeight: '55px' }} onMouseDown={(e) => e.preventDefault()}>
         <ToolbarGroup>
           <HighlightColorSelect
             highlightColor={highlightColors[instanceKey]}
@@ -601,66 +630,73 @@ class TextResource extends Component {
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
           />
           <IconButton
-            onClick={this.onHighlight}
-            tooltip='Highlight a passage of text.'
+            onMouseDown={this.onHighlight.bind(this)}
+            tooltip="Highlight selected text"
             disabled={loading}
           >
             <BorderColor />
           </IconButton>
           <IconButton
-            onClick={this.onBold}
-            tooltip='Bold selected text.'
+            onMouseDown={this.onBold.bind(this)}
+            tooltip="Bold"
             disabled={loading}
           >
             <FormatBold />
           </IconButton>
           <IconButton
-            onClick={this.onItalic}
-            tooltip='Italicize selected text.'
+            onMouseDown={this.onItalic.bind(this)}
+            tooltip="Italicize"
             disabled={loading}
           >
             <FormatItalic />
           </IconButton>
           <IconButton
-            onClick={this.onUnderline}
-            tooltip='Underline selected text.'  
+            onMouseDown={this.onUnderline.bind(this)}
+            tooltip="Underline"  
             disabled={loading}
           >
             <FormatUnderlined />
           </IconButton>
+          <IconButton
+            onMouseDown={this.onStrikethrough.bind(this)}
+            tooltip="Strikethrough"
+            disabled={loading}
+          >
+            <FormatStrikethrough />
+          </IconButton>
           { this.renderDropDownMenu(loading) }
           <IconButton
-            onClick={this.onHyperLink}
-            tooltip='Create a hyperlink.'
+            onMouseDown={this.onHyperLink.bind(this)}
+            tooltip="Hyperlink"
             disabled={loading}
           >
             <InsertLink />
           </IconButton>
           <IconButton
-            onClick={this.onBulletList.bind(this)}
-            tooltip='Create a bulleted list.'  
+            onMouseDown={this.onBulletList.bind(this)}
+            tooltip="Bulleted list"  
             disabled={loading}
           >
             <FormatListBulleted />
           </IconButton>
           <IconButton
-            onClick={this.onOrderedList.bind(this)}
-            tooltip='Create a numbered list.'
+            onMouseDown={this.onOrderedList.bind(this)}
+            tooltip="Numbered list"
             disabled={loading}
           >
             <FormatListNumbered />
           </IconButton>
           <IconButton
             style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
-            onClick={this.onHighlightSelectMode.bind(this)}
-            tooltip='Select a highlight.'
+            onMouseDown={this.onHighlightSelectMode.bind(this)}
+            tooltip="Select a highlight"
             disabled={loading}
           >
             <CropFree />
           </IconButton>
           <IconButton
-            onClick={this.onDeleteHighlight.bind(this)}
-            tooltip='Delete selected highlight.'
+            onMouseDown={this.onDeleteHighlight.bind(this)}
+            tooltip="Delete selected highlight"
             disabled={!selectedHighlights[instanceKey] || loading}
           >
             <DeleteForever />
@@ -731,6 +767,7 @@ class TextResource extends Component {
           style={{
             overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',
           }}
+          onKeyDown={this.preventFirefoxUShortcut.bind(this)}
         >
           {this.props.loading && this.isEditable() && (
             <div className="editorview-loading-indicator" style={{
