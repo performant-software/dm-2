@@ -90,6 +90,7 @@ class CanvasResource extends Component {
 
     this.state = {
       currentPage: 0,
+      totalPages: 0,
       layerName: '',
     };
   }
@@ -102,6 +103,7 @@ class CanvasResource extends Component {
       this.openTileSources(this.props.content.tileSources);
       if (this.props.content.tileSources.length !== prevProps.content.tileSources.length) {
         this.osdViewer.goToPage(0);
+        this.setState({ totalPages: this.props.content.tileSources.length });
       } else {
         this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
       }
@@ -110,7 +112,7 @@ class CanvasResource extends Component {
       if (this.hasLayers() && !hasLayerControls) {
         this.osdViewer.addControl(this.imageLayerControls, {
           anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
-          autoFade: true,
+          autoFade: false,
         });
       } else if (!this.hasLayers() && hasLayerControls) {
         this.osdViewer.removeControl(this.imageLayerControls);
@@ -160,8 +162,13 @@ class CanvasResource extends Component {
       srcGroup: "/images/up_grouphover.png",
       srcHover: "/images/up_hover.png",
       srcDown: "/images/up_pressed.png",
-      onRelease: (e) => {
-        viewer.goToPage(this.state.currentPage - 1);
+      onRelease: () => {
+        let prevPage = this.state.currentPage - 1;
+        if (this.state && this.state.totalPages && this.state.currentPage === 0) {
+          // Wrap around if at beginning
+          prevPage = this.state.totalPages - 1;
+        }
+        viewer.goToPage(prevPage);
       },
     });
     const layerSelect = this.layerSelect = OpenSeadragon.makeNeutralElement('select');
@@ -187,14 +194,15 @@ class CanvasResource extends Component {
       srcGroup: "/images/down_grouphover.png",
       srcHover: "/images/down_hover.png",
       srcDown: "/images/down_pressed.png",
-      onRelease: (e) => {
-        viewer.goToPage(this.state.currentPage + 1);
+      onRelease: () => {
+        let nextPage = this.state.currentPage + 1;
+        if (this.state && this.state.totalPages && this.state.currentPage === (this.state.totalPages-1)) {
+          // Wrap around if at end
+          nextPage = 0;
+        }
+        viewer.goToPage(nextPage);
       },
     });
-    upButton.disable();
-    if (!(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1)) {
-      downButton.disable();
-    }
 
     const wrapper = this.imageLayerControls = OpenSeadragon.makeNeutralElement('div');
     wrapper.className = 'image-layer-controls';
@@ -209,7 +217,7 @@ class CanvasResource extends Component {
     if (hasLayers) {
       viewer.addControl(wrapper, {
         anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
-        autoFade: true,
+        autoFade: false,
       });
     }
 
@@ -220,7 +228,8 @@ class CanvasResource extends Component {
     const firstTileSource = tileSources[0];
 
     if (firstTileSource) {
-      imageUrlForThumbnail = this.openTileSources(tileSources)
+      this.setState({ totalPages: tileSources.length });
+      imageUrlForThumbnail = this.openTileSources(tileSources);
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
@@ -247,20 +256,6 @@ class CanvasResource extends Component {
 
     viewer.addHandler('page', (event) => {
       const pageNumber = parseInt(event.page, 10);
-      if (this.upButton && pageNumber <= 0) {
-        this.upButton.disable();
-      } else if (this.upButton) {
-        this.upButton.enable();
-      }
-      if (this.downButton && !(
-          this.props.content
-          && this.props.content.tileSources
-          && pageNumber !== (this.props.content.tileSources.length-1)
-        )) {
-        this.downButton.disable();
-      } else if (this.downButton) {
-        this.downButton.enable();
-      }
       if (this.layerSelect) {
         this.layerSelect.selectedIndex = pageNumber;
       }
