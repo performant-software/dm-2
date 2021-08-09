@@ -1188,12 +1188,10 @@ export function moveLayer({ documentId, origin, direction, editorKey }) {
         const firstTileSource = document.content.tileSources[0];
         // Update doc thumbnail
         let imageUrlForThumbnail = '';
-        if (typeof firstTileSource === 'string' && firstTileSource.includes('.json')) {
-          // IIIF
+        if (typeof firstTileSource === 'string') {
+          // Tile source is a string, so it's IIIF
           let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
           imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png';
-        } else if (typeof firstTileSource === 'string') {
-          imageUrlForThumbnail = firstTileSource;
         } else if (firstTileSource.url && firstTileSource.type === 'image') {
           imageUrlForThumbnail = firstTileSource.url;
         } else {

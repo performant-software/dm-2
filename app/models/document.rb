@@ -62,22 +62,24 @@ class Document < Linkable
       new_tile_source = tile_source
       new_tile_source["name"] = new_name
       self.content["tileSources"][layer] = new_tile_source
-    elsif tile_source.end_with?(".json")
-      self.content["iiifTileNames"].each {|tile_name_obj|
-        if tile_name_obj["url"] == tile_source
-          tile_name_obj["name"] = new_name
-        end
-      }
     else
-      new_tile_source = {
-        "url" => tile_source,
-        "name" => new_name,
-        "type"=>"image",
-        "useCanvas" => true,
-        "crossOriginPolicy" => false,
-        "ajaxWithCredentials" => false
-      }
-      self.content["tileSources"][layer] = new_tile_source
+      new_obj = { :url => tile_source, :name => new_name };
+      if !self.content["iiifTileNames"].nil? && self.content["iiifTileNames"].length() > 0
+        found_in_tile_names = false
+        self.content["iiifTileNames"].each {|tile_name_obj|
+          if tile_name_obj["url"] == tile_source
+            tile_name_obj["name"] = new_name
+            found_in_tile_names = true
+          end
+        }
+        if !found_in_tile_names
+          self.content["iiifTileNames"].push(new_obj)
+        end
+      elsif !self.content["iiifTileNames"].nil?
+        self.content["iiifTileNames"].push(new_obj)
+      else
+        self.content["iiifTileNames"] = [new_obj]
+      end
     end
   end
 
