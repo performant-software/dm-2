@@ -9,18 +9,20 @@ export function checkTileSource( tileSource, successCallBack, errorCallback ) {
         console.log(`Found image info at: ${withInfoJson}`)
         successCallBack( withInfoJson )
       } else {
-        errorCallback(initialResponse.statusText)
+        errorCallback(response.statusText)
       }            
     })
   }
 
   fetch(tileSource).then(response => {
       if (!response.ok) {
+        console.log(response.statusText);
         retryWithInfoJSON(response)
       } else {
         successCallBack( tileSource )
       }
   }).catch( (e) => {
+    console.error(e);
     retryWithInfoJSON(e)
   }) 
 }
