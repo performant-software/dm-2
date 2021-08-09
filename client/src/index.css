@@ -11,12 +11,15 @@ body {
   margin-top: -3px;
   margin-bottom: -10px;
   word-wrap: normal;
-  cursor: text;
+  cursor: text !important;
+  color: #212121 !important;
 }
 
 .folder-name-textfield textarea {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
+  cursor: text !important;
+  color: #212121 !important;
 }
 
 .dm-highlight .selected {
