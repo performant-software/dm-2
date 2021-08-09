@@ -5,6 +5,20 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+.folder-name-textfield {
+  flex-grow: 1;
+  height: auto !important;
+  margin-top: -3px;
+  margin-bottom: -10px;
+  word-wrap: normal;
+  cursor: text;
+}
+
+.folder-name-textfield textarea {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 .dm-highlight .selected {
   border: 2px solid blue;
 }
