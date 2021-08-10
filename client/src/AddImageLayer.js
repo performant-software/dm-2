@@ -82,7 +82,7 @@ class AddImageLayer extends Component {
       case IIIF_TILE_SOURCE_TYPE:
         newTileSources.push(this.state.newTileSourceValue);
         if (shouldSetThumbnail) {
-          imageUrlForThumbnail = this.state.newTileSourceValue + '/full/!160,160/0/default.png';
+          imageUrlForThumbnail = this.state.newTileSourceValue.replace('http:', 'https:').replace('/info.json', '') + '/full/!160,160/0/default.png';
         }
         iiifTileNames.push({
           name: 'IIIF layer',

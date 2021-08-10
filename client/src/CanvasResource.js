@@ -372,9 +372,9 @@ class CanvasResource extends Component {
           this.osdViewer.open(newTileSources);
         } else this.osdViewer.open([{ type: 'image', url: tileSourceSSL }]);
       }
-    }
-    else if (firstTileSource) {
-      let resourceURL = firstTileSource.replace('http:', 'https:')
+    } else if (firstTileSource && typeof firstTileSource === 'string') {
+      // Tile source is a string, so it's IIIF
+      let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
       imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png'
       this.props.setImageUrl(key, imageUrlForThumbnail);
       checkTileSource(
@@ -964,15 +964,13 @@ class CanvasResource extends Component {
     const { content } = this.props;
     const currentLayer = content.tileSources[page];
     let currentLayerName = 'Untitled image layer';
-    if (typeof currentLayer === 'string' && currentLayer.includes('.json')) {
+    if (typeof currentLayer === 'string') {
+      // Tile source is a string, so it's IIIF
       if (content.iiifTileNames && content.iiifTileNames.find(tile => tile.url === currentLayer)) {
         currentLayerName = content.iiifTileNames.find(tile => tile.url === currentLayer).name;
       } else {
         currentLayerName = 'IIIF layer';
       }
-    } else if (typeof currentLayer === 'string' && currentLayer.includes('http')) {
-      const url = currentLayer;
-      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
     } else if (currentLayer && currentLayer.name) {
       currentLayerName = currentLayer.name;
     } else if (currentLayer && currentLayer.url) {
