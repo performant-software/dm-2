@@ -144,7 +144,7 @@ class DocumentsController < ApplicationController
       else
         tile_source = content["tileSources"][layer]
         @document.purge_image_by_tilesource!(tile_source)
-        if tile_source.is_a?(String) && tile_source.end_with?(".json") && content.has_key?("iiifTileNames")
+        if tile_source.is_a?(String) && content.has_key?("iiifTileNames")
           content["iiifTileNames"].delete_if {|tile_name_obj|
             tile_name_obj["url"] == tile_source
           }
@@ -170,7 +170,7 @@ class DocumentsController < ApplicationController
     new_name = params[:name]
     if layer.nil? || layer < 0 || new_name.nil?
       render status: :bad_request
-    elsif content["tileSources"]
+    elsif !content.nil? && !content["tileSources"].nil?
       size = content["tileSources"].length()
       if layer >= size
         render status: :bad_request
