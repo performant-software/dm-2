@@ -23,15 +23,26 @@ const validURLRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:1
 
 class AddImageLayer extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            newTileSourceValue: null,
-            linkError: false,
-            uploadErrorMessage: null,
-            uploading: false
-        }
+  constructor(props) {
+    super(props);
+    this.state = {
+      newTileSourceValue: null,
+      linkError: false,
+      uploadErrorMessage: null,
+      uploading: false,
+      newImageUrl: null,
     }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.image_urls.length > prevProps.image_urls.length) {
+      this.props.image_urls.forEach(url =>{
+        if (!prevProps.image_urls.includes(url)) {
+          this.setState({ newImageUrl: url });
+        }
+      })
+    }      
+  }
 
   addTileSource = (addTileSourceMode) => {
     let imageUrlForThumbnail = null;
@@ -46,21 +57,16 @@ class AddImageLayer extends Component {
     let newTileSources = [];
     switch (addTileSourceMode) {
       case UPLOAD_SOURCE_TYPE:
-        if (this.props.image_urls && this.props.image_urls.length > 0) {
-          let existingImageUrls = [];
-          existingTileSources.forEach(source => {
-            if (source.type && source.url && source.type === 'image')
-              existingImageUrls.push(source.url);
-          });
-          this.props.image_urls.forEach(url => {
-            if (!existingImageUrls.includes(url)) {
-              const filename = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
-              newTileSources.push({
-                type: 'image',
-                url,
-                name: filename,
-              });
-            }
+        if (this.props.image_urls && this.props.image_urls.length > 0 && this.state.newImageUrl) {
+          const url = this.state.newImageUrl;
+          const filename = decodeURIComponent(url.substring(
+            url.lastIndexOf('/')+1,
+            url.lastIndexOf('.')
+          ));
+          newTileSources.push({
+            type: 'image',
+            url,
+            name: filename,
           });
           if (shouldSetThumbnail && newTileSources.length > 0)
             imageUrlForThumbnail = newTileSources[0].url;
