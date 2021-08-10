@@ -1263,6 +1263,21 @@ export function deleteLayer({ documentId, layer, editorKey }) {
           dispatch(refreshTarget(index));
         }
       });
+      if (layer === 0 && document.content && document.content.tileSources && document.content.tileSources[0]) {
+        const firstTileSource = document.content.tileSources[0];
+        // Update doc thumbnail
+        let imageUrlForThumbnail = '';
+        if (typeof firstTileSource === 'string') {
+          // Tile source is a string, so it's IIIF
+          let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
+          imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png';
+        } else if (firstTileSource.url && firstTileSource.type === 'image') {
+          imageUrlForThumbnail = firstTileSource.url;
+        } else {
+          imageUrlForThumbnail = firstTileSource;
+        }
+        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+      }
       dispatch({
         type: REPLACE_DOCUMENT,
         document
