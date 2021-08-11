@@ -30,10 +30,9 @@ import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
-import { wrapIn } from 'prosemirror-commands';
 
 import { addListNodes, wrapInList } from 'prosemirror-schema-list';
-import { toggleMark } from 'prosemirror-commands';
+import { toggleMark, wrapIn } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
 import { undo, redo } from "prosemirror-history"
 import { keymap } from "prosemirror-keymap"
