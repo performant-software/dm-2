@@ -141,12 +141,19 @@ export const marks = {
     toDOM() { return ["s", 0] }
   },
 
-  // TODO how to migrate old mark types to new ones?
   fontSize: {
-    attrs: {fontSize: {default: 'normal'}},
+    attrs: {fontSize: {default: '12pt'}},
     toDOM(mark) {
         let fontSize=mark.attrs.fontSize; 
         return ["span", { style: `font-size:${fontSize}` }, 0] 
+    }
+  },
+
+  fontFamily: {
+    attrs: {fontFamily: {default: '12pt'}},
+    toDOM(mark) {
+        let fontFamily=mark.attrs.fontFamily; 
+        return ["span", { style: `font-family:${fontFamily}` }, 0] 
     }
   },
 

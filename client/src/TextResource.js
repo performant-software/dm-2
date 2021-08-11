@@ -48,13 +48,7 @@ import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighligh
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
-// font sizes as defined in DM1
-const fontSize = {
-  small: 'x-small',
-  normal: null,
-  large: 'large',
-  huge: 'xx-large'
-}
+const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive']
 
 const buttonWidth = 48;
 
@@ -76,13 +70,14 @@ class TextResource extends Component {
       { name: 'italic', position: 3, width: buttonWidth, text: 'Italicize' },
       { name: 'underline', position: 4, width: buttonWidth, text: 'Underline' },
       { name: 'strikethrough', position: 5, width: buttonWidth, text: 'Strikethrough' },
-      { name: 'dropdown', position: 6, width: buttonWidth },
-      { name: 'link', position: 7, width: buttonWidth, text: 'Hyperlink' },
-      { name: 'bulleted-list', position: 8, width: buttonWidth, text: 'Bulleted list' },
-      { name: 'numbered-list', position: 9, width: buttonWidth, text: 'Numbered list' },
-      { name: 'blockquote', position: 10, width: buttonWidth, text: 'Blockquote' },
-      { name: 'highlight-select', position: 11, width: buttonWidth, text: 'Select a highlight' },
-      { name: 'highlight-delete', position: 12, width: buttonWidth, text: 'Delete selected highlight' },
+      { name: 'font-family', position: 6, width: 148 },
+      { name: 'font-size', position: 7, width: buttonWidth },
+      { name: 'link', position: 8, width: buttonWidth, text: 'Hyperlink' },
+      { name: 'bulleted-list', position: 9, width: buttonWidth, text: 'Bulleted list' },
+      { name: 'numbered-list', position: 10, width: buttonWidth, text: 'Numbered list' },
+      { name: 'blockquote', position: 11, width: buttonWidth, text: 'Blockquote' },
+      { name: 'highlight-select', position: 12, width: buttonWidth, text: 'Select a highlight' },
+      { name: 'highlight-delete', position: 13, width: buttonWidth, text: 'Delete selected highlight' },
     ];
 
     this.initialLinkDialogState = {
@@ -224,8 +219,11 @@ class TextResource extends Component {
           </IconButton>
         );
       
-      case 'dropdown':
-        return this.renderDropDownMenu(loading);
+      case 'font-size':
+        return this.renderFontSizeDropDown(loading);
+
+      case 'font-family':
+        return this.renderFontFamilyDropDown(loading);
 
       case 'link':
         return (
@@ -642,6 +640,14 @@ class TextResource extends Component {
     cmd( editorState, this.state.editorView.dispatch );
   }
 
+  onFontFamilyChange(e,i,fontFamily) {
+    e.preventDefault();
+    const fontFamilyMarkType = this.state.documentSchema.marks.fontFamily;
+    const editorState = this.getEditorState();
+    const cmd = fontFamily ? addMark( fontFamilyMarkType, { fontFamily } ) : removeMark( fontFamilyMarkType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
   onHighlightSelectMode(e) {
     e.preventDefault();
     const key = this.getInstanceKey();
@@ -903,20 +909,44 @@ class TextResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
-  renderDropDownMenu(loading) {
+  renderFontSizeDropDown(loading) {
     return (
       <DropDownMenu
-        key="dropdown"
+        key="fontSizeDropdown"
         value={'12pt'}
         onChange={this.onFontSizeChange.bind(this)}
-        onMouseOver={this.onTooltipOpen.bind(this, 'dropdown')}
-        onMouseOut={this.onTooltipClose.bind(this, 'dropdown')}
+        onMouseOver={this.onTooltipOpen.bind(this, 'font-size')}
+        onMouseOut={this.onTooltipClose.bind(this, 'font-size')}
         autoWidth={false}
         disabled={loading}
         className="font-size-dropdown"
       >
         {[...Array(128).keys()].filter(key => key !== 0).map(key =>
           <MenuItem key={`${key}pt`} value={`${key}pt`} primaryText={key} />
+        )}
+      </DropDownMenu>
+    );
+  }
+
+  renderFontFamilyDropDown(loading) {
+    return (
+      <DropDownMenu
+        key="fontFamilyDropdown"
+        value={'sans-serif'}
+        onChange={this.onFontFamilyChange.bind(this)}
+        onMouseOver={this.onTooltipOpen.bind(this, 'font-family')}
+        onMouseOut={this.onTooltipClose.bind(this, 'font-family')}
+        autoWidth={false}
+        disabled={loading}
+        className="font-family-dropdown"
+      >
+        {fontFamilies.map(key =>
+          <MenuItem
+            key={key}
+            value={key}
+            style={{ fontFamily: key }}
+            primaryText={key[0].toUpperCase() + key.slice(1)}
+          />
         )}
       </DropDownMenu>
     );
@@ -966,7 +996,8 @@ class TextResource extends Component {
                 }
               </>
             )}
-            {this.renderTooltipFromHidden({ toolName: 'dropdown', text: 'Font size (pt)' })}
+            {this.renderTooltipFromHidden({ toolName: 'font-family', text: 'Font' })}
+            {this.renderTooltipFromHidden({ toolName: 'font-size', text: 'Font size (pt)' })}
           </ToolbarGroup>
         </Toolbar>
       </div>
