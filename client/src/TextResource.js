@@ -171,6 +171,7 @@ class TextResource extends Component {
         "Mod-z": undo,
         "Mod-y": redo,
         "Mod-u": this.onUnderlineByKey.bind(this),
+        "Ctrl-u": this.onUnderlineByKey.bind(this),
         "Mod-X": this.onStrikethroughByKey.bind(this),
         "Tab": goToNextCell(1),
         "Shift-Tab": goToNextCell(-1)
@@ -267,6 +268,8 @@ class TextResource extends Component {
 
   preventFirefoxUShortcut = (e) => {
     if (e.metaKey && e.key === 'u') {
+      e.preventDefault();
+    } else if (e.ctrlKey && e.key === 'u') {
       e.preventDefault();
     }
   }

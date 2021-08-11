@@ -46,7 +46,7 @@ heroku buildpacks:add --index 1 heroku/nodejs
 
 You will need to provision SendGrid and Heroku Postgres using the Heroku Resources section.
 
-You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. See https://aws.amazon.com/ for more information.
+You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket. See https://aws.amazon.com/ for more information.
 
 ### Configuration variables
 
