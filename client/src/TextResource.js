@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 
 import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
+import Popover from 'material-ui/Popover';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 import Dialog from 'material-ui/Dialog';
@@ -20,6 +21,7 @@ import FormatStrikethrough from 'material-ui/svg-icons/editor/format-strikethrou
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
+import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
 
@@ -53,6 +55,8 @@ const fontSize = {
   huge: 'xx-large'
 }
 
+const buttonWidth = 48;
+
 const validURLRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})).?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
 
 class TextResource extends Component {
@@ -63,6 +67,21 @@ class TextResource extends Component {
     this.highlightsToDuplicate = [];
     this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
     this.scheduledContentUpdate = null;
+
+    this.tools = [
+      { name: 'highlight-color', position: 0, width: buttonWidth },
+      { name: 'highlight', position: 1, width: buttonWidth, text: 'Highlight selected text' },
+      { name: 'bold', position: 2, width: buttonWidth, text: 'Bold' },
+      { name: 'italic', position: 3, width: buttonWidth, text: 'Italicize' },
+      { name: 'underline', position: 4, width: buttonWidth, text: 'Underline' },
+      { name: 'strikethrough', position: 5, width: buttonWidth, text: 'Strikethrough' },
+      { name: 'dropdown', position: 6, width: 148 },
+      { name: 'link', position: 7, width: buttonWidth, text: 'Hyperlink' },
+      { name: 'bulleted-list', position: 8, width: buttonWidth, text: 'Bulleted list' },
+      { name: 'numbered-list', position: 9, width: buttonWidth, text: 'Numbered list' },
+      { name: 'highlight-select', position: 10, width: buttonWidth, text: 'Select a highlight' },
+      { name: 'highlight-delete', position: 11, width: buttonWidth, text: 'Delete selected highlight' },
+    ];
 
     this.initialLinkDialogState = {
       linkDialogOpen: false,
@@ -76,6 +95,12 @@ class TextResource extends Component {
       documentSchema: this.createDocumentSchema(),
       targetHighlights: [],
       currentScrollTop: 0,
+      toolbarWidth: 0,
+      hiddenTools: [],
+      hiddenToolsOpen: false,
+      hiddenToolsAnchor: undefined,
+      tooltipOpen: {},
+      tooltipAnchor: {},
       ...this.initialLinkDialogState
     };
   }
@@ -86,6 +111,257 @@ class TextResource extends Component {
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
+    }
+  }
+
+  renderTool = ({ toolName, text }) => {
+    const { 
+      highlightColors,
+      displayColorPickers,
+      setTextHighlightColor,
+      toggleTextColorPicker,
+      highlightSelectModes,
+      selectedHighlights,
+      loading
+    } = this.props;
+  
+    const instanceKey = this.getInstanceKey();
+
+    switch (toolName) {
+      case 'highlight-color':
+        return (
+          <HighlightColorSelect
+            key={toolName}
+            highlightColor={highlightColors[instanceKey]}
+            displayColorPicker={displayColorPickers[instanceKey]}
+            setHighlightColor={function(color) {
+              setTextHighlightColor(instanceKey, color);
+              const selectedHighlight = this.props.selectedHighlights[instanceKey];
+              if (selectedHighlight) {
+                // TODO: make this less heavy handed; following the highlight update, we recreate the schema and state to force prosemirror to rerender the necessary dom elements with the updated highlight data
+                this.props.updateHighlight(this.props.highlight_map[selectedHighlight].id, {color})
+                .then(function() {
+                  this.props.closeEditor(instanceKey);
+                  this.setState({documentSchema: this.createDocumentSchema()});
+                  this.createEditorState();
+                }.bind(this));
+              }
+            }.bind(this)}
+            toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
+          />
+        );
+
+      case 'highlight':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onHighlight.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <BorderColor />
+          </IconButton>
+        );
+  
+      case 'bold':
+        return (
+            <IconButton
+              key={toolName}
+              onMouseDown={this.onBold.bind(this)}
+              onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+              onMouseOut={this.onTooltipClose.bind(this, toolName)}
+              tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+              disabled={loading}
+            >
+              <FormatBold />
+            </IconButton>
+        );
+
+      case 'italic':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onItalic.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatItalic />
+          </IconButton>
+        );
+
+      case 'underline':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onUnderline.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatUnderlined />
+          </IconButton>
+        );
+
+      case 'strikethrough':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onStrikethrough.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatStrikethrough />
+          </IconButton>
+        );
+      
+      case 'dropdown':
+        return this.renderDropDownMenu(loading);
+
+      case 'link':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onHyperLink.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <InsertLink />
+          </IconButton>
+        );
+
+      case 'bulleted-list':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onBulletList.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatListBulleted />
+          </IconButton>
+        );
+
+      case 'numbered-list':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onOrderedList.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatListNumbered />
+          </IconButton>
+        );
+        
+      case 'highlight-select':
+        return (
+          <IconButton
+            key={toolName}
+            style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
+            onMouseDown={this.onHighlightSelectMode.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <CropFree />
+          </IconButton>
+        );
+        
+      case 'highlight-delete':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onDeleteHighlight.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={!selectedHighlights[instanceKey] || loading}
+          >
+            <DeleteForever />
+          </IconButton>
+        );
+        
+      default:
+        return (<div />);
+    }
+  }
+
+  renderTooltipFromHidden ({ toolName, text }) {
+    return (
+      <Popover
+        key={toolName}
+        open={this.state.tooltipOpen[toolName]}
+        anchorEl={this.state.tooltipAnchor[toolName]}
+        zDepth={5}
+        className="tooltip-popover"
+        anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+        targetOrigin={{horizontal: 'middle', vertical: 'top'}}
+        useLayerForClickAway={false}
+        autoCloseWhenOffScreen={false}
+      >
+        {text}
+      </Popover>
+    );
+  }
+
+  onTooltipOpen (toolName, e) {
+    e.persist();
+    const anchorEl = e.currentTarget;
+    e.preventDefault();
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        tooltipOpen: { ...prevState.tooltipOpen, [toolName]: true },
+        tooltipAnchor: { ...prevState.tooltipAnchor, [toolName]: anchorEl },
+      }
+    });
+  }
+
+  onTooltipClose (toolName) {
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        tooltipOpen: { ...prevState.tooltipOpen, [toolName]: false },
+      }
+    });
+  }
+
+  onToolbarWidthChange(node) {
+    if (node && node.offsetWidth !== this.state.toolbarWidth) {
+      let hiddenTools = this.state.hiddenTools;
+      let sumWidths = 0;
+      let hidingBegan = false;
+      this.tools
+        .sort((a, b) => a.position - b.position)
+        .forEach((tool, index) => {
+          let nextToolWidth = 48;
+          if (index + 1 < this.tools.length) nextToolWidth += this.tools[index+1].width;
+          if (sumWidths + tool.width + nextToolWidth < node.offsetWidth && !hidingBegan) {
+            sumWidths += tool.width;
+            if (hiddenTools.includes(tool.name)) {
+              hiddenTools.splice(hiddenTools.indexOf(tool.name), 1);
+            }
+          } else {
+            hidingBegan = true;
+            hiddenTools.push(tool.name);
+          }
+        });
+      this.setState({ hiddenTools });
+      this.setState({ toolbarWidth: node.offsetWidth });
     }
   }
 
@@ -358,6 +634,20 @@ class TextResource extends Component {
     }
   }
 
+  onHiddenToolsOpen(e) {
+    e.preventDefault();
+    this.setState({
+      hiddenToolsOpen: true,
+      hiddenToolsAnchor: e.currentTarget,
+    });
+  }
+
+  onHiddenToolsClose(e) {
+    this.setState({
+      hiddenToolsOpen: false,
+    });
+  }
+
   componentWillReceiveProps(nextProps) {
     // When we receive new EditorState through props — we apply it to the
     // EditorView instance and update local state for this component
@@ -591,6 +881,7 @@ class TextResource extends Component {
   renderDropDownMenu(loading) {
     return (
       <DropDownMenu
+        key="dropdown"
         value={fontSize['normal']}
         onChange={this.onFontSizeChange.bind(this)}
         autoWidth={false}
@@ -605,114 +896,52 @@ class TextResource extends Component {
   }
 
   renderToolbar() {
-    const { 
-      highlightColors,
-      displayColorPickers,
-      setTextHighlightColor,
-      toggleTextColorPicker,
-      highlightSelectModes,
-      selectedHighlights,
-      loading
-    } = this.props;
 
     if( !this.isEditable() ) return <div></div>;
-    const instanceKey = this.getInstanceKey();
 
     return (
-      <Toolbar style={{ minHeight: '55px' }} onMouseDown={(e) => e.preventDefault()}>
-        <ToolbarGroup>
-          <HighlightColorSelect
-            highlightColor={highlightColors[instanceKey]}
-            displayColorPicker={displayColorPickers[instanceKey]}
-            setHighlightColor={function(color) {
-              setTextHighlightColor(instanceKey, color);
-              const selectedHighlight = this.props.selectedHighlights[instanceKey];
-              if (selectedHighlight) {
-                // TODO: make this less heavy handed; following the highlight update, we recreate the schema and state to force prosemirror to rerender the necessary dom elements with the updated highlight data
-                this.props.updateHighlight(this.props.highlight_map[selectedHighlight].id, {color})
-                .then(function() {
-                  this.props.closeEditor(instanceKey);
-                  this.setState({documentSchema: this.createDocumentSchema()});
-                  this.createEditorState();
-                }.bind(this));
-              }
-            }.bind(this)}
-            toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
-          />
-          <IconButton
-            onMouseDown={this.onHighlight.bind(this)}
-            tooltip="Highlight selected text"
-            disabled={loading}
-          >
-            <BorderColor />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onBold.bind(this)}
-            tooltip="Bold"
-            disabled={loading}
-          >
-            <FormatBold />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onItalic.bind(this)}
-            tooltip="Italicize"
-            disabled={loading}
-          >
-            <FormatItalic />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onUnderline.bind(this)}
-            tooltip="Underline"  
-            disabled={loading}
-          >
-            <FormatUnderlined />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onStrikethrough.bind(this)}
-            tooltip="Strikethrough"
-            disabled={loading}
-          >
-            <FormatStrikethrough />
-          </IconButton>
-          { this.renderDropDownMenu(loading) }
-          <IconButton
-            onMouseDown={this.onHyperLink.bind(this)}
-            tooltip="Hyperlink"
-            disabled={loading}
-          >
-            <InsertLink />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onBulletList.bind(this)}
-            tooltip="Bulleted list"  
-            disabled={loading}
-          >
-            <FormatListBulleted />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onOrderedList.bind(this)}
-            tooltip="Numbered list"
-            disabled={loading}
-          >
-            <FormatListNumbered />
-          </IconButton>
-          <IconButton
-            style={{backgroundColor: highlightSelectModes[instanceKey] ? 'rgb(188, 188, 188)' : 'initial'}}
-            onMouseDown={this.onHighlightSelectMode.bind(this)}
-            tooltip="Select a highlight"
-            disabled={loading}
-          >
-            <CropFree />
-          </IconButton>
-          <IconButton
-            onMouseDown={this.onDeleteHighlight.bind(this)}
-            tooltip="Delete selected highlight"
-            disabled={!selectedHighlights[instanceKey] || loading}
-          >
-            <DeleteForever />
-          </IconButton>
-        </ToolbarGroup>
-      </Toolbar>
+      <div 
+        ref={this.onToolbarWidthChange.bind(this)}
+      >
+        <Toolbar
+          style={{ minHeight: '55px' }}
+          onMouseDown={(e) => e.preventDefault()} 
+        >
+          <ToolbarGroup>
+            {this.tools.sort((a, b) => a.position - b.position)
+              .filter(tool => !this.state.hiddenTools.includes(tool.name))
+              .map(tool => this.renderTool({ toolName: tool.name, text: tool.text }))
+            }
+            {this.state.hiddenTools.length > 0 && (
+              <>
+                <IconButton
+                  onMouseDown={this.onHiddenToolsOpen.bind(this)}
+                  disabled={this.props.loading}
+                >
+                  <EllipsisIcon />
+                </IconButton>
+                <Popover
+                  open={this.state.hiddenToolsOpen}
+                  anchorEl={this.state.hiddenToolsAnchor}
+                  className="hidden-tools-popover"
+                  anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
+                  targetOrigin={{horizontal: 'left', vertical: 'top'}}
+                  onRequestClose={this.onHiddenToolsClose.bind(this)}
+                >
+                  {this.tools.sort((a, b) => a.position - b.position)
+                    .filter(tool => this.state.hiddenTools.includes(tool.name))
+                    .map(tool => this.renderTool({ toolName: tool.name, text: tool.text }))
+                  }
+                </Popover>
+                {this.tools.sort((a, b) => a.position - b.position)
+                    .filter(tool => this.state.hiddenTools.includes(tool.name))
+                    .map(tool => this.renderTooltipFromHidden({ toolName: tool.name, text: tool.text }))
+                  }
+              </>
+            )}
+          </ToolbarGroup>
+        </Toolbar>
+      </div>
     );
   }
 

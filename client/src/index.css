@@ -5,6 +5,21 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+.hidden-tools-popover > div {
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+}
+
+.tooltip-popover {
+  font-family: Roboto, sans-serif;
+  font-size: 10px;
+  line-height: 22px;
+  padding: 0px 8px;
+  color: white !important;
+  background-color: rgb(100, 100, 100) !important;
+  opacity: 0.9 !important;
+}
+
 .folder-name-textfield {
   flex-grow: 1;
   height: auto !important;
