@@ -25,7 +25,7 @@ import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbere
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
-
+import { Hr } from 'react-bootstrap-icons';
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
@@ -40,7 +40,7 @@ import {tableEditing, columnResizing, tableNodes } from "prosemirror-tables"
 import { goToNextCell } from "prosemirror-tables"
 
 import { schema } from './TextSchema';
-import { addMark, removeMark } from './TextCommands';
+import { addMark, removeMark, replaceNodeWith } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
@@ -76,8 +76,9 @@ class TextResource extends Component {
       { name: 'bulleted-list', position: 9, width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', position: 10, width: buttonWidth, text: 'Numbered list' },
       { name: 'blockquote', position: 11, width: buttonWidth, text: 'Blockquote' },
-      { name: 'highlight-select', position: 12, width: buttonWidth, text: 'Select a highlight' },
-      { name: 'highlight-delete', position: 13, width: buttonWidth, text: 'Delete selected highlight' },
+      { name: 'hr', position: 12, width: buttonWidth, text: 'Horizontal rule' },
+      { name: 'highlight-select', position: 13, width: buttonWidth, text: 'Select a highlight' },
+      { name: 'highlight-delete', position: 14, width: buttonWidth, text: 'Delete selected highlight' },
     ];
 
     this.initialLinkDialogState = {
@@ -280,6 +281,24 @@ class TextResource extends Component {
             <FormatQuote />
           </IconButton>
         );
+
+      case 'hr': {
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onHR.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <Hr
+              color="black"
+              size={24}
+            />
+          </IconButton>
+        )
+      }
         
       case 'highlight-select':
         return (
@@ -627,6 +646,14 @@ class TextResource extends Component {
     const blockquoteNodeType = this.state.documentSchema.nodes.blockquote;
     const editorState = this.getEditorState();
     const cmd = wrapIn( blockquoteNodeType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onHR(e) {
+    e.preventDefault();
+    const hrNodeType = this.state.documentSchema.nodes.horizontal_rule;
+    const editorState = this.getEditorState();
+    const cmd = replaceNodeWith(hrNodeType);
     cmd( editorState, this.state.editorView.dispatch );
   }
 
