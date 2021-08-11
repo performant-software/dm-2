@@ -951,8 +951,8 @@ class TextResource extends Component {
                   open={this.state.hiddenToolsOpen}
                   anchorEl={this.state.hiddenToolsAnchor}
                   className="hidden-tools-popover"
-                  anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
-                  targetOrigin={{horizontal: 'left', vertical: 'top'}}
+                  anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}
+                  targetOrigin={{horizontal: 'right', vertical: 'top'}}
                   onRequestClose={this.onHiddenToolsClose.bind(this)}
                 >
                   {this.tools.sort((a, b) => a.position - b.position)
