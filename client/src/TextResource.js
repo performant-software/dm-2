@@ -76,7 +76,7 @@ class TextResource extends Component {
       { name: 'italic', position: 3, width: buttonWidth, text: 'Italicize' },
       { name: 'underline', position: 4, width: buttonWidth, text: 'Underline' },
       { name: 'strikethrough', position: 5, width: buttonWidth, text: 'Strikethrough' },
-      { name: 'dropdown', position: 6, width: 148 },
+      { name: 'dropdown', position: 6, width: buttonWidth },
       { name: 'link', position: 7, width: buttonWidth, text: 'Hyperlink' },
       { name: 'bulleted-list', position: 8, width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', position: 9, width: buttonWidth, text: 'Numbered list' },
