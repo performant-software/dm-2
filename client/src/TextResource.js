@@ -18,6 +18,7 @@ import FormatBold from 'material-ui/svg-icons/editor/format-bold';
 import FormatItalic from 'material-ui/svg-icons/editor/format-italic';
 import FormatUnderlined from 'material-ui/svg-icons/editor/format-underlined';
 import FormatStrikethrough from 'material-ui/svg-icons/editor/format-strikethrough';
+import FormatQuote from 'material-ui/svg-icons/editor/format-quote';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
@@ -29,6 +30,7 @@ import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
+import { wrapIn } from 'prosemirror-commands';
 
 import { addListNodes, wrapInList } from 'prosemirror-schema-list';
 import { toggleMark } from 'prosemirror-commands';
@@ -79,8 +81,9 @@ class TextResource extends Component {
       { name: 'link', position: 7, width: buttonWidth, text: 'Hyperlink' },
       { name: 'bulleted-list', position: 8, width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', position: 9, width: buttonWidth, text: 'Numbered list' },
-      { name: 'highlight-select', position: 10, width: buttonWidth, text: 'Select a highlight' },
-      { name: 'highlight-delete', position: 11, width: buttonWidth, text: 'Delete selected highlight' },
+      { name: 'blockquote', position: 10, width: buttonWidth, text: 'Blockquote' },
+      { name: 'highlight-select', position: 11, width: buttonWidth, text: 'Select a highlight' },
+      { name: 'highlight-delete', position: 12, width: buttonWidth, text: 'Delete selected highlight' },
     ];
 
     this.initialLinkDialogState = {
@@ -263,6 +266,20 @@ class TextResource extends Component {
             disabled={loading}
           >
             <FormatListNumbered />
+          </IconButton>
+        );
+
+      case 'blockquote':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onBlockquote.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatQuote />
           </IconButton>
         );
         
@@ -606,6 +623,14 @@ class TextResource extends Component {
     const bulletListNodeType = this.state.documentSchema.nodes.bullet_list;
     const editorState = this.getEditorState();
     const cmd = wrapInList( bulletListNodeType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onBlockquote(e) {
+    e.preventDefault();
+    const blockquoteNodeType = this.state.documentSchema.nodes.blockquote;
+    const editorState = this.getEditorState();
+    const cmd = wrapIn( blockquoteNodeType );
     cmd( editorState, this.state.editorView.dispatch );
   }
 
