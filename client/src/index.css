@@ -23,6 +23,23 @@ body {
   background-color: rgb(100, 100, 100) !important;
   opacity: 0.9 !important;
   box-shadow: none !important;
+  margin-top: 6px !important;
+}
+
+.font-size-dropdown {
+  margin-top: -8px !important;
+  margin-left: -24px !important;
+  margin-right: -24px !important;
+}
+
+.font-size-dropdown > div {
+  padding: 0 !important;
+  margin-left: 24px !important;
+  margin-right: 0 !important;
+}
+
+.font-size-dropdown svg {
+  display: none !important;
 }
 
 .folder-name-textfield {

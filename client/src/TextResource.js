@@ -218,6 +218,7 @@ class TextResource extends Component {
             onMouseOut={this.onTooltipClose.bind(this, toolName)}
             tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
             disabled={loading}
+            style={{ zIndex: 4 }}
           >
             <FormatStrikethrough />
           </IconButton>
@@ -906,15 +907,17 @@ class TextResource extends Component {
     return (
       <DropDownMenu
         key="dropdown"
-        value={fontSize['normal']}
+        value={'12pt'}
         onChange={this.onFontSizeChange.bind(this)}
+        onMouseOver={this.onTooltipOpen.bind(this, 'dropdown')}
+        onMouseOut={this.onTooltipClose.bind(this, 'dropdown')}
         autoWidth={false}
         disabled={loading}
+        className="font-size-dropdown"
       >
-        <MenuItem value={fontSize['small']} primaryText="Small" />
-        <MenuItem value={fontSize['normal']} primaryText="Normal" />
-        <MenuItem value={fontSize['large']} primaryText="Large" />
-        <MenuItem value={fontSize['huge']} primaryText="Huge" />
+        {[...Array(128).keys()].filter(key => key !== 0).map(key =>
+          <MenuItem key={`${key}pt`} value={`${key}pt`} primaryText={key} />
+        )}
       </DropDownMenu>
     );
   }
@@ -958,11 +961,12 @@ class TextResource extends Component {
                   }
                 </Popover>
                 {this.tools.sort((a, b) => a.position - b.position)
-                    .filter(tool => this.state.hiddenTools.includes(tool.name))
-                    .map(tool => this.renderTooltipFromHidden({ toolName: tool.name, text: tool.text }))
-                  }
+                  .filter(tool => this.state.hiddenTools.includes(tool.name))
+                  .map(tool => this.renderTooltipFromHidden({ toolName: tool.name, text: tool.text }))
+                }
               </>
             )}
+            {this.renderTooltipFromHidden({ toolName: 'dropdown', text: 'Font size (pt)' })}
           </ToolbarGroup>
         </Toolbar>
       </div>
