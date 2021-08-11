@@ -71,7 +71,7 @@ class TextResource extends Component {
       { name: 'underline', position: 4, width: buttonWidth, text: 'Underline' },
       { name: 'strikethrough', position: 5, width: buttonWidth, text: 'Strikethrough' },
       { name: 'font-family', position: 6, width: 148 },
-      { name: 'font-size', position: 7, width: buttonWidth },
+      { name: 'font-size', position: 7, width: 72 },
       { name: 'link', position: 8, width: buttonWidth, text: 'Hyperlink' },
       { name: 'bulleted-list', position: 9, width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', position: 10, width: buttonWidth, text: 'Numbered list' },
@@ -362,10 +362,8 @@ class TextResource extends Component {
       let hidingBegan = false;
       this.tools
         .sort((a, b) => a.position - b.position)
-        .forEach((tool, index) => {
-          let nextToolWidth = 48;
-          if (index + 1 < this.tools.length) nextToolWidth += this.tools[index+1].width;
-          if (sumWidths + tool.width + nextToolWidth < node.offsetWidth && !hidingBegan) {
+        .forEach((tool) => {
+          if (sumWidths + tool.width + buttonWidth < node.offsetWidth && !hidingBegan) {
             sumWidths += tool.width;
             if (hiddenTools.includes(tool.name)) {
               hiddenTools.splice(hiddenTools.indexOf(tool.name), 1);

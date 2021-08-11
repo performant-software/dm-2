@@ -14,6 +14,10 @@ body {
   overflow-x: hidden !important;
 }
 
+.hidden-tools-popover > div > div {
+  display: flex;
+}
+
 .tooltip-popover {
   font-family: Roboto, sans-serif;
   font-size: 10px;
@@ -45,6 +49,16 @@ body {
 .font-family-dropdown {
   margin-top: -8px !important;
   margin-right: -18px !important;
+}
+
+.hidden-tools-popover .font-size-dropdown,
+.hidden-tools-popover .font-family-dropdown {
+  margin-top: 0px !important;
+}
+
+.hidden-tools-popover .font-size-dropdown > div,
+.hidden-tools-popover .font-family-dropdown > div {
+  margin-top: -4px !important;
 }
 
 .folder-name-textfield {
