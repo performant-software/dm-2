@@ -481,6 +481,7 @@ class TextResource extends Component {
         "Mod-u": this.onUnderlineByKey.bind(this),
         "Ctrl-u": this.onUnderlineByKey.bind(this),
         "Mod-X": this.onStrikethroughByKey.bind(this),
+        "Ctrl-X": this.onStrikethroughByKey.bind(this),
         "Tab": goToNextCell(1),
         "Shift-Tab": goToNextCell(-1)
       })
