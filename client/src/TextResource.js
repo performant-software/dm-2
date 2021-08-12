@@ -398,7 +398,6 @@ class TextResource extends Component {
         tooltipOpen: { ...prevState.tooltipOpen, [toolName]: false },
       }
     });
-    this.state.editorView.focus();
   }
 
   onToolbarWidthChange(node) {
@@ -611,7 +610,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onItalic = (e) => {
@@ -620,14 +618,12 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onUnderlineByKey = (editorState) => {
     const markType = this.state.documentSchema.marks.underline;
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   preventFirefoxUShortcut = (e) => {
@@ -644,7 +640,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onStrikethrough = (e) => {
@@ -652,7 +647,6 @@ class TextResource extends Component {
     const markType = this.state.documentSchema.marks.strikethrough;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
-    this.state.editorView.focus();
     cmd( editorState, this.state.editorView.dispatch );
   }
 
@@ -681,7 +675,6 @@ class TextResource extends Component {
       cmd( editorState, this.state.editorView.dispatch );
     }
     this.setState( {...this.state, linkDialogOpen: true, createHyperlink } );
-    this.state.editorView.focus();
   }
 
   onOrderedList(e) {
@@ -690,7 +683,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = wrapInList( orderedListNodeType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onBulletList(e) {
@@ -699,7 +691,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = wrapInList( bulletListNodeType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onBlockquote(e) {
@@ -708,7 +699,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = wrapIn( blockquoteNodeType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onHR(e) {
@@ -717,7 +707,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = replaceNodeWith(hrNodeType);
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onFontSizeChange(e,i,fontSize) {
@@ -726,7 +715,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = fontSize ? addMark( textStyleMarkType, { fontSize } ) : removeMark( textStyleMarkType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onFontFamilyChange(e,i,fontFamily) {
@@ -735,7 +723,6 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = fontFamily ? addMark( fontFamilyMarkType, { fontFamily } ) : removeMark( fontFamilyMarkType );
     cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
   }
 
   onHighlightSelectMode(e) {
@@ -753,7 +740,6 @@ class TextResource extends Component {
       const cmd = removeMark( markType, selectedHighlight );
       cmd( editorState, this.state.editorView.dispatch );
     }
-    this.state.editorView.focus();
   }
 
   onHiddenToolsOpen(e) {
