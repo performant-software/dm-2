@@ -13,7 +13,10 @@ import TextField from 'material-ui/TextField';
 import CircularProgress from 'material-ui/CircularProgress';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 
+import { SketchPicker } from 'react-color';
+
 import IconButton from 'material-ui/IconButton';
+import TextFields from 'material-ui/svg-icons/editor/text-fields';
 import FormatBold from 'material-ui/svg-icons/editor/format-bold';
 import FormatItalic from 'material-ui/svg-icons/editor/format-italic';
 import FormatUnderlined from 'material-ui/svg-icons/editor/format-underlined';
@@ -64,22 +67,25 @@ class TextResource extends Component {
     this.scheduledContentUpdate = null;
 
     this.tools = [
-      { name: 'highlight-color', position: 0, width: buttonWidth },
-      { name: 'highlight', position: 1, width: buttonWidth, text: 'Highlight selected text' },
-      { name: 'bold', position: 2, width: buttonWidth, text: 'Bold' },
-      { name: 'italic', position: 3, width: buttonWidth, text: 'Italicize' },
-      { name: 'underline', position: 4, width: buttonWidth, text: 'Underline' },
-      { name: 'strikethrough', position: 5, width: buttonWidth, text: 'Strikethrough' },
-      { name: 'font-family', position: 6, width: 148 },
-      { name: 'font-size', position: 7, width: 72 },
-      { name: 'link', position: 8, width: buttonWidth, text: 'Hyperlink' },
-      { name: 'bulleted-list', position: 9, width: buttonWidth, text: 'Bulleted list' },
-      { name: 'numbered-list', position: 10, width: buttonWidth, text: 'Numbered list' },
-      { name: 'blockquote', position: 11, width: buttonWidth, text: 'Blockquote' },
-      { name: 'hr', position: 12, width: buttonWidth, text: 'Horizontal rule' },
-      { name: 'highlight-select', position: 13, width: buttonWidth, text: 'Select a highlight' },
-      { name: 'highlight-delete', position: 14, width: buttonWidth, text: 'Delete selected highlight' },
-    ];
+      { name: 'highlight-color', width: buttonWidth },
+      { name: 'highlight', width: buttonWidth, text: 'Highlight selected text' },
+      { name: 'text-color', width: buttonWidth, text: 'Change text color' },
+      { name: 'bold', width: buttonWidth, text: 'Bold' },
+      { name: 'italic', width: buttonWidth, text: 'Italicize' },
+      { name: 'underline', width: buttonWidth, text: 'Underline' },
+      { name: 'strikethrough', width: buttonWidth, text: 'Strikethrough' },
+      { name: 'font-family', width: 148 },
+      { name: 'font-size', width: 72 },
+      { name: 'link', width: buttonWidth, text: 'Hyperlink' },
+      { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
+      { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
+      { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
+      { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
+      { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
+      { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
+    ].map((tool, position) => {
+      return { ...tool, position }
+    });
 
     this.initialLinkDialogState = {
       linkDialogOpen: false,
@@ -97,6 +103,9 @@ class TextResource extends Component {
       hiddenTools: [],
       hiddenToolsOpen: false,
       hiddenToolsAnchor: undefined,
+      textColor: 'teal',
+      colorPickerOpen: false,
+      colorPickerAnchor: undefined,
       tooltipOpen: {},
       tooltipAnchor: {},
       ...this.initialLinkDialogState
@@ -162,6 +171,23 @@ class TextResource extends Component {
             <BorderColor />
           </IconButton>
         );
+
+      case 'text-color':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onColorPickerOpen.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <TextFields
+              color={this.state.textColor}
+              className="text-fields-icon"
+            />
+          </IconButton>
+        )
   
       case 'bold':
         return (
@@ -551,6 +577,31 @@ class TextResource extends Component {
     const editorState = this.getEditorState();
     const cmd = addMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
     cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
+  }
+
+  onColorPickerOpen(e) {
+    e.preventDefault();
+    this.setState({
+      colorPickerOpen: true,
+      colorPickerAnchor: e.currentTarget,
+    });
+  }
+
+  onColorPickerClose() {
+    this.setState({
+      colorPickerOpen: false,
+    });
+    this.state.editorView.focus();
+  }
+
+  onChangeTextColor = (color) => {
+    this.setState({ textColor: color.hex });
+    const colorMarkType = this.state.documentSchema.marks.color;
+    const editorState = this.getEditorState();
+    const cmd = color ? addMark( colorMarkType, { color: color.hex } ) : removeMark( colorMarkType );
+    cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
   }
 
   onBold = (e) => {
@@ -935,6 +986,25 @@ class TextResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
+  renderColorPicker() {
+    return (
+      <Popover
+        open={this.state.colorPickerOpen}
+        anchorEl={this.state.colorPickerAnchor}
+        className="color-picker-popover"
+        anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
+        targetOrigin={{horizontal: 'left', vertical: 'top'}}
+        onRequestClose={this.onColorPickerClose.bind(this)}
+        animated={false}
+      >
+        <SketchPicker
+          color={this.state.textColor}
+          onChangeComplete={this.onChangeTextColor.bind(this)}
+        />
+      </Popover>
+    )
+  }
+
   renderFontSizeDropDown(loading) {
     return (
       <DropDownMenu
@@ -1026,6 +1096,7 @@ class TextResource extends Component {
             {this.renderTooltipFromHidden({ toolName: 'font-size', text: 'Font size (pt)' })}
           </ToolbarGroup>
         </Toolbar>
+        { this.renderColorPicker() }
       </div>
     );
   }
