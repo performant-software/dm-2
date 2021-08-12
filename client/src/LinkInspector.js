@@ -18,8 +18,10 @@ const LinkList = function(props) {
     return (
       <LinkableList
         items={props.items}
+        originKey={props.originKey}
         writeEnabled={props.writeEnabled}
         adminEnabled={props.adminEnabled}
+        openDocuments={props.openDocuments}
         openDocumentIds={props.openDocumentIds}
         highlightId={props.highlight_id}
       />
@@ -136,8 +138,10 @@ class LinkInspector extends Component {
       <div style={{ marginBottom: '8px' }}>
         <LinkArea
           items={items}
+          openDocuments={this.props.openDocuments}
           openDocumentIds={this.props.openDocumentIds}
           loading={target.loading}
+          originKey={target.originKey}
           document_id={target.document_id}
           highlight_id={target.highlight_id}
           addLink={this.props.addLink}

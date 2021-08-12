@@ -357,9 +357,12 @@ export default function(state = initialState, action) {
   }
 }
 
-export function openDocument(documentId, firstTarget) {
+export function openDocument(documentId, firstTarget, inContents, pos) {
   return function(dispatch, getState) {
-    const documentPosition = getState().documentGrid.openDocuments.length;
+    let documentPosition = getState().documentGrid.openDocuments.length;
+    if (!inContents && pos) {
+      documentPosition = pos;
+    }
     dispatch({
       type: OPEN_DOCUMENT
     });
