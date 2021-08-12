@@ -12,6 +12,7 @@
     "openseadragon-fabricjs-overlay": "git://github.com/performant-software/OpenseadragonFabricjsOverlay.git",
     "prosemirror-commands": "^1.1.10",
     "prosemirror-example-setup": "^1.1.2",
+    "prosemirror-keymap": "^1.1.4",
     "prosemirror-menu": "^1.1.4",
     "prosemirror-model": "^1.14.3",
     "prosemirror-schema-basic": "^1.1.2",
@@ -41,6 +42,7 @@
   },
   "resolutions": {
     "prosemirror-commands": "1.1.10",
+    "prosemirror-keymap": "1.1.4",
     "prosemirror-menu": "1.1.4",
     "prosemirror-model": "1.14.3",
     "prosemirror-schema-list": "1.1.5",
