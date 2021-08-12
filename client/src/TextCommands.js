@@ -76,3 +76,21 @@ export function removeMark(markType, uid) {
         return true
     }
 }
+
+function canInsert(state, nodeType) {
+    var $from = state.selection.$from;
+    for (var d = $from.depth; d >= 0; d--) {
+      var index = $from.index(d);
+      if ($from.node(d).canReplaceWith(index, index, nodeType)) { return true }
+    }
+    return false
+  }
+
+export function replaceNodeWith (nodeType) {
+    return function(state, dispatch) {
+        if (canInsert(state, nodeType)) {
+            dispatch(state.tr.replaceSelectionWith(nodeType.create()));
+        }
+        return true
+    }
+}

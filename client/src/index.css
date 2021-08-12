@@ -5,6 +5,62 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+.hidden-tools-popover {
+  background-color: rgb(232, 232, 232) !important;
+}
+
+.hidden-tools-popover > div {
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+}
+
+.hidden-tools-popover > div > div {
+  display: flex;
+}
+
+.tooltip-popover {
+  font-family: Roboto, sans-serif;
+  font-size: 10px;
+  line-height: 22px;
+  padding: 0px 8px;
+  color: white !important;
+  background-color: rgb(100, 100, 100) !important;
+  opacity: 0.9 !important;
+  box-shadow: none !important;
+  margin-top: 6px !important;
+}
+
+.font-size-dropdown {
+  margin-top: -8px !important;
+  margin-left: -24px !important;
+  margin-right: -24px !important;
+}
+
+.font-size-dropdown > div {
+  padding: 0 !important;
+  margin-left: 24px !important;
+  margin-right: 0 !important;
+}
+
+.font-size-dropdown svg {
+  display: none !important;
+}
+
+.font-family-dropdown {
+  margin-top: -8px !important;
+  margin-right: -18px !important;
+}
+
+.hidden-tools-popover .font-size-dropdown,
+.hidden-tools-popover .font-family-dropdown {
+  margin-top: 0px !important;
+}
+
+.hidden-tools-popover .font-size-dropdown > div,
+.hidden-tools-popover .font-family-dropdown > div {
+  margin-top: -4px !important;
+}
+
 .folder-name-textfield {
   flex-grow: 1;
   height: auto !important;
