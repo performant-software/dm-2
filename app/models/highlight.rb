@@ -15,7 +15,6 @@ class Highlight < Linkable
           r[:highlight_uid] = hl.uid
         end
       end
-      r[:origin_doc_id] = self.document_id
     }
     result
   end

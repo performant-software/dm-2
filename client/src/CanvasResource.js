@@ -283,7 +283,7 @@ class CanvasResource extends Component {
 
     overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-          window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
+          window.setFocusHighlight(document_id, event.target._highlightUid, key); // the code that pops up the annotation
           overlay.fabricCanvas().discardActiveObject();
       } else if (this.currentMode === 'edit' && event && event.target._isTarget) {
         for (let i = 0; i < 3; i++){ // For some reason it's necessary to do this multiple times
@@ -314,7 +314,7 @@ class CanvasResource extends Component {
     // rollover highlights
     overlay.fabricCanvas().on('mouse:over', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-        window.showRollover(this.props.document_id, event.target._highlightUid);
+        window.showRollover(this.props.document_id, event.target._highlightUid, key);
       }
     });
     overlay.fabricCanvas().on('mouse:out', function(event) {
