@@ -5,10 +5,6 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
-.github-picker {
-  z-index: 3001;
-}
-
 .hidden-tools-popover {
   background-color: rgb(232, 232, 232) !important;
 }
