@@ -24,6 +24,9 @@ class Linkable < ApplicationRecord
         target_obj[:highlight_uid] = hl.uid
       end
     end
+    if self.class.to_s == 'Document'
+      target_obj[:origin_doc_id] = self.id
+    end
     target_obj
   end
 

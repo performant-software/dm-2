@@ -55,7 +55,7 @@ class LinkableList extends Component {
   }
 
   renderItem(item, buoyancyTarget, targetParentId, targetParentType) {
-    const { inContents, writeEnabled, openDocumentIds } = this.props;
+    const { inContents, writeEnabled, openDocuments, openDocumentIds } = this.props;
     const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
     let primaryText = item.document_title;
@@ -96,11 +96,21 @@ class LinkableList extends Component {
           isDraggable={writeEnabled}
           isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
           handleClick={() => {
-            if (item.document_kind === 'text') {
-              this.props.openDocument(item.document_id, item.highlight_uid)
-            } else {
-              this.props.openDocument(item.document_id, item.highlight_id)
+            let target = item.highlight_id;
+            let pos = null;
+            if (item.document_kind === 'text') target = item.highlight_uid;
+            if (item.origin_doc_id) {
+            const originDoc = parseInt(item.origin_doc_id, 10);
+              const openDocsMatchingId = openDocuments
+                .filter(doc => doc.id === originDoc)
+                .sort((a, b) => b.timeOpened - a.timeOpened);
+              if (openDocsMatchingId.length > 0) {
+                const lastDocTime = openDocsMatchingId[0].timeOpened;
+                pos = openDocuments
+                  .findIndex(doc => doc.id === originDoc && doc.timeOpened === lastDocTime) + 1;
+              }
             }
+            this.props.openDocument(item.document_id, target, inContents, pos)
           }}
           // TODO use this for rename function
           handleDoubleClick={() => {}}
