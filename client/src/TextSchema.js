@@ -157,14 +157,6 @@ export const marks = {
     }
   },
 
-  color: {
-    attrs: {color: {default: 'black'}},
-    toDOM(mark) {
-        let color=mark.attrs.color; 
-        return ["span", { style: `color:${color}` }, 0] 
-    }
-  },
-
   textStyle: textStyle,
 
   // :: MarkSpec A strong mark. Rendered as `<strong>`, parse rules
