@@ -173,7 +173,12 @@ class Document < Linkable
       .resize_to_fill(80, 80)
       .convert('png')
       .call
-   self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+
+    self.highlights.each{|highlight|
+      highlight.set_thumbnail(image_url, nil)
+    }
+
+    self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
   end
 
   def highlight_map
