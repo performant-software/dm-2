@@ -1,7 +1,7 @@
 import {Schema} from "prosemirror-model"
 import {textStyle} from "./TextStyleMarkSpec"
 
-const pDOM = ["p", 0], blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
+const blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
       preDOM = ["pre", ["code", 0]], brDOM = ["br"]
 
 // :: Object
@@ -17,8 +17,28 @@ export const nodes = {
   paragraph: {
     content: "inline*",
     group: "block",
-    parseDOM: [{tag: "p"}],
-    toDOM() { return pDOM }
+    parseDOM: [{
+      tag: "p",
+      getAttrs: node => {
+        const marginLeft = node.style['margin-left'].split('px')[0];
+        const indentLevel = parseInt(marginLeft, 10) / 48;
+        return {
+          indented: node.style['text-indent'] === '3em',
+          indentLevel,
+        }
+      }
+    }],
+    attrs: {
+      indented: {default: false},
+      indentLevel: {default: 0},
+    },
+    toDOM(node) {
+      const textIndent = node.attrs.indented ? '3em' : '0';
+      const marginLeft = `${node.attrs.indentLevel * 48}px`;
+      return ["p", {
+        style: `text-indent: ${textIndent}; margin-left: ${marginLeft}`
+      }, 0];
+    }
   },
 
   // :: NodeSpec A blockquote (`<blockquote>`) wrapping one or more blocks.

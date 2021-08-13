@@ -25,6 +25,8 @@ import FormatQuote from 'material-ui/svg-icons/editor/format-quote';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
+import IncreaseIndent from 'material-ui/svg-icons/editor/format-indent-increase';
+import DecreaseIndent from 'material-ui/svg-icons/editor/format-indent-decrease';
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
@@ -40,10 +42,11 @@ import { exampleSetup } from 'prosemirror-example-setup';
 import { undo, redo } from "prosemirror-history"
 import { keymap } from "prosemirror-keymap"
 import {tableEditing, columnResizing, tableNodes } from "prosemirror-tables"
-import { goToNextCell } from "prosemirror-tables"
 
 import { schema } from './TextSchema';
-import { addMark, removeMark, replaceNodeWith } from './TextCommands';
+import {
+  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith
+} from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
@@ -69,6 +72,7 @@ class TextResource extends Component {
     this.tools = [
       { name: 'highlight-color', width: buttonWidth },
       { name: 'highlight', width: buttonWidth, text: 'Highlight selected text' },
+      { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'text-color', width: buttonWidth, text: 'Change text color' },
       { name: 'bold', width: buttonWidth, text: 'Bold' },
       { name: 'italic', width: buttonWidth, text: 'Italicize' },
@@ -79,9 +83,10 @@ class TextResource extends Component {
       { name: 'link', width: buttonWidth, text: 'Hyperlink' },
       { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
+      { name: 'decrease-indent', width: buttonWidth, text: 'Decrease indent' },
+      { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
-      { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
       return { ...tool, position }
@@ -294,6 +299,34 @@ class TextResource extends Component {
           </IconButton>
         );
 
+      case 'decrease-indent':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onDecreaseIndent.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <DecreaseIndent />
+          </IconButton>
+        );
+
+      case 'increase-indent':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onIncreaseIndent.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <IncreaseIndent />
+          </IconButton>
+        );
+      
       case 'blockquote':
         return (
           <IconButton
@@ -509,8 +542,8 @@ class TextResource extends Component {
         "Ctrl-u": this.onUnderlineByKey.bind(this),
         "Mod-X": this.onStrikethroughByKey.bind(this),
         "Ctrl-X": this.onStrikethroughByKey.bind(this),
-        "Tab": goToNextCell(1),
-        "Shift-Tab": goToNextCell(-1)
+        "Tab": this.onIncreaseIndentByKey.bind(this),
+        "Shift-Tab": this.onDecreaseIndentByKey.bind(this),
       })
     );
 
@@ -630,10 +663,12 @@ class TextResource extends Component {
     this.state.editorView.focus();
   }
 
-  preventFirefoxUShortcut = (e) => {
-    if (e.metaKey && e.key === 'u') {
-      e.preventDefault();
-    } else if (e.ctrlKey && e.key === 'u') {
+  preventDefaultKeymaps = (e) => {
+    if (
+      (e.metaKey && e.key === 'u')
+      || (e.ctrlKey && e.key === 'u')
+      || (e.key === 'Tab')
+      ) {
       e.preventDefault();
     }
   }
@@ -652,13 +687,43 @@ class TextResource extends Component {
     const markType = this.state.documentSchema.marks.strikethrough;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
-    this.state.editorView.focus();
     cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
   }
 
   onStrikethroughByKey = (editorState) => {
     const markType = this.state.documentSchema.marks.strikethrough;
     const cmd = toggleMark( markType );
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onIncreaseIndent = (e) => {
+    e.preventDefault();
+    const nodeType = this.state.documentSchema.nodes.paragraph;
+    const editorState = this.getEditorState();
+    const cmd = increaseIndent(nodeType, false);
+    cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
+  }
+
+  onDecreaseIndent = (e) => {
+    e.preventDefault();
+    const nodeType = this.state.documentSchema.nodes.paragraph;
+    const editorState = this.getEditorState();
+    const cmd = decreaseIndent(nodeType, true);
+    cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
+  }
+
+  onIncreaseIndentByKey = (editorState) => {
+    const nodeType = this.state.documentSchema.nodes.paragraph;
+    const cmd = increaseIndent(nodeType, true);
+    cmd( editorState, this.state.editorView.dispatch );
+  }
+
+  onDecreaseIndentByKey = (editorState) => {
+    const nodeType = this.state.documentSchema.nodes.paragraph;
+    const cmd = decreaseIndent(nodeType, false);
     cmd( editorState, this.state.editorView.dispatch );
   }
 
@@ -1176,7 +1241,7 @@ class TextResource extends Component {
           style={{
             overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',
           }}
-          onKeyDown={this.preventFirefoxUShortcut.bind(this)}
+          onKeyDown={this.preventDefaultKeymaps.bind(this)}
         >
           {this.props.loading && this.isEditable() && (
             <div className="editorview-loading-indicator" style={{

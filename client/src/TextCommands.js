@@ -1,3 +1,5 @@
+import { liftListItem } from 'prosemirror-schema-list';
+
 function markApplies(doc, ranges, type) {
     for (let i = 0; i < ranges.length; i++) {
         let {$from, $to} = ranges[i]
@@ -78,9 +80,9 @@ export function removeMark(markType, uid) {
 }
 
 function canInsert(state, nodeType) {
-    var $from = state.selection.$from;
-    for (var d = $from.depth; d >= 0; d--) {
-      var index = $from.index(d);
+    const $from = state.selection.$from;
+    for (let d = $from.depth; d >= 0; d--) {
+      const index = $from.index(d);
       if ($from.node(d).canReplaceWith(index, index, nodeType)) { return true }
     }
     return false
@@ -92,5 +94,76 @@ export function replaceNodeWith (nodeType) {
             dispatch(state.tr.replaceSelectionWith(nodeType.create()));
         }
         return true
+    }
+}
+
+export function increaseIndent (nodeType, withHanging) {
+    return function(state, dispatch) {
+        const { ranges } = state.selection;
+        for (let i = 0; i < ranges.length; i++) {
+            let { $from, $to } = ranges[i];
+            state.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
+                if (node.type.name === nodeType.name) {
+                    if (node.attrs.indented === false && node.attrs.indentLevel === 0 && withHanging) {
+                        dispatch(state.tr.setNodeMarkup(pos, nodeType, {
+                            indented: true
+                        }));
+                    } else if (node.attrs.indentLevel < 5) {
+                        let { indentLevel } = node.attrs;
+                        indentLevel += 1;
+                        dispatch(state.tr.setNodeMarkup(pos, nodeType, {
+                            indented: node.attrs.indented, indentLevel
+                        }));
+                    }
+                }
+            })
+        }
+        return true;
+    }
+}
+
+export function decreaseIndent (nodeType, withHanging) {
+    return function(state, dispatch) {
+        const { ranges } = state.selection;
+        for (let i = 0; i < ranges.length; i++) {
+            let { $from, $to } = ranges[i];
+            let removedFromList = false;
+            state.doc.nodesBetween($from.pos, $to.pos, (node) => {
+                if (node.type.name === 'list_item') {
+                    node.descendants((node) => {
+                        if (node.type.name === nodeType.name) {
+                            if (node.attrs.indentLevel === 0 && node.attrs.indented === false) {
+                                removedFromList = true;
+                            }
+                        } 
+                    });
+                    if (removedFromList) {
+                        const cmd = liftListItem(node.type);
+                        cmd(state, dispatch);
+                    }
+                }
+            })
+            if (removedFromList) return true;
+            else {
+                state.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
+                    if (node.type.name === nodeType.name) {
+                        if (node.attrs.indentLevel > 0 && (
+                            node.attrs.indented === false || (withHanging && node.attrs.indented === true)
+                        )) {
+                            let { indentLevel } = node.attrs;
+                            indentLevel -= 1;
+                            dispatch(state.tr.setNodeMarkup(pos, nodeType, {
+                                indented: node.attrs.indented, indentLevel
+                            }));
+                        } else if (node.attrs.indented === true && !withHanging) {
+                            dispatch(state.tr.setNodeMarkup(pos, nodeType, { 
+                                indented: false, indentLevel: node.attrs.indentLevel
+                            }));
+                        }
+                    } 
+                });
+                return true;
+            }
+        }
     }
 }
