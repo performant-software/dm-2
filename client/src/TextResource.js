@@ -1115,12 +1115,12 @@ class TextResource extends Component {
         disabled={loading}
         className="font-family-dropdown"
       >
-        {fontFamilies.map(key =>
+        {fontFamilies.map(family =>
           <MenuItem
-            key={key}
-            value={key}
-            style={{ fontFamily: key }}
-            primaryText={key[0].toUpperCase() + key.slice(1)}
+            key={family}
+            value={family}
+            style={{ fontFamily: family }}
+            primaryText={family[0].toUpperCase() + family.slice(1)}
           />
         )}
       </DropDownMenu>
