@@ -81,12 +81,12 @@ class TextResource extends Component {
       { name: 'font-family', width: 148 },
       { name: 'font-size', width: 72 },
       { name: 'link', width: buttonWidth, text: 'Hyperlink' },
-      { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
-      { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
-      { name: 'decrease-indent', width: buttonWidth, text: 'Decrease indent' },
-      { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
+      { name: 'decrease-indent', width: buttonWidth, text: 'Decrease indent' },
+      { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
+      { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
+      { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
       return { ...tool, position }
@@ -105,7 +105,7 @@ class TextResource extends Component {
       targetHighlights: [],
       currentScrollTop: 0,
       toolbarWidth: 0,
-      hiddenTools: [],
+      hiddenTools: ['highlight-delete'],
       hiddenToolsOpen: false,
       hiddenToolsAnchor: undefined,
       textColor: 'teal',
@@ -444,7 +444,7 @@ class TextResource extends Component {
         .forEach((tool) => {
           if (sumWidths + tool.width + buttonWidth < node.offsetWidth && !hidingBegan) {
             sumWidths += tool.width;
-            if (hiddenTools.includes(tool.name)) {
+            if (hiddenTools.includes(tool.name) && tool.name !== 'highlight-delete') {
               hiddenTools.splice(hiddenTools.indexOf(tool.name), 1);
             }
           } else {
