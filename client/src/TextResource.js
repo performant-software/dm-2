@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 
 import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
+import IconMenu from 'material-ui/IconMenu';
 import Popover from 'material-ui/Popover';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
@@ -23,6 +24,7 @@ import FormatUnderlined from 'material-ui/svg-icons/editor/format-underlined';
 import FormatStrikethrough from 'material-ui/svg-icons/editor/format-strikethrough';
 import FormatQuote from 'material-ui/svg-icons/editor/format-quote';
 import InsertLink from 'material-ui/svg-icons/editor/insert-link';
+import LineSpacing from 'material-ui/svg-icons/editor/format-line-spacing';
 import FormatListBulleted from 'material-ui/svg-icons/editor/format-list-bulleted';
 import FormatListNumbered from 'material-ui/svg-icons/editor/format-list-numbered';
 import IncreaseIndent from 'material-ui/svg-icons/editor/format-indent-increase';
@@ -45,7 +47,7 @@ import {tableEditing, columnResizing, tableNodes } from "prosemirror-tables"
 
 import { schema } from './TextSchema';
 import {
-  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith
+  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith, setNodeAttributes
 } from './TextCommands';
 import HighlightColorSelect from './HighlightColorSelect';
 import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
@@ -54,7 +56,9 @@ import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighligh
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 
-const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive']
+const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
+
+const lineHeights = [1, 1.15, 1.5, 2];
 
 const buttonWidth = 48;
 
@@ -81,12 +85,13 @@ class TextResource extends Component {
       { name: 'font-family', width: 148 },
       { name: 'font-size', width: 72 },
       { name: 'link', width: buttonWidth, text: 'Hyperlink' },
-      { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
-      { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
-      { name: 'decrease-indent', width: buttonWidth, text: 'Decrease indent' },
-      { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
+      { name: 'line-spacing', width: buttonWidth, text: 'Line spacing' },
+      { name: 'decrease-indent', width: buttonWidth, text: 'Decrease indent' },
+      { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
+      { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
+      { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
       return { ...tool, position }
@@ -105,7 +110,7 @@ class TextResource extends Component {
       targetHighlights: [],
       currentScrollTop: 0,
       toolbarWidth: 0,
-      hiddenTools: [],
+      hiddenTools: ['highlight-delete'],
       hiddenToolsOpen: false,
       hiddenToolsAnchor: undefined,
       textColor: 'teal',
@@ -270,6 +275,10 @@ class TextResource extends Component {
             <InsertLink />
           </IconButton>
         );
+
+      case 'line-spacing':
+        const tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
+        return this.renderLineSpacingMenu(loading, tooltip);
 
       case 'bulleted-list':
         return (
@@ -444,7 +453,7 @@ class TextResource extends Component {
         .forEach((tool) => {
           if (sumWidths + tool.width + buttonWidth < node.offsetWidth && !hidingBegan) {
             sumWidths += tool.width;
-            if (hiddenTools.includes(tool.name)) {
+            if (hiddenTools.includes(tool.name) && tool.name !== 'highlight-delete') {
               hiddenTools.splice(hiddenTools.indexOf(tool.name), 1);
             }
           } else {
@@ -726,7 +735,6 @@ class TextResource extends Component {
     const cmd = decreaseIndent(nodeType, false);
     cmd( editorState, this.state.editorView.dispatch );
   }
-
   // markActive(state, type) {
   //   let {from, $from, to, empty} = state.selection
   //   if (empty) return type.isInSet(state.storedMarks || $from.marks())
@@ -799,6 +807,15 @@ class TextResource extends Component {
     const fontFamilyMarkType = this.state.documentSchema.marks.fontFamily;
     const editorState = this.getEditorState();
     const cmd = fontFamily ? addMark( fontFamilyMarkType, { fontFamily } ) : removeMark( fontFamilyMarkType );
+    cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
+  }
+
+  onLineSpacingChange = (e, lineHeight) => {
+    e.preventDefault();
+    const nodeType = this.state.documentSchema.nodes.paragraph;
+    const editorState = this.getEditorState();
+    const cmd = setNodeAttributes(nodeType, { lineHeight });
     cmd( editorState, this.state.editorView.dispatch );
     this.state.editorView.focus();
   }
@@ -1115,16 +1132,41 @@ class TextResource extends Component {
         disabled={loading}
         className="font-family-dropdown"
       >
-        {fontFamilies.map(key =>
+        {fontFamilies.map(family =>
           <MenuItem
-            key={key}
-            value={key}
-            style={{ fontFamily: key }}
-            primaryText={key[0].toUpperCase() + key.slice(1)}
+            key={family}
+            value={family}
+            style={{ fontFamily: family }}
+            primaryText={family[0].toUpperCase() + family.slice(1)}
           />
         )}
       </DropDownMenu>
     );
+  }
+
+  renderLineSpacingMenu(loading, tooltip) {
+    return (
+      <IconMenu
+        key="lineSpacingDropdown"
+        onChange={this.onLineSpacingChange.bind(this)}
+        iconButtonElement={
+          <IconButton
+            disabled={loading}
+            tooltip={tooltip}
+            onMouseOver={this.onTooltipOpen.bind(this, 'line-spacing')}
+            onMouseOut={this.onTooltipClose.bind(this, 'line-spacing')}
+          >
+            <LineSpacing />
+          </IconButton>
+        }
+        anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+        targetOrigin={{horizontal: 'left', vertical: 'top'}}
+      >
+        {lineHeights.map(height =>
+          <MenuItem key={height.toString()} value={height} primaryText={height.toString()} />
+        )}
+      </IconMenu>
+    )
   }
 
   renderToolbar() {
