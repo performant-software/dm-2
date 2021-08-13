@@ -22,21 +22,26 @@ export const nodes = {
       getAttrs: node => {
         const marginLeft = node.style['margin-left'].split('px')[0];
         const indentLevel = parseInt(marginLeft, 10) / 48;
+        const lineHeightParsed = parseFloat(node.style['line-height']);
+        const lineHeight = !isNaN(lineHeightParsed) ? lineHeightParsed : node.style['line-height'];
         return {
           indented: node.style['text-indent'] === '3em',
           indentLevel,
+          lineHeight,
         }
       }
     }],
     attrs: {
       indented: {default: false},
       indentLevel: {default: 0},
+      lineHeight: {default: 'normal'},
     },
     toDOM(node) {
       const textIndent = node.attrs.indented ? '3em' : '0';
       const marginLeft = `${node.attrs.indentLevel * 48}px`;
+      const lineHeight = node.attrs.lineHeight;
       return ["p", {
-        style: `text-indent: ${textIndent}; margin-left: ${marginLeft}`
+        style: `text-indent: ${textIndent}; margin-left: ${marginLeft}; line-height: ${lineHeight}`
       }, 0];
     }
   },
