@@ -78,9 +78,9 @@ export function removeMark(markType, uid) {
 }
 
 function canInsert(state, nodeType) {
-    var $from = state.selection.$from;
-    for (var d = $from.depth; d >= 0; d--) {
-      var index = $from.index(d);
+    const $from = state.selection.$from;
+    for (let d = $from.depth; d >= 0; d--) {
+      const index = $from.index(d);
       if ($from.node(d).canReplaceWith(index, index, nodeType)) { return true }
     }
     return false

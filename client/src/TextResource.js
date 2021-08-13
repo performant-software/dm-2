@@ -652,8 +652,8 @@ class TextResource extends Component {
     const markType = this.state.documentSchema.marks.strikethrough;
     const editorState = this.getEditorState();
     const cmd = toggleMark( markType );
-    this.state.editorView.focus();
     cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
   }
 
   onStrikethroughByKey = (editorState) => {
