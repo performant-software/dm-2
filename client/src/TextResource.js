@@ -72,6 +72,7 @@ class TextResource extends Component {
     this.tools = [
       { name: 'highlight-color', width: buttonWidth },
       { name: 'highlight', width: buttonWidth, text: 'Highlight selected text' },
+      { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'text-color', width: buttonWidth, text: 'Change text color' },
       { name: 'bold', width: buttonWidth, text: 'Bold' },
       { name: 'italic', width: buttonWidth, text: 'Italicize' },
@@ -86,7 +87,6 @@ class TextResource extends Component {
       { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
-      { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
       return { ...tool, position }
