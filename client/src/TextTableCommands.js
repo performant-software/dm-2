@@ -32,18 +32,6 @@ function createTable(state, rowsCount, colsCount, withHeaderRow, cellContent) {
   return types.table.createChecked(null, rows)
 }
 
-// function addTable(state, dispatch, { rowsCount, colsCount, withHeaderRow, cellContent }) {
-//   const offset = state.tr.selection.anchor + 1
-
-//   const nodes = createTable(state, rowsCount, colsCount, withHeaderRow, cellContent)
-//   const tr = state.tr.replaceSelectionWith(nodes).scrollIntoView()
-//   const resolvedPos = tr.doc.resolve(offset)
-
-//   tr.setSelection(TextSelection.near(resolvedPos))
-
-//   dispatch(tr)
-// }
-
 // add table to a new paragraph
 export function addTable(state, dispatch, { rowsCount, colsCount, withHeaderRow, cellContent }) {
   let tr = state.tr
