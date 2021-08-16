@@ -65,9 +65,24 @@ import {
 } from './TextCommands';
 import { addTable } from './TextTableCommands';
 import HighlightColorSelect from './HighlightColorSelect';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
+import {
+  updateEditorState,
+  setTextHighlightColor,
+  toggleTextColorPicker,
+  setHighlightSelectMode,
+  selectHighlight,
+  closeEditor
+} from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
-import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
+import {
+  TEXT_HIGHLIGHT_DELETE,
+  MAX_EXCERPT_LENGTH,
+  addHighlight,
+  updateHighlight,
+  duplicateHighlights,
+  updateDocument,
+  openDeleteDialog
+} from './modules/documentGrid';
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
@@ -1423,40 +1438,40 @@ class TextResource extends Component {
 
     return (
       <Dialog
-          title="Insert Table"
-          contentStyle={{ width: '400px' }}
-          actions={actions}
-          modal={true}
-          open={this.state.tableDialogOpen}
-          onRequestClose={this.onCancelTableDialog}
-        >
-          <TextField
-            type="number"
-            min={1}
-            max={99}
-            value={this.state.tableDialogRows}
-            errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
-            floatingLabelText={"Rows"}
-            onChange={(e, newValue) => this.setState({...this.state, tableDialogRows: newValue}) }
-          />
-          <br />
-          <TextField
-            type="number"
-            min={1}
-            max={99}
-            value={this.state.tableDialogCols}
-            errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
-            floatingLabelText={"Columns"}
-            onChange={(e, newValue) => this.setState({ ...this.state, tableDialogCols: newValue}) }
-          />
-          <br />
-          <br />
-          <Checkbox
-            label="First row is header"
-            checked={this.state.tableDialogHeader}
-            onCheck={(e, checked) => this.setState({ ...this.state, tableDialogHeader: checked})}
-          />
-        </Dialog>
+        title="Insert Table"
+        contentStyle={{ width: '400px' }}
+        actions={actions}
+        modal={true}
+        open={this.state.tableDialogOpen}
+        onRequestClose={this.onCancelTableDialog}
+      >
+        <TextField
+          type="number"
+          min={1}
+          max={99}
+          value={this.state.tableDialogRows}
+          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Rows"}
+          onChange={(e, newValue) => this.setState({...this.state, tableDialogRows: newValue}) }
+        />
+        <br />
+        <TextField
+          type="number"
+          min={1}
+          max={99}
+          value={this.state.tableDialogCols}
+          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Columns"}
+          onChange={(e, newValue) => this.setState({ ...this.state, tableDialogCols: newValue}) }
+        />
+        <br />
+        <br />
+        <Checkbox
+          label="First row is header"
+          checked={this.state.tableDialogHeader}
+          onCheck={(e, checked) => this.setState({ ...this.state, tableDialogHeader: checked})}
+        />
+      </Dialog>
     );
 
   }
