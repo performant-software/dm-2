@@ -55,32 +55,61 @@ class Highlight < Linkable
     end
   end
 
-  def set_thumbnail( image_url, thumb_rect )
-    pad_factor = 0.06
-    base_image = MiniMagick::Image.open(image_url)
-    base_image.resize '200'
-    orig_offset_x = thumb_rect[:left] != nil ? thumb_rect[:left] : thumb_rect['left']
-    orig_offset_y = thumb_rect[:top] != nil ? thumb_rect[:top] : thumb_rect['top']
-    orig_width = thumb_rect[:width] != nil ? thumb_rect[:width] : thumb_rect['width']
-    orig_height = thumb_rect[:height] != nil ? thumb_rect[:height] : thumb_rect['height']
-    is_wider_than_long = orig_width > orig_height
-    min_max = [orig_width, orig_height].minmax
-    greater_of_width_and_height = min_max[1]
-    lesser_of_width_and_height = min_max[0]
-    offset_subtract = (greater_of_width_and_height - lesser_of_width_and_height) / 2.0
-    pad_subtract = greater_of_width_and_height * pad_factor
-    crop_wh = greater_of_width_and_height * (1 + pad_factor * 2.0)
-    adjusted_offset_x = orig_offset_x - pad_subtract
-    adjusted_offset_y = orig_offset_y - pad_subtract
-    if is_wider_than_long
-      adjusted_offset_y = adjusted_offset_y - offset_subtract
-    else
-      adjusted_offset_x = adjusted_offset_x - offset_subtract
+  def download_to_file(uri)
+    stream = open(uri, "rb")
+    return stream if stream.respond_to?(:path) # Already file-like
+  
+    # Workaround when open(uri) doesn't return File
+    Tempfile.new.tap do |file|
+      file.binmode
+      IO.copy_stream(stream, file)
+      stream.close
+      file.rewind
     end
-    base_image.crop "#{crop_wh * 0.1}x#{crop_wh * 0.1}+#{adjusted_offset_x * 0.1}+#{adjusted_offset_y * 0.1}"
-    base_image.resize '80x80'
-    base_image.format 'png'
-    io = File.open(base_image.path)
+  end
+
+  def set_thumbnail( image_url, thumb_rect )
+    if !thumb_rect.nil?
+      pad_factor = 0.06
+      base_image = MiniMagick::Image.open(image_url)
+      base_image.resize '200'
+      orig_offset_x = thumb_rect[:left] != nil ? thumb_rect[:left] : thumb_rect['left']
+      orig_offset_y = thumb_rect[:top] != nil ? thumb_rect[:top] : thumb_rect['top']
+      orig_width = thumb_rect[:width] != nil ? thumb_rect[:width] : thumb_rect['width']
+      orig_height = thumb_rect[:height] != nil ? thumb_rect[:height] : thumb_rect['height']
+      is_wider_than_long = orig_width > orig_height
+      min_max = [orig_width, orig_height].minmax
+      greater_of_width_and_height = min_max[1]
+      lesser_of_width_and_height = min_max[0]
+      offset_subtract = (greater_of_width_and_height - lesser_of_width_and_height) / 2.0
+      pad_subtract = greater_of_width_and_height * pad_factor
+      crop_wh = greater_of_width_and_height * (1 + pad_factor * 2.0)
+      adjusted_offset_x = orig_offset_x - pad_subtract
+      adjusted_offset_y = orig_offset_y - pad_subtract
+      if is_wider_than_long
+        adjusted_offset_y = adjusted_offset_y - offset_subtract
+      else
+        adjusted_offset_x = adjusted_offset_x - offset_subtract
+      end
+      base_image.crop "#{crop_wh * 0.1}x#{crop_wh * 0.1}+#{adjusted_offset_x * 0.1}+#{adjusted_offset_y * 0.1}"
+      base_image.resize '80x80'
+      base_image.format 'png'
+      io = File.open(base_image.path)
+    else
+      begin
+        # Try with PNG
+        opened = download_to_file(image_url)
+      rescue OpenURI::HTTPError
+        # Only JPG is required for IIIF level 1 compliance,
+        # so if we get back a 400 error, use JPG for thumbnail
+        with_jpg = image_url.sub('.png', '.jpg')
+        opened = download_to_file(with_jpg)
+      end
+      io = ImageProcessing::MiniMagick.source(opened)
+        .resize_to_fill(80, 80)
+        .convert('png')
+        .call
+    end
     self.thumbnail.attach(io: io, filename: "thumbnail-for-highlight-#{self.id}.png")
   end
 
