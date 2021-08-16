@@ -32,7 +32,7 @@ import DecreaseIndent from 'material-ui/svg-icons/editor/format-indent-decrease'
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
-import { Hr } from 'react-bootstrap-icons';
+import { Hr, Table } from 'react-bootstrap-icons';
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
@@ -43,18 +43,51 @@ import { toggleMark, wrapIn } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
 import { undo, redo } from "prosemirror-history"
 import { keymap } from "prosemirror-keymap"
-import {tableEditing, columnResizing, tableNodes } from "prosemirror-tables"
+import {
+  tableEditing,
+  columnResizing,
+  tableNodes,
+  addColumnBefore,
+  addColumnAfter,
+  deleteColumn,
+  addRowBefore,
+  addRowAfter,
+  deleteRow,
+  deleteTable,
+  mergeCells,
+  toggleHeaderColumn,
+  toggleHeaderRow,
+  isInTable,
+  goToNextCell,
+} from "prosemirror-tables"
 
 import { schema } from './TextSchema';
 import {
   addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith, setNodeAttributes
 } from './TextCommands';
+import { addTable } from './TextTableCommands';
 import HighlightColorSelect from './HighlightColorSelect';
-import { updateEditorState, setTextHighlightColor, toggleTextColorPicker, setHighlightSelectMode, selectHighlight, closeEditor } from './modules/textEditor';
+import {
+  updateEditorState,
+  setTextHighlightColor,
+  toggleTextColorPicker,
+  setHighlightSelectMode,
+  selectHighlight,
+  closeEditor
+} from './modules/textEditor';
 import { setGlobalCanvasDisplay } from './modules/canvasEditor';
-import { TEXT_HIGHLIGHT_DELETE, MAX_EXCERPT_LENGTH, addHighlight, updateHighlight, duplicateHighlights, updateDocument, openDeleteDialog } from './modules/documentGrid';
+import {
+  TEXT_HIGHLIGHT_DELETE,
+  MAX_EXCERPT_LENGTH,
+  addHighlight,
+  updateHighlight,
+  duplicateHighlights,
+  updateDocument,
+  openDeleteDialog
+} from './modules/documentGrid';
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
+import Checkbox from 'material-ui/Checkbox';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
@@ -87,6 +120,7 @@ class TextResource extends Component {
       { name: 'link', width: buttonWidth, text: 'Hyperlink' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
+      { name: 'table', width: buttonWidth, text: 'Insert/edit table' },
       { name: 'line-spacing', width: buttonWidth, text: 'Line spacing' },
       { name: 'decrease-indent', width: buttonWidth, text: 'Decrease indent' },
       { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
@@ -97,11 +131,33 @@ class TextResource extends Component {
       return { ...tool, position }
     });
 
+    this.tableTools = [
+      { name: 'insert-col-before', text: 'Insert column before', cmd: addColumnBefore },
+      { name: 'insert-col-after', text: 'Insert column after', cmd: addColumnAfter },
+      { name: 'delete col', text: 'Delete column', cmd: deleteColumn },
+      { name: 'insert-row-before', text: 'Insert row before', cmd: addRowBefore },
+      { name: 'insert-row-after', text: 'Insert row after', cmd: addRowAfter },
+      { name: 'delete-row', text: 'Delete row', cmd: deleteRow },
+      { name: 'delete-table', text: 'Delete table', cmd: deleteTable },
+      { name: 'merge-cells', text: 'Merge cells', cmd: mergeCells },
+      { name: 'toggle-header-col', text: 'Toggle header column', cmd: toggleHeaderColumn },
+      { name: 'toggle-header-row', text: 'Toggle header row', cmd: toggleHeaderRow },
+    ];
+
     this.initialLinkDialogState = {
       linkDialogOpen: false,
       linkDialogBuffer: "",
       linkDialogBufferInvalid: false,
       createHyperlink: null,
+    }
+
+    this.initialTableDialogState = {
+      tableDialogOpen: false,
+      tableDialogRows: '',
+      tableDialogCols: '',
+      tableDialogHeader: false,
+      tableDialogBufferInvalid: false,
+      createTable: null,
     }
 
     this.state = {
@@ -118,7 +174,10 @@ class TextResource extends Component {
       colorPickerAnchor: undefined,
       tooltipOpen: {},
       tooltipAnchor: {},
-      ...this.initialLinkDialogState
+      tableMenuOpen: false,
+      tableMenuAnchor: undefined,
+      ...this.initialLinkDialogState,
+      ...this.initialTableDialogState,
     };
   }
   
@@ -143,6 +202,7 @@ class TextResource extends Component {
     } = this.props;
   
     const instanceKey = this.getInstanceKey();
+    let tooltip = '';
 
     switch (toolName) {
       case 'highlight-color':
@@ -276,8 +336,12 @@ class TextResource extends Component {
           </IconButton>
         );
 
+      case 'table':
+        tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
+        return this.renderTableMenu(loading, tooltip);
+
       case 'line-spacing':
-        const tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
+        tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
         return this.renderLineSpacingMenu(loading, tooltip);
 
       case 'bulleted-list':
@@ -551,8 +615,8 @@ class TextResource extends Component {
         "Ctrl-u": this.onUnderlineByKey.bind(this),
         "Mod-X": this.onStrikethroughByKey.bind(this),
         "Ctrl-X": this.onStrikethroughByKey.bind(this),
-        "Tab": this.onIncreaseIndentByKey.bind(this),
-        "Shift-Tab": this.onDecreaseIndentByKey.bind(this),
+        "Tab": this.handleTab.bind(this),
+        "Shift-Tab": this.handleShiftTab.bind(this),
       })
     );
 
@@ -838,6 +902,41 @@ class TextResource extends Component {
     this.state.editorView.focus();
   }
 
+  onTableClick(e) {
+    e.preventDefault();
+    const createTable = ({ rowsCount, colsCount, withHeaderRow }) => {
+      const editorState = this.getEditorState();
+      const dispatch = this.state.editorView.dispatch;
+      addTable(editorState, dispatch, { rowsCount, colsCount, withHeaderRow });
+    }
+    this.setState( {...this.state, tableDialogOpen: true, createTable } );
+    this.state.editorView.focus();
+  }
+
+  onTableMenuChange(e, action) {
+    e.preventDefault();
+    switch (action) {
+      case 'insert-table':
+        this.onTableClick(e);
+        break;
+      default:
+        const editorState = this.getEditorState();
+        const { cmd } = this.tableTools.find((tool) => tool.name === action);
+        cmd( editorState, this.state.editorView.dispatch );
+        this.state.editorView.focus();
+        break;
+    }
+  }
+
+  onLineSpacingChange = (e, lineHeight) => {
+    // e.preventDefault();
+    const nodeType = this.state.documentSchema.nodes.paragraph;
+    const editorState = this.getEditorState();
+    const cmd = setNodeAttributes(nodeType, { lineHeight });
+    cmd( editorState, this.state.editorView.dispatch );
+    this.state.editorView.focus();
+  }
+
   onHiddenToolsOpen(e) {
     e.preventDefault();
     this.setState({
@@ -850,6 +949,22 @@ class TextResource extends Component {
     this.setState({
       hiddenToolsOpen: false,
     });
+  }
+
+  handleTab(editorState) {
+    if (isInTable(editorState)) {
+      goToNextCell(1)(editorState, this.state.editorView.dispatch);
+    } else {
+      this.onIncreaseIndentByKey(editorState);
+    }
+  }
+
+  handleShiftTab(editorState) {
+    if (isInTable(editorState)) {
+      goToNextCell(-1)(editorState, this.state.editorView.dispatch);
+    } else {
+      this.onDecreaseIndentByKey(editorState);
+    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -1169,6 +1284,35 @@ class TextResource extends Component {
     )
   }
 
+  renderTableMenu(loading, tooltip) {
+    return (
+      <IconMenu
+        key="tableDropdown"
+        onChange={this.onTableMenuChange.bind(this)}
+        iconButtonElement={
+          <IconButton
+            disabled={loading}
+            tooltip={tooltip}
+            onMouseOver={this.onTooltipOpen.bind(this, 'table')}
+            onMouseOut={this.onTooltipClose.bind(this, 'table')}
+          >
+            <Table
+              color="black"
+              size={24}
+            />
+          </IconButton>
+        }
+        anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+        targetOrigin={{horizontal: 'left', vertical: 'top'}}
+      >
+        <MenuItem key={'insert-table'} value={'insert-table'} primaryText="Insert table" />
+        {this.tableTools.map(tool => (
+          <MenuItem key={tool.name} value={tool.name} primaryText={tool.text} />
+        ))}
+      </IconMenu>
+    )
+  }
+
   renderToolbar() {
 
     if( !this.isEditable() ) return <div></div>;
@@ -1273,6 +1417,83 @@ class TextResource extends Component {
     );
   }
 
+  onCancelTableDialog = () => {
+    // discard the buffer state and close dialog
+    this.setState({...this.state, ...this.initialTableDialogState});
+  }
+
+  onSubmitTableDialog = () => {
+    // call the callback if it is valid, otherwise, set error state and stay open
+    const rowsCount = parseInt(this.state.tableDialogRows, 10);
+    const colsCount = parseInt(this.state.tableDialogCols, 10);
+    const withHeaderRow = this.state.tableDialogHeader;
+    if(!isNaN(rowsCount) && !isNaN(colsCount) 
+      && rowsCount > 0 && colsCount > 0
+      && rowsCount < 50 && colsCount < 50) {
+      this.state.createTable({ rowsCount, colsCount, withHeaderRow });
+      this.setState({
+        ...this.state,
+        ...this.initialTableDialogState
+      });
+    } else {
+      this.setState({ ...this.state, tableDialogBufferInvalid: true });
+    }
+  }
+
+  renderTableDialog() {
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.onCancelTableDialog}
+      />,
+      <FlatButton
+        label="Add"
+        primary={true}
+        onClick={this.onSubmitTableDialog}
+      />,
+    ];
+
+    return (
+      <Dialog
+        title="Insert Table"
+        contentStyle={{ width: '400px' }}
+        actions={actions}
+        modal={true}
+        open={this.state.tableDialogOpen}
+        onRequestClose={this.onCancelTableDialog}
+      >
+        <TextField
+          type="number"
+          min={1}
+          max={49}
+          value={this.state.tableDialogRows}
+          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Rows"}
+          onChange={(e, newValue) => this.setState({...this.state, tableDialogRows: newValue}) }
+        />
+        <br />
+        <TextField
+          type="number"
+          min={1}
+          max={49}
+          value={this.state.tableDialogCols}
+          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Columns"}
+          onChange={(e, newValue) => this.setState({ ...this.state, tableDialogCols: newValue}) }
+        />
+        <br />
+        <br />
+        <Checkbox
+          label="First row is header"
+          checked={this.state.tableDialogHeader}
+          onCheck={(e, checked) => this.setState({ ...this.state, tableDialogHeader: checked})}
+        />
+      </Dialog>
+    );
+
+  }
+
   render() {
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
@@ -1301,6 +1522,7 @@ class TextResource extends Component {
             createEditorView={this.createEditorView}
           />
           { this.renderLinkDialog() }
+          { this.renderTableDialog() }
         </div>
       </div>
     );
