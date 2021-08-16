@@ -261,16 +261,16 @@ class TextResource extends Component {
   
       case 'bold':
         return (
-            <IconButton
-              key={toolName}
-              onMouseDown={this.onBold.bind(this)}
-              onMouseOver={this.onTooltipOpen.bind(this, toolName)}
-              onMouseOut={this.onTooltipClose.bind(this, toolName)}
-              tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
-              disabled={loading}
-            >
-              <FormatBold />
-            </IconButton>
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onBold.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatBold />
+          </IconButton>
         );
 
       case 'italic':
