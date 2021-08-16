@@ -1429,7 +1429,7 @@ class TextResource extends Component {
     const withHeaderRow = this.state.tableDialogHeader;
     if(!isNaN(rowsCount) && !isNaN(colsCount) 
       && rowsCount > 0 && colsCount > 0
-      && rowsCount < 100 && colsCount < 100) {
+      && rowsCount < 50 && colsCount < 50) {
       this.state.createTable({ rowsCount, colsCount, withHeaderRow });
       this.setState({
         ...this.state,
@@ -1466,7 +1466,7 @@ class TextResource extends Component {
         <TextField
           type="number"
           min={1}
-          max={99}
+          max={49}
           value={this.state.tableDialogRows}
           errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
           floatingLabelText={"Rows"}
@@ -1476,7 +1476,7 @@ class TextResource extends Component {
         <TextField
           type="number"
           min={1}
-          max={99}
+          max={49}
           value={this.state.tableDialogCols}
           errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
           floatingLabelText={"Columns"}
