@@ -57,6 +57,8 @@ import {
   mergeCells,
   toggleHeaderColumn,
   toggleHeaderRow,
+  isInTable,
+  goToNextCell,
 } from "prosemirror-tables"
 
 import { schema } from './TextSchema';
@@ -613,8 +615,8 @@ class TextResource extends Component {
         "Ctrl-u": this.onUnderlineByKey.bind(this),
         "Mod-X": this.onStrikethroughByKey.bind(this),
         "Ctrl-X": this.onStrikethroughByKey.bind(this),
-        "Tab": this.onIncreaseIndentByKey.bind(this),
-        "Shift-Tab": this.onDecreaseIndentByKey.bind(this),
+        "Tab": this.handleTab.bind(this),
+        "Shift-Tab": this.handleShiftTab.bind(this),
       })
     );
 
@@ -947,6 +949,22 @@ class TextResource extends Component {
     this.setState({
       hiddenToolsOpen: false,
     });
+  }
+
+  handleTab(editorState) {
+    if (isInTable(editorState)) {
+      goToNextCell(1)(editorState, this.state.editorView.dispatch);
+    } else {
+      this.onIncreaseIndentByKey(editorState);
+    }
+  }
+
+  handleShiftTab(editorState) {
+    if (isInTable(editorState)) {
+      goToNextCell(-1)(editorState, this.state.editorView.dispatch);
+    } else {
+      this.onDecreaseIndentByKey(editorState);
+    }
   }
 
   componentWillReceiveProps(nextProps) {
