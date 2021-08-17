@@ -38,12 +38,11 @@ import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
-
 import { addListNodes, wrapInList } from 'prosemirror-schema-list';
 import { toggleMark, wrapIn } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
-import { undo, redo } from "prosemirror-history"
-import { keymap } from "prosemirror-keymap"
+import { undo, redo } from "prosemirror-history";
+import { keymap } from "prosemirror-keymap";
 import {
   tableEditing,
   columnResizing,
@@ -60,7 +59,7 @@ import {
   toggleHeaderRow,
   isInTable,
   goToNextCell,
-} from "prosemirror-tables"
+} from "prosemirror-tables";
 
 import { schema } from './TextSchema';
 import {
@@ -70,7 +69,6 @@ import {
   removeMark,
   replaceNodeWith,
   setNodeAttributes,
-  wrapAllInOrSetAttrs
 } from './TextCommands';
 import { addTable } from './TextTableCommands';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -171,10 +169,10 @@ class TextResource extends Component {
 
     this.initialMarginDialogState = {
       marginDialogOpen: false,
-      marginLeft: 0,
-      marginRight: 0,
-      marginTop: 0,
-      marginBottom: 0,
+      marginLeft: this.props.content.marginLeft || '',
+      marginRight: this.props.content.marginRight || '',
+      marginTop: this.props.content.marginTop || '',
+      marginBottom: this.props.content.marginBottom || '',
       marginLefttInvalid: false,
       marginRightInvalid: false,
       marginTopInvalid: false,
@@ -210,6 +208,18 @@ class TextResource extends Component {
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
+    }
+    if (this.props.content.marginLeft !== prevProps.content.marginLeft) {
+      this.setState({ marginLeft: this.props.content.marginLeft });
+    }
+    if (this.props.content.marginRight !== prevProps.content.marginRight) {
+      this.setState({ marginRight: this.props.content.marginRight });
+    }
+    if (this.props.content.marginTop !== prevProps.content.marginTop) {
+      this.setState({ marginTop: this.props.content.marginTop });
+    }
+    if (this.props.content.marginBottom !== prevProps.content.marginBottom) {
+      this.setState({ marginBottom: this.props.content.marginBottom });
     }
   }
 
@@ -965,15 +975,6 @@ class TextResource extends Component {
     }
   }
 
-  onLineSpacingChange = (e, lineHeight) => {
-    // e.preventDefault();
-    const nodeType = this.state.documentSchema.nodes.paragraph;
-    const editorState = this.getEditorState();
-    const cmd = setNodeAttributes(nodeType, { lineHeight });
-    cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
-  }
-
   onHiddenToolsOpen(e) {
     e.preventDefault();
     this.setState({
@@ -992,13 +993,25 @@ class TextResource extends Component {
     e.preventDefault();
     const setPageMargin = ({ marginTop, marginBottom, marginLeft, marginRight }) => {
       const editorState = this.getEditorState();
-      const dispatch = this.state.editorView.dispatch;
-      const marginNodeType = this.state.documentSchema.nodes.margins;
-      const cmd = wrapAllInOrSetAttrs(marginNodeType, { marginTop, marginBottom, marginLeft, marginRight });
-      cmd(editorState, dispatch);
+      this.props.updateDocument(
+        this.props.document_id,
+        { 
+          content: {
+            type: 'doc',
+            content: editorState.doc.content,
+            marginTop,
+            marginBottom,
+            marginLeft,
+            marginRight,
+            columnCount: this.state.columnCount,
+          },
+        },
+        { refreshDocumentContent: true, timeOpened: this.props.timeOpened },
+      );
       this.state.editorView.focus();
     }
-    this.setState( {...this.state, marginDialogOpen: true, setPageMargin } );
+    this.setState(prevState => ({...prevState, marginDialogOpen: true, setPageMargin }));
+  }
   }
 
   handleTab(editorState) {
@@ -1575,8 +1588,7 @@ class TextResource extends Component {
       && marginTop >= 0 && marginBottom >= 0 && marginLeft >= 0 && marginRight >= 0) {
       this.state.setPageMargin({ marginTop, marginBottom, marginLeft, marginRight });
       this.setState({
-        ...this.state,
-        ...this.initialMarginDialogState
+        marginDialogOpen: false,
       });
     } else {
       this.setState({
@@ -1618,7 +1630,7 @@ class TextResource extends Component {
           value={this.state.marginLeft}
           errorText={ this.state.marginLeftInvalid ? "Please enter a valid number" : "" }
           floatingLabelText={"Left"}
-          onChange={(e, newValue) => this.setState({ ...this.state, marginLeft: newValue}) }
+          onChange={(e, newValue) => this.setState({ marginLeft: newValue}) }
         /> px
         <br />
         <TextField
@@ -1627,7 +1639,7 @@ class TextResource extends Component {
           value={this.state.marginRight}
           errorText={ this.state.marginRightInvalid ? "Please enter a valid number" : "" }
           floatingLabelText={"Right"}
-          onChange={(e, newValue) => this.setState({ ...this.state, marginRight: newValue}) }
+          onChange={(e, newValue) => this.setState({ marginRight: newValue}) }
         /> px
         <br />
         <TextField
@@ -1636,7 +1648,7 @@ class TextResource extends Component {
           value={this.state.marginTop}
           errorText={ this.state.marginTopInvalid ? "Please enter a valid number" : "" }
           floatingLabelText={"Top"}
-          onChange={(e, newValue) => this.setState({...this.state, marginTop: newValue}) }
+          onChange={(e, newValue) => this.setState({ marginTop: newValue}) }
         /> px
         <br />
         <TextField
@@ -1645,13 +1657,17 @@ class TextResource extends Component {
           value={this.state.marginBottom}
           errorText={ this.state.marginBottomInvalid ? "Please enter a valid number" : "" }
           floatingLabelText={"Bottom"}
-          onChange={(e, newValue) => this.setState({ ...this.state, marginBottom: newValue}) }
+          onChange={(e, newValue) => this.setState({ marginBottom: newValue}) }
         /> px
       </Dialog>
     );
   }
 
   render() {
+    const marginTop = parseInt(this.state.marginTop || 0, 10);
+    const marginBottom = parseInt(this.state.marginBottom || 0, 10);
+    const marginLeft = parseInt(this.state.marginLeft || 0, 10);
+    const marginRight = parseInt(this.state.marginRight || 0, 10);
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
@@ -1677,6 +1693,12 @@ class TextResource extends Component {
           <ProseMirrorEditorView
             editorView={this.state.editorView}
             createEditorView={this.createEditorView}
+            style={{
+              marginTop,
+              marginBottom,
+              marginLeft,
+              marginRight,
+            }}
           />
           { this.renderLinkDialog() }
           { this.renderTableDialog() }

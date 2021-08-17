@@ -12,38 +12,6 @@ export const nodes = {
     content: "block+"
   },
 
-  margins: {
-    content: "block+",
-    group: "block",
-    attrs: {
-      marginTop: {default: 0},
-      marginBottom: {default: 0},
-      marginLeft: {default: 0},
-      marginRight: {default: 0},
-    },
-    parseDOM: [{
-      tag: "div",
-      getAttrs: node => {
-        const marginTop = parseInt(node.style['margin-top'].split('px')[0], 10);
-        const marginBottom = parseInt(node.style['margin-bottom'].split('px')[0], 10);
-        const marginLeft = parseInt(node.style['margin-left'].split('px')[0], 10);
-        const marginRight = parseInt(node.style['margin-right'].split('px')[0], 10);
-        return {
-          marginTop,
-          marginBottom,
-          marginLeft,
-          marginRight,
-        }
-      }
-    }],
-    toDOM(node) {
-      const { marginTop, marginBottom, marginLeft, marginRight } = node.attrs;
-      return ["div", {
-        style: `margin-top: ${marginTop}px; margin-bottom: ${marginBottom}px; margin-left: ${marginLeft}px; margin-right: ${marginRight}px`
-      }, 0];
-    }
-  },
-
   // :: NodeSpec A plain paragraph textblock. Represented in the DOM
   // as a `<p>` element.
   paragraph: {
