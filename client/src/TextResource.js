@@ -32,7 +32,8 @@ import DecreaseIndent from 'material-ui/svg-icons/editor/format-indent-decrease'
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
-import { Hr, Table, BoundingBoxCircles } from 'react-bootstrap-icons';
+import { Hr, Table } from 'react-bootstrap-icons';
+import PageMargins from './icons/PageMargins';
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
@@ -63,7 +64,13 @@ import {
 
 import { schema } from './TextSchema';
 import {
-  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith, setNodeAttributes, wrapAllInOrSetAttrs
+  addMark,
+  decreaseIndent,
+  increaseIndent,
+  removeMark,
+  replaceNodeWith,
+  setNodeAttributes,
+  wrapAllInOrSetAttrs
 } from './TextCommands';
 import { addTable } from './TextTableCommands';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -473,7 +480,7 @@ class TextResource extends Component {
             tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
             disabled={loading}
           >
-            <BoundingBoxCircles size={24} color="black" />
+            <PageMargins size={24} color="black" />
           </IconButton>
         );
         
@@ -1341,7 +1348,7 @@ class TextResource extends Component {
           >
             <Table
               color="black"
-              size={24}
+              size={18}
             />
           </IconButton>
         }
