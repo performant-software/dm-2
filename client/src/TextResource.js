@@ -32,6 +32,7 @@ import DecreaseIndent from 'material-ui/svg-icons/editor/format-indent-decrease'
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
+import ViewColumn from 'material-ui/svg-icons/action/view-column';
 import { Hr, Table } from 'react-bootstrap-icons';
 import PageMargins from './icons/PageMargins';
 import { Schema, DOMSerializer } from 'prosemirror-model';
@@ -131,6 +132,7 @@ class TextResource extends Component {
       { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
+      { name: 'columns', width: buttonWidth, text: 'Set column count' },
       { name: 'margin', width: buttonWidth, text: 'Set page margins' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
@@ -196,6 +198,7 @@ class TextResource extends Component {
       tooltipAnchor: {},
       tableMenuOpen: false,
       tableMenuAnchor: undefined,
+      columnCount: this.props.content.columnCount || 1,
       ...this.initialLinkDialogState,
       ...this.initialTableDialogState,
       ...this.initialMarginDialogState,
@@ -220,6 +223,9 @@ class TextResource extends Component {
     }
     if (this.props.content.marginBottom !== prevProps.content.marginBottom) {
       this.setState({ marginBottom: this.props.content.marginBottom });
+    }
+    if (this.props.content.columnCount !== prevProps.content.columnCount) {
+      this.setState({ columnCount: this.props.content.columnCount });
     }
   }
 
@@ -376,6 +382,10 @@ class TextResource extends Component {
       case 'line-spacing':
         tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
         return this.renderLineSpacingMenu(loading, tooltip);
+
+      case 'columns':
+        tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
+        return this.renderColumnsMenu(loading, tooltip);
 
       case 'bulleted-list':
         return (
@@ -1012,6 +1022,28 @@ class TextResource extends Component {
     }
     this.setState(prevState => ({...prevState, marginDialogOpen: true, setPageMargin }));
   }
+
+  onColumnsChange(e, columnCount) {
+    e.preventDefault();
+    const editorState = this.getEditorState();
+    this.setState({ columnCount });
+    const { marginTop, marginBottom, marginLeft, marginRight } = this.state;
+    this.props.updateDocument(
+      this.props.document_id,
+      { 
+        content: {
+          type: 'doc',
+          content: editorState.doc.content,
+          marginTop,
+          marginBottom,
+          marginLeft,
+          marginRight,
+          columnCount,
+        },
+      },
+      { refreshDocumentContent: true, timeOpened: this.props.timeOpened },
+    );
+    this.state.editorView.focus();
   }
 
   handleTab(editorState) {
@@ -1388,6 +1420,31 @@ class TextResource extends Component {
     )
   }
 
+  renderColumnsMenu(loading, tooltip) {
+    return (
+      <IconMenu
+        key="columnsDropdown"
+        onChange={this.onColumnsChange.bind(this)}
+        iconButtonElement={
+          <IconButton
+            disabled={loading}
+            tooltip={tooltip}
+            onMouseOver={this.onTooltipOpen.bind(this, 'columns')}
+            onMouseOut={this.onTooltipClose.bind(this, 'columns')}
+          >
+            <ViewColumn />
+          </IconButton>
+        }
+        anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+        targetOrigin={{horizontal: 'left', vertical: 'top'}}
+      >
+        {[1, 2, 3].map(columnCount =>
+          <MenuItem key={columnCount.toString()} value={columnCount} primaryText={columnCount.toString()} />
+        )}
+      </IconMenu>
+    )
+  }
+
   renderToolbar() {
 
     if( !this.isEditable() ) return <div></div>;
@@ -1668,6 +1725,7 @@ class TextResource extends Component {
     const marginBottom = parseInt(this.state.marginBottom || 0, 10);
     const marginLeft = parseInt(this.state.marginLeft || 0, 10);
     const marginRight = parseInt(this.state.marginRight || 0, 10);
+    const columnCount = parseInt(this.state.columnCount || 1, 10);
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
@@ -1699,6 +1757,7 @@ class TextResource extends Component {
               marginLeft,
               marginRight,
             }}
+            columnCount={columnCount}
           />
           { this.renderLinkDialog() }
           { this.renderTableDialog() }
