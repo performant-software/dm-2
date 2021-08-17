@@ -1,6 +1,7 @@
 import { liftListItem } from 'prosemirror-schema-list';
 import { ReplaceAroundStep } from 'prosemirror-transform';
 import { Slice, Fragment } from 'prosemirror-model';
+import { selectAll, wrapIn } from 'prosemirror-commands';
 
 function markApplies(doc, ranges, type) {
     for (let i = 0; i < ranges.length; i++) {
@@ -120,6 +121,37 @@ export function setNodeAttributes (nodeType, attributes) {
             })
         }
         if(transaction.docChanged){
+            dispatch(transaction);
+        }
+        return true;
+    }
+}
+
+export function wrapAllInOrSetAttrs (nodeType, attrs) {
+    // Wrap the whole document in a node of type nodeType,
+    // unless it already is wrapped in that type, in which case,
+    // set attrs
+    return function(state, dispatch) {
+        let alreadyWrapped = false;
+        let transaction = state.tr;
+        state.doc.descendants((node, pos) => {
+            if (node.type.name === nodeType.name) {
+                alreadyWrapped = true;
+                const attributes = { ...node.attrs, ...attrs};
+                const newNode = nodeType.create(attributes, null, node.marks);
+                transaction.step(
+                    new ReplaceAroundStep(pos, pos + node.nodeSize, pos + 1,
+                        pos + node.nodeSize - 1,
+                        new Slice(Fragment.from(newNode), 0, 0),
+                        1, true,
+                    ),
+                );
+            }
+        });
+        if (!alreadyWrapped) {
+            selectAll(state, dispatch);
+            wrapIn(nodeType, attrs)(state, dispatch);
+        } else if(transaction.docChanged){
             dispatch(transaction);
         }
         return true;

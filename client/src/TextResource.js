@@ -32,7 +32,7 @@ import DecreaseIndent from 'material-ui/svg-icons/editor/format-indent-decrease'
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
-import { Hr, Table } from 'react-bootstrap-icons';
+import { Hr, Table, BoundingBoxCircles } from 'react-bootstrap-icons';
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
@@ -63,7 +63,7 @@ import {
 
 import { schema } from './TextSchema';
 import {
-  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith, setNodeAttributes
+  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith, setNodeAttributes, wrapAllInOrSetAttrs
 } from './TextCommands';
 import { addTable } from './TextTableCommands';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -126,6 +126,7 @@ class TextResource extends Component {
       { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
+      { name: 'margin', width: buttonWidth, text: 'Set page margins' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
       return { ...tool, position }
@@ -161,6 +162,19 @@ class TextResource extends Component {
       createTable: null,
     }
 
+    this.initialMarginDialogState = {
+      marginDialogOpen: false,
+      marginLeft: 0,
+      marginRight: 0,
+      marginTop: 0,
+      marginBottom: 0,
+      marginLefttInvalid: false,
+      marginRightInvalid: false,
+      marginTopInvalid: false,
+      marginBottomInvalid: false,
+      setPageMargin: null,
+    }
+
     this.state = {
       editorView: null,
       documentSchema: this.createDocumentSchema(),
@@ -179,6 +193,7 @@ class TextResource extends Component {
       tableMenuAnchor: undefined,
       ...this.initialLinkDialogState,
       ...this.initialTableDialogState,
+      ...this.initialMarginDialogState,
     };
   }
   
@@ -445,6 +460,20 @@ class TextResource extends Component {
             disabled={loading}
           >
             <CropFree />
+          </IconButton>
+        );
+
+      case 'margin':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onMarginClick.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <BoundingBoxCircles size={24} color="black" />
           </IconButton>
         );
         
@@ -950,6 +979,19 @@ class TextResource extends Component {
     this.setState({
       hiddenToolsOpen: false,
     });
+  }
+
+  onMarginClick(e) {
+    e.preventDefault();
+    const setPageMargin = ({ marginTop, marginBottom, marginLeft, marginRight }) => {
+      const editorState = this.getEditorState();
+      const dispatch = this.state.editorView.dispatch;
+      const marginNodeType = this.state.documentSchema.nodes.margins;
+      const cmd = wrapAllInOrSetAttrs(marginNodeType, { marginTop, marginBottom, marginLeft, marginRight });
+      cmd(editorState, dispatch);
+      this.state.editorView.focus();
+    }
+    this.setState( {...this.state, marginDialogOpen: true, setPageMargin } );
   }
 
   handleTab(editorState) {
@@ -1494,7 +1536,98 @@ class TextResource extends Component {
         />
       </Dialog>
     );
+  }
 
+  onCancelMarginDialog = () => {
+    // discard the buffer state and close dialog
+    this.setState({...this.state, ...this.initialMarginDialogState});
+  }
+
+  onSubmitMarginDialog = () => {
+    // call the callback if it is valid, otherwise, set error state and stay open
+    const marginTop = parseInt(this.state.marginTop || 0, 10);
+    const marginBottom = parseInt(this.state.marginBottom || 0, 10);
+    const marginLeft = parseInt(this.state.marginLeft || 0, 10);
+    const marginRight = parseInt(this.state.marginRight || 0, 10);
+
+    if(!isNaN(marginTop) && !isNaN(marginBottom) && !isNaN(marginLeft) && !isNaN(marginRight)
+      && marginTop >= 0 && marginBottom >= 0 && marginLeft >= 0 && marginRight >= 0) {
+      this.state.setPageMargin({ marginTop, marginBottom, marginLeft, marginRight });
+      this.setState({
+        ...this.state,
+        ...this.initialMarginDialogState
+      });
+    } else if (isNaN(marginTop) || marginTop < 0) {
+      this.setState({ ...this.state, marginTopInvalid: true });
+    } else if (isNaN(marginBottom) || marginBottom < 0) {
+      this.setState({ ...this.state, marginBottomInvalid: true });
+    } else if (isNaN(marginLeft) || marginLeft < 0) {
+      this.setState({ ...this.state, marginLeftInvalid: true });
+    } else if (isNaN(marginRight) || marginRight < 0) {
+      this.setState({ ...this.state, marginRightInvalid: true });
+    }
+  }
+
+  renderMarginDialog() {
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.onCancelMarginDialog}
+      />,
+      <FlatButton
+        label="Set"
+        primary={true}
+        onClick={this.onSubmitMarginDialog}
+      />,
+    ];
+
+    return (
+      <Dialog
+        title="Set Page Margins"
+        contentStyle={{ width: '400px' }}
+        actions={actions}
+        modal={true}
+        open={this.state.marginDialogOpen}
+        onRequestClose={this.onCancelMarginDialog}
+      >
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginLeft}
+          errorText={ this.state.marginLeftInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Left"}
+          onChange={(e, newValue) => this.setState({ ...this.state, marginLeft: newValue}) }
+        /> px
+        <br />
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginRight}
+          errorText={ this.state.marginRightInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Right"}
+          onChange={(e, newValue) => this.setState({ ...this.state, marginRight: newValue}) }
+        /> px
+        <br />
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginTop}
+          errorText={ this.state.marginTopInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Top"}
+          onChange={(e, newValue) => this.setState({...this.state, marginTop: newValue}) }
+        /> px
+        <br />
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginBottom}
+          errorText={ this.state.marginBottomInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Bottom"}
+          onChange={(e, newValue) => this.setState({ ...this.state, marginBottom: newValue}) }
+        /> px
+      </Dialog>
+    );
   }
 
   render() {
@@ -1526,6 +1659,7 @@ class TextResource extends Component {
           />
           { this.renderLinkDialog() }
           { this.renderTableDialog() }
+          { this.renderMarginDialog() }
         </div>
       </div>
     );
