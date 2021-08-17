@@ -146,10 +146,10 @@ class TextResource extends Component {
       { name: 'insert-row-before', text: 'Insert row before', cmd: addRowBefore },
       { name: 'insert-row-after', text: 'Insert row after', cmd: addRowAfter },
       { name: 'delete-row', text: 'Delete row', cmd: deleteRow },
-      { name: 'delete-table', text: 'Delete table', cmd: deleteTable },
-      { name: 'merge-cells', text: 'Merge cells', cmd: mergeCells },
       { name: 'toggle-header-col', text: 'Toggle header column', cmd: toggleHeaderColumn },
       { name: 'toggle-header-row', text: 'Toggle header row', cmd: toggleHeaderRow },
+      { name: 'merge-cells', text: 'Merge cells', cmd: mergeCells },
+      { name: 'delete-table', text: 'Delete table', cmd: deleteTable },
     ];
 
     this.initialLinkDialogState = {
@@ -1159,14 +1159,26 @@ class TextResource extends Component {
             to += 1;
           }
         }
-        effectedMarks = effectedMarks.concat(this.collectHighlights(editorState.doc, from, to));
+        try {
+          editorState.doc.resolve(from);
+          editorState.doc.resolve(to);
+          effectedMarks = effectedMarks.concat(this.collectHighlights(editorState.doc, from, to));
+        } catch (e) {
+          console.log(e);
+        }
         const additionTo = step.to + (tx.doc.nodeSize - tx.before.nodeSize);
-        const possibleNewMarks = this.collectHighlights(tx.doc, step.from, additionTo);
-        possibleNewMarks.forEach(mark => {
-          if (!effectedMarks.includes(mark) && !this.highlightsToDuplicate.map(item => item.newHighlightUid).includes(mark.attrs.highlightUid)) {
-            this.createHighlight(mark, tx.doc.slice(step.from, additionTo), serializer);
-          }
-        });
+        try {
+          tx.doc.resolve(step.from);
+          tx.doc.resolve(additionTo);
+          const possibleNewMarks = this.collectHighlights(tx.doc, step.from, additionTo);
+          possibleNewMarks.forEach(mark => {
+            if (!effectedMarks.includes(mark) && !this.highlightsToDuplicate.map(item => item.newHighlightUid).includes(mark.attrs.highlightUid)) {
+              this.createHighlight(mark, tx.doc.slice(step.from, additionTo), serializer);
+            }
+          });
+        } catch (e) {
+          console.log(e);
+        }
       }
     });
     if (effectedMarks.length > 0) {
