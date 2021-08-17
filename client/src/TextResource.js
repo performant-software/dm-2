@@ -175,6 +175,12 @@ class TextResource extends Component {
       marginRight: this.props.content.marginRight || '',
       marginTop: this.props.content.marginTop || '',
       marginBottom: this.props.content.marginBottom || '',
+      priorMargins: {
+        marginLeft: this.props.content.marginLeft || '',
+        marginRight: this.props.content.marginRight || '',
+        marginTop: this.props.content.marginTop || '',
+        marginBottom: this.props.content.marginBottom || '',
+      },
       marginLefttInvalid: false,
       marginRightInvalid: false,
       marginTopInvalid: false,
@@ -1020,7 +1026,15 @@ class TextResource extends Component {
       );
       this.state.editorView.focus();
     }
-    this.setState(prevState => ({...prevState, marginDialogOpen: true, setPageMargin }));
+    const { marginTop, marginBottom, marginLeft, marginRight } = this.state;
+    this.setState(prevState => ({
+      ...prevState,
+      marginDialogOpen: true,
+      setPageMargin,
+      priorMargins: {
+        marginTop, marginBottom, marginLeft, marginRight
+      },
+    }));
   }
 
   onColumnsChange(e, columnCount) {
@@ -1631,7 +1645,7 @@ class TextResource extends Component {
 
   onCancelMarginDialog = () => {
     // discard the buffer state and close dialog
-    this.setState({...this.state, ...this.initialMarginDialogState});
+    this.setState({ marginDialogOpen: false, ...this.state.priorMargins });
   }
 
   onSubmitMarginDialog = () => {
