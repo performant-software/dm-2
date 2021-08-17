@@ -156,7 +156,8 @@ class TextResource extends Component {
       tableDialogRows: '',
       tableDialogCols: '',
       tableDialogHeader: false,
-      tableDialogBufferInvalid: false,
+      tableDialogRowsInvalid: false,
+      tableDialogColsInvalid: false,
       createTable: null,
     }
 
@@ -908,9 +909,9 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const dispatch = this.state.editorView.dispatch;
       addTable(editorState, dispatch, { rowsCount, colsCount, withHeaderRow });
+      this.state.editorView.focus();
     }
     this.setState( {...this.state, tableDialogOpen: true, createTable } );
-    this.state.editorView.focus();
   }
 
   onTableMenuChange(e, action) {
@@ -1435,8 +1436,10 @@ class TextResource extends Component {
         ...this.state,
         ...this.initialTableDialogState
       });
-    } else {
-      this.setState({ ...this.state, tableDialogBufferInvalid: true });
+    } else if (isNaN(rowsCount) || rowsCount <= 0 || rowsCount >= 50) {
+      this.setState({ ...this.state, tableDialogRowsInvalid: true });
+    } else if (isNaN(colsCount) || colsCount <= 0 || colsCount >= 50) {
+      this.setState({ ...this.state, tableDialogColsInvalid: true });
     }
   }
 
@@ -1468,7 +1471,7 @@ class TextResource extends Component {
           min={1}
           max={49}
           value={this.state.tableDialogRows}
-          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          errorText={ this.state.tableDialogRowsInvalid ? "Please enter a number between 1 and 49" : "" }
           floatingLabelText={"Rows"}
           onChange={(e, newValue) => this.setState({...this.state, tableDialogRows: newValue}) }
         />
@@ -1478,7 +1481,7 @@ class TextResource extends Component {
           min={1}
           max={49}
           value={this.state.tableDialogCols}
-          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          errorText={ this.state.tableDialogColsInvalid ? "Please enter a number between 1 and 49" : "" }
           floatingLabelText={"Columns"}
           onChange={(e, newValue) => this.setState({ ...this.state, tableDialogCols: newValue}) }
         />
