@@ -1485,10 +1485,12 @@ class TextResource extends Component {
         ...this.state,
         ...this.initialTableDialogState
       });
-    } else if (isNaN(rowsCount) || rowsCount <= 0 || rowsCount >= 50) {
-      this.setState({ ...this.state, tableDialogRowsInvalid: true });
-    } else if (isNaN(colsCount) || colsCount <= 0 || colsCount >= 50) {
-      this.setState({ ...this.state, tableDialogColsInvalid: true });
+    } else {
+      this.setState({ 
+        ...this.state, 
+        tableDialogRowsInvalid: (isNaN(rowsCount) || rowsCount <= 0 || rowsCount >= 50), 
+        tableDialogColsInvalid: (isNaN(colsCount) || colsCount <= 0 || colsCount >= 50),
+      });
     }
   }
 
@@ -1564,14 +1566,14 @@ class TextResource extends Component {
         ...this.state,
         ...this.initialMarginDialogState
       });
-    } else if (isNaN(marginTop) || marginTop < 0) {
-      this.setState({ ...this.state, marginTopInvalid: true });
-    } else if (isNaN(marginBottom) || marginBottom < 0) {
-      this.setState({ ...this.state, marginBottomInvalid: true });
-    } else if (isNaN(marginLeft) || marginLeft < 0) {
-      this.setState({ ...this.state, marginLeftInvalid: true });
-    } else if (isNaN(marginRight) || marginRight < 0) {
-      this.setState({ ...this.state, marginRightInvalid: true });
+    } else {
+      this.setState({
+        ...this.state,
+        marginTopInvalid: (isNaN(marginTop) || marginTop < 0),
+        marginBottomInvalid: (isNaN(marginBottom) || marginBottom < 0),
+        marginLeftInvalid: (isNaN(marginLeft) || marginLeft < 0),
+        marginRightInvalid: (isNaN(marginRight) || marginRight < 0),
+      });
     }
   }
 
