@@ -6,6 +6,7 @@ import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
 import IconMenu from 'material-ui/IconMenu';
 import Popover from 'material-ui/Popover';
+import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 import Dialog from 'material-ui/Dialog';
@@ -1239,6 +1240,7 @@ class TextResource extends Component {
         autoWidth={false}
         disabled={loading}
         className="font-size-dropdown"
+        maxHeight={150}
       >
         {[...Array(128).keys()].filter(key => key !== 0).map(key =>
           <MenuItem key={`${key}pt`} value={`${key}pt`} primaryText={key} />
@@ -1296,33 +1298,67 @@ class TextResource extends Component {
     )
   }
 
+  closeTableMenu() {
+    this.setState({
+      tableMenuOpen: false,
+    });
+  }
+
+  openTableMenu(event) {
+    this.setState({
+      tableMenuOpen: true,
+      tableMenuAnchor: event.currentTarget,
+    });
+  }
+
   renderTableMenu(loading, tooltip) {
     return (
-      <IconMenu
-        key="tableDropdown"
-        onChange={this.onTableMenuChange.bind(this)}
-        iconButtonElement={
-          <IconButton
-            disabled={loading}
-            tooltip={tooltip}
-            onMouseOver={this.onTooltipOpen.bind(this, 'table')}
-            onMouseOut={this.onTooltipClose.bind(this, 'table')}
-          >
-            <Table
-              color="black"
-              size={24}
-            />
-          </IconButton>
-        }
-        anchorOrigin={{horizontal: 'left', vertical: 'top'}}
-        targetOrigin={{horizontal: 'left', vertical: 'top'}}
+      <div
+        style={{
+          display: 'inline-block',
+          position: 'relative',
+        }}
       >
-        <MenuItem key={'insert-table'} value={'insert-table'} primaryText="Insert table" />
-        {this.tableTools.map(tool => (
-          <MenuItem key={tool.name} value={tool.name} primaryText={tool.text} />
-        ))}
-      </IconMenu>
-    )
+        <IconButton
+          disabled={loading}
+          tooltip={tooltip}
+          onMouseOver={this.onTooltipOpen.bind(this, 'table')}
+          onMouseOut={this.onTooltipClose.bind(this, 'table')}
+          onClick={(event) => {
+            this.openTableMenu(event);
+          }}
+        >
+          <Table
+            color="black"
+            size={24}
+          />
+        </IconButton>
+        <Popover
+          anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+          targetOrigin={{horizontal: 'left', vertical: 'top'}}
+          open={this.state.tableMenuOpen}
+          anchorEl={this.state.tableMenuAnchor}
+          useLayerForClickAway={false}
+          onRequestClose={() => this.closeTableMenu()}
+          animated={true}
+          style={{ zIndex: 20000 }}
+        >
+          <Menu
+            onChange={this.onTableMenuChange.bind(this)}
+            onItemClick={() => this.closeTableMenu()}
+            maxHeight={500}
+            style={{
+              position: 'relative',
+            }}
+          >
+            <MenuItem key={'insert-table'} value={'insert-table'} primaryText="Insert table" />
+            {this.tableTools.map(tool => (
+              <MenuItem key={tool.name} value={tool.name} primaryText={tool.text} />
+            ))}
+          </Menu>
+        </Popover>
+      </div>
+    );
   }
 
   renderToolbar() {
