@@ -187,6 +187,8 @@ class TextResource extends Component {
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
+      this.props.setLastSaved(new Date().toLocaleString('en-US'));
+      this.props.setSaving({ doneSaving: true });
     }
   }
 
@@ -1085,6 +1087,7 @@ class TextResource extends Component {
   };
 
   processAndConfirmTransaction = (tx, callback) => {
+    this.props.setSaving({ doneSaving: false });
     let postponeCallback = false;
     let postContentChanges = true;
     const serializer = DOMSerializer.fromSchema(this.state.documentSchema);
@@ -1174,6 +1177,7 @@ class TextResource extends Component {
         );
       }
     }
+    if (steps.length === 0) this.props.setSaving({ doneSaving: true });
     if (postContentChanges && tx.before.content !== tx.doc.content)
       this.scheduleContentUpdate(tx.doc)
     if (!postponeCallback) {
@@ -1201,6 +1205,8 @@ class TextResource extends Component {
         {content: {type: 'doc', content}, search_text},
         { refreshDocumentContent: true, timeOpened: this.props.timeOpened },
       );
+      this.props.setLastSaved(new Date().toLocaleString('en-US'));
+      this.props.setSaving({ doneSaving: true });
     }.bind(this), delay);
   }
 

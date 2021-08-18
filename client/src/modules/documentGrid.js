@@ -510,7 +510,7 @@ export function deleteHighlights(highlights = []) {
   }
 }
 
-export function updateHighlight(id, attributes) {
+export function updateHighlight(id, attributes, callback) {
   return function(dispatch, getState) {
     dispatch({
       type: UPDATE_HIGHLIGHT,
@@ -556,6 +556,11 @@ export function updateHighlight(id, attributes) {
           dispatch(refreshTarget(index));
         }
       });
+    })
+    .then(highlight => {
+      if (callback) {
+        callback(highlight);
+      }
     })
     .catch(() => dispatch({
       type: UPDATE_HIGHLIGHT_ERRORED
