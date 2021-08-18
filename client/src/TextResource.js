@@ -1347,6 +1347,7 @@ class TextResource extends Component {
                 <IconButton
                   onMouseDown={this.onHiddenToolsOpen.bind(this)}
                   disabled={this.props.loading}
+                  tooltip="More text tools"
                 >
                   <EllipsisIcon />
                 </IconButton>
