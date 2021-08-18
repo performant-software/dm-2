@@ -135,6 +135,8 @@ class AddImageLayer extends Component {
               replaceDocument({ ...document, locked_by_me: document.locked ? true : false });
               this.addTileSource(UPLOAD_SOURCE_TYPE);
               this.setState( { ...this.state, uploadErrorMessage: null, uploading: false } );
+              this.props.setLastSaved(new Date().toLocaleString('en-US'));
+              this.props.setSaving({ doneSaving: true });
             }}
             onError={ () => {
               this.setState( { ...this.state, uploadErrorMessage: "Unable to process file.", uploading: false } );
@@ -153,7 +155,8 @@ class AddImageLayer extends Component {
               disabled={!ready}
               onChange={(e) => {
                 this.props.setAddTileSourceMode(this.props.document_id, UPLOAD_SOURCE_TYPE);
-                this.setState({ ...this.state, uploadErrorMessage: null, uploading: true })
+                this.setState({ ...this.state, uploadErrorMessage: null, uploading: true });
+                this.props.setSaving({ doneSaving: false });
                 handleUpload(e.currentTarget.files)
               }}
               style={{ display: 'none' }}
