@@ -39,9 +39,23 @@ class TableOfContents extends Component {
                     icon={<CreateNewFolder />}
                     onClick={() => {this.props.createFolder(projectId, 'Project');}}
                   />
-                    <IconButton onClick={this.props.checkInAllClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><MoveToInbox /></IconButton>
+                    <IconButton
+                      onClick={this.props.checkInAllClick}
+                      style={{ width: '44px', height: '44px', marginLeft: '6px' }}
+                      iconStyle={{ width: '20px', height: '20px' }}
+                      tooltip="Check In All Documents"
+                    >
+                      <MoveToInbox />
+                    </IconButton>
                   { adminEnabled && 
-                    <IconButton onClick={this.props.settingsClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><Settings /></IconButton>
+                    <IconButton 
+                      onClick={this.props.settingsClick}
+                      style={{ width: '44px', height: '44px', marginLeft: '6px' }}
+                      iconStyle={{ width: '20px', height: '20px' }}
+                      tooltip="Project Settings"
+                    >
+                      <Settings />
+                    </IconButton>
                   }
                 </ToolbarGroup>
               </Toolbar>
