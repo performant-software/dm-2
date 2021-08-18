@@ -138,7 +138,7 @@ class LinkInspectorPopup extends Component {
         <Paper 
           id={this.getInnerID()} 
           zDepth={4} 
-          style={{ position: 'absolute', top: `${target.startPosition.y}px`, left: `${target.startPosition.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}
+          style={{ position: 'absolute', top: `${target.startPosition ? target.startPosition.y : 0}px`, left: `${target.startPosition ? target.startPosition.x : 0}px`, zIndex: (999 + this.props.popupIndex).toString()}}
         >          
           <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
             <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
