@@ -32,17 +32,18 @@ import DecreaseIndent from 'material-ui/svg-icons/editor/format-indent-decrease'
 import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
+import ViewColumn from 'material-ui/svg-icons/action/view-column';
 import { Hr, Table } from 'react-bootstrap-icons';
+import PageMargins from './icons/PageMargins';
 import { Schema, DOMSerializer } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
-
 import { addListNodes, wrapInList } from 'prosemirror-schema-list';
 import { toggleMark, wrapIn } from 'prosemirror-commands';
 import { exampleSetup } from 'prosemirror-example-setup';
-import { undo, redo } from "prosemirror-history"
-import { keymap } from "prosemirror-keymap"
+import { undo, redo } from "prosemirror-history";
+import { keymap } from "prosemirror-keymap";
 import {
   tableEditing,
   columnResizing,
@@ -59,11 +60,16 @@ import {
   toggleHeaderRow,
   isInTable,
   goToNextCell,
-} from "prosemirror-tables"
+} from "prosemirror-tables";
 
 import { schema } from './TextSchema';
 import {
-  addMark, decreaseIndent, increaseIndent, removeMark, replaceNodeWith, setNodeAttributes
+  addMark,
+  decreaseIndent,
+  increaseIndent,
+  removeMark,
+  replaceNodeWith,
+  setNodeAttributes,
 } from './TextCommands';
 import { addTable } from './TextTableCommands';
 import HighlightColorSelect from './HighlightColorSelect';
@@ -126,6 +132,8 @@ class TextResource extends Component {
       { name: 'increase-indent', width: buttonWidth, text: 'Increase indent' },
       { name: 'bulleted-list', width: buttonWidth, text: 'Bulleted list' },
       { name: 'numbered-list', width: buttonWidth, text: 'Numbered list' },
+      { name: 'columns', width: buttonWidth, text: 'Set column count' },
+      { name: 'margin', width: buttonWidth, text: 'Set page margins' },
       { name: 'highlight-delete', width: buttonWidth, text: 'Delete selected highlight' },
     ].map((tool, position) => {
       return { ...tool, position }
@@ -156,8 +164,28 @@ class TextResource extends Component {
       tableDialogRows: '',
       tableDialogCols: '',
       tableDialogHeader: false,
-      tableDialogBufferInvalid: false,
+      tableDialogRowsInvalid: false,
+      tableDialogColsInvalid: false,
       createTable: null,
+    }
+
+    this.initialMarginDialogState = {
+      marginDialogOpen: false,
+      marginLeft: this.props.content.marginLeft || '',
+      marginRight: this.props.content.marginRight || '',
+      marginTop: this.props.content.marginTop || '',
+      marginBottom: this.props.content.marginBottom || '',
+      priorMargins: {
+        marginLeft: this.props.content.marginLeft || '',
+        marginRight: this.props.content.marginRight || '',
+        marginTop: this.props.content.marginTop || '',
+        marginBottom: this.props.content.marginBottom || '',
+      },
+      marginLefttInvalid: false,
+      marginRightInvalid: false,
+      marginTopInvalid: false,
+      marginBottomInvalid: false,
+      setPageMargin: null,
     }
 
     this.state = {
@@ -176,8 +204,10 @@ class TextResource extends Component {
       tooltipAnchor: {},
       tableMenuOpen: false,
       tableMenuAnchor: undefined,
+      columnCount: this.props.content.columnCount || 1,
       ...this.initialLinkDialogState,
       ...this.initialTableDialogState,
+      ...this.initialMarginDialogState,
     };
   }
   
@@ -187,6 +217,21 @@ class TextResource extends Component {
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
+    }
+    if (this.props.content.marginLeft !== prevProps.content.marginLeft) {
+      this.setState({ marginLeft: this.props.content.marginLeft });
+    }
+    if (this.props.content.marginRight !== prevProps.content.marginRight) {
+      this.setState({ marginRight: this.props.content.marginRight });
+    }
+    if (this.props.content.marginTop !== prevProps.content.marginTop) {
+      this.setState({ marginTop: this.props.content.marginTop });
+    }
+    if (this.props.content.marginBottom !== prevProps.content.marginBottom) {
+      this.setState({ marginBottom: this.props.content.marginBottom });
+    }
+    if (this.props.content.columnCount !== prevProps.content.columnCount) {
+      this.setState({ columnCount: this.props.content.columnCount });
     }
   }
 
@@ -261,16 +306,16 @@ class TextResource extends Component {
   
       case 'bold':
         return (
-            <IconButton
-              key={toolName}
-              onMouseDown={this.onBold.bind(this)}
-              onMouseOver={this.onTooltipOpen.bind(this, toolName)}
-              onMouseOut={this.onTooltipClose.bind(this, toolName)}
-              tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
-              disabled={loading}
-            >
-              <FormatBold />
-            </IconButton>
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onBold.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <FormatBold />
+          </IconButton>
         );
 
       case 'italic':
@@ -343,6 +388,10 @@ class TextResource extends Component {
       case 'line-spacing':
         tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
         return this.renderLineSpacingMenu(loading, tooltip);
+
+      case 'columns':
+        tooltip=!this.state.hiddenTools.includes(toolName) ? text : undefined;
+        return this.renderColumnsMenu(loading, tooltip);
 
       case 'bulleted-list':
         return (
@@ -444,6 +493,20 @@ class TextResource extends Component {
             disabled={loading}
           >
             <CropFree />
+          </IconButton>
+        );
+
+      case 'margin':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onMarginClick.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <PageMargins size={24} color="black" />
           </IconButton>
         );
         
@@ -908,9 +971,9 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const dispatch = this.state.editorView.dispatch;
       addTable(editorState, dispatch, { rowsCount, colsCount, withHeaderRow });
+      this.state.editorView.focus();
     }
     this.setState( {...this.state, tableDialogOpen: true, createTable } );
-    this.state.editorView.focus();
   }
 
   onTableMenuChange(e, action) {
@@ -928,15 +991,6 @@ class TextResource extends Component {
     }
   }
 
-  onLineSpacingChange = (e, lineHeight) => {
-    // e.preventDefault();
-    const nodeType = this.state.documentSchema.nodes.paragraph;
-    const editorState = this.getEditorState();
-    const cmd = setNodeAttributes(nodeType, { lineHeight });
-    cmd( editorState, this.state.editorView.dispatch );
-    this.state.editorView.focus();
-  }
-
   onHiddenToolsOpen(e) {
     e.preventDefault();
     this.setState({
@@ -949,6 +1003,61 @@ class TextResource extends Component {
     this.setState({
       hiddenToolsOpen: false,
     });
+  }
+
+  onMarginClick(e) {
+    e.preventDefault();
+    const setPageMargin = ({ marginTop, marginBottom, marginLeft, marginRight }) => {
+      const editorState = this.getEditorState();
+      this.props.updateDocument(
+        this.props.document_id,
+        { 
+          content: {
+            type: 'doc',
+            content: editorState.doc.content,
+            marginTop,
+            marginBottom,
+            marginLeft,
+            marginRight,
+            columnCount: this.state.columnCount,
+          },
+        },
+        { refreshDocumentContent: true, timeOpened: this.props.timeOpened },
+      );
+      this.state.editorView.focus();
+    }
+    const { marginTop, marginBottom, marginLeft, marginRight } = this.state;
+    this.setState(prevState => ({
+      ...prevState,
+      marginDialogOpen: true,
+      setPageMargin,
+      priorMargins: {
+        marginTop, marginBottom, marginLeft, marginRight
+      },
+    }));
+  }
+
+  onColumnsChange(e, columnCount) {
+    e.preventDefault();
+    const editorState = this.getEditorState();
+    this.setState({ columnCount });
+    const { marginTop, marginBottom, marginLeft, marginRight } = this.state;
+    this.props.updateDocument(
+      this.props.document_id,
+      { 
+        content: {
+          type: 'doc',
+          content: editorState.doc.content,
+          marginTop,
+          marginBottom,
+          marginLeft,
+          marginRight,
+          columnCount,
+        },
+      },
+      { refreshDocumentContent: true, timeOpened: this.props.timeOpened },
+    );
+    this.state.editorView.focus();
   }
 
   handleTab(editorState) {
@@ -1310,7 +1419,7 @@ class TextResource extends Component {
           >
             <Table
               color="black"
-              size={24}
+              size={18}
             />
           </IconButton>
         }
@@ -1321,6 +1430,31 @@ class TextResource extends Component {
         {this.tableTools.map(tool => (
           <MenuItem key={tool.name} value={tool.name} primaryText={tool.text} />
         ))}
+      </IconMenu>
+    )
+  }
+
+  renderColumnsMenu(loading, tooltip) {
+    return (
+      <IconMenu
+        key="columnsDropdown"
+        onChange={this.onColumnsChange.bind(this)}
+        iconButtonElement={
+          <IconButton
+            disabled={loading}
+            tooltip={tooltip}
+            onMouseOver={this.onTooltipOpen.bind(this, 'columns')}
+            onMouseOut={this.onTooltipClose.bind(this, 'columns')}
+          >
+            <ViewColumn />
+          </IconButton>
+        }
+        anchorOrigin={{horizontal: 'left', vertical: 'top'}}
+        targetOrigin={{horizontal: 'left', vertical: 'top'}}
+      >
+        {[1, 2, 3].map(columnCount =>
+          <MenuItem key={columnCount.toString()} value={columnCount} primaryText={columnCount.toString()} />
+        )}
       </IconMenu>
     )
   }
@@ -1448,7 +1582,11 @@ class TextResource extends Component {
         ...this.initialTableDialogState
       });
     } else {
-      this.setState({ ...this.state, tableDialogBufferInvalid: true });
+      this.setState({ 
+        ...this.state, 
+        tableDialogRowsInvalid: (isNaN(rowsCount) || rowsCount <= 0 || rowsCount >= 50), 
+        tableDialogColsInvalid: (isNaN(colsCount) || colsCount <= 0 || colsCount >= 50),
+      });
     }
   }
 
@@ -1480,7 +1618,7 @@ class TextResource extends Component {
           min={1}
           max={49}
           value={this.state.tableDialogRows}
-          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          errorText={ this.state.tableDialogRowsInvalid ? "Please enter a number between 1 and 49" : "" }
           floatingLabelText={"Rows"}
           onChange={(e, newValue) => this.setState({...this.state, tableDialogRows: newValue}) }
         />
@@ -1490,7 +1628,7 @@ class TextResource extends Component {
           min={1}
           max={49}
           value={this.state.tableDialogCols}
-          errorText={ this.state.tableDialogBufferInvalid ? "Please enter a valid number" : "" }
+          errorText={ this.state.tableDialogColsInvalid ? "Please enter a number between 1 and 49" : "" }
           floatingLabelText={"Columns"}
           onChange={(e, newValue) => this.setState({ ...this.state, tableDialogCols: newValue}) }
         />
@@ -1503,10 +1641,105 @@ class TextResource extends Component {
         />
       </Dialog>
     );
+  }
 
+  onCancelMarginDialog = () => {
+    // discard the buffer state and close dialog
+    this.setState({ marginDialogOpen: false, ...this.state.priorMargins });
+  }
+
+  onSubmitMarginDialog = () => {
+    // call the callback if it is valid, otherwise, set error state and stay open
+    const marginTop = parseInt(this.state.marginTop || 0, 10);
+    const marginBottom = parseInt(this.state.marginBottom || 0, 10);
+    const marginLeft = parseInt(this.state.marginLeft || 0, 10);
+    const marginRight = parseInt(this.state.marginRight || 0, 10);
+
+    if(!isNaN(marginTop) && !isNaN(marginBottom) && !isNaN(marginLeft) && !isNaN(marginRight)
+      && marginTop >= 0 && marginBottom >= 0 && marginLeft >= 0 && marginRight >= 0) {
+      this.state.setPageMargin({ marginTop, marginBottom, marginLeft, marginRight });
+      this.setState({
+        marginDialogOpen: false,
+      });
+    } else {
+      this.setState({
+        ...this.state,
+        marginTopInvalid: (isNaN(marginTop) || marginTop < 0),
+        marginBottomInvalid: (isNaN(marginBottom) || marginBottom < 0),
+        marginLeftInvalid: (isNaN(marginLeft) || marginLeft < 0),
+        marginRightInvalid: (isNaN(marginRight) || marginRight < 0),
+      });
+    }
+  }
+
+  renderMarginDialog() {
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.onCancelMarginDialog}
+      />,
+      <FlatButton
+        label="Set"
+        primary={true}
+        onClick={this.onSubmitMarginDialog}
+      />,
+    ];
+
+    return (
+      <Dialog
+        title="Set Page Margins"
+        contentStyle={{ width: '400px' }}
+        actions={actions}
+        modal={true}
+        open={this.state.marginDialogOpen}
+        onRequestClose={this.onCancelMarginDialog}
+      >
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginLeft}
+          errorText={ this.state.marginLeftInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Left"}
+          onChange={(e, newValue) => this.setState({ marginLeft: newValue}) }
+        /> px
+        <br />
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginRight}
+          errorText={ this.state.marginRightInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Right"}
+          onChange={(e, newValue) => this.setState({ marginRight: newValue}) }
+        /> px
+        <br />
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginTop}
+          errorText={ this.state.marginTopInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Top"}
+          onChange={(e, newValue) => this.setState({ marginTop: newValue}) }
+        /> px
+        <br />
+        <TextField
+          type="number"
+          min={0}
+          value={this.state.marginBottom}
+          errorText={ this.state.marginBottomInvalid ? "Please enter a valid number" : "" }
+          floatingLabelText={"Bottom"}
+          onChange={(e, newValue) => this.setState({ marginBottom: newValue}) }
+        /> px
+      </Dialog>
+    );
   }
 
   render() {
+    const marginTop = parseInt(this.state.marginTop || 0, 10);
+    const marginBottom = parseInt(this.state.marginBottom || 0, 10);
+    const marginLeft = parseInt(this.state.marginLeft || 0, 10);
+    const marginRight = parseInt(this.state.marginRight || 0, 10);
+    const columnCount = parseInt(this.state.columnCount || 1, 10);
     return (
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
@@ -1532,9 +1765,17 @@ class TextResource extends Component {
           <ProseMirrorEditorView
             editorView={this.state.editorView}
             createEditorView={this.createEditorView}
+            style={{
+              marginTop,
+              marginBottom,
+              marginLeft,
+              marginRight,
+            }}
+            columnCount={columnCount}
           />
           { this.renderLinkDialog() }
           { this.renderTableDialog() }
+          { this.renderMarginDialog() }
         </div>
       </div>
     );
