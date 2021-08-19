@@ -31,9 +31,25 @@ Rails.application.configure do
   config.active_storage.service = ENV['ACTIVE_STORAGE_SERVICE']&.to_sym || :local
 
   # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Use the lowest log level to ensure availability of diagnostic information
+  # when problems arise.
+  config.log_level = :error
 
-  config.action_mailer.perform_caching = false
+  # Prepend all log lines with the following tags.
+  config.log_tags = [ :request_id ]
+
+  # Use default logging formatter so that PID and timestamp are not suppressed.
+  config.log_formatter = ::Logger::Formatter.new
+
+  # Use a different logger for distributed setups.
+  # require 'syslog/logger'
+  # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new 'app-name')
+
+  if ENV["RAILS_LOG_TO_STDOUT"].present?
+    logger           = ActiveSupport::Logger.new(STDOUT)
+    logger.formatter = config.log_formatter
+    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+  end
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
