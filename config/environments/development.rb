@@ -31,6 +31,21 @@ Rails.application.configure do
   config.active_storage.service = ENV['ACTIVE_STORAGE_SERVICE']&.to_sym || :local
 
   # Don't care if the mailer can't send.
+  config.action_mailer.default_url_options = {:host => ENV['HOSTNAME']}
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.perform_caching = false
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.smtp_settings = {
+    :user_name => ENV['SENDGRID_USERNAME'],
+    :password => ENV['SENDGRID_PASSWORD'],
+    :domain => ENV['HOSTNAME'],
+    :address => 'smtp.sendgrid.net',
+    :port => 587,
+    :authentication => :plain,
+    :enable_starttls_auto => true
+  }
+
   # Use the lowest log level to ensure availability of diagnostic information
   # when problems arise.
   config.log_level = :error
