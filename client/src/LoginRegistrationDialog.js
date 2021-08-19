@@ -138,13 +138,28 @@ class LoginRegistrationDialog extends Component {
             {this.props.userAuthError.response && this.props.userAuthError.response.data 
             && this.props.userAuthError.response.data.errors && (
               <p>
-                {this.props.userAuthError.response.data.errors[0].toString()}
+                {Array.isArray(this.props.userAuthError.response.data.errors)
+                  && this.props.userAuthError.response.data.errors.length > 0 
+                  && this.props.userAuthError.response.data.errors[0].toString()}
+                {!Array.isArray(this.props.userAuthError.response.data.errors)
+                  && Array.isArray(this.props.userAuthError.response.data.errors.full_messages)
+                  && this.props.userAuthError.response.data.errors.full_messages.length > 0
+                  && this.props.userAuthError.response.data.errors.full_messages[0].toString()
+                }
               </p>
             )}
           </>
         }
         {this.props.approvalPendingShown &&
-          <p style={{ color: blue900 }}>Your account has been created, but a site administrator must approve it before you can proceed to work with projects. An email has been sent to the administrators for this site.</p>
+          <>
+            <p style={{ color: blue900 }}>
+              Your account has been created, but your email must be confirmed before you may log in.
+            </p>
+            <p style={{ color: blue900 }}>
+              In addition, a site administrator must approve your account before you can proceed to work with projects.
+              An email has been sent to the administrators for this site.
+            </p>
+          </>
         }
         {this.props.confirmUserSuccessDialogShown && (
           <p style={{ color: blue900 }}>
