@@ -19,9 +19,7 @@ class User < ActiveRecord::Base
     if User.count == 1
       User.first.update({admin: true, approved: true})
     end
-
-    # TODO 
-    # AdminMailer.new_user_waiting_for_approval(email).deliver
+    AdminMailer.new_user_waiting_for_approval(self.email).deliver
   end
 
   def inactive_message
