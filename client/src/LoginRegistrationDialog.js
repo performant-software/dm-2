@@ -106,7 +106,17 @@ class LoginRegistrationDialog extends Component {
         actions={actions}
       >
         {this.props.userAuthError &&
-          <p style={{ color: red500 }}>User authentication error</p>
+          <>
+            <p style={{ color: red500 }}>
+              User authentication error
+            </p>
+            {this.props.userAuthError.response && this.props.userAuthError.response.data 
+            && this.props.userAuthError.response.data.errors && (
+              <p>
+                {this.props.userAuthError.response.data.errors[0].toString()}
+              </p>
+            )}
+          </>
         }
         {this.props.approvalPendingShown &&
           <p style={{ color: blue900 }}>Your account has been created, but a site administrator must approve it before you can proceed to work with projects. An email has been sent to the administrators for this site.</p>
@@ -118,6 +128,7 @@ class LoginRegistrationDialog extends Component {
               hintText='me@example.com'
               value={this.props.userEmail}
               onChange={this.props.userEmailChanged}
+              type="email"
             /><br />
           </div>
         }
@@ -127,6 +138,7 @@ class LoginRegistrationDialog extends Component {
               floatingLabelText='Display name'
               value={this.props.userName}
               onChange={this.props.userNameChanged}
+              type="text"
             /><br />
           </div>
         }

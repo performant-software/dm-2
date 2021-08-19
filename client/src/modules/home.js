@@ -156,7 +156,7 @@ export default function(state = initialState, action) {
     case USER_AUTH_ERRORED:
       return {
         ...state,
-        userAuthError: true
+        userAuthError: action.error
       };
 
     case AUTH_MENU_TOGGLED:
