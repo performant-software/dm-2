@@ -157,6 +157,7 @@ class CanvasResource extends Component {
       sequenceMode: true,
       showSequenceControl: false,
       preserveViewport: true,
+      preserveImageSizeOnResize: true,
     });
     const hasLayers = this.hasLayers();
 
