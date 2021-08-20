@@ -1,8 +1,9 @@
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable and :omniauthable
+  # :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable
+         :recoverable, :rememberable, :trackable, :validatable,
+         :confirmable
   include DeviseTokenAuth::Concerns::User
 
   has_many :user_project_permissions, dependent: :destroy
@@ -18,9 +19,7 @@ class User < ActiveRecord::Base
     if User.count == 1
       User.first.update({admin: true, approved: true})
     end
-
-    # TODO 
-    # AdminMailer.new_user_waiting_for_approval(email).deliver
+    AdminMailer.new_user_waiting_for_approval(self.email).deliver
   end
 
   def inactive_message
@@ -59,5 +58,9 @@ class User < ActiveRecord::Base
     Document
       .where(locked_by_id: self.id)
       .update_all(locked_by_id: nil, locked: false)
+  end
+
+  def as_json(options = nil)
+    super(options).merge({ "confirmed" => self.confirmed? })
   end
 end

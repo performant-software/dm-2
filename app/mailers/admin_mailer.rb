@@ -1,5 +1,5 @@
 class AdminMailer < Devise::Mailer
-  default from: "DigitalMappa@#{ENV['HOSTNAME']}"
+  default from: ENV['EMAIL_FROM']
   layout 'mailer'
 
   def new_user_waiting_for_approval(email)
