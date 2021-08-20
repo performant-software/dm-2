@@ -1433,6 +1433,7 @@ class TextResource extends Component {
           display: 'inline-block',
           position: 'relative',
         }}
+        key="tableMenu"
       >
         <IconButton
           disabled={loading}
