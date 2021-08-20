@@ -15,7 +15,7 @@ gem 'pg', '>= 0.18', '< 2.0'
 gem 'puma', '~> 3.7'
 gem 'foreman'
 
-gem 'devise', '~> 4.6.1'
+gem 'devise', '~> 4.7.1'
 
 # needed for nokogiri
 gem 'pkg-config', "~> 1.1"
