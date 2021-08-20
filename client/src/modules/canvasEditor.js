@@ -3,7 +3,6 @@ export const HIDE_COLOR_PICKER = 'canvasEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'canvasEditor/TOGGLE_COLOR_PICKER';
 export const SET_ADD_TILE_SOURCE_MODE = 'canvasEditor/SET_ADD_TILE_SOURCE_MODE';
 export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
-export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
 export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
 export const SET_IMAGE_URL = 'canvasEditor/SET_IMAGE_URL';
 export const TOGGLE_HIGHLIGHTS = 'canvasEditor/TOGGLE_HIGHLIGHTS';
@@ -22,7 +21,6 @@ const initialState = {
   highlightsHidden: {},
   imageURLs: {},
   isPencilMode: {},
-  zoomControls: {},
   globalCanvasDisplay: true,
   pageToChange: {},
   editingLayerName: {},
@@ -76,14 +74,6 @@ export default function(state = initialState, action) {
       return {
         ...state,
         isPencilMode: updatedPencilMode
-      };
-
-    case SET_ZOOM_CONTROL:
-      let updatedZoomControls = Object.assign({}, state.zoomControls);
-      updatedZoomControls[action.editorKey] = action.zoomValue;
-      return {
-        ...state,
-        zoomControls: updatedZoomControls
       };
 
     case SET_GLOBAL_CANVAS_DISPLAY:
@@ -188,16 +178,6 @@ export function toggleCanvasHighlights(editorKey, value) {
       value
     });
   };
-}
-
-export function setZoomControl(editorKey, zoomValue) {
-  return function(dispatch) {
-    dispatch({
-      type: SET_ZOOM_CONTROL,
-      editorKey,
-      zoomValue
-    });
-  }
 }
 
 export function setGlobalCanvasDisplay(value) {

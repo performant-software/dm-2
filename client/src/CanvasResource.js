@@ -28,7 +28,6 @@ import {
   setIsPencilMode,
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
-  setZoomControl,
   toggleEditLayerName,
 } from './modules/canvasEditor';
 import {
@@ -69,10 +68,11 @@ fabric.Object.prototype._renderStroke = function(ctx) {
 const strokeWidth = 3.0;
 const markerRadius = 4.0;
 const doubleClickTimeout = 500;
-const markerThumbnailSize = 100
-const fabricViewportScale = 2000
-const minZoomImageRatio = 0.9
-const maxZoomPixelRatio = 10.0
+const markerThumbnailSize = 100;
+const fabricViewportScale = 2000;
+const minZoomImageRatio = 0.9;
+const maxZoomPixelRatio = 5.0;
+const maxZoomLevel = 10.0;
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -92,6 +92,8 @@ class CanvasResource extends Component {
       currentPage: 0,
       totalPages: 0,
       layerName: '',
+      zoomLevel: 0,
+      minZoom: 0,
     };
   }
 
@@ -151,6 +153,7 @@ class CanvasResource extends Component {
       tileSources: [],
       minZoomImageRatio: minZoomImageRatio,
       maxZoomPixelRatio: maxZoomPixelRatio,
+      maxZoomLevel: 10.0,
       navigatorSizeRatio: 0.15,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true,
@@ -275,12 +278,15 @@ class CanvasResource extends Component {
     viewer.addHandler('open', this.onOpen.bind(this) );
 
     viewer.addHandler('zoom', event => {
-      const max = this.osdViewer.viewport.getMaxZoom();
-      const min = this.osdViewer.viewport.getMinZoom();
-      //JONAH const exponential_range = (value-Math.log1p(value));  // flattens out default exponential zoom. zoom now fairly linear -Jonah
-      //JONAH this.osdViewer.viewport.zoomTo(min + ((max - min) * exponential_range));
-      // this sets the zoom control based on zoom level (when adjusted through mouse wheel)
-      this.props.setZoomControl(this.getInstanceKey(), Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
+      const maxZoom = this.osdViewer.viewport.getMaxZoom();
+      const minZoom = this.osdViewer.viewport.getMinZoom();
+      let zoomLevel = maxZoom;
+      if (event.zoom <= maxZoom) {
+        zoomLevel = event.zoom;
+      } else if (event.zoom <= minZoom) {
+        zoomLevel = minZoom;
+      }
+      this.setState((prevState) => ({ ...prevState, zoomLevel, minZoom }));
     });
 
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
@@ -1039,10 +1045,9 @@ class CanvasResource extends Component {
 
   zoomControlChange(event, value) {
     if (this.osdViewer && this.osdViewer.viewport) {
-      const max = this.osdViewer.viewport.getMaxZoom();
-      const min = this.osdViewer.viewport.getMinZoom();
-      const exponential_range = (value-Math.log1p(value));  // flattens out default exponential zoom. zoom now fairly linear -Jonah
-      this.osdViewer.viewport.zoomTo(min + ((max - min) * exponential_range));
+      const zoomLevel = value;
+      this.setState({ zoomLevel });
+      this.osdViewer.viewport.zoomTo(zoomLevel);
     }
   }
 
@@ -1372,7 +1377,15 @@ class CanvasResource extends Component {
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
-            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.01} value={this.props.zoomControls[key] || 0} onChange={this.zoomControlChange.bind(this)} />
+            <Slider
+              sliderStyle={{marginTop: '0'}}
+              axis='y'
+              step={0.01}
+              min={this.state.minZoom}
+              max={maxZoomLevel}
+              value={this.state.zoomLevel}
+              onChange={this.zoomControlChange.bind(this)}
+            />
             <div id={this.osdId} style={{ flexGrow: 1 }}></div>
           </div>
         </div>
@@ -1399,7 +1412,6 @@ const mapStateToProps = state => ({
   addTileSourceMode: state.canvasEditor.addTileSourceMode,
   imageURLs: state.canvasEditor.imageURLs,
   isPencilMode: state.canvasEditor.isPencilMode,
-  zoomControls: state.canvasEditor.zoomControls,
   globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay,
   pageToChange: state.canvasEditor.pageToChange,
   loading: state.documentGrid.loading,
@@ -1415,7 +1427,6 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   setCanvasHighlightColor,
   toggleCanvasColorPicker,
   setIsPencilMode,
-  setZoomControl,
   openDeleteDialog,
   moveLayer,
   renameLayer,
