@@ -72,7 +72,7 @@ const markerThumbnailSize = 100;
 const fabricViewportScale = 2000;
 const minZoomImageRatio = 0.9;
 const maxZoomPixelRatio = 5.0;
-const maxZoomLevel = 10.0;
+const maxZoomLevel = 5.0;
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -153,7 +153,7 @@ class CanvasResource extends Component {
       tileSources: [],
       minZoomImageRatio: minZoomImageRatio,
       maxZoomPixelRatio: maxZoomPixelRatio,
-      maxZoomLevel: 10.0,
+      maxZoomLevel,
       navigatorSizeRatio: 0.15,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true,
