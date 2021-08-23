@@ -686,12 +686,12 @@ export function createTextDocumentWithLink(origin, parentId = null, parentType =
       dispatch(addLink(origin, {
         linkable_id: document.id,
         linkable_type: 'Document'
-      }));
+      }, null, origin.linkable_type));
     }));
   }
 }
 
-export function moveDocument(documentId, destination_id, position ) {
+export function moveDocument(documentId, destination_id, destinationParentType, position ) {
   return function(dispatch, getState) {
     dispatch({
       type: MOVE_DOCUMENT

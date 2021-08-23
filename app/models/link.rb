@@ -2,7 +2,9 @@ class Link < ApplicationRecord
   belongs_to :linkable_a, polymorphic: true, touch: true
   belongs_to :linkable_b, polymorphic: true, touch: true
   has_many :highlights_links, :dependent => :destroy
-  has_many :links, through: :highlights_links
+  has_many :highlights, through: :highlights_links
+  has_many :documents_links, :dependent => :destroy
+  has_many :documents, through: :documents_links
 
   # This script deletes links that have been orphaned from Documents and Highlight targets
   def self.destroy_dead_links!
@@ -47,6 +49,7 @@ class Link < ApplicationRecord
   end
 
   def renumber_all(remove_self)
+    # Renumber all HighlightsLinks attached to this link
     self.highlights_links.each { |hll| 
       if remove_self == true
         siblings = HighlightsLink.where(
@@ -56,6 +59,29 @@ class Link < ApplicationRecord
         ).sort_by(&:position)
       else
         siblings = HighlightsLink.where(:highlight_id => hll.highlight_id).sort_by(&:position)
+      end
+
+      # renumber them in a single transaction
+      ActiveRecord::Base.transaction do
+        i = 0
+        siblings.each { |sibling|
+          sibling.position = i
+          i = i + 1
+          sibling.save!
+        }
+      end
+    }
+
+    # Renumber all DocumentsLinks attached to this link
+    self.documents_links.each { |dl| 
+      if remove_self == true
+        siblings = DocumentsLink.where(
+          :document_id => dl.document_id
+        ).where.not(
+          :link_id => self.id
+        ).sort_by(&:position)
+      else
+        siblings = DocumentsLink.where(:document_id => dl.document_id).sort_by(&:position)
       end
 
       # renumber them in a single transaction
@@ -81,8 +107,12 @@ class Link < ApplicationRecord
     end
   end
 
-  def move_to(target_position, highlight_id)
-    siblings = HighlightsLink.where(:highlight_id => highlight_id).sort_by(&:position)
+  def move_to(target_position, target_type, target_id)
+    if target_type == 'highlight' || target_type == 'Highlight'
+      siblings = HighlightsLink.where(:highlight_id => target_id).sort_by(&:position)
+    else
+      siblings = DocumentsLink.where(:document_id => target_id).sort_by(&:position)
+    end
   
     siblings.each { |sibling|
       if sibling.link_id == self.id
