@@ -2,7 +2,9 @@ class Link < ApplicationRecord
   belongs_to :linkable_a, polymorphic: true, touch: true
   belongs_to :linkable_b, polymorphic: true, touch: true
   has_many :highlights_links, :dependent => :destroy
-  has_many :links, through: :highlights_links
+  has_many :highlights, through: :highlights_links
+  has_many :documents_links, :dependent => :destroy
+  has_many :documents, through: :documents_links
 
   # This script deletes links that have been orphaned from Documents and Highlight targets
   def self.destroy_dead_links!

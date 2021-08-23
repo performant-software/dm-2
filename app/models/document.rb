@@ -8,6 +8,8 @@ class Document < Linkable
   has_many_attached :images
   has_many :documents, as: :parent, dependent: :destroy
   has_many :document_folders, as: :parent, dependent: :destroy
+  has_many :documents_links, :dependent => :destroy
+  has_many :links, through: :documents_links
 
   include PgSearch
   include TreeNode
