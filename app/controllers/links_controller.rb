@@ -48,6 +48,26 @@ class LinksController < ApplicationController
         render json: @link.errors, status: :unprocessable_entity and return
       end
     end
+    if @link.linkable_a_type == 'Document'
+      if @link.save
+        @link.documents_links.create(
+          :link_id => @link[:id], 
+          :document_id => @link.linkable_a_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity and return
+      end
+    end
+    if @link.linkable_b_type == 'Document'
+      if @link.save
+        @link.documents_links.create(
+          :link_id => @link[:id], 
+          :document_id => @link.linkable_b_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity and return
+      end
+    end
 
     if @link.save
       render json: @link, status: :created, location: @link
@@ -60,8 +80,8 @@ class LinksController < ApplicationController
   # PATCH/PUT /links/1/move
   def move
     @link = Link.find(params[:id])
-    pp = request.parameters
-    @link.move_to(pp[:position], pp["targetId"])
+    move_params = request.parameters
+    @link.move_to(move_params[:position], move_params["targetParentType"], move_params["targetId"])
   end
   
 

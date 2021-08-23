@@ -217,6 +217,11 @@ class Document < Linkable
     nil
   end
 
+  def links_to
+    all_links = self.documents_links.sort_by{ |dl| dl.position }.map{ |dl| Link.where(:id => dl.link_id).first }
+    all_links.map { |link| self.to_link_obj(link) }.compact
+  end
+
   def to_obj
     {
       id: self.id, 

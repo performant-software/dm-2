@@ -91,7 +91,7 @@ function handleDMItemDrop(props,monitorItem) {
         linkable_id: props.highlightId || props.documentId,
         linkable_type: props.highlightId ? 'Highlight' : 'Document'
       }
-      props.addLink(origin, monitorItem, props.buoyancyTarget);
+      props.addLink(origin, monitorItem, props.buoyancyTarget, origin.linkable_type);
       return;
     } else {
       // Link in list, just needs to reorder
@@ -100,7 +100,7 @@ function handleDMItemDrop(props,monitorItem) {
     }
   }
   const targetID = props.targetParentType === 'Project' ? null : props.targetParentId;
-  handler(idToPass, targetID, props.buoyancyTarget )
+  handler(idToPass, targetID, props.targetParentType, props.buoyancyTarget )
   .then(() => {
     // TODO these shouldn't happen until we get an OK back from the server
     if (monitorItem.existingParentType === 'Project' || props.targetParentType === 'Project')
@@ -149,9 +149,13 @@ function collect(connect, monitor) {
 class ListDropTarget extends Component {
   componentDidUpdate(prevProps) {
     if (this.props.addedLink !== prevProps.addedLink) {
-      const { id, highlight_id, position } = this.props.addedLink;
+      const { id, highlight_id, document_id, position, listType } = this.props.addedLink;
       if (position === this.props.buoyancyTarget) {
-        this.props.moveLink(id, highlight_id, position + 1);
+        if (listType === 'Highlight') {
+          this.props.moveLink(id, highlight_id, 'Highlight', position + 1);
+        } else if (listType === 'Document') {
+          this.props.moveLink(id, document_id, 'Document', position + 1);
+        }
       }
     }
   }

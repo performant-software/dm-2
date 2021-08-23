@@ -66,7 +66,7 @@ const linkTarget = {
     }
 
     // this is a fresh link, create it...
-    props.addLink(origin, target);
+    props.addLink(origin, target, null, origin.linkable_type);
   }
 };
 

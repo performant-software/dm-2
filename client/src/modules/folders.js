@@ -152,7 +152,7 @@ export function closeFolder(id) {
   };
 }
 
-export function moveFolder(folderID, destination_id, position ) {
+export function moveFolder(folderID, destination_id, destinationParentType, position ) {
   return function(dispatch) {
     dispatch({
       type: UPDATE_FOLDER
