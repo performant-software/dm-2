@@ -28,6 +28,7 @@ gem 'aws-sdk-s3', '~> 1.48.0', require: false
 gem 'rack-cors', :require => 'rack/cors'
 gem 'pg_search'
 gem 'figaro'
+gem 'open-uri'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

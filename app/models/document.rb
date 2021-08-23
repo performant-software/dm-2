@@ -147,7 +147,7 @@ class Document < Linkable
   end
 
   def download_to_file(uri)
-    stream = open(uri, "rb")
+    stream = URI.open(uri)
     return stream if stream.respond_to?(:path) # Already file-like
   
     # Workaround when open(uri) doesn't return File
