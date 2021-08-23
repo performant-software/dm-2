@@ -132,13 +132,17 @@ class LinkInspectorPopup extends Component {
           openDoc => openDoc.id === this.props.target.document_id && openDoc.locked === true
         )
       : true);
-
-    return (
+    const startPos = target.startPosition;
+    let open = true;
+    if (!startPos) {
+      open = false;
+    }
+    return open && (
       <Draggable handle='.links-popup-drag-handle' bounds='parent' disabled={(this.state.titleHasFocus && canEditTitle) || this.props.rollover} >
         <Paper 
           id={this.getInnerID()} 
           zDepth={4} 
-          style={{ position: 'absolute', top: `${target.startPosition ? target.startPosition.y : 0}px`, left: `${target.startPosition ? target.startPosition.x : 0}px`, zIndex: (999 + this.props.popupIndex).toString()}}
+          style={{ position: 'absolute', top: `${startPos.y}px`, left: `${startPos.x}px`, zIndex: (999 + this.props.popupIndex).toString()}}
         >          
           <div style={{ display: 'flex', flexShrink: '0', backgroundColor: titleBarColor }}>
             <Subheader style={{ flexGrow: '1', cursor: '-webkit-grab' }} className='links-popup-drag-handle' onMouseDown={this.props.onDragHandleMouseDown} >
