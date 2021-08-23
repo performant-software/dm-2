@@ -116,7 +116,17 @@ The first user account created is automatically given admin powers. Thereafter, 
 Heroku Local Development Environment 
 -------------
 
-DM2 is a pretty standard Ruby on Rails 5.x application. It uses a PostgreSQL and has been developed using PostgreSQL v11.1. It was developed using Ruby 2.5.7 and Bundler 2.2.23. Setting up PostgresSQL, Ruby, and Bundler are beyond the scope of this README, but plenty of information is available online about these tools.
+### Requirements
+
+- Ruby 2.7.4
+- Bundler 2.2.26+
+- PostgreSQL 11.12+
+- Node.js 16.x
+- Yarn 1.x
+
+### Setup
+
+DM2 is a Ruby on Rails 5.x/React application. Setting up PostgresSQL, Ruby, Bundler, Node.JS, and Yarn are beyond the scope of this README, but plenty of information is available online about these tools.
 
 Once the dependencies mentioned above are installed, please follow these steps:
 
