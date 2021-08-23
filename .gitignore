@@ -19,9 +19,11 @@
 .byebug_history
 .vscode
 .idea
-.ruby-version
 convert/node_modules
 
 latest.dump
 # Ignore application configuration
 /config/application.yml
+
+# OS files
+.DS_Store

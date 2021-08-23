@@ -2,7 +2,7 @@
   "name": "dm-2",
   "description": "",
   "scripts": {
-    "postdeploy": "bundle exec rake db:migrate && bundle exec rake db:seed"
+    "postdeploy": "bundle exec rails db:migrate && bundle exec rails db:seed"
   },
   "repository": "https://github.com/performant-software/dm-2",
   "env": {
@@ -58,10 +58,10 @@
   ],
   "buildpacks": [
     {
-      "url": "heroku/ruby"
+      "url": "heroku/nodejs"
     },
     {
-      "url": "heroku/nodejs"
+      "url": "heroku/ruby"
     },
     {
       "url": "https://github.com/heroku/heroku-buildpack-activestorage-preview"
