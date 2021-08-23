@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_23_182432) do
+ActiveRecord::Schema.define(version: 2021_08_23_142423) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
@@ -65,6 +65,16 @@ ActiveRecord::Schema.define(version: 2021_07_23_182432) do
     t.index ["locked_by_id"], name: "index_documents_on_locked_by_id"
     t.index ["parent_type", "parent_id"], name: "index_documents_on_parent_type_and_parent_id"
     t.index ["project_id"], name: "index_documents_on_project_id"
+  end
+
+  create_table "documents_links", force: :cascade do |t|
+    t.bigint "document_id", null: false
+    t.bigint "link_id", null: false
+    t.integer "position", default: -1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_documents_links_on_document_id"
+    t.index ["link_id"], name: "index_documents_links_on_link_id"
   end
 
   create_table "highlights", force: :cascade do |t|
