@@ -25,7 +25,6 @@ module  DocumentLinkMigrationHelper
           i = i + 1
         end
       }
-      puts document[:id]
     }
   end
 end
