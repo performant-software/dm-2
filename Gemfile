@@ -22,7 +22,7 @@ gem 'pkg-config', '~> 1.1'
 
 gem 'devise_token_auth', '~> 1.1.5'
 gem 'active_model_serializers'
-gem 'bootsnap', require: false
+gem 'bootsnap', '~> 1.7.7', require: false
 gem 'image_processing', '~> 1.2'
 gem 'aws-sdk-s3', '~> 1.48.0', require: false
 gem 'rack-cors', :require => 'rack/cors'
