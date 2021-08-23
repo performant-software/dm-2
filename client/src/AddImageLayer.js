@@ -23,15 +23,26 @@ const validURLRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:1
 
 class AddImageLayer extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            newTileSourceValue: null,
-            linkError: false,
-            uploadErrorMessage: null,
-            uploading: false
-        }
+  constructor(props) {
+    super(props);
+    this.state = {
+      newTileSourceValue: null,
+      linkError: false,
+      uploadErrorMessage: null,
+      uploading: false,
+      newImageUrl: null,
     }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.image_urls.length > prevProps.image_urls.length) {
+      this.props.image_urls.forEach(url =>{
+        if (!prevProps.image_urls.includes(url)) {
+          this.setState({ newImageUrl: url });
+        }
+      })
+    }      
+  }
 
   addTileSource = (addTileSourceMode) => {
     let imageUrlForThumbnail = null;
@@ -46,21 +57,16 @@ class AddImageLayer extends Component {
     let newTileSources = [];
     switch (addTileSourceMode) {
       case UPLOAD_SOURCE_TYPE:
-        if (this.props.image_urls && this.props.image_urls.length > 0) {
-          let existingImageUrls = [];
-          existingTileSources.forEach(source => {
-            if (source.type && source.url && source.type === 'image')
-              existingImageUrls.push(source.url);
-          });
-          this.props.image_urls.forEach(url => {
-            if (!existingImageUrls.includes(url)) {
-              const filename = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
-              newTileSources.push({
-                type: 'image',
-                url,
-                name: filename,
-              });
-            }
+        if (this.props.image_urls && this.props.image_urls.length > 0 && this.state.newImageUrl) {
+          const url = this.state.newImageUrl;
+          const filename = decodeURIComponent(url.substring(
+            url.lastIndexOf('/')+1,
+            url.lastIndexOf('.')
+          ));
+          newTileSources.push({
+            type: 'image',
+            url,
+            name: filename,
           });
           if (shouldSetThumbnail && newTileSources.length > 0)
             imageUrlForThumbnail = newTileSources[0].url;
@@ -82,7 +88,7 @@ class AddImageLayer extends Component {
       case IIIF_TILE_SOURCE_TYPE:
         newTileSources.push(this.state.newTileSourceValue);
         if (shouldSetThumbnail) {
-          imageUrlForThumbnail = this.state.newTileSourceValue + '/full/!160,160/0/default.png';
+          imageUrlForThumbnail = this.state.newTileSourceValue.replace('http:', 'https:').replace('/info.json', '') + '/full/!160,160/0/default.png';
         }
         iiifTileNames.push({
           name: 'IIIF layer',
@@ -129,6 +135,8 @@ class AddImageLayer extends Component {
               replaceDocument({ ...document, locked_by_me: document.locked ? true : false });
               this.addTileSource(UPLOAD_SOURCE_TYPE);
               this.setState( { ...this.state, uploadErrorMessage: null, uploading: false } );
+              this.props.setLastSaved(new Date().toLocaleString('en-US'));
+              this.props.setSaving({ doneSaving: true });
             }}
             onError={ () => {
               this.setState( { ...this.state, uploadErrorMessage: "Unable to process file.", uploading: false } );
@@ -147,7 +155,8 @@ class AddImageLayer extends Component {
               disabled={!ready}
               onChange={(e) => {
                 this.props.setAddTileSourceMode(this.props.document_id, UPLOAD_SOURCE_TYPE);
-                this.setState({ ...this.state, uploadErrorMessage: null, uploading: true })
+                this.setState({ ...this.state, uploadErrorMessage: null, uploading: true });
+                this.props.setSaving({ doneSaving: false });
                 handleUpload(e.currentTarget.files)
               }}
               style={{ display: 'none' }}

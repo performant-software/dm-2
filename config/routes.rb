@@ -7,6 +7,9 @@ Rails.application.routes.draw do
   resources :projects
   mount_devise_token_auth_for 'User', at: '/auth'
 
+  devise_scope :user do
+    get '/confirmed' => 'confirmations#complete_confirmation'
+  end
   get '/users/update'
   get '/users/list_admin' => 'users#list_admin'
   patch '/users/:id' => 'users#admin_update'

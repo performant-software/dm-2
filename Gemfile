@@ -12,10 +12,10 @@ gem 'rails', '~> 5.2.0'
 # Use postgresql as the database for Active Record
 gem 'pg', '>= 0.18', '< 2.0'
 # Use Puma as the app server
-gem 'puma', '~> 3.7'
+gem 'puma', '~> 4.3'
 gem 'foreman'
 
-gem 'devise', '~> 4.6.1'
+gem 'devise', '~> 4.7.1'
 
 # needed for nokogiri
 gem 'pkg-config', "~> 1.1"
@@ -30,7 +30,7 @@ gem 'pkg-config', "~> 1.1"
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'devise_token_auth', '~> 1.0'
+gem 'devise_token_auth', '~> 1.1.5'
 gem 'active_model_serializers'
 gem 'bootsnap', require: false
 gem 'image_processing', '~> 1.2'

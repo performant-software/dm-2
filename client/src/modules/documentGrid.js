@@ -357,9 +357,12 @@ export default function(state = initialState, action) {
   }
 }
 
-export function openDocument(documentId, firstTarget) {
+export function openDocument(documentId, firstTarget, inContents, pos) {
   return function(dispatch, getState) {
-    const documentPosition = getState().documentGrid.openDocuments.length;
+    let documentPosition = getState().documentGrid.openDocuments.length;
+    if (!inContents && pos) {
+      documentPosition = pos;
+    }
     dispatch({
       type: OPEN_DOCUMENT
     });
@@ -507,7 +510,7 @@ export function deleteHighlights(highlights = []) {
   }
 }
 
-export function updateHighlight(id, attributes) {
+export function updateHighlight(id, attributes, callback) {
   return function(dispatch, getState) {
     dispatch({
       type: UPDATE_HIGHLIGHT,
@@ -553,6 +556,11 @@ export function updateHighlight(id, attributes) {
           dispatch(refreshTarget(index));
         }
       });
+    })
+    .then(highlight => {
+      if (callback) {
+        callback(highlight);
+      }
     })
     .catch(() => dispatch({
       type: UPDATE_HIGHLIGHT_ERRORED
@@ -1184,6 +1192,21 @@ export function moveLayer({ documentId, origin, direction, editorKey }) {
           dispatch(refreshTarget(index));
         }
       });
+      if (document.content && document.content.tileSources && document.content.tileSources[0]) {
+        const firstTileSource = document.content.tileSources[0];
+        // Update doc thumbnail
+        let imageUrlForThumbnail = '';
+        if (typeof firstTileSource === 'string') {
+          // Tile source is a string, so it's IIIF
+          let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
+          imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png';
+        } else if (firstTileSource.url && firstTileSource.type === 'image') {
+          imageUrlForThumbnail = firstTileSource.url;
+        } else {
+          imageUrlForThumbnail = firstTileSource;
+        }
+        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+      }
       dispatch({
         type: REPLACE_DOCUMENT,
         document
@@ -1248,6 +1271,21 @@ export function deleteLayer({ documentId, layer, editorKey }) {
           dispatch(refreshTarget(index));
         }
       });
+      if (layer === 0 && document.content && document.content.tileSources && document.content.tileSources[0]) {
+        const firstTileSource = document.content.tileSources[0];
+        // Update doc thumbnail
+        let imageUrlForThumbnail = '';
+        if (typeof firstTileSource === 'string') {
+          // Tile source is a string, so it's IIIF
+          let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
+          imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png';
+        } else if (firstTileSource.url && firstTileSource.type === 'image') {
+          imageUrlForThumbnail = firstTileSource.url;
+        } else {
+          imageUrlForThumbnail = firstTileSource;
+        }
+        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+      }
       dispatch({
         type: REPLACE_DOCUMENT,
         document

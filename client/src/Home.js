@@ -7,13 +7,16 @@ import { List, ListItem } from 'material-ui/List';
 import Divider from 'material-ui/Divider';
 import FlatButton from 'material-ui/FlatButton';
 import AddCircle from 'material-ui/svg-icons/content/add-circle';
-import { load } from './modules/home';
+import { load, confirmUser } from './modules/home';
 import { newProject, clearProject } from './modules/project';
 import { closeAllResources } from './modules/documentGrid';
 import Navigation from './Navigation';
 
 class Home extends Component {
   componentDidMount() {
+    if (this.props.confirmationToken) {
+      this.props.confirmUser(this.props.confirmationToken);
+    }
     this.props.load();
     this.props.clearProject();
     this.props.closeAllResources();
@@ -53,11 +56,13 @@ class Home extends Component {
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state, ownProps) => ({
   projects: state.home.projects,
   loading: state.home.loading,
   currentUser: state.reduxTokenAuth.currentUser,
-  reduxTokenAuth: state.reduxTokenAuth
+  reduxTokenAuth: state.reduxTokenAuth,
+  confirmationToken: ownProps.location && ownProps.location.search 
+    && ownProps.location.search.includes('confirmationToken') ? ownProps.location.search.split('confirmationToken=')[1] : '',
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -65,7 +70,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   projectClick: slug => push(`/${slug}`),
   newProject,
   clearProject,
-  closeAllResources
+  closeAllResources,
+  confirmUser,
 }, dispatch);
 
 export default connect(

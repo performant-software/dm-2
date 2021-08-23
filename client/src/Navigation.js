@@ -25,7 +25,10 @@ import AdminDialog from './AdminDialog';
 import SearchBar from './SearchBar';
 
 const LoginMenuBody = props => {
-  if (props.currentUser && props.currentUser.isSignedIn) {
+  if (props.currentUser 
+    && props.currentUser.isSignedIn
+    && props.currentUser.attributes
+    && props.currentUser.attributes.confirmed) {
     return (
       <div>
         <MenuItem primaryText = 'Sign out' onClick={() => {
@@ -66,7 +69,11 @@ class Navigation extends Component {
 
   render() {
     let userMenuLabel = '';
-    if (this.props.currentUser.attributes.id) { // if a user is signed in
+    if (this.props.currentUser 
+      && this.props.currentUser.isSignedIn 
+      && this.props.currentUser.attributes 
+      && this.props.currentUser.attributes.confirmed
+    ) { // if a user is signed in
       userMenuLabel += this.props.currentUser.attributes.name;
       if (!this.props.currentUser.attributes.approved) {
         userMenuLabel += ' (Pending approval)';

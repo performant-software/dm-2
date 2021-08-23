@@ -117,11 +117,15 @@ class CanvasResource extends Component {
       } else if (!this.hasLayers() && hasLayerControls) {
         this.osdViewer.removeControl(this.imageLayerControls);
       }
+      this.props.setSaving({ doneSaving: true });
+      this.props.setLastSaved(new Date().toLocaleString('en-US'));
     }
     if (this.layerSelect 
         && prevProps.content && this.props.content  && this.props.content.tileSources
         && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
       this.refreshLayerSelect(this.props.content.tileSources);
+      this.props.setSaving({ doneSaving: true });
+      this.props.setLastSaved(new Date().toLocaleString('en-US'));
     }
     if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
       this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
@@ -283,7 +287,7 @@ class CanvasResource extends Component {
 
     overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-          window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
+          window.setFocusHighlight(document_id, event.target._highlightUid, key); // the code that pops up the annotation
           overlay.fabricCanvas().discardActiveObject();
       } else if (this.currentMode === 'edit' && event && event.target._isTarget) {
         for (let i = 0; i < 3; i++){ // For some reason it's necessary to do this multiple times
@@ -305,7 +309,16 @@ class CanvasResource extends Component {
             const highlightCoords = event.target._isMarker ?
               this.computeMarkerThumbBounds(event.target) :
               event.target.aCoords
-            updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
+            
+            this.props.setSaving({ doneSaving: false });
+            updateHighlight(
+              highlight_id, 
+              {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))},
+              () => {
+                this.props.setSaving({ doneSaving: true });
+                this.props.setLastSaved(new Date().toLocaleString('en-US'));
+              }
+            );
             setHighlightThumbnail(highlight_id, imageUrlForThumbnail, highlightCoords, event.target.toSVG());
           }
       }
@@ -314,7 +327,7 @@ class CanvasResource extends Component {
     // rollover highlights
     overlay.fabricCanvas().on('mouse:over', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-        window.showRollover(this.props.document_id, event.target._highlightUid);
+        window.showRollover(this.props.document_id, event.target._highlightUid, key);
       }
     });
     overlay.fabricCanvas().on('mouse:out', function(event) {
@@ -331,6 +344,7 @@ class CanvasResource extends Component {
         path._highlightUid = highlightUid;
         path.perPixelTargetFind = true;
         this.overlay.fabricCanvas().setActiveObject(path);
+        this.props.setSaving({ doneSaving: false });
         addHighlight(
           document_id,
           highlightUid,
@@ -339,6 +353,8 @@ class CanvasResource extends Component {
           'Pencil highlight',
           savedHighlight => {
             setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());
+            this.props.setSaving({ doneSaving: true });
+            this.props.setLastSaved(new Date().toLocaleString('en-US'));
           });
       }
     });
@@ -372,9 +388,9 @@ class CanvasResource extends Component {
           this.osdViewer.open(newTileSources);
         } else this.osdViewer.open([{ type: 'image', url: tileSourceSSL }]);
       }
-    }
-    else if (firstTileSource) {
-      let resourceURL = firstTileSource.replace('http:', 'https:')
+    } else if (firstTileSource && typeof firstTileSource === 'string') {
+      // Tile source is a string, so it's IIIF
+      let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
       imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png'
       this.props.setImageUrl(key, imageUrlForThumbnail);
       checkTileSource(
@@ -484,7 +500,15 @@ class CanvasResource extends Component {
             this.overlay.fabricCanvas().discardActiveObject();
 
             const highlight_id = this.highlight_map[selectedObject._highlightUid].id;
-            this.props.updateHighlight(highlight_id, {color: newColor, target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
+            this.props.setSaving({ doneSaving: false });
+            this.props.updateHighlight(
+              highlight_id,
+              {color: newColor, target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))},
+              () => {
+                this.props.setSaving({ doneSaving: true });
+                this.props.setLastSaved(new Date().toLocaleString('en-US'));
+              }
+            );
           }
           break;
 
@@ -559,6 +583,7 @@ class CanvasResource extends Component {
     const svg = this.newShape.toSVG();
     const imageUrlForThumbnail = this.props.imageURLs[key]
 
+    this.props.setSaving({ doneSaving: false });
     this.props.addHighlight(
       this.props.document_id,
       this.newShape._highlightUid,
@@ -572,6 +597,8 @@ class CanvasResource extends Component {
             aCoords,
             svg
           );
+          this.props.setSaving({ doneSaving: true });
+          this.props.setLastSaved(new Date().toLocaleString('en-US'));
       });
     this.panClick(); // jonah *** change here the current mode to 'pan'
     this.newShape = null;
@@ -730,6 +757,7 @@ class CanvasResource extends Component {
     this.addShape(marker);
     const highlightCoords = this.computeMarkerThumbBounds(markerCoords)
 
+    this.props.setSaving({ doneSaving: false });
     // save as a highlight
     this.props.addHighlight(
       this.props.document_id,
@@ -744,6 +772,8 @@ class CanvasResource extends Component {
             highlightCoords,
             marker.toSVG()
           );
+          this.props.setSaving({ doneSaving: true });
+          this.props.setLastSaved(new Date().toLocaleString('en-US'));
     });
   }
 
@@ -760,6 +790,7 @@ class CanvasResource extends Component {
     const highlightUid = `dm_canvas_highlight_${Date.now()}`;
     this.lineInProgress['_highlightUid'] = highlightUid;
 
+    this.props.setSaving({ doneSaving: false });
     this.props.addHighlight(
       this.props.document_id,
       this.lineInProgress._highlightUid,
@@ -773,6 +804,8 @@ class CanvasResource extends Component {
           aCoords,
           svg
         );
+        this.props.setSaving({ doneSaving: true });
+        this.props.setLastSaved(new Date().toLocaleString('en-US'));
     });
     this.lineInProgress = null;
     this.overlay.fabricCanvas().defaultCursor = 'default';
@@ -921,6 +954,7 @@ class CanvasResource extends Component {
   }
 
   moveLayerClick(direction) {
+    this.props.setSaving({ doneSaving: false });
     this.props.moveLayer({
       documentId: this.props.document_id,
       origin: this.state.currentPage,
@@ -964,15 +998,13 @@ class CanvasResource extends Component {
     const { content } = this.props;
     const currentLayer = content.tileSources[page];
     let currentLayerName = 'Untitled image layer';
-    if (typeof currentLayer === 'string' && currentLayer.includes('.json')) {
+    if (typeof currentLayer === 'string') {
+      // Tile source is a string, so it's IIIF
       if (content.iiifTileNames && content.iiifTileNames.find(tile => tile.url === currentLayer)) {
         currentLayerName = content.iiifTileNames.find(tile => tile.url === currentLayer).name;
       } else {
         currentLayerName = 'IIIF layer';
       }
-    } else if (typeof currentLayer === 'string' && currentLayer.includes('http')) {
-      const url = currentLayer;
-      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
     } else if (currentLayer && currentLayer.name) {
       currentLayerName = currentLayer.name;
     } else if (currentLayer && currentLayer.url) {
@@ -1000,6 +1032,7 @@ class CanvasResource extends Component {
         editorKey: this.getInstanceKey(),
       };
       this.props.renameLayer(layerNamePayload);
+      this.props.setSaving({ doneSaving: false });
     }
   }
 
@@ -1044,6 +1077,8 @@ class CanvasResource extends Component {
       writeEnabled,
       lockedByMe,
       globalCanvasDisplay,
+      setLastSaved,
+      setSaving,
     } = this.props;
     const key = this.getInstanceKey();
 
@@ -1348,6 +1383,8 @@ class CanvasResource extends Component {
           document_id={document_id}
           content={content}
           openTileSources={this.openTileSources.bind(this)}
+          setLastSaved={setLastSaved}
+          setSaving={setSaving}
         />
       </div>
     );

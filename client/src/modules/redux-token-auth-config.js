@@ -7,7 +7,8 @@ const config = {
     name: 'name',
     approved: 'approved',
     admin: 'admin',
-    id: 'id'
+    id: 'id',
+    confirmed: 'confirmed',
   },
   userRegistrationAttributes: {
     name: 'name',

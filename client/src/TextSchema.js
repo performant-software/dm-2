@@ -1,7 +1,7 @@
 import {Schema} from "prosemirror-model"
 import {textStyle} from "./TextStyleMarkSpec"
 
-const pDOM = ["p", 0], blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
+const blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
       preDOM = ["pre", ["code", 0]], brDOM = ["br"]
 
 // :: Object
@@ -17,8 +17,33 @@ export const nodes = {
   paragraph: {
     content: "inline*",
     group: "block",
-    parseDOM: [{tag: "p"}],
-    toDOM() { return pDOM }
+    parseDOM: [{
+      tag: "p",
+      getAttrs: node => {
+        const marginLeft = node.style['margin-left'].split('px')[0];
+        const indentLevel = parseInt(marginLeft, 10) / 48;
+        const lineHeightParsed = parseFloat(node.style['line-height']);
+        const lineHeight = !isNaN(lineHeightParsed) ? lineHeightParsed : node.style['line-height'];
+        return {
+          indented: node.style['text-indent'] === '3em',
+          indentLevel,
+          lineHeight,
+        }
+      }
+    }],
+    attrs: {
+      indented: {default: false},
+      indentLevel: {default: 0},
+      lineHeight: {default: 'normal'},
+    },
+    toDOM(node) {
+      const textIndent = node.attrs.indented ? '3em' : '0';
+      const marginLeft = `${node.attrs.indentLevel * 48}px`;
+      const lineHeight = node.attrs.lineHeight;
+      return ["p", {
+        style: `text-indent: ${textIndent}; margin-left: ${marginLeft}; line-height: ${lineHeight}`
+      }, 0];
+    }
   },
 
   // :: NodeSpec A blockquote (`<blockquote>`) wrapping one or more blocks.
@@ -141,12 +166,27 @@ export const marks = {
     toDOM() { return ["s", 0] }
   },
 
-  // TODO how to migrate old mark types to new ones?
   fontSize: {
-    attrs: {fontSize: {default: 'normal'}},
+    attrs: {fontSize: {default: '12pt'}},
     toDOM(mark) {
         let fontSize=mark.attrs.fontSize; 
         return ["span", { style: `font-size:${fontSize}` }, 0] 
+    }
+  },
+
+  fontFamily: {
+    attrs: {fontFamily: {default: '12pt'}},
+    toDOM(mark) {
+        let fontFamily=mark.attrs.fontFamily; 
+        return ["span", { style: `font-family:${fontFamily}` }, 0] 
+    }
+  },
+
+  color: {
+    attrs: {color: {default: 'black'}},
+    toDOM(mark) {
+        let color=mark.attrs.color; 
+        return ["span", { style: `color:${color}` }, 0] 
     }
   },
 

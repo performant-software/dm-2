@@ -62,22 +62,24 @@ class Document < Linkable
       new_tile_source = tile_source
       new_tile_source["name"] = new_name
       self.content["tileSources"][layer] = new_tile_source
-    elsif tile_source.end_with?(".json")
-      self.content["iiifTileNames"].each {|tile_name_obj|
-        if tile_name_obj["url"] == tile_source
-          tile_name_obj["name"] = new_name
-        end
-      }
     else
-      new_tile_source = {
-        "url" => tile_source,
-        "name" => new_name,
-        "type"=>"image",
-        "useCanvas" => true,
-        "crossOriginPolicy" => false,
-        "ajaxWithCredentials" => false
-      }
-      self.content["tileSources"][layer] = new_tile_source
+      new_obj = { :url => tile_source, :name => new_name };
+      if !self.content["iiifTileNames"].nil? && self.content["iiifTileNames"].length() > 0
+        found_in_tile_names = false
+        self.content["iiifTileNames"].each {|tile_name_obj|
+          if tile_name_obj["url"] == tile_source
+            tile_name_obj["name"] = new_name
+            found_in_tile_names = true
+          end
+        }
+        if !found_in_tile_names
+          self.content["iiifTileNames"].push(new_obj)
+        end
+      elsif !self.content["iiifTileNames"].nil?
+        self.content["iiifTileNames"].push(new_obj)
+      else
+        self.content["iiifTileNames"] = [new_obj]
+      end
     end
   end
 
@@ -144,12 +146,39 @@ class Document < Linkable
     nil
   end
 
+  def download_to_file(uri)
+    stream = open(uri, "rb")
+    return stream if stream.respond_to?(:path) # Already file-like
+  
+    # Workaround when open(uri) doesn't return File
+    Tempfile.new.tap do |file|
+      file.binmode
+      IO.copy_stream(stream, file)
+      stream.close
+      file.rewind
+    end
+  end
+  
   def add_thumbnail( image_url )
-    processed = ImageProcessing::MiniMagick.source(open(image_url))
+    begin
+      # Try with PNG
+      opened = download_to_file(image_url)
+    rescue OpenURI::HTTPError
+      # Only JPG is required for IIIF level 1 compliance,
+      # so if we get back a 400 error, use JPG for thumbnail
+      with_jpg = image_url.sub('.png', '.jpg')
+      opened = download_to_file(with_jpg)
+    end
+    processed = ImageProcessing::MiniMagick.source(opened)
       .resize_to_fill(80, 80)
       .convert('png')
       .call
-   self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+
+    self.highlights.each{|highlight|
+      highlight.set_thumbnail(image_url, nil)
+    }
+
+    self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
   end
 
   def highlight_map

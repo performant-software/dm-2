@@ -85,6 +85,8 @@ class DocumentViewer extends Component {
 
     this.state = {
       resourceName: this.props.resourceName,
+      lastSaved: '',
+      doneSaving: true,
     }
   }
 
@@ -106,14 +108,21 @@ class DocumentViewer extends Component {
     return ( writeEnabled && lockedByMe );
   }
 
+  setLastSaved(lastSaved) {
+    this.setState({ lastSaved });
+  }
+
   onChangeTitle = (event, newValue) => {
+    this.setSaving({ doneSaving: false })
     this.setState({
       resourceName: newValue,
     })
     window.clearTimeout(this.titleChangeTimeout);
     this.titleChangeTimeout = window.setTimeout(() => {
       this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
-    }, this.titleChangeDelayMs);
+      this.setLastSaved(new Date().toLocaleString('en-US'));
+      this.setSaving({ doneSaving: true })
+    }, this.titleChangeDelayMs);;
   }
 
   onToggleHighlights() {
@@ -130,6 +139,10 @@ class DocumentViewer extends Component {
   onCloseDocument() {
     this.props.closeDocument(this.props.document_id, this.props.timeOpened)
     this.props.closeDocumentTargets(this.props.document_id)
+  }
+
+  setSaving({ doneSaving }) {
+    this.setState({ doneSaving });
   }
 
   renderTitleBar() {
@@ -200,9 +213,11 @@ class DocumentViewer extends Component {
         locked={locked}
         lockedByUserName={lockedByUserName}
         lockedByMe={lockedByMe}
-        resourceName={resourceName} 
-        writeEnabled={writeEnabled} >
-      </DocumentStatusBar>
+        resourceName={resourceName}
+        writeEnabled={writeEnabled}
+        lastSaved={this.state.lastSaved}
+        doneSaving={this.state.doneSaving}
+      />
     );
   }
 
@@ -240,7 +255,11 @@ class DocumentViewer extends Component {
             flexDirection: 'column'
           }}>
             { this.renderTitleBar() }
-            <DocumentInner {...this.props} />
+            <DocumentInner 
+              setLastSaved={this.setLastSaved.bind(this)}
+              setSaving={this.setSaving.bind(this)}
+              {...this.props}
+            />
             { this.renderStatusBar() }
           </div>
         )}
