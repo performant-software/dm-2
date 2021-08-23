@@ -88,8 +88,8 @@ function handleDMItemDrop(props,monitorItem) {
     ) {
       // Link isn't yet in list
       const origin = {
-        linkable_id: props.highlightId,
-        linkable_type: 'Highlight'
+        linkable_id: props.highlightId || props.documentId,
+        linkable_type: props.highlightId ? 'Highlight' : 'Document'
       }
       props.addLink(origin, monitorItem, props.buoyancyTarget);
       return;

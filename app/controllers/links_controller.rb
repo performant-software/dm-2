@@ -35,7 +35,7 @@ class LinksController < ApplicationController
           :highlight_id => @link.linkable_a_id,
         )
       else
-        render json: @link.errors, status: :unprocessable_entity
+        render json: @link.errors, status: :unprocessable_entity and return
       end
     end
     if @link.linkable_b_type == 'Highlight'
@@ -45,7 +45,7 @@ class LinksController < ApplicationController
           :highlight_id => @link.linkable_b_id,
         )
       else
-        render json: @link.errors, status: :unprocessable_entity
+        render json: @link.errors, status: :unprocessable_entity and return
       end
     end
 

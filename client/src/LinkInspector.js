@@ -24,6 +24,7 @@ const LinkList = function(props) {
         openDocuments={props.openDocuments}
         openDocumentIds={props.openDocumentIds}
         highlightId={props.highlight_id}
+        documentId={props.document_id}
       />
     );
   }

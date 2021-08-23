@@ -120,7 +120,7 @@ class LinkableList extends Component {
   }
 
   render() {
-    const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId, highlightId } = this.props;
+    const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId, highlightId, documentId } = this.props;
     let targetParentId = projectId;
     let targetParentType = 'Project';
     if (insideFolder) {
@@ -128,8 +128,8 @@ class LinkableList extends Component {
       targetParentType = 'DocumentFolder';
     }
     else if (!inContents) {
-      targetParentId = highlightId;
-      targetParentType = 'Highlight';
+      targetParentId = highlightId || documentId;
+      targetParentType = highlightId ? 'Highlight' : 'Document';
     }
 
     return (
