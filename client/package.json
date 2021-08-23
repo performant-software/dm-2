@@ -57,10 +57,6 @@
     "eject": "react-scripts eject"
   },
   "proxy": "http://localhost:3001",
-  "engines": {
-    "node": "16.x",
-    "yarn": "1.x"
-  },
   "browserslist": [
     ">0.2%",
     "not dead",
