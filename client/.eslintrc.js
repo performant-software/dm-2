@@ -21,5 +21,6 @@ module.exports = {
     'react/prop-types': 0,
     'react/jsx-filename-extension': 0,
     'no-shadow': 0,
+    'react/sort-comp': 0,
   },
 };
