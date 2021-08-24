@@ -72,7 +72,7 @@ const markerThumbnailSize = 100;
 const fabricViewportScale = 2000;
 const minZoomImageRatio = 0.9;
 const maxZoomPixelRatio = 5.0;
-const maxZoomLevel = 5.0;
+const maxZoomLevel = 7.5;
 
 class CanvasResource extends Component {
   constructor(props) {
