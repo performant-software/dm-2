@@ -5,7 +5,9 @@ import { IconButton } from 'material-ui';
 
 const summarySource = {
   beginDrag(props) {
-    const { id, highlight_id, document_id, parent_id, parent_type, descendant_folder_ids } = props.item;
+    const {
+      id, highlight_id, document_id, parent_id, parent_type, descendant_folder_ids,
+    } = props.item;
 
     return {
       id,
@@ -14,55 +16,52 @@ const summarySource = {
       isFolder: props.isFolder,
       descendant_folder_ids: props.isFolder ? descendant_folder_ids : null,
       existingParentId: parent_id,
-      existingParentType: parent_type
+      existingParentType: parent_type,
     };
-  }
+  },
 };
 
 function collect(connect, monitor) {
   return {
     connectDragSource: connect.dragSource(),
     connectDragPreview: connect.dragPreview(),
-    isDragging: monitor.isDragging()
+    isDragging: monitor.isDragging(),
   };
 }
 
-class DraggableLinkIcon extends Component { 
-
+class DraggableLinkIcon extends Component {
   componentDidMount() {
     // use a static image for dragg preview
     const { connectDragPreview } = this.props;
-    let linkDragIcon = new Image();
+    const linkDragIcon = new Image();
     linkDragIcon.src = '/dragging-link.png';
     connectDragPreview(linkDragIcon);
   }
 
   render() {
-    return this.props.connectDragSource( 
-      <div style={{ marginTop: 12, marginRight: 15}} >
-          <Link/> 
-      </div>
+    return this.props.connectDragSource(
+      <div style={{ marginTop: 12, marginRight: 15 }}>
+        <Link />
+      </div>,
     );
   }
 
-
   oldrender() {
-    return this.props.connectDragSource( 
-      <div >
+    return this.props.connectDragSource(
+      <div>
         <IconButton
           tooltipPosition="top-left"
           tooltip={<span>Drag this icon to make a link.</span>}
         >
-          <Link/> 
+          <Link />
         </IconButton>
-      </div>
+      </div>,
     );
   }
 }
 
 export default DragSource(
-  props => props.inContents ? 'contentsSummary' : 'linkableSummary',
+  (props) => (props.inContents ? 'contentsSummary' : 'linkableSummary'),
   summarySource,
-  collect
+  collect,
 )(DraggableLinkIcon);
-

@@ -12,20 +12,20 @@ const config = {
   },
   userRegistrationAttributes: {
     name: 'name',
-    password_confirmation: 'password_confirmation'
-  }
-}
+    password_confirmation: 'password_confirmation',
+  },
+};
 
 const {
   registerUser,
   signInUser,
   signOutUser,
-  verifyCredentials
+  verifyCredentials,
 } = generateAuthActions(config);
 
 export {
   registerUser,
   signInUser,
   signOutUser,
-  verifyCredentials
+  verifyCredentials,
 };

@@ -12,7 +12,7 @@ export default class AddDocumentButton extends Component {
       <div>
         <FlatButton
           label={this.props.label}
-          style={{marginLeft: 10}}
+          style={{ marginLeft: 10 }}
           icon={<NoteAdd />}
           onClick={this.props.openDocumentPopover}
           id={buttonId}
@@ -20,19 +20,25 @@ export default class AddDocumentButton extends Component {
         <Popover
           open={this.props.documentPopoverOpen}
           anchorEl={document.getElementById(buttonId)}
-          anchorOrigin={{horizontal: 'right', vertical: 'top'}}
-          targetOrigin={{horizontal: 'left', vertical: 'top'}}
+          anchorOrigin={{ horizontal: 'right', vertical: 'top' }}
+          targetOrigin={{ horizontal: 'left', vertical: 'top' }}
           onRequestClose={this.props.closeDocumentPopover}
-         >
+        >
           <Menu>
-            <MenuItem primaryText='Text' onClick={() => {
-              this.props.textClick();
-              this.props.closeDocumentPopover();
-            }} />
-            <MenuItem primaryText='Image' onClick={() => {
-              this.props.imageClick();
-              this.props.closeDocumentPopover();
-            }} />
+            <MenuItem
+              primaryText="Text"
+              onClick={() => {
+                this.props.textClick();
+                this.props.closeDocumentPopover();
+              }}
+            />
+            <MenuItem
+              primaryText="Image"
+              onClick={() => {
+                this.props.imageClick();
+                this.props.closeDocumentPopover();
+              }}
+            />
           </Menu>
         </Popover>
       </div>

@@ -28,94 +28,94 @@ const initialState = {
   editingLayerName: {},
 };
 
-export default function(state = initialState, action) {
+export default function (state = initialState, action) {
   switch (action.type) {
     case SET_HIGHLIGHT_COLOR:
-      let updatedHighlightColors = Object.assign({}, state.highlightColors);
+      const updatedHighlightColors = { ...state.highlightColors };
       updatedHighlightColors[action.editorKey] = action.highlightColor;
       return {
         ...state,
-        highlightColors: updatedHighlightColors
+        highlightColors: updatedHighlightColors,
       };
 
     case HIDE_COLOR_PICKER:
-      let updatedDisplayColorPickers = Object.assign({}, state.displayColorPickers);
+      const updatedDisplayColorPickers = { ...state.displayColorPickers };
       updatedDisplayColorPickers[action.editorKey] = false;
       return {
         ...state,
-        displayColorPickers: updatedDisplayColorPickers
+        displayColorPickers: updatedDisplayColorPickers,
       };
 
     case TOGGLE_COLOR_PICKER:
-      let updatedToggleDisplayColorPickers = Object.assign({}, state.displayColorPickers);
+      const updatedToggleDisplayColorPickers = { ...state.displayColorPickers };
       updatedToggleDisplayColorPickers[action.editorKey] = !updatedToggleDisplayColorPickers[action.editorKey];
       return {
         ...state,
-        displayColorPickers: updatedToggleDisplayColorPickers
+        displayColorPickers: updatedToggleDisplayColorPickers,
       };
 
     case SET_ADD_TILE_SOURCE_MODE:
-      let updatedAddTileSourceMode = Object.assign({}, state.addTileSourceMode);
+      const updatedAddTileSourceMode = { ...state.addTileSourceMode };
       updatedAddTileSourceMode[action.editorKey] = action.mode;
       return {
         ...state,
-        addTileSourceMode: updatedAddTileSourceMode
+        addTileSourceMode: updatedAddTileSourceMode,
       };
-    
+
     case SET_IMAGE_URL:
-      let imageURLs = { ...state.imageURLs };
+      const imageURLs = { ...state.imageURLs };
       imageURLs[action.editorKey] = action.url;
       return {
         ...state,
-        imageURLs
+        imageURLs,
       };
 
     case SET_IS_PENCIL_MODE:
-      let updatedPencilMode = Object.assign({}, state.isPencilMode);
+      const updatedPencilMode = { ...state.isPencilMode };
       updatedPencilMode[action.editorKey] = action.isPencilMode;
       return {
         ...state,
-        isPencilMode: updatedPencilMode
+        isPencilMode: updatedPencilMode,
       };
 
     case SET_ZOOM_CONTROL:
-      let updatedZoomControls = Object.assign({}, state.zoomControls);
+      const updatedZoomControls = { ...state.zoomControls };
       updatedZoomControls[action.editorKey] = action.zoomValue;
       return {
         ...state,
-        zoomControls: updatedZoomControls
+        zoomControls: updatedZoomControls,
       };
 
     case SET_GLOBAL_CANVAS_DISPLAY:
       return {
         ...state,
-        globalCanvasDisplay: action.value
+        globalCanvasDisplay: action.value,
       };
 
     case TOGGLE_HIGHLIGHTS:
-      let highlightsHidden = { ...state.highlightsHidden };
+      const highlightsHidden = { ...state.highlightsHidden };
       highlightsHidden[action.editorKey] = action.value;
       return {
         ...state,
-        highlightsHidden
+        highlightsHidden,
       };
-    
+
     case PAGE_TO_CHANGE:
-      let updatedPageToChange = Object.assign({}, state.pageToChange);
+      const updatedPageToChange = { ...state.pageToChange };
       updatedPageToChange[action.editorKey] = action.pageToChange;
       return {
         ...state,
         pageToChange: updatedPageToChange,
       };
-    
+
     case TOGGLE_EDIT_LAYER_NAME:
-      let updatedEditingLayerName = Object.assign({}, state.editingLayerName);
+      const updatedEditingLayerName = { ...state.editingLayerName };
       updatedEditingLayerName[action.editorKey] = action.value;
       return {
         ...state,
         editingLayerName: updatedEditingLayerName,
       };
-    
+
     case RENAME_LAYER_SUCCESS:
       return {
         ...state,
@@ -128,103 +128,103 @@ export default function(state = initialState, action) {
 }
 
 export function setCanvasHighlightColor(editorKey, highlightColor) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_HIGHLIGHT_COLOR,
       editorKey,
-      highlightColor
+      highlightColor,
     });
     dispatch({
       type: HIDE_COLOR_PICKER,
-      editorKey
+      editorKey,
     });
-  }
+  };
 }
 
 export function toggleCanvasColorPicker(editorKey) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: TOGGLE_COLOR_PICKER,
-      editorKey
+      editorKey,
     });
-  }
+  };
 }
 
 export function setAddTileSourceMode(editorKey, mode) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_ADD_TILE_SOURCE_MODE,
       editorKey,
-      mode
+      mode,
     });
-  }
+  };
 }
 
 export function setImageUrl(editorKey, url) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_IMAGE_URL,
       editorKey,
-      url
+      url,
     });
-  }
+  };
 }
 
 export function setIsPencilMode(editorKey, isPencilMode) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_IS_PENCIL_MODE,
       editorKey,
-      isPencilMode
+      isPencilMode,
     });
-  }
+  };
 }
 
 export function toggleCanvasHighlights(editorKey, value) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: TOGGLE_HIGHLIGHTS,
       editorKey,
-      value
+      value,
     });
   };
 }
 
 export function setZoomControl(editorKey, zoomValue) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_ZOOM_CONTROL,
       editorKey,
-      zoomValue
+      zoomValue,
     });
-  }
+  };
 }
 
 export function setGlobalCanvasDisplay(value) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_GLOBAL_CANVAS_DISPLAY,
-      value
+      value,
     });
-  }
+  };
 }
 
 export function changePage({ editorKey, page }) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: PAGE_TO_CHANGE,
       pageToChange: page,
       editorKey,
     });
-  }
+  };
 }
 
 export function toggleEditLayerName({ editorKey, value }) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: TOGGLE_EDIT_LAYER_NAME,
       editorKey,
       value,
     });
-  }
+  };
 }

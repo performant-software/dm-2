@@ -1,7 +1,9 @@
-import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
-import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
-import {updateEditorState, selectHighlight, setHighlightSelectMode} from './textEditor';
-import {deleteFolder} from './folders';
+import { TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject } from './project';
+import {
+  addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget,
+} from './annotationViewer';
+import { updateEditorState, selectHighlight, setHighlightSelectMode } from './textEditor';
+import { deleteFolder } from './folders';
 import {
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
@@ -60,12 +62,11 @@ export const GET_CURRENT_DOC_CONTENT = 'document_grid/GET_CURRENT_DOC_CONTENT';
 export const GET_CURRENT_DOC_CONTENT_SUCCESS = 'document_grid/GET_CURRENT_DOC_CONTENT_SUCCESS';
 export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CONTENT_ERRORED';
 
-
 export const layoutOptions = [
   { rows: 1, cols: 1, description: '1 x 1' },
   { rows: 1, cols: 2, description: '1 x 2' },
   { rows: 2, cols: 2, description: '2 x 2' },
-  { rows: 3, cols: 3, description: '3 x 3' }
+  { rows: 3, cols: 3, description: '3 x 3' },
 ];
 
 export const MAX_EXCERPT_LENGTH = 80;
@@ -84,10 +85,10 @@ const initialState = {
   deleteDialogKind: null,
   snackBarOpen: false,
   snackBarMessage: null,
-  currentLayout: 2
+  currentLayout: 2,
 };
 
-export default function(state = initialState, action) {
+export default function (state = initialState, action) {
   switch (action.type) {
     case ADD_HIGHLIGHT:
     case DELETE_HIGHLIGHT:
@@ -95,40 +96,39 @@ export default function(state = initialState, action) {
       return {
         ...state,
         highlightsLoading: true,
-        loading: true
-      }
+        loading: true,
+      };
     case UPDATE_HIGHLIGHT:
       return {
         ...state,
         highlightsLoading: action.shouldStartLoading,
-        loading: action.shouldStartLoading
-      }
+        loading: action.shouldStartLoading,
+      };
     case OPEN_DOCUMENT:
     case NEW_DOCUMENT:
     case DELETE_DOCUMENT:
     case MOVE_DOCUMENT:
       return {
         ...state,
-        loading: true
-      }
+        loading: true,
+      };
 
     case UPDATE_DOCUMENT:
-      return state
+      return state;
 
     case OPEN_DOCUMENT_SUCCESS:
     case POST_SUCCESS:
-      let openDocumentsCopy = state.openDocuments.slice(0);
+      const openDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
-        if (+document.id === +action.document.id)
-          openDocumentsCopy.splice(index, 1, Object.assign({timeOpened: document.timeOpened}, action.document));
+        if (+document.id === +action.document.id) openDocumentsCopy.splice(index, 1, { timeOpened: document.timeOpened, ...action.document });
       });
-      let positionToSplice = action.documentPosition;
-      openDocumentsCopy.splice(positionToSplice, 0, Object.assign({timeOpened: Date.now(), firstTarget: action.firstTarget }, action.document));
+      const positionToSplice = action.documentPosition;
+      openDocumentsCopy.splice(positionToSplice, 0, { timeOpened: Date.now(), firstTarget: action.firstTarget, ...action.document });
       return {
         ...state,
         openDocuments: openDocumentsCopy,
-        loading: false
-      }
+        loading: false,
+      };
 
     case OPEN_DOCUMENT_ERRORED:
     case PATCH_ERRORED:
@@ -139,10 +139,9 @@ export default function(state = initialState, action) {
       return {
         ...state,
         loading: false,
-        errored: true
-      }
+        errored: true,
+      };
 
-    
     case DELETE_HIGHLIGHT_ERRORED:
     case UPDATE_HIGHLIGHT_ERRORED:
     case DUPLICATE_HIGHLIGHTS_ERRORED:
@@ -153,88 +152,86 @@ export default function(state = initialState, action) {
         ...state,
         loading: false,
         highlightsLoading: false,
-        errored: true
-      }
+        errored: true,
+      };
 
     case CHECK_IN_DOCS: {
-      const nextOpenDocs = [ ...state.openDocuments ]
-      nextOpenDocs.forEach( resource => {
-        if( action.docIDs.find( docID => docID === resource.document_id ) ) {
-          resource.locked=false
-          resource.locked_by_me=false
-          resource.locked_by_user_name=null
+      const nextOpenDocs = [...state.openDocuments];
+      nextOpenDocs.forEach((resource) => {
+        if (action.docIDs.find((docID) => docID === resource.document_id)) {
+          resource.locked = false;
+          resource.locked_by_me = false;
+          resource.locked_by_user_name = null;
         }
-      })
+      });
 
-      const numDocs = action.docIDs.length
-      const snackBarMessage = numDocs > 0 ? `Checked in ${numDocs} documents.` : "All your documents are checked in."
+      const numDocs = action.docIDs.length;
+      const snackBarMessage = numDocs > 0 ? `Checked in ${numDocs} documents.` : 'All your documents are checked in.';
 
       return {
         ...state,
         snackBarOpen: true,
         snackBarMessage,
-        openDocuments: nextOpenDocs
+        openDocuments: nextOpenDocs,
       };
     }
 
     case UPDATE_SNACK_BAR: {
-      const { snackBarOpen, snackBarMessage } = action
+      const { snackBarOpen, snackBarMessage } = action;
       return {
         ...state,
         snackBarOpen,
-        snackBarMessage       
-      }
+        snackBarMessage,
+      };
     }
 
     case REFRESH_DOCUMENTS:
-      let preRefreshDocumentsCopy = state.openDocuments.slice(0);
+      const preRefreshDocumentsCopy = state.openDocuments.slice(0);
       state.openDocuments.forEach((document, index) => {
-        if (+document.id === +action.document.id 
-            && action.timeOpened 
+        if (+document.id === +action.document.id
+            && action.timeOpened
             && document.timeOpened !== action.timeOpened) {
           const { timeOpened } = document;
-          preRefreshDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
+          preRefreshDocumentsCopy.splice(index, 1, { timeOpened, ...action.document });
         }
       });
       return {
         ...state,
-        openDocuments: preRefreshDocumentsCopy
+        openDocuments: preRefreshDocumentsCopy,
       };
-    
+
     case PATCH_SUCCESS:
     case REPLACE_DOCUMENT:
-      let preReplaceDocumentsCopy = state.openDocuments.slice(0);
+      const preReplaceDocumentsCopy = state.openDocuments.slice(0);
       if (!action.shouldSkipReplacement) {
         state.openDocuments.forEach((document, index) => {
           if (+document.id === +action.document.id) {
             const { timeOpened } = document;
-            preReplaceDocumentsCopy.splice(index, 1, Object.assign({timeOpened}, action.document));
+            preReplaceDocumentsCopy.splice(index, 1, { timeOpened, ...action.document });
           }
         });
       }
       return {
         ...state,
         loading: state.highlightsLoading,
-        openDocuments: preReplaceDocumentsCopy
+        openDocuments: preReplaceDocumentsCopy,
       };
 
     case CLOSE_DOCUMENT:
-      let preCloseDocumentsCopy = state.openDocuments.slice(0);
-      let toCloseIndex = state.openDocuments.findIndex(resource => {
-        return ( resource.id.toString() === action.documentId.toString() &&
-                 resource.timeOpened === action.timeOpened )
-      });
+      const preCloseDocumentsCopy = state.openDocuments.slice(0);
+      const toCloseIndex = state.openDocuments.findIndex((resource) => (resource.id.toString() === action.documentId.toString()
+                 && resource.timeOpened === action.timeOpened));
       if (toCloseIndex >= 0) {
         preCloseDocumentsCopy.splice(toCloseIndex, 1);
       }
       return {
         ...state,
-        openDocuments: preCloseDocumentsCopy
+        openDocuments: preCloseDocumentsCopy,
       };
 
     case DELETE_SUCCESS:
       const targetID = action.documentId.toString();
-      const openDocuments = state.openDocuments.filter( openDocument => ( openDocument.id.toString() !== targetID ) )
+      const openDocuments = state.openDocuments.filter((openDocument) => (openDocument.id.toString() !== targetID));
       return {
         ...state,
         openDocuments,
@@ -244,20 +241,20 @@ export default function(state = initialState, action) {
     case CLEAR_RESOURCES:
       return {
         ...state,
-        openDocuments: []
+        openDocuments: [],
       };
 
     case ADD_HIGHLIGHT_SUCCESS:
-      let resourceIndex = state.openDocuments.findIndex(resource => resource.id === action.document_id);
-      let updatedopenDocuments = state.openDocuments.slice(0);
+      const resourceIndex = state.openDocuments.findIndex((resource) => resource.id === action.document_id);
+      const updatedopenDocuments = state.openDocuments.slice(0);
       if (resourceIndex >= 0) {
-        let updatedResource = Object.assign(updatedopenDocuments[resourceIndex], {});
+        const updatedResource = Object.assign(updatedopenDocuments[resourceIndex], {});
         updatedResource.highlight_map[action.highlight_id] = {
           id: action.id,
           target: action.highlightTarget,
           color: action.color,
           excerpt: action.excerpt,
-          links: []
+          links: [],
         };
         updatedopenDocuments.splice(resourceIndex, 1, updatedResource);
       }
@@ -266,20 +263,20 @@ export default function(state = initialState, action) {
         openDocuments: updatedopenDocuments,
         loading: false,
         highlightsLoading: false,
-      }
+      };
 
     case DUPLICATE_HIGHLIGHTS_SUCCESS:
-      let duplicatesUpdatedOpenDocuments = state.openDocuments.slice(0);
-      action.highlights.forEach(highlight => {
-        let resourceIndex = state.openDocuments.findIndex(resource => resource.id === action.document_id);
+      const duplicatesUpdatedOpenDocuments = state.openDocuments.slice(0);
+      action.highlights.forEach((highlight) => {
+        const resourceIndex = state.openDocuments.findIndex((resource) => resource.id === action.document_id);
         if (resourceIndex >= 0) {
-          let updatedResource = Object.assign(duplicatesUpdatedOpenDocuments[resourceIndex], {});
+          const updatedResource = Object.assign(duplicatesUpdatedOpenDocuments[resourceIndex], {});
           updatedResource.highlight_map[highlight.uid] = {
             id: highlight.id,
             target: highlight.target,
             color: highlight.color,
             excerpt: highlight.excerpt,
-            links: highlight.links
+            links: highlight.links,
           };
           duplicatesUpdatedOpenDocuments.splice(resourceIndex, 1, updatedResource);
         }
@@ -289,30 +286,29 @@ export default function(state = initialState, action) {
         openDocuments: duplicatesUpdatedOpenDocuments,
         loading: false,
         highlightsLoading: false,
-      }
+      };
 
     case UPDATE_HIGHLIGHT_SUCCESS:
-      let hResourceIndex = state.openDocuments.findIndex(resource => resource.id === action.document_id);
-      let hUpdatedOpenDocuments = state.openDocuments.slice(0);
+      const hResourceIndex = state.openDocuments.findIndex((resource) => resource.id === action.document_id);
+      const hUpdatedOpenDocuments = state.openDocuments.slice(0);
       if (hResourceIndex >= 0) {
-        let hUpdatedResource = Object.assign(hUpdatedOpenDocuments[hResourceIndex], {});
-        if (hUpdatedResource.highlight_map[action.highlight_id])
-          hUpdatedResource.highlight_map[action.highlight_id].color = action.color;
+        const hUpdatedResource = Object.assign(hUpdatedOpenDocuments[hResourceIndex], {});
+        if (hUpdatedResource.highlight_map[action.highlight_id]) hUpdatedResource.highlight_map[action.highlight_id].color = action.color;
         hUpdatedOpenDocuments.splice(hResourceIndex, 1, hUpdatedResource);
       }
       return {
         ...state,
         openDocuments: hUpdatedOpenDocuments,
         highlightsLoading: false,
-        loading: false
-      }
+        loading: false,
+      };
 
     case DELETE_HIGHLIGHT_SUCCESS:
       return {
         ...state,
         highlightsLoading: false,
-        loading: false
-      }
+        loading: false,
+      };
 
     case OPEN_DELETE_DIALOG:
       return {
@@ -322,7 +318,7 @@ export default function(state = initialState, action) {
         deleteDialogBody: action.body,
         deleteDialogSubmit: action.submit,
         deleteDialogPayload: action.payload,
-        deleteDialogKind: action.kind
+        deleteDialogKind: action.kind,
       };
 
     case CLOSE_DELETE_DIALOG:
@@ -333,23 +329,23 @@ export default function(state = initialState, action) {
         deleteDialogBody: initialState.deleteDialogBody,
         deleteDialogSubmit: initialState.deleteDialogSubmit,
         deleteDialogPayload: initialState.deleteDialogPayload,
-        deleteDialogKind: initialState.deleteDialogKind
+        deleteDialogKind: initialState.deleteDialogKind,
       };
 
     case SET_CURRENT_LAYOUT:
       return {
         ...state,
-        currentLayout: action.index
+        currentLayout: action.index,
       };
 
     case MOVE_DOCUMENT_WINDOW:
-      let draggedDocument = state.openDocuments[action.dragIndex];
-      let openDocumentsMoveCopy = state.openDocuments.slice(0);
+      const draggedDocument = state.openDocuments[action.dragIndex];
+      const openDocumentsMoveCopy = state.openDocuments.slice(0);
       openDocumentsMoveCopy.splice(action.dragIndex, 1);
       openDocumentsMoveCopy.splice(action.moveIndex, 0, draggedDocument);
       return {
         ...state,
-        openDocuments: openDocumentsMoveCopy
+        openDocuments: openDocumentsMoveCopy,
       };
 
     default:
@@ -358,160 +354,156 @@ export default function(state = initialState, action) {
 }
 
 export function openDocument(documentId, firstTarget, inContents, pos) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     let documentPosition = getState().documentGrid.openDocuments.length;
     if (!inContents && pos) {
       documentPosition = pos;
     }
     dispatch({
-      type: OPEN_DOCUMENT
+      type: OPEN_DOCUMENT,
     });
 
     fetch(`/documents/${documentId}`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      return document;
-    })
-    .then(document => dispatch({
-      type: OPEN_DOCUMENT_SUCCESS,
-      document,
-      firstTarget,
-      documentPosition
-    }))
-    .catch(() => dispatch({
-      type: OPEN_DOCUMENT_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((document) => document)
+      .then((document) => dispatch({
+        type: OPEN_DOCUMENT_SUCCESS,
+        document,
+        firstTarget,
+        documentPosition,
+      }))
+      .catch(() => dispatch({
+        type: OPEN_DOCUMENT_ERRORED,
+      }));
   };
 }
 
 export function closeAllResources() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: CLEAR_RESOURCES
+      type: CLEAR_RESOURCES,
     });
   };
 }
 
 export function addHighlight(document_id, highlight_id, highlightTarget, color, excerpt, callback) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: ADD_HIGHLIGHT
+      type: ADD_HIGHLIGHT,
     });
 
     fetch('/highlights', {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
-        document_id: document_id,
+        document_id,
         uid: highlight_id,
         target: highlightTarget,
-        color: color,
-        excerpt: excerpt
-      })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(savedHighlight => {
-      dispatch({
-        type: ADD_HIGHLIGHT_SUCCESS,
-        document_id,
-        highlight_id,
-        highlightTarget,
         color,
         excerpt,
-        id: savedHighlight.id
-      });
-      return savedHighlight
+      }),
     })
-    .then(savedHighlight => {
-      if (callback) {
-        callback(savedHighlight);
-      }
-    })
-    .catch(() => dispatch({
-      type: ADD_HIGHLIGHT_ERRORED
-    }));
-  }
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((savedHighlight) => {
+        dispatch({
+          type: ADD_HIGHLIGHT_SUCCESS,
+          document_id,
+          highlight_id,
+          highlightTarget,
+          color,
+          excerpt,
+          id: savedHighlight.id,
+        });
+        return savedHighlight;
+      })
+      .then((savedHighlight) => {
+        if (callback) {
+          callback(savedHighlight);
+        }
+      })
+      .catch(() => dispatch({
+        type: ADD_HIGHLIGHT_ERRORED,
+      }));
+  };
 }
 
 export function deleteHighlights(highlights = []) {
-  return function(dispatch, getState) {
-    highlights.forEach(highlight => {
+  return function (dispatch, getState) {
+    highlights.forEach((highlight) => {
       if (highlight && highlight.id) {
         fetch(`/highlights/${highlight.id}`, {
           headers: {
             'access-token': localStorage.getItem('access-token'),
             'token-type': localStorage.getItem('token-type'),
-            'client': localStorage.getItem('client'),
-            'expiry': localStorage.getItem('expiry'),
-            'uid': localStorage.getItem('uid')
+            client: localStorage.getItem('client'),
+            expiry: localStorage.getItem('expiry'),
+            uid: localStorage.getItem('uid'),
           },
-          method: 'DELETE'
+          method: 'DELETE',
         })
-        .then(response => {
-          if (!response.ok) {
-            throw Error(response.statusText);
-          }
-        })
-        .then(() => {
-          dispatch({
-            type: DELETE_HIGHLIGHT_SUCCESS,
-            uid: highlight.uid,
-            document_id: highlight.document_id
-          });
-          const sidebarTarget = getState().annotationViewer.sidebarTarget;
-          if (sidebarTarget && (+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id)) {
-            dispatch(closeSidebarTarget());
-          }
-          else if (sidebarTarget && sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
-            dispatch(selectSidebarTarget(sidebarTarget));
-          }
-          getState().annotationViewer.selectedTargets.forEach((target, index) => {
-            if (+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) {
-              dispatch(closeTarget(highlight.document_id, highlight.id));
+          .then((response) => {
+            if (!response.ok) {
+              throw Error(response.statusText);
             }
-            else if(target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
-              dispatch(refreshTarget(index));
+          })
+          .then(() => {
+            dispatch({
+              type: DELETE_HIGHLIGHT_SUCCESS,
+              uid: highlight.uid,
+              document_id: highlight.document_id,
+            });
+            const { sidebarTarget } = getState().annotationViewer;
+            if (sidebarTarget && (+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id)) {
+              dispatch(closeSidebarTarget());
+            } else if (sidebarTarget && sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
+              dispatch(selectSidebarTarget(sidebarTarget));
             }
-          });
-        })
-        .catch(() => dispatch({
-          type: DELETE_HIGHLIGHT_ERRORED
-        }));
+            getState().annotationViewer.selectedTargets.forEach((target, index) => {
+              if (+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) {
+                dispatch(closeTarget(highlight.document_id, highlight.id));
+              } else if (target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
+                dispatch(refreshTarget(index));
+              }
+            });
+          })
+          .catch(() => dispatch({
+            type: DELETE_HIGHLIGHT_ERRORED,
+          }));
       }
     });
-  }
+  };
 }
 
 export function updateHighlight(id, attributes, callback) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
       type: UPDATE_HIGHLIGHT,
       shouldStartLoading: !Object.prototype.hasOwnProperty.call(attributes, 'excerpt'),
@@ -519,113 +511,112 @@ export function updateHighlight(id, attributes, callback) {
 
     return fetch(`/highlights/${id}`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
-      body: JSON.stringify(attributes)
+      body: JSON.stringify(attributes),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(highlight => {
-      if (!Object.prototype.hasOwnProperty.call(attributes, 'excerpt')) {
-        dispatch(refreshCurrentDocContent(highlight.document_id));
-      }
-      dispatch({
-        type: UPDATE_HIGHLIGHT_SUCCESS,
-        color: highlight.color,
-        highlight_id: highlight.uid,
-        document_id: highlight.document_id
-      });
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget && ((+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id) || sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false))) {
-        dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        if ((+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) || target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
-          dispatch(refreshTarget(index));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
-      });
-    })
-    .then(highlight => {
-      if (callback) {
-        callback(highlight);
-      }
-    })
-    .catch(() => dispatch({
-      type: UPDATE_HIGHLIGHT_ERRORED
-    }));
-  }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((highlight) => {
+        if (!Object.prototype.hasOwnProperty.call(attributes, 'excerpt')) {
+          dispatch(refreshCurrentDocContent(highlight.document_id));
+        }
+        dispatch({
+          type: UPDATE_HIGHLIGHT_SUCCESS,
+          color: highlight.color,
+          highlight_id: highlight.uid,
+          document_id: highlight.document_id,
+        });
+        const { sidebarTarget } = getState().annotationViewer;
+        if (sidebarTarget && ((+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id) || sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false))) {
+          dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        getState().annotationViewer.selectedTargets.forEach((target, index) => {
+          if ((+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) || target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
+            dispatch(refreshTarget(index));
+          }
+        });
+      })
+      .then((highlight) => {
+        if (callback) {
+          callback(highlight);
+        }
+      })
+      .catch(() => dispatch({
+        type: UPDATE_HIGHLIGHT_ERRORED,
+      }));
+  };
 }
 
 export function duplicateHighlights(highlights, document_id) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: DUPLICATE_HIGHLIGHTS
+      type: DUPLICATE_HIGHLIGHTS,
     });
 
     fetch('/highlights/duplicate', {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
         highlights,
-        document_id
+        document_id,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(newHighlights => {
-      dispatch({
-        type: DUPLICATE_HIGHLIGHTS_SUCCESS,
-        highlights: newHighlights,
-        document_id
-      });
-    })
-    .catch(() => dispatch({
-      type: DUPLICATE_HIGHLIGHTS_ERRORED
-    }));
-  }
+      .then((response) => response.json())
+      .then((newHighlights) => {
+        dispatch({
+          type: DUPLICATE_HIGHLIGHTS_SUCCESS,
+          highlights: newHighlights,
+          document_id,
+        });
+      })
+      .catch(() => dispatch({
+        type: DUPLICATE_HIGHLIGHTS_ERRORED,
+      }));
+  };
 }
 
-
 export function createTextDocument(parentId, parentType, callback) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: NEW_DOCUMENT
+      type: NEW_DOCUMENT,
     });
 
     // Annotation title handling
-    let title =  parentType === 'Document' ? 'New Annotation' : 'Untitled Document';
+    let title = parentType === 'Document' ? 'New Annotation' : 'Untitled Document';
     if (
-      parentType === 'Document' 
+      parentType === 'Document'
       && getState().annotationViewer
       && Array.isArray(getState().annotationViewer.selectedTargets)
       && getState().annotationViewer.selectedTargets.length > 0
     ) {
-      getState().annotationViewer.selectedTargets.forEach(target => {
+      getState().annotationViewer.selectedTargets.forEach((target) => {
         if (target.document_id === parentId) {
           title = `Annotation for ${target.document_title}`;
         }
@@ -634,306 +625,306 @@ export function createTextDocument(parentId, parentType, callback) {
 
     fetch('/documents', {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
         title,
         project_id: getState().project.id,
         document_kind: TEXT_RESOURCE_TYPE,
-        content: {type: 'doc', content: [{"type":"paragraph","content":[]}]},
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] },
         parent_id: parentId,
-        parent_type: parentType
+        parent_type: parentType,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      dispatch({
-        type: POST_SUCCESS,
-        document,
-        documentPosition: getState().documentGrid.openDocuments.length
-      });
-      if (parentType === 'Project') // refresh project if document has been added to its table of contents
-        dispatch(loadProject(getState().project.id));
-      return document;
-    })
-    .then(document => {
-      if (callback) {
-        callback(document);
-      }
-    })
-    .catch(() => dispatch({
-      type: POST_ERRORED
-    }));
-  }
+      .then((response) => response.json())
+      .then((document) => {
+        dispatch({
+          type: POST_SUCCESS,
+          document,
+          documentPosition: getState().documentGrid.openDocuments.length,
+        });
+        if (parentType === 'Project') // refresh project if document has been added to its table of contents
+        { dispatch(loadProject(getState().project.id)); }
+        return document;
+      })
+      .then((document) => {
+        if (callback) {
+          callback(document);
+        }
+      })
+      .catch(() => dispatch({
+        type: POST_ERRORED,
+      }));
+  };
 }
 
 export function createTextDocumentWithLink(origin, parentId = null, parentType = null) {
-  return function(dispatch) {
-    dispatch(createTextDocument(parentId, parentType, document => {
+  return function (dispatch) {
+    dispatch(createTextDocument(parentId, parentType, (document) => {
       dispatch(addLink(origin, {
         linkable_id: document.id,
-        linkable_type: 'Document'
+        linkable_type: 'Document',
       }));
     }));
-  }
+  };
 }
 
-export function moveDocument(documentId, destination_id, position ) {
-  return function(dispatch, getState) {
+export function moveDocument(documentId, destination_id, position) {
+  return function (dispatch, getState) {
     dispatch({
-      type: MOVE_DOCUMENT
+      type: MOVE_DOCUMENT,
     });
 
     return fetch(`/documents/${documentId}/move`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
       body: JSON.stringify({
         document: {
           destination_id,
-          position
+          position,
+        },
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(() => {
-      dispatch({
-        type: MOVE_DOCUMENT_SUCCESS
-      });
-    })
-    .catch(() => dispatch({
-      type: MOVE_DOCUMENT_ERRORED
-    }));
-  }
+      .then(() => {
+        dispatch({
+          type: MOVE_DOCUMENT_SUCCESS,
+        });
+      })
+      .catch(() => dispatch({
+        type: MOVE_DOCUMENT_ERRORED,
+      }));
+  };
 }
 
 export function refreshDocuments(document, timeOpened) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: REFRESH_DOCUMENTS,
       document,
       timeOpened,
     });
-  }
+  };
 }
 
 export function updateDocument(documentId, attributes, options) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: UPDATE_DOCUMENT
+      type: UPDATE_DOCUMENT,
     });
 
     // patch via the lock method if we're adjusting the state of the lock
-    const url = ( options && options.adjustLock ) ? `/documents/${documentId}/lock` : `/documents/${documentId}`;
+    const url = (options && options.adjustLock) ? `/documents/${documentId}/lock` : `/documents/${documentId}`;
 
     return fetch(url, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
-      body: JSON.stringify(attributes)
+      body: JSON.stringify(attributes),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      dispatch({
-        type: PATCH_SUCCESS,
-        document,
-        shouldSkipReplacement: (!!options && !!options.refreshDocumentContent && !!options.timeOpened),
-      });
-      if (options && options.adjustLock) {
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((document) => {
         dispatch({
-          type: REPLACE_DOCUMENT,
-          document
+          type: PATCH_SUCCESS,
+          document,
+          shouldSkipReplacement: (!!options && !!options.refreshDocumentContent && !!options.timeOpened),
         });
-        if (attributes.locked === false && options.instanceKey) {
-          dispatch(selectHighlight(options.instanceKey, null));
-          dispatch(setHighlightSelectMode(options.instanceKey, false));
-        }
-      }
-      if (options && options.replaceThisDocument) {
-        dispatch({
-          type: REPLACE_DOCUMENT,
-          document
-        });
-      }
-      if (options && options.refreshLists) {
-        if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
-          dispatch(loadProject(getState().project.id));
-        }
-        const sidebarTarget = getState().annotationViewer.sidebarTarget;
-        if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
-          dispatch(selectSidebarTarget(sidebarTarget));
-        }
-        getState().annotationViewer.selectedTargets.forEach((target, index) => {
-          if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
-            dispatch(refreshTarget(index));
+        if (options && options.adjustLock) {
+          dispatch({
+            type: REPLACE_DOCUMENT,
+            document,
+          });
+          if (attributes.locked === false && options.instanceKey) {
+            dispatch(selectHighlight(options.instanceKey, null));
+            dispatch(setHighlightSelectMode(options.instanceKey, false));
           }
-        });
-      }
-      if (options && options.refreshDocumentContent && options.timeOpened) {
-        dispatch(refreshDocuments(document, options.timeOpened))
-      }
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
-  }
+        }
+        if (options && options.replaceThisDocument) {
+          dispatch({
+            type: REPLACE_DOCUMENT,
+            document,
+          });
+        }
+        if (options && options.refreshLists) {
+          if (getState().project.contentsChildren.map((child) => child.document_id).includes(documentId)) {
+            dispatch(loadProject(getState().project.id));
+          }
+          const { sidebarTarget } = getState().annotationViewer;
+          if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map((link) => link.document_id).includes(documentId))) {
+            dispatch(selectSidebarTarget(sidebarTarget));
+          }
+          getState().annotationViewer.selectedTargets.forEach((target, index) => {
+            if (target.document_id === documentId || target.links_to.map((link) => link.document_id).includes(documentId)) {
+              dispatch(refreshTarget(index));
+            }
+          });
+        }
+        if (options && options.refreshDocumentContent && options.timeOpened) {
+          dispatch(refreshDocuments(document, options.timeOpened));
+        }
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
+  };
 }
 
 export function setDocumentThumbnail(documentId, image_url) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: UPDATE_DOCUMENT
+      type: UPDATE_DOCUMENT,
     });
 
     fetch(`/documents/${documentId}/set_thumbnail`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
-        image_url
-      })
+        image_url,
+      }),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      dispatch({
-        type: PATCH_SUCCESS,
-        document
-      });
-      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
-        dispatch(loadProject(getState().project.id));
-      }
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
-        dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
-          dispatch(refreshTarget(index));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
-      });
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
-  }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((document) => {
+        dispatch({
+          type: PATCH_SUCCESS,
+          document,
+        });
+        if (getState().project.contentsChildren.map((child) => child.document_id).includes(documentId)) {
+          dispatch(loadProject(getState().project.id));
+        }
+        const { sidebarTarget } = getState().annotationViewer;
+        if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map((link) => link.document_id).includes(documentId))) {
+          dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        getState().annotationViewer.selectedTargets.forEach((target, index) => {
+          if (target.document_id === documentId || target.links_to.map((link) => link.document_id).includes(documentId)) {
+            dispatch(refreshTarget(index));
+          }
+        });
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
+  };
 }
 
 export function setHighlightThumbnail(highlightId, image_url, coords, svg_string) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: UPDATE_HIGHLIGHT
+      type: UPDATE_HIGHLIGHT,
     });
 
     fetch(`/highlights/${highlightId}/set_thumbnail`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
         image_url,
         coords,
-        svg_string
-      })
+        svg_string,
+      }),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(highlight => {
-      dispatch({
-        type: UPDATE_HIGHLIGHT_SUCCESS
-      });
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget && ((+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id) || sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false))) {
-        dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        if ((+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) || target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
-          dispatch(refreshTarget(index));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
-      });
-    })
-    .catch(() => dispatch({
-      type: UPDATE_HIGHLIGHT_ERRORED
-    }));
-  }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((highlight) => {
+        dispatch({
+          type: UPDATE_HIGHLIGHT_SUCCESS,
+        });
+        const { sidebarTarget } = getState().annotationViewer;
+        if (sidebarTarget && ((+sidebarTarget.document_id === +highlight.document_id && +sidebarTarget.highlight_id === +highlight.id) || sidebarTarget.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false))) {
+          dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        getState().annotationViewer.selectedTargets.forEach((target, index) => {
+          if ((+target.document_id === +highlight.document_id && +target.highlight_id === +highlight.id) || target.links_to.reduce((matched, link) => matched || (+link.document_id === +highlight.document_id && +link.highlight_id === +highlight.id), false)) {
+            dispatch(refreshTarget(index));
+          }
+        });
+      })
+      .catch(() => dispatch({
+        type: UPDATE_HIGHLIGHT_ERRORED,
+      }));
+  };
 }
 
 export function createCanvasDocument(parentId, parentType, callback) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: NEW_DOCUMENT
+      type: NEW_DOCUMENT,
     });
 
     fetch('/documents', {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
@@ -942,61 +933,61 @@ export function createCanvasDocument(parentId, parentType, callback) {
         document_kind: CANVAS_RESOURCE_TYPE,
         content: { tileSources: [] },
         parent_id: parentId,
-        parent_type: parentType
+        parent_type: parentType,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      dispatch({
-        type: POST_SUCCESS,
-        document,
-        documentPosition: getState().documentGrid.openDocuments.length
-      });
-      dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
-      if (parentType === 'Project') // refresh project if document has been added to its table of contents
-        dispatch(loadProject(getState().project.id));
-      return document;
-    })
-    .then(document => {
-      if (callback) {
-        callback(document);
-      }
-    })
-    .catch(() => dispatch({
-      type: POST_ERRORED
-    }));
-  }
+      .then((response) => response.json())
+      .then((document) => {
+        dispatch({
+          type: POST_SUCCESS,
+          document,
+          documentPosition: getState().documentGrid.openDocuments.length,
+        });
+        dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
+        if (parentType === 'Project') // refresh project if document has been added to its table of contents
+        { dispatch(loadProject(getState().project.id)); }
+        return document;
+      })
+      .then((document) => {
+        if (callback) {
+          callback(document);
+        }
+      })
+      .catch(() => dispatch({
+        type: POST_ERRORED,
+      }));
+  };
 }
 
 export function closeDocument(documentId, timeOpened) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: CLOSE_DOCUMENT,
       documentId,
-      timeOpened
+      timeOpened,
     });
   };
 }
 
 export function replaceDocument(document) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: REPLACE_DOCUMENT,
-      document
+      document,
     });
   };
 }
 
 export function deleteDocument(documentId) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: DELETE_DOCUMENT
+      type: DELETE_DOCUMENT,
     });
 
     fetch(`/documents/${documentId}`, {
@@ -1004,69 +995,69 @@ export function deleteDocument(documentId) {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => {
-      dispatch({
-        type: DELETE_SUCCESS,
-        documentId
-      });
-      dispatch(closeDocumentTargets(documentId));
-      dispatch(refreshTargetByDocumentID(documentId));
-      dispatch(loadProject(getState().project.id));
-    })
-    .catch(() => dispatch({
-      type: DELETE_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+      })
+      .then(() => {
+        dispatch({
+          type: DELETE_SUCCESS,
+          documentId,
+        });
+        dispatch(closeDocumentTargets(documentId));
+        dispatch(refreshTargetByDocumentID(documentId));
+        dispatch(loadProject(getState().project.id));
+      })
+      .catch(() => dispatch({
+        type: DELETE_ERRORED,
+      }));
   };
 }
 
 export function openDeleteDialog(title, body, submit, payload, kind) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: OPEN_DELETE_DIALOG,
       title,
       body,
       submit,
       payload,
-      kind
+      kind,
     });
-  }
+  };
 }
 
 export function closeDeleteDialog() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: CLOSE_DELETE_DIALOG
+      type: CLOSE_DELETE_DIALOG,
     });
-  }
+  };
 }
 
 // close any documents found in these folders
-export function closeDocumentFolders( folders ) {
-  return function(dispatch, getState) {
-    const openDocuments = getState().documentGrid.openDocuments
-    openDocuments.forEach( (document) => {
-      const found = folders.find( folderID => folderID === document.parent_id )
-      if( found ) {
+export function closeDocumentFolders(folders) {
+  return function (dispatch, getState) {
+    const { openDocuments } = getState().documentGrid;
+    openDocuments.forEach((document) => {
+      const found = folders.find((folderID) => folderID === document.parent_id);
+      if (found) {
         dispatch(closeDocumentTargets(document.id));
-        dispatch(closeDocument(document.id,document.timeOpened));
+        dispatch(closeDocument(document.id, document.timeOpened));
         dispatch(refreshTargetByDocumentID(document.id));
       }
-    })
-  }
+    });
+  };
 }
 
 export function confirmDeleteDialog() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const payload = getState().documentGrid.deleteDialogPayload;
     switch (getState().documentGrid.deleteDialogKind) {
       case TEXT_HIGHLIGHT_DELETE:
@@ -1076,13 +1067,13 @@ export function confirmDeleteDialog() {
           dispatch(updateEditorState(payload.instanceKey, newState));
           dispatch(updateDocument(
             payload.document_id,
-            {content: {type: 'doc', content: payload.transaction.doc.content}},
-            { refreshDocumentContent: payload.timeOpened ? true : false, timeOpened: payload.timeOpened }
+            { content: { type: 'doc', content: payload.transaction.doc.content } },
+            { refreshDocumentContent: !!payload.timeOpened, timeOpened: payload.timeOpened },
           ));
           dispatch(deleteHighlights(payload.highlights));
           if (payload.highlightsToDuplicate.length > 0) dispatch(duplicateHighlights(payload.highlightsToDuplicate, payload.document_id));
-          payload.alteredHighlights.forEach(highlight => {
-            dispatch(updateHighlight(highlight.id, {excerpt: highlight.excerpt}));
+          payload.alteredHighlights.forEach((highlight) => {
+            dispatch(updateHighlight(highlight.id, { excerpt: highlight.excerpt }));
           });
           dispatch(selectHighlight(payload.instanceKey, null));
         }
@@ -1092,18 +1083,18 @@ export function confirmDeleteDialog() {
       case CANVAS_HIGHLIGHT_DELETE:
         dispatch(deleteHighlights(payload.highlights));
         if (payload.canvas) {
-          payload.fabricObjects.forEach(object => {
+          payload.fabricObjects.forEach((object) => {
             payload.canvas.remove(object);
           });
         }
         dispatch(closeDeleteDialog());
         break;
-      
+
       case CANVAS_LAYER_DELETE:
         dispatch(deleteLayer(payload));
         dispatch(closeDeleteDialog());
         break;
-      
+
       case DOCUMENT_DELETE:
         dispatch(deleteDocument(payload.documentId));
         dispatch(closeDeleteDialog());
@@ -1118,293 +1109,295 @@ export function confirmDeleteDialog() {
       default:
         dispatch(closeDeleteDialog());
     }
-  }
+  };
 }
 
 export function setCurrentLayout(event, index) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: SET_CURRENT_LAYOUT,
-      index
+      index,
     });
   };
 }
 
 export function moveDocumentWindow(dragIndex, moveIndex) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: MOVE_DOCUMENT_WINDOW,
       dragIndex,
-      moveIndex
+      moveIndex,
     });
   };
 }
 
-export function updateSnackBar(snackBarOpen,snackBarMessage) {
-  return function(dispatch) {
+export function updateSnackBar(snackBarOpen, snackBarMessage) {
+  return function (dispatch) {
     dispatch({
       type: UPDATE_SNACK_BAR,
-      snackBarMessage, 
-      snackBarOpen
+      snackBarMessage,
+      snackBarOpen,
     });
   };
 }
 
-export function moveLayer({ documentId, origin, direction, editorKey }) {
-  return function(dispatch, getState) {
+export function moveLayer({
+  documentId, origin, direction, editorKey,
+}) {
+  return function (dispatch, getState) {
     dispatch({
-      type: UPDATE_DOCUMENT
+      type: UPDATE_DOCUMENT,
     });
 
     fetch(`/documents/${documentId}/move_layer`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
       body: JSON.stringify({
         origin,
         direction,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
-        dispatch(loadProject(getState().project.id));
-      }
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
-        dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
-          dispatch(refreshTarget(index));
+      .then((response) => response.json())
+      .then((document) => {
+        if (getState().project.contentsChildren.map((child) => child.document_id).includes(documentId)) {
+          dispatch(loadProject(getState().project.id));
         }
-      });
-      if (document.content && document.content.tileSources && document.content.tileSources[0]) {
-        const firstTileSource = document.content.tileSources[0];
-        // Update doc thumbnail
-        let imageUrlForThumbnail = '';
-        if (typeof firstTileSource === 'string') {
+        const { sidebarTarget } = getState().annotationViewer;
+        if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map((link) => link.document_id).includes(documentId))) {
+          dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        getState().annotationViewer.selectedTargets.forEach((target, index) => {
+          if (target.document_id === documentId || target.links_to.map((link) => link.document_id).includes(documentId)) {
+            dispatch(refreshTarget(index));
+          }
+        });
+        if (document.content && document.content.tileSources && document.content.tileSources[0]) {
+          const firstTileSource = document.content.tileSources[0];
+          // Update doc thumbnail
+          let imageUrlForThumbnail = '';
+          if (typeof firstTileSource === 'string') {
           // Tile source is a string, so it's IIIF
-          let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
-          imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png';
-        } else if (firstTileSource.url && firstTileSource.type === 'image') {
-          imageUrlForThumbnail = firstTileSource.url;
-        } else {
-          imageUrlForThumbnail = firstTileSource;
+            const resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
+            imageUrlForThumbnail = `${resourceURL}/full/!400,400/0/default.png`;
+          } else if (firstTileSource.url && firstTileSource.type === 'image') {
+            imageUrlForThumbnail = firstTileSource.url;
+          } else {
+            imageUrlForThumbnail = firstTileSource;
+          }
+          dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
-      }
-      dispatch({
-        type: REPLACE_DOCUMENT,
-        document
-      });
-    })
-    .then(() => {
-      dispatch({
-        type: PAGE_TO_CHANGE,
-        pageToChange: origin + direction,
-        editorKey,
-      });
-      dispatch({
-        type: PATCH_SUCCESS,
-        document
-      });
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
-  }
+        dispatch({
+          type: REPLACE_DOCUMENT,
+          document,
+        });
+      })
+      .then(() => {
+        dispatch({
+          type: PAGE_TO_CHANGE,
+          pageToChange: origin + direction,
+          editorKey,
+        });
+        dispatch({
+          type: PATCH_SUCCESS,
+          document,
+        });
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
+  };
 }
 
-
 export function deleteLayer({ documentId, layer, editorKey }) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: UPDATE_DOCUMENT
+      type: UPDATE_DOCUMENT,
     });
 
     fetch(`/documents/${documentId}/delete_layer`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
       body: JSON.stringify({
         layer,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
-        dispatch(loadProject(getState().project.id));
-      }
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
-        dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
-          dispatch(refreshTarget(index));
+      .then((response) => response.json())
+      .then((document) => {
+        if (getState().project.contentsChildren.map((child) => child.document_id).includes(documentId)) {
+          dispatch(loadProject(getState().project.id));
         }
-      });
-      if (layer === 0 && document.content && document.content.tileSources && document.content.tileSources[0]) {
-        const firstTileSource = document.content.tileSources[0];
-        // Update doc thumbnail
-        let imageUrlForThumbnail = '';
-        if (typeof firstTileSource === 'string') {
+        const { sidebarTarget } = getState().annotationViewer;
+        if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map((link) => link.document_id).includes(documentId))) {
+          dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        getState().annotationViewer.selectedTargets.forEach((target, index) => {
+          if (target.document_id === documentId || target.links_to.map((link) => link.document_id).includes(documentId)) {
+            dispatch(refreshTarget(index));
+          }
+        });
+        if (layer === 0 && document.content && document.content.tileSources && document.content.tileSources[0]) {
+          const firstTileSource = document.content.tileSources[0];
+          // Update doc thumbnail
+          let imageUrlForThumbnail = '';
+          if (typeof firstTileSource === 'string') {
           // Tile source is a string, so it's IIIF
-          let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
-          imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png';
-        } else if (firstTileSource.url && firstTileSource.type === 'image') {
-          imageUrlForThumbnail = firstTileSource.url;
-        } else {
-          imageUrlForThumbnail = firstTileSource;
+            const resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
+            imageUrlForThumbnail = `${resourceURL}/full/!400,400/0/default.png`;
+          } else if (firstTileSource.url && firstTileSource.type === 'image') {
+            imageUrlForThumbnail = firstTileSource.url;
+          } else {
+            imageUrlForThumbnail = firstTileSource;
+          }
+          dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
-      }
-      dispatch({
-        type: REPLACE_DOCUMENT,
-        document
-      });
-    })
-    .then(() => {
-      dispatch({
-        type: PAGE_TO_CHANGE,
-        pageToChange: 0,
-        editorKey,
-      });
-      dispatch({
-        type: PATCH_SUCCESS,
-        document
-      });
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
-  }
+        dispatch({
+          type: REPLACE_DOCUMENT,
+          document,
+        });
+      })
+      .then(() => {
+        dispatch({
+          type: PAGE_TO_CHANGE,
+          pageToChange: 0,
+          editorKey,
+        });
+        dispatch({
+          type: PATCH_SUCCESS,
+          document,
+        });
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
+  };
 }
 
-
-export function renameLayer({ documentId, layer, name, editorKey }) {
-  return function(dispatch, getState) {
+export function renameLayer({
+  documentId, layer, name, editorKey,
+}) {
+  return function (dispatch, getState) {
     dispatch({
-      type: UPDATE_DOCUMENT
+      type: UPDATE_DOCUMENT,
     });
 
     fetch(`/documents/${documentId}/rename_layer`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
       body: JSON.stringify({
         layer,
         name,
-      })
+      }),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
-        dispatch(loadProject(getState().project.id));
-      }
-      const sidebarTarget = getState().annotationViewer.sidebarTarget;
-      if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
-        dispatch(selectSidebarTarget(sidebarTarget));
-      }
-      getState().annotationViewer.selectedTargets.forEach((target, index) => {
-        if (target.document_id === documentId || target.links_to.map(link => link.document_id).includes(documentId)) {
-          dispatch(refreshTarget(index));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
-      });
-      dispatch({
-        type: REPLACE_DOCUMENT,
-        document
-      });
-    })
-    .then(() => {
-      dispatch({
-        type: PAGE_TO_CHANGE,
-        pageToChange: layer,
-        editorKey,
-      });
-      dispatch({
-        type: TOGGLE_EDIT_LAYER_NAME,
-        editorKey,
-        value: false,
-      });
-      dispatch({
-        type: RENAME_LAYER_SUCCESS,
-      });
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
-  }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((document) => {
+        if (getState().project.contentsChildren.map((child) => child.document_id).includes(documentId)) {
+          dispatch(loadProject(getState().project.id));
+        }
+        const { sidebarTarget } = getState().annotationViewer;
+        if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map((link) => link.document_id).includes(documentId))) {
+          dispatch(selectSidebarTarget(sidebarTarget));
+        }
+        getState().annotationViewer.selectedTargets.forEach((target, index) => {
+          if (target.document_id === documentId || target.links_to.map((link) => link.document_id).includes(documentId)) {
+            dispatch(refreshTarget(index));
+          }
+        });
+        dispatch({
+          type: REPLACE_DOCUMENT,
+          document,
+        });
+      })
+      .then(() => {
+        dispatch({
+          type: PAGE_TO_CHANGE,
+          pageToChange: layer,
+          editorKey,
+        });
+        dispatch({
+          type: TOGGLE_EDIT_LAYER_NAME,
+          editorKey,
+          value: false,
+        });
+        dispatch({
+          type: RENAME_LAYER_SUCCESS,
+        });
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
+  };
 }
 
 export function refreshCurrentDocContent(documentId) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: GET_CURRENT_DOC_CONTENT
+      type: GET_CURRENT_DOC_CONTENT,
     });
 
     fetch(`/documents/${documentId}`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => dispatch({
-      type: REPLACE_DOCUMENT,
-      document,
-    }))
-    .catch(() => dispatch({
-      type: GET_CURRENT_DOC_CONTENT_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((document) => dispatch({
+        type: REPLACE_DOCUMENT,
+        document,
+      }))
+      .catch(() => dispatch({
+        type: GET_CURRENT_DOC_CONTENT_ERRORED,
+      }));
   };
 }

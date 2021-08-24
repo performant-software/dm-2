@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 const PageMargins = ({ size, color }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill={color} viewBox="-2 -2 20 20">

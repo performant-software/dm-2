@@ -54,25 +54,25 @@ const initialState = {
   confirmUserErroredDialogShown: false,
 };
 
-export default function(state = initialState, action) {
+export default function (state = initialState, action) {
   switch (action.type) {
     case LOADING:
       return {
         ...state,
-        loading: true
+        loading: true,
       };
 
     case ERRORED:
       return {
         ...state,
-        errored: true
+        errored: true,
       };
 
     case FETCH_SUCCESS:
       return {
         ...state,
         loading: false,
-        projects: action.projects
+        projects: action.projects,
       };
 
     case LOGIN_SHOWN:
@@ -81,7 +81,7 @@ export default function(state = initialState, action) {
         loginShown: true,
         registrationShown: false,
         approvalPendingShown: false,
-        authMenuShown: false
+        authMenuShown: false,
       };
 
     case LOGIN_HIDDEN:
@@ -92,8 +92,8 @@ export default function(state = initialState, action) {
         userEmail: '',
         userName: '',
         userPassword: '',
-        userPasswordConfirmation: ''
-      }
+        userPasswordConfirmation: '',
+      };
 
     case REGISTRATION_SHOWN:
       return {
@@ -101,7 +101,7 @@ export default function(state = initialState, action) {
         registrationShown: true,
         loginShown: false,
         approvalPendingShown: false,
-        authMenuShown: false
+        authMenuShown: false,
       };
 
     case REGISTRATION_HIDDEN:
@@ -112,7 +112,7 @@ export default function(state = initialState, action) {
         userEmail: '',
         userName: '',
         userPassword: '',
-        userPasswordConfirmation: ''
+        userPasswordConfirmation: '',
       };
 
     case APPROVAL_PENDING_SHOWN:
@@ -121,7 +121,7 @@ export default function(state = initialState, action) {
         approvalPendingShown: true,
         registrationShown: false,
         loginShown: false,
-        authMenuShown: false
+        authMenuShown: false,
       };
 
     case APPROVAL_PENDING_HIDDEN:
@@ -132,62 +132,62 @@ export default function(state = initialState, action) {
         userEmail: '',
         userName: '',
         userPassword: '',
-        userPasswordConfirmation: ''
+        userPasswordConfirmation: '',
       };
 
     case USER_EMAIL_CHANGED:
       return {
         ...state,
-        userEmail: action.value
+        userEmail: action.value,
       };
 
     case USER_NAME_CHANGED:
       return {
         ...state,
-        userName: action.value
+        userName: action.value,
       };
 
     case USER_PASSWORD_CHANGED:
       return {
         ...state,
-        userPassword: action.value
+        userPassword: action.value,
       };
 
     case USER_PASSWORD_CONFIRMATION_CHANGED:
       return {
         ...state,
-        userPasswordConfirmation: action.value
+        userPasswordConfirmation: action.value,
       };
 
     case USER_AUTH_ERRORED:
       return {
         ...state,
-        userAuthError: action.error
+        userAuthError: action.error,
       };
 
     case AUTH_MENU_TOGGLED:
       return {
         ...state,
         authMenuShown: !state.authMenuShown,
-        authMenuAnchor: action.anchor
+        authMenuAnchor: action.anchor,
       };
 
     case AUTH_MENU_HIDDEN:
       return {
         ...state,
-        authMenuShown: false
+        authMenuShown: false,
       };
 
     case ADMIN_DIALOG_SHOWN:
       return {
         ...state,
-        adminDialogShown: true
+        adminDialogShown: true,
       };
 
     case ADMIN_DIALOG_HIDDEN:
       return {
         ...state,
-        adminDialogShown: false
+        adminDialogShown: false,
       };
 
     case USER_ADMIN_LIST_LOADING:
@@ -204,7 +204,7 @@ export default function(state = initialState, action) {
       return {
         ...state,
         userAdminListErrored: true,
-        userAdminListLoading: false
+        userAdminListLoading: false,
       };
 
     case USER_ADMIN_LIST_SUCCESS:
@@ -214,7 +214,7 @@ export default function(state = initialState, action) {
         ...state,
         userAdminListLoading: false,
         userAdminListErrored: false,
-        userAdminList: action.users
+        userAdminList: action.users,
       };
 
     case CONFIRM_USER_SUCCESS:
@@ -228,7 +228,7 @@ export default function(state = initialState, action) {
       return {
         ...state,
         confirmUserSuccessDialogShown: false,
-      }
+      };
 
     case CONFIRM_USER_ERRORED:
       return {
@@ -236,248 +236,248 @@ export default function(state = initialState, action) {
         confirmUserSuccessDialogShown: true,
         confirmUserErrored: true,
       };
-      
+
     default:
       return state;
   }
 }
 
 export function load() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: LOADING
+      type: LOADING,
     });
 
     fetch('/projects', {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(projects => {
-      // sort by title
-      projects = projects.sort(createAlphaNumericComparator('title'));
-      dispatch({
-        type: FETCH_SUCCESS,
-        projects
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-      dispatch(push('/'));
-    })
-    .catch(() => dispatch({
-      type: ERRORED
-    }));
+      .then((response) => response.json())
+      .then((projects) => {
+      // sort by title
+        projects = projects.sort(createAlphaNumericComparator('title'));
+        dispatch({
+          type: FETCH_SUCCESS,
+          projects,
+        });
+        dispatch(push('/'));
+      })
+      .catch(() => dispatch({
+        type: ERRORED,
+      }));
   };
 }
 
 export function showLogin() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: LOGIN_SHOWN
+      type: LOGIN_SHOWN,
     });
   };
 }
 
 export function hideLogin() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: LOGIN_HIDDEN
+      type: LOGIN_HIDDEN,
     });
   };
 }
 
 export function showRegistration() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: REGISTRATION_SHOWN
+      type: REGISTRATION_SHOWN,
     });
   };
 }
 
 export function hideRegistration() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: REGISTRATION_HIDDEN
+      type: REGISTRATION_HIDDEN,
     });
   };
 }
 
 export function showApprovalPending() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: APPROVAL_PENDING_SHOWN
+      type: APPROVAL_PENDING_SHOWN,
     });
   };
 }
 
 export function hideApprovalPending() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: APPROVAL_PENDING_HIDDEN
+      type: APPROVAL_PENDING_HIDDEN,
     });
   };
 }
 
 export function userEmailChanged(event) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: USER_EMAIL_CHANGED,
-      value: event.target.value
+      value: event.target.value,
     });
   };
 }
 
 export function userNameChanged(event) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: USER_NAME_CHANGED,
-      value: event.target.value
+      value: event.target.value,
     });
   };
 }
 
 export function userPasswordChanged(event) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: USER_PASSWORD_CHANGED,
-      value: event.target.value
+      value: event.target.value,
     });
   };
 }
 
 export function userPasswordConfirmationChanged(event) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: USER_PASSWORD_CONFIRMATION_CHANGED,
-      value: event.target.value
+      value: event.target.value,
     });
   };
 }
 
 export function userAuthErrored(error) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: USER_AUTH_ERRORED,
-      error
+      error,
     });
   };
 }
 
 export function toggleAuthMenu(anchor) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: AUTH_MENU_TOGGLED,
-      anchor
+      anchor,
     });
   };
 }
 
 export function hideAuthMenu(anchor) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: AUTH_MENU_HIDDEN
+      type: AUTH_MENU_HIDDEN,
     });
   };
 }
 
 export function showAdminDialog() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: ADMIN_DIALOG_SHOWN
+      type: ADMIN_DIALOG_SHOWN,
     });
     dispatch(loadUserAdminList());
   };
 }
 
 export function loadUserAdminList() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: USER_ADMIN_LIST_LOADING
+      type: USER_ADMIN_LIST_LOADING,
     });
 
     fetch('/users/list_admin', {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(users => dispatch({
-      type: USER_ADMIN_LIST_SUCCESS,
-      users
-    }))
-    .catch(() => dispatch({
-      type: USER_ADMIN_LIST_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((users) => dispatch({
+        type: USER_ADMIN_LIST_SUCCESS,
+        users,
+      }))
+      .catch(() => dispatch({
+        type: USER_ADMIN_LIST_ERRORED,
+      }));
   };
 }
 
 export function hideAdminDialog() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: ADMIN_DIALOG_HIDDEN
+      type: ADMIN_DIALOG_HIDDEN,
     });
   };
 }
 
 export function updateUser(userId, attributes) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: UPDATE_USER_LOADING
+      type: UPDATE_USER_LOADING,
     });
 
     fetch(`/users/${userId}`, {
       method: 'PATCH',
       body: JSON.stringify(attributes),
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(users => dispatch({
-      type: UPDATE_USER_SUCCESS,
-      users
-    }))
-    .catch(() => dispatch({
-      type: UPDATE_USER_ERRORED
-    }));
-  }
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((users) => dispatch({
+        type: UPDATE_USER_SUCCESS,
+        users,
+      }))
+      .catch(() => dispatch({
+        type: UPDATE_USER_ERRORED,
+      }));
+  };
 }
 
 export function deleteUser(userId) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: DELETE_USER_LOADING
+      type: DELETE_USER_LOADING,
     });
 
     fetch(`/users/${userId}`, {
@@ -485,85 +485,85 @@ export function deleteUser(userId) {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(users => dispatch({
-      type: DELETE_USER_SUCCESS,
-      users
-    }))
-    .catch(() => dispatch({
-      type: DELETE_USER_ERRORED
-    }));
-  }
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((users) => dispatch({
+        type: DELETE_USER_SUCCESS,
+        users,
+      }))
+      .catch(() => dispatch({
+        type: DELETE_USER_ERRORED,
+      }));
+  };
 }
 
-function createAlphaNumericComparator( field ) {
-  return function alphaNumericCompare(a,b) {
-    var nameA = a[field].toUpperCase(); // ignore upper and lowercase
-    var nameB = b[field].toUpperCase(); // ignore upper and lowercase
+function createAlphaNumericComparator(field) {
+  return function alphaNumericCompare(a, b) {
+    const nameA = a[field].toUpperCase(); // ignore upper and lowercase
+    const nameB = b[field].toUpperCase(); // ignore upper and lowercase
     if (nameA < nameB) {
       return -1;
     }
     if (nameA > nameB) {
       return 1;
     }
-  
+
     // names must be equal
     return 0;
-  }  
+  };
 }
 
 export function confirmUser(token) {
-  return function(dispatch) {
+  return function (dispatch) {
     fetch(`/auth/confirmation?confirmation_token=${token}`, {
       method: 'GET',
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(res => {
-      if (res.account_confirmation_success === "true" || res.account_confirmation_success === true) {
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((res) => {
+        if (res.account_confirmation_success === 'true' || res.account_confirmation_success === true) {
+          dispatch({
+            type: CONFIRM_USER_SUCCESS,
+          });
+        } else {
+          throw Error(res);
+        }
+      })
+      .catch((err) => {
         dispatch({
-          type: CONFIRM_USER_SUCCESS
+          type: CONFIRM_USER_ERRORED,
+          err,
         });
-      } else {
-        throw Error(res);
-      }
-    })
-    .catch((err) => {
-      dispatch({
-        type: CONFIRM_USER_ERRORED,
-        err
       });
-    })
-  }
+  };
 }
 
 export function closeConfirmDialog() {
   return function (dispatch) {
     dispatch({
       type: CONFIRM_USER_SUCCESS_DIALOG_CLOSED,
-    })
-  }
+    });
+  };
 }

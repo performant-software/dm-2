@@ -4,7 +4,6 @@ import React, { Component } from 'react';
  * This wraps ProseMirror's EditorView into React component.
  */
 export default class ProseMirrorEditorView extends Component {
-  
   focus() {
     if (this.props.editorView) {
       this.propse.editorView.focus();
@@ -20,7 +19,7 @@ export default class ProseMirrorEditorView extends Component {
   shouldComponentUpdate(nextProps) {
     // Update component if style attrs change
     if (this.props.style !== nextProps.style || this.props.columnCount !== nextProps.columnCount) {
-      return true
+      return true;
     }
     // Note that EditorView manages its DOM itself so we'd rather not mess
     // with it otherwise.
@@ -33,14 +32,14 @@ export default class ProseMirrorEditorView extends Component {
     const style = { flexGrow: '1', padding: '10px', ...this.props.style };
     let className = '';
     switch (this.props.columnCount) {
-      case 1: 
+      case 1:
         className = 'one-column';
         break;
-      case 2: 
-        className =  'two-column';
+      case 2:
+        className = 'two-column';
         break;
       case 3:
-        className =  'three-column';
+        className = 'three-column';
         break;
       default:
         className = '';

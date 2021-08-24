@@ -1,5 +1,5 @@
 import { loadProject } from './project';
-import { closeDocumentFolders } from './documentGrid'
+import { closeDocumentFolders } from './documentGrid';
 
 export const NEW_FOLDER = 'folders/NEW_FOLDER';
 export const POST_SUCCESS = 'folders/POST_SUCCESS';
@@ -22,47 +22,47 @@ export const ADD_TREE_SUCCESS = 'folders/ADD_TREE_SUCCESS';
 export const ADD_TREE_ERRORED = 'folders/ADD_TREE_ERRORED';
 
 const initialState = {
-  openFolderContents: {}
+  openFolderContents: {},
 };
 
-export default function(state = initialState, action) {
+export default function (state = initialState, action) {
   switch (action.type) {
     case FOLDER_OPENED:
     case MOVE_FOLDER:
     case DELETE_FOLDER:
-      let loadingOpenFolderContents = Object.assign({}, state.openFolderContents);
+      const loadingOpenFolderContents = { ...state.openFolderContents };
       loadingOpenFolderContents[action.id] = 'loading';
       return {
         ...state,
-        openFolderContents: loadingOpenFolderContents
+        openFolderContents: loadingOpenFolderContents,
       };
 
     case OPEN_SUCCESS:
     case MOVE_FOLDER_SUCCESS:
-      let successOpenFolderContents = Object.assign({}, state.openFolderContents);
+      const successOpenFolderContents = { ...state.openFolderContents };
       successOpenFolderContents[action.id] = action.contentsChildren;
       return {
         ...state,
-        openFolderContents: successOpenFolderContents
+        openFolderContents: successOpenFolderContents,
       };
 
     case OPEN_ERRORED:
     case MOVE_FOLDER_ERRORED:
     case DELETE_ERRORED:
-      let erroredOpenFolderContents = Object.assign({}, state.openFolderContents);
-      erroredOpenFolderContents[action.id] = 'errored'
+      const erroredOpenFolderContents = { ...state.openFolderContents };
+      erroredOpenFolderContents[action.id] = 'errored';
       return {
         ...state,
-        openFolderContents: erroredOpenFolderContents
+        openFolderContents: erroredOpenFolderContents,
       };
 
     case FOLDER_CLOSED:
     case DELETE_SUCCESS:
-      let closeOpenFolderContents = Object.assign({}, state.openFolderContents);
+      const closeOpenFolderContents = { ...state.openFolderContents };
       closeOpenFolderContents[action.id] = null;
       return {
         ...state,
-        openFolderContents: closeOpenFolderContents
+        openFolderContents: closeOpenFolderContents,
       };
 
     default:
@@ -71,171 +71,171 @@ export default function(state = initialState, action) {
 }
 
 export function createFolder(parentId, parentType, title = 'New Folder') {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: NEW_FOLDER
+      type: NEW_FOLDER,
     });
 
     fetch('/document_folders', {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
         title,
         project_id: getState().project.id,
         parent_id: parentId,
-        parent_type: parentType
+        parent_type: parentType,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => dispatch(loadProject(getState().project.id)))
-    .then(() => dispatch({
-      type: POST_SUCCESS
-    }))
-    .catch(() => dispatch({
-      type: POST_ERRORED
-    }));
-  }
+      .then(() => dispatch(loadProject(getState().project.id)))
+      .then(() => dispatch({
+        type: POST_SUCCESS,
+      }))
+      .catch(() => dispatch({
+        type: POST_ERRORED,
+      }));
+  };
 }
 
 export function openFolder(id) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: FOLDER_OPENED,
-      id
+      id,
     });
 
     fetch(`document_folders/${id}`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(folder => dispatch({
-      type: OPEN_SUCCESS,
-      id,
-      contentsChildren: folder.contents_children
-    }))
-    .catch(() => dispatch({
-      type: OPEN_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((folder) => dispatch({
+        type: OPEN_SUCCESS,
+        id,
+        contentsChildren: folder.contents_children,
+      }))
+      .catch(() => dispatch({
+        type: OPEN_ERRORED,
+      }));
   };
 }
 
 export function closeFolder(id) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: FOLDER_CLOSED,
-      id
+      id,
     });
   };
 }
 
-export function moveFolder(folderID, destination_id, position ) {
-  return function(dispatch) {
+export function moveFolder(folderID, destination_id, position) {
+  return function (dispatch) {
     dispatch({
-      type: UPDATE_FOLDER
+      type: UPDATE_FOLDER,
     });
 
     return fetch(`/document_folders/${folderID}/move`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
       body: JSON.stringify({
         document_folder: {
           destination_id,
-          position
+          position,
+        },
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(() => {
-      dispatch({
-        type: MOVE_FOLDER_SUCCESS
-      });
-    })
-    .catch(() => dispatch({
-      type: MOVE_FOLDER_ERRORED
-    }));
-  }
+      .then(() => {
+        dispatch({
+          type: MOVE_FOLDER_SUCCESS,
+        });
+      })
+      .catch(() => dispatch({
+        type: MOVE_FOLDER_ERRORED,
+      }));
+  };
 }
 
 export function updateFolder(id, attributes) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: UPDATE_FOLDER
+      type: UPDATE_FOLDER,
     });
 
     return fetch(`/document_folders/${id}`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
-      body: JSON.stringify(attributes)
+      body: JSON.stringify(attributes),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(folder => {
-      dispatch({
-        type: PATCH_SUCCESS,
-        folder
-      });
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
-  }
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((folder) => {
+        dispatch({
+          type: PATCH_SUCCESS,
+          folder,
+        });
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
+  };
 }
 
 export function deleteFolder(folderId, parentType, parentId) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
       type: DELETE_FOLDER,
-      id: folderId
+      id: folderId,
     });
 
     fetch(`/document_folders/${folderId}`, {
@@ -243,68 +243,68 @@ export function deleteFolder(folderId, parentType, parentId) {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => response.json())
-    .then((descendants) => {
-      dispatch(closeDocumentFolders(descendants));
-      dispatch({
-        type: DELETE_SUCCESS,
-        id: folderId
-      });
-      if (parentType === 'Project') {
-        dispatch(loadProject(getState().project.id));
-      }
-      if (parentType === 'DocumentFolder' && getState().folders.openFolderContents[parentId]) {
-        dispatch(openFolder(parentId))
-      }
-    })
-    .catch(() => dispatch({
-      type: DELETE_ERRORED,
-      id: folderId
-    }));
+      .then((response) => response.json())
+      .then((descendants) => {
+        dispatch(closeDocumentFolders(descendants));
+        dispatch({
+          type: DELETE_SUCCESS,
+          id: folderId,
+        });
+        if (parentType === 'Project') {
+          dispatch(loadProject(getState().project.id));
+        }
+        if (parentType === 'DocumentFolder' && getState().folders.openFolderContents[parentId]) {
+          dispatch(openFolder(parentId));
+        }
+      })
+      .catch(() => dispatch({
+        type: DELETE_ERRORED,
+        id: folderId,
+      }));
   };
 }
 
-export function addTree( parentId, parentType, tree) {
-  return function(dispatch, getState) {
+export function addTree(parentId, parentType, tree) {
+  return function (dispatch, getState) {
     dispatch({
-      type: ADD_TREE
+      type: ADD_TREE,
     });
 
     fetch(`/document_folders/${parentId}/add_tree`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'POST',
       body: JSON.stringify({
         document_folder: {
           parent_id: parentId,
           parent_type: parentType,
-          tree  
+          tree,
+        },
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
         }
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => dispatch(loadProject(getState().project.id)))
-    .then(() => dispatch({
-      type: ADD_TREE_SUCCESS
-    }))
-    .catch(() => dispatch({
-      type: ADD_TREE_ERRORED
-    }));
-  }
+      .then(() => dispatch(loadProject(getState().project.id)))
+      .then(() => dispatch({
+        type: ADD_TREE_SUCCESS,
+      }))
+      .catch(() => dispatch({
+        type: ADD_TREE_ERRORED,
+      }));
+  };
 }

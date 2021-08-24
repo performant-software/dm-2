@@ -1,6 +1,6 @@
 import { push, replace } from 'react-router-redux';
-import { CLOSE_SEARCH_POPUP } from './search'
-import { CHECK_IN_DOCS } from './documentGrid'
+import { CLOSE_SEARCH_POPUP } from './search';
+import { CHECK_IN_DOCS } from './documentGrid';
 
 export const TEXT_RESOURCE_TYPE = 'text';
 export const CANVAS_RESOURCE_TYPE = 'canvas';
@@ -33,7 +33,7 @@ export const CREATE_PERMISSION_SUCCESS = 'project/CREATE_PERMISSION_SUCCESS';
 export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
 export const TOGGLE_SIDEBAR = 'project/TOGGLE_SIDEBAR';
 
-const sidebarOpenWidth = 490
+const sidebarOpenWidth = 490;
 
 const initialState = {
   id: null,
@@ -53,16 +53,16 @@ const initialState = {
   newPermissionError: null,
   deleteConfirmed: false,
   sidebarWidth: sidebarOpenWidth,
-  sidebarOpen: true
+  sidebarOpen: true,
 };
 
-export default function(state = initialState, action) {
+export default function (state = initialState, action) {
   switch (action.type) {
     case LOAD_PROJECT:
       return {
         ...state,
         title: action.title || state.title,
-        loading: true
+        loading: true,
       };
 
     case DELETE_SUCCESS:
@@ -73,15 +73,15 @@ export default function(state = initialState, action) {
       return {
         ...state,
         loading: true,
-        title: 'Untitled Project'
+        title: 'Untitled Project',
       };
 
     case UPDATE_PROJECT:
     case DELETE_PROJECT:
       return {
         ...state,
-        loading: true
-      }
+        loading: true,
+      };
 
     case GET_SUCCESS:
     case POST_SUCCESS:
@@ -95,7 +95,7 @@ export default function(state = initialState, action) {
         userProjectPermissions: action.userProjectPermissions || [],
         contentsChildren: action.contentsChildren || [],
         public: action.public,
-        currentUserPermissions: action.currentUserPermissions
+        currentUserPermissions: action.currentUserPermissions,
       };
 
     case GET_ERRORED:
@@ -106,31 +106,31 @@ export default function(state = initialState, action) {
       return {
         ...state,
         loading: false,
-        errored: true
+        errored: true,
       };
 
     case OPEN_DOCUMENT_POPOVER:
       return {
         ...state,
-        documentPopoverOpenFor: action.target
+        documentPopoverOpenFor: action.target,
       };
 
     case CLOSE_DOCUMENT_POPOVER:
       return {
         ...state,
-        documentPopoverOpenFor: null
+        documentPopoverOpenFor: null,
       };
 
     case SETTINGS_SHOWN:
       return {
         ...state,
-        settingsShown: true
+        settingsShown: true,
       };
 
     case SETTINGS_HIDDEN:
       return {
         ...state,
-        settingsShown: false
+        settingsShown: false,
       };
 
     case CREATE_PERMISSION_LOADING:
@@ -144,7 +144,7 @@ export default function(state = initialState, action) {
         ...state,
         newPermissionLoading: false,
         newPermissionError: null,
-        newPermissionUser: null
+        newPermissionUser: null,
       };
 
     case CREATE_PERMISSION_ERRORED:
@@ -152,33 +152,33 @@ export default function(state = initialState, action) {
         ...state,
         newPermissionLoading: false,
         newPermissionError: 'Unable to add user.',
-      }
+      };
 
     case NEW_PERMISSION_USER_CHANGE:
       return {
         ...state,
-        newPermissionUser: action.user
+        newPermissionUser: action.user,
       };
 
     case NEW_PERMISSION_LEVEL_CHANGE:
       return {
         ...state,
-        newPermissionLevel: action.level
+        newPermissionLevel: action.level,
       };
 
     case TOGGLE_DELETE_CONFIRMATION:
       return {
         ...state,
-        deleteConfirmed: !state.deleteConfirmed
+        deleteConfirmed: !state.deleteConfirmed,
       };
 
     case TOGGLE_SIDEBAR:
-      const sidebarOpen = !state.sidebarOpen
-      const sidebarWidth = sidebarOpen ? sidebarOpenWidth : 0
+      const sidebarOpen = !state.sidebarOpen;
+      const sidebarWidth = sidebarOpen ? sidebarOpenWidth : 0;
       return {
         ...state,
         sidebarOpen,
-        sidebarWidth 
+        sidebarWidth,
       };
 
     default:
@@ -187,64 +187,64 @@ export default function(state = initialState, action) {
 }
 
 export function clearProject() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: CLOSE_SEARCH_POPUP
+      type: CLOSE_SEARCH_POPUP,
     });
     dispatch({
-      type: CLEAR_PROJECT
+      type: CLEAR_PROJECT,
     });
   };
 }
 
 export function loadProject(projectId, title) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: LOAD_PROJECT
+      type: LOAD_PROJECT,
     });
 
     fetch(`projects/${projectId}`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      }
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+      },
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(project => {
-      if( project.forbidden ) {
-        dispatch(push('/'))
-      } else {
-        dispatch({
-          type: GET_SUCCESS,
-          projectId: project.id,
-          projectTitle: project.title,
-          projectDescription: project.description,
-          contentsChildren: project['contents_children'],
-          userProjectPermissions: project['user_project_permissions'],
-          public: project.public,
-          currentUserPermissions: project['current_user_permissions']
-        })      
-      }
-    })
-    .catch(() => dispatch({
-      type: GET_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((project) => {
+        if (project.forbidden) {
+          dispatch(push('/'));
+        } else {
+          dispatch({
+            type: GET_SUCCESS,
+            projectId: project.id,
+            projectTitle: project.title,
+            projectDescription: project.description,
+            contentsChildren: project.contents_children,
+            userProjectPermissions: project.user_project_permissions,
+            public: project.public,
+            currentUserPermissions: project.current_user_permissions,
+          });
+        }
+      })
+      .catch(() => dispatch({
+        type: GET_ERRORED,
+      }));
   };
 }
 
 export function newProject() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: NEW_PROJECT
+      type: NEW_PROJECT,
     });
     dispatch(push('/new'));
 
@@ -252,335 +252,335 @@ export function newProject() {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid'),
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       method: 'POST',
       body: JSON.stringify({
-        title: 'Untitled Project'
+        title: 'Untitled Project',
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(project => {
-      dispatch({
-        type: POST_SUCCESS,
-        projectId: project.id,
-        projectTitle: project.title,
-        userProjectPermissions: project['user_project_permissions'],
-        public: project.public,
-        currentUserPermissions: project['current_user_permissions']
-      });
-      dispatch(replace(`/${project.id}`));
-      dispatch(showSettings());
-    })
-    .catch(() => dispatch({
-      type: POST_ERRORED
-    }));
+      .then((response) => response.json())
+      .then((project) => {
+        dispatch({
+          type: POST_SUCCESS,
+          projectId: project.id,
+          projectTitle: project.title,
+          userProjectPermissions: project.user_project_permissions,
+          public: project.public,
+          currentUserPermissions: project.current_user_permissions,
+        });
+        dispatch(replace(`/${project.id}`));
+        dispatch(showSettings());
+      })
+      .catch(() => dispatch({
+        type: POST_ERRORED,
+      }));
   };
 }
 
 export function updateProject(projectId, attributes) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: UPDATE_PROJECT
+      type: UPDATE_PROJECT,
     });
 
     fetch(`/projects/${projectId}`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
       },
       method: 'PATCH',
-      body: JSON.stringify(attributes)
+      body: JSON.stringify(attributes),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(project => {
-      dispatch({
-        type: PATCH_SUCCESS,
-        projectId: project.id,
-        projectTitle: project.title,
-        projectDescription: project.description,
-        contentsChildren: project['contents_children'],
-        userProjectPermissions: project['user_project_permissions'],
-        public: project.public,
-        currentUserPermissions: project['current_user_permissions']
-      });
-    })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((project) => {
+        dispatch({
+          type: PATCH_SUCCESS,
+          projectId: project.id,
+          projectTitle: project.title,
+          projectDescription: project.description,
+          contentsChildren: project.contents_children,
+          userProjectPermissions: project.user_project_permissions,
+          public: project.public,
+          currentUserPermissions: project.current_user_permissions,
+        });
+      })
+      .catch(() => dispatch({
+        type: PATCH_ERRORED,
+      }));
   };
 }
 
 export function openDocumentPopover(target) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: OPEN_DOCUMENT_POPOVER,
-      target
+      target,
     });
   };
 }
 
 export function closeDocumentPopover() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: CLOSE_DOCUMENT_POPOVER
+      type: CLOSE_DOCUMENT_POPOVER,
     });
   };
 }
 
 export function showSettings() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: SETTINGS_SHOWN
+      type: SETTINGS_SHOWN,
     });
   };
 }
 
 export function hideSettings() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: SETTINGS_HIDDEN
+      type: SETTINGS_HIDDEN,
     });
   };
 }
 
 export function setNewPermissionUser(user) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: NEW_PERMISSION_USER_CHANGE,
-      user
+      user,
     });
   };
 }
 
 export function setNewPermissionLevel(level) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
       type: NEW_PERMISSION_LEVEL_CHANGE,
-      level
+      level,
     });
   };
 }
 
 export function createNewPermission() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const { id, newPermissionUser, newPermissionLevel } = getState().project;
 
     if (newPermissionUser !== null) {
       dispatch({
-        type: CREATE_PERMISSION_LOADING
+        type: CREATE_PERMISSION_LOADING,
       });
 
       fetch('/user_project_permissions', {
         headers: {
           'access-token': localStorage.getItem('access-token'),
           'token-type': localStorage.getItem('token-type'),
-          'client': localStorage.getItem('client'),
-          'expiry': localStorage.getItem('expiry'),
-          'uid': localStorage.getItem('uid'),
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          client: localStorage.getItem('client'),
+          expiry: localStorage.getItem('expiry'),
+          uid: localStorage.getItem('uid'),
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
         method: 'POST',
         body: JSON.stringify({
           project_id: id,
           email: newPermissionUser,
-          permission: newPermissionLevel
-        })
+          permission: newPermissionLevel,
+        }),
       })
-      .then(response => {
+        .then((response) => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+        })
+        .then(() => {
+          dispatch({
+            type: CREATE_PERMISSION_SUCCESS,
+          });
+          dispatch(loadProject(id));
+        })
+        .catch(() => dispatch({
+          type: CREATE_PERMISSION_ERRORED,
+        }));
+    }
+  };
+}
+
+export function deletePermission(id) {
+  return function (dispatch, getState) {
+    dispatch({
+      type: CREATE_PERMISSION_LOADING,
+    });
+
+    fetch(`/user_project_permissions/${id}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      method: 'DELETE',
+    })
+      .then((response) => {
         if (!response.ok) {
           throw Error(response.statusText);
         }
       })
       .then(() => {
         dispatch({
-          type: CREATE_PERMISSION_SUCCESS
+          type: CREATE_PERMISSION_SUCCESS,
         });
-        dispatch(loadProject(id));
+        dispatch(loadProject(getState().project.id));
       })
       .catch(() => dispatch({
-        type: CREATE_PERMISSION_ERRORED
+        type: CREATE_PERMISSION_ERRORED,
       }));
-    }
-  }
-}
-
-export function deletePermission(id) {
-  return function(dispatch, getState) {
-    dispatch({
-      type: CREATE_PERMISSION_LOADING
-    });
-
-    fetch(`/user_project_permissions/${id}`, {
-      headers: {
-        'access-token': localStorage.getItem('access-token'),
-        'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid'),
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'DELETE'
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => {
-      dispatch({
-        type: CREATE_PERMISSION_SUCCESS
-      });
-      dispatch(loadProject(getState().project.id));
-    })
-    .catch(() => dispatch({
-      type: CREATE_PERMISSION_ERRORED
-    }));
-  }
+  };
 }
 
 export function updatePermission(id, permissionLevel) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
-      type: CREATE_PERMISSION_LOADING
+      type: CREATE_PERMISSION_LOADING,
     });
 
     fetch(`/user_project_permissions/${id}`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid'),
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       method: 'PATCH',
       body: JSON.stringify({
-        permission: permissionLevel
+        permission: permissionLevel,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
       })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => {
-      dispatch({
-        type: CREATE_PERMISSION_SUCCESS
-      });
-      dispatch(loadProject(getState().project.id));
-    })
-    .catch(() => dispatch({
-      type: CREATE_PERMISSION_ERRORED
-    }));
-  }
+      .then(() => {
+        dispatch({
+          type: CREATE_PERMISSION_SUCCESS,
+        });
+        dispatch(loadProject(getState().project.id));
+      })
+      .catch(() => dispatch({
+        type: CREATE_PERMISSION_ERRORED,
+      }));
+  };
 }
 
 export function checkInAll(projectID) {
-  return function(dispatch) {
+  return function (dispatch) {
     fetch(`/projects/${projectID}/check_in`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid'),
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
-      method: 'POST'
+      method: 'POST',
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(status => {
-      dispatch({
-        type: CHECK_IN_DOCS,
-        projectId: projectID,
-        docIDs: status.checked_in_docs,
-      });
-    })
-    .catch(() => dispatch({
-      type: POST_ERRORED
-    }));
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((status) => {
+        dispatch({
+          type: CHECK_IN_DOCS,
+          projectId: projectID,
+          docIDs: status.checked_in_docs,
+        });
+      })
+      .catch(() => dispatch({
+        type: POST_ERRORED,
+      }));
   };
 }
 
 export function toggleDeleteConfirmation() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: TOGGLE_DELETE_CONFIRMATION
+      type: TOGGLE_DELETE_CONFIRMATION,
     });
-  }
+  };
 }
 
 export function toggleSidebar() {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: TOGGLE_SIDEBAR
+      type: TOGGLE_SIDEBAR,
     });
-  }
+  };
 }
 
 export function deleteProject(projectId) {
-  return function(dispatch) {
+  return function (dispatch) {
     dispatch({
-      type: DELETE_PROJECT
+      type: DELETE_PROJECT,
     });
 
     fetch(`/projects/${projectId}`, {
       headers: {
         'access-token': localStorage.getItem('access-token'),
         'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid'),
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        client: localStorage.getItem('client'),
+        expiry: localStorage.getItem('expiry'),
+        uid: localStorage.getItem('uid'),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
-      method: 'DELETE'
+      method: 'DELETE',
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-    })
-    .then(() => {
-      dispatch({
-        type: DELETE_SUCCESS
-      });
-      dispatch(push('/'));
-    })
-    .catch(() => dispatch({
-      type: DELETE_ERRORED
-    }));
-  }
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+      })
+      .then(() => {
+        dispatch({
+          type: DELETE_SUCCESS,
+        });
+        dispatch(push('/'));
+      })
+      .catch(() => dispatch({
+        type: DELETE_ERRORED,
+      }));
+  };
 }

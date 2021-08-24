@@ -20,5 +20,5 @@ export default combineReducers({
   annotationViewer,
   textEditor,
   canvasEditor,
-  search
+  search,
 });

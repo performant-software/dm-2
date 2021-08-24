@@ -23,7 +23,7 @@ import {
 class LoginRegistrationDialog extends Component {
   render() {
     let title = '';
-    let actions = [];
+    const actions = [];
     let open = false;
     let requestedClose = () => {};
     let showNameField = false;
@@ -36,14 +36,14 @@ class LoginRegistrationDialog extends Component {
       actions.push(
         <FlatButton
           label="Cancel"
-          primary={true}
+          primary
           onClick={this.props.hideRegistration}
-        />
+        />,
       );
       actions.push(
         <FlatButton
           label="Register"
-          primary={true}
+          primary
           onClick={() => {
             this.props.registerUser({
               email: this.props.userEmail,
@@ -51,12 +51,12 @@ class LoginRegistrationDialog extends Component {
               password: this.props.userPassword,
               password_confirmation: this.props.userPasswordConfirmation,
             })
-            .then(() => {
-              this.props.showApprovalPending();
-            })
-            .catch(this.props.userAuthErrored);
+              .then(() => {
+                this.props.showApprovalPending();
+              })
+              .catch(this.props.userAuthErrored);
           }}
-        />
+        />,
       );
       open = true;
       requestedClose = this.props.hideRegistration;
@@ -64,15 +64,14 @@ class LoginRegistrationDialog extends Component {
       showEmailField = true;
       showPasswordField = true;
       showPasswordConfirmationField = true;
-    }
-    else if (this.props.approvalPendingShown) {
+    } else if (this.props.approvalPendingShown) {
       title = 'Approval pending';
       actions.push(
         <FlatButton
           label="OK"
-          primary={true}
+          primary
           onClick={this.props.hideApprovalPending}
-        />
+        />,
       );
       open = true;
       requestedClose = this.props.hideApprovalPending;
@@ -81,38 +80,37 @@ class LoginRegistrationDialog extends Component {
       actions.push(
         <FlatButton
           label="OK"
-          primary={true}
+          primary
           onClick={this.props.closeConfirmDialog}
-        />
+        />,
       );
       open = true;
       requestedClose = this.props.closeConfirmDialog;
-    }
-    else if (this.props.loginShown) {
+    } else if (this.props.loginShown) {
       title = 'Sign in';
       actions.push(
         <FlatButton
           label="Cancel"
-          primary={true}
+          primary
           onClick={this.props.hideLogin}
-        />
+        />,
       );
       actions.push(
         <FlatButton
           label="Sign in"
-          primary={true}
+          primary
           onClick={() => {
             this.props.signInUser({
               email: this.props.userEmail,
-              password: this.props.userPassword
+              password: this.props.userPassword,
             })
-            .then(() => {
-              this.props.hideLogin();
-              this.props.load();
-            })
-            .catch(this.props.userAuthErrored);
+              .then(() => {
+                this.props.hideLogin();
+                this.props.load();
+              })
+              .catch(this.props.userAuthErrored);
           }}
-        />
+        />,
       );
       open = true;
       requestedClose = this.props.hideLogin;
@@ -127,30 +125,31 @@ class LoginRegistrationDialog extends Component {
         modal={false}
         open={open}
         onRequestClose={requestedClose}
-        autoScrollBodyContent={true}
+        autoScrollBodyContent
         actions={actions}
       >
-        {this.props.userAuthError &&
+        {this.props.userAuthError
+          && (
           <>
             <p style={{ color: red500 }}>
               User authentication error
             </p>
-            {this.props.userAuthError.response && this.props.userAuthError.response.data 
+            {this.props.userAuthError.response && this.props.userAuthError.response.data
             && this.props.userAuthError.response.data.errors && (
               <p>
                 {Array.isArray(this.props.userAuthError.response.data.errors)
-                  && this.props.userAuthError.response.data.errors.length > 0 
+                  && this.props.userAuthError.response.data.errors.length > 0
                   && this.props.userAuthError.response.data.errors[0].toString()}
                 {!Array.isArray(this.props.userAuthError.response.data.errors)
                   && Array.isArray(this.props.userAuthError.response.data.errors.full_messages)
                   && this.props.userAuthError.response.data.errors.full_messages.length > 0
-                  && this.props.userAuthError.response.data.errors.full_messages[0].toString()
-                }
+                  && this.props.userAuthError.response.data.errors.full_messages[0].toString()}
               </p>
             )}
           </>
-        }
-        {this.props.approvalPendingShown &&
+          )}
+        {this.props.approvalPendingShown
+          && (
           <>
             <p style={{ color: blue900 }}>
               Your account has been created, but your email must be confirmed before you may log in.
@@ -160,14 +159,15 @@ class LoginRegistrationDialog extends Component {
               An email has been sent to the administrators for this site.
             </p>
           </>
-        }
+          )}
         {this.props.confirmUserSuccessDialogShown && (
           <p style={{ color: blue900 }}>
             {this.props.confirmUserErrored && 'There was an error confirming your email address.'}
             {!this.props.confirmUserErrored && 'Your email has been successfully confirmed. You may now log in.'}
           </p>
         )}
-        {showEmailField &&
+        {showEmailField
+          && (
           <div>
             <TextField
               floatingLabelText="Email"
@@ -176,10 +176,12 @@ class LoginRegistrationDialog extends Component {
               onChange={this.props.userEmailChanged}
               type="email"
               autoComplete="email"
-            /><br />
+            />
+            <br />
           </div>
-        }
-        {showNameField &&
+          )}
+        {showNameField
+          && (
           <div>
             <TextField
               floatingLabelText="Display name"
@@ -187,10 +189,12 @@ class LoginRegistrationDialog extends Component {
               onChange={this.props.userNameChanged}
               type="text"
               autoComplete="name"
-            /><br />
+            />
+            <br />
           </div>
-        }
-        {showPasswordField &&
+          )}
+        {showPasswordField
+          && (
           <div>
             <TextField
               type="password"
@@ -198,10 +202,12 @@ class LoginRegistrationDialog extends Component {
               value={this.props.userPassword}
               onChange={this.props.userPasswordChanged}
               autoComplete={this.props.registrationShown ? 'new-password' : 'current-password'}
-            /><br />
+            />
+            <br />
           </div>
-        }
-        {showPasswordConfirmationField &&
+          )}
+        {showPasswordConfirmationField
+          && (
           <div>
             <TextField
               type="password"
@@ -210,15 +216,16 @@ class LoginRegistrationDialog extends Component {
               onChange={this.props.userPasswordConfirmationChanged}
               errorText={this.props.userPassword !== this.props.userPasswordConfirmation ? 'Passwords much match' : null}
               autoComplete="new-password"
-            /><br />
+            />
+            <br />
           </div>
-        }
+          )}
       </Dialog>
     );
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   loginShown: state.home.loginShown,
   registrationShown: state.home.registrationShown,
   approvalPendingShown: state.home.approvalPendingShown,
@@ -231,7 +238,7 @@ const mapStateToProps = state => ({
   confirmUserErrored: state.home.confirmUserErrored,
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch) => bindActionCreators({
   load,
   hideLogin,
   hideRegistration,
@@ -249,5 +256,5 @@ const mapDispatchToProps = dispatch => bindActionCreators({
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(LoginRegistrationDialog);

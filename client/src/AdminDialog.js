@@ -12,24 +12,26 @@ import {
   TableRowColumn,
 } from 'material-ui/Table';
 import Toggle from 'material-ui/Toggle';
-import { red50, red400, red600, lightBlue50, grey200 } from 'material-ui/styles/colors';
+import {
+  red50, red400, red600, lightBlue50, grey200,
+} from 'material-ui/styles/colors';
 import { hideAdminDialog, updateUser, deleteUser } from './modules/home';
 
 class AdminDialog extends Component {
   render() {
     return (
       <Dialog
-        title='Site administration'
+        title="Site administration"
         modal={false}
         open={this.props.adminDialogShown}
         onRequestClose={this.props.hideAdminDialog}
-        autoScrollBodyContent={true}
+        autoScrollBodyContent
         actions={[
           <FlatButton
-            label='Close'
-            primary={true}
+            label="Close"
+            primary
             onClick={this.props.hideAdminDialog}
-          />
+          />,
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
@@ -40,47 +42,47 @@ class AdminDialog extends Component {
               <TableHeaderColumn>Name</TableHeaderColumn>
               <TableHeaderColumn>Approved</TableHeaderColumn>
               <TableHeaderColumn>Site admin</TableHeaderColumn>
-              <TableHeaderColumn></TableHeaderColumn>
+              <TableHeaderColumn />
             </TableRow>
           </TableHeader>
           <TableBody displayRowCheckbox={false}>
-            {this.props.userAdminList.map(user => (
+            {this.props.userAdminList.map((user) => (
               <TableRow key={user.id} style={{ background: user.approved ? (user.admin ? lightBlue50 : 'initial') : red50 }}>
                 <TableRowColumn>{user.email}</TableRowColumn>
                 <TableRowColumn>{user.name}</TableRowColumn>
                 <TableRowColumn>
-                  <Toggle toggled={user.approved} disabled={user.id === this.props.currentUser.attributes.id} onToggle={(event, isInputChecked) => {this.props.updateUser(user.id, {approved: isInputChecked});}} />
+                  <Toggle toggled={user.approved} disabled={user.id === this.props.currentUser.attributes.id} onToggle={(event, isInputChecked) => { this.props.updateUser(user.id, { approved: isInputChecked }); }} />
                 </TableRowColumn>
                 <TableRowColumn>
-                  <Toggle toggled={user.admin} disabled={user.id === this.props.currentUser.attributes.id} onToggle={(event, isInputChecked) => {this.props.updateUser(user.id, {admin: isInputChecked});}} />
+                  <Toggle toggled={user.admin} disabled={user.id === this.props.currentUser.attributes.id} onToggle={(event, isInputChecked) => { this.props.updateUser(user.id, { admin: isInputChecked }); }} />
                 </TableRowColumn>
                 <TableRowColumn>
-                  <FlatButton label='Delete' disabled={user.id === this.props.currentUser.attributes.id} onClick={() => {this.props.deleteUser(user.id);}} backgroundColor={red400} hoverColor={red600} style={{ color: user.id === this.props.currentUser.attributes.id ? grey200 : 'white' }} />
+                  <FlatButton label="Delete" disabled={user.id === this.props.currentUser.attributes.id} onClick={() => { this.props.deleteUser(user.id); }} backgroundColor={red400} hoverColor={red600} style={{ color: user.id === this.props.currentUser.attributes.id ? grey200 : 'white' }} />
                 </TableRowColumn>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Dialog>
-    )
+    );
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   currentUser: state.reduxTokenAuth.currentUser,
   adminDialogShown: state.home.adminDialogShown,
   userAdminList: state.home.userAdminList,
   userAdminListLoading: state.home.userAdminListLoading,
-  userAdminListErrored: state.home.userAdminListErrored
+  userAdminListErrored: state.home.userAdminListErrored,
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch) => bindActionCreators({
   hideAdminDialog,
   updateUser,
-  deleteUser
+  deleteUser,
 }, dispatch);
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(AdminDialog);

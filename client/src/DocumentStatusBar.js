@@ -1,25 +1,24 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { updateDocument, openDeleteDialog, DOCUMENT_DELETE } from './modules/documentGrid';
 import IconButton from 'material-ui/IconButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
 import Popover from 'material-ui/Popover';
 import CircularProgress from 'material-ui/CircularProgress';
+import { updateDocument, openDeleteDialog, DOCUMENT_DELETE } from './modules/documentGrid';
 
 class DocumentStatusBar extends Component {
-
   constructor(props) {
     super(props);
     this.state = {
       tooltipOpen: {},
       tooltipAnchor: {},
-    }
+    };
   }
 
   renderLastSaved() {
-    let style = {
+    const style = {
       color: this.props.document_kind === 'canvas' ? 'lightgray' : 'gray',
       marginLeft: '6px',
     };
@@ -34,12 +33,12 @@ class DocumentStatusBar extends Component {
     let statusMessage = '';
     if (this.props.locked) {
       if (this.props.lockedByMe) {
-        statusMessage = "Check document in for team to edit."
+        statusMessage = 'Check document in for team to edit.';
       } else {
         statusMessage = `This document is checked out by ${this.props.lockedByUserName}.`;
       }
     } else {
-      statusMessage = "Check document out to edit it.";
+      statusMessage = 'Check document out to edit it.';
     }
 
     return statusMessage;
@@ -49,22 +48,18 @@ class DocumentStatusBar extends Component {
     e.persist();
     const anchorEl = e.currentTarget;
     e.preventDefault();
-    this.setState((prevState) => {
-      return {
-        ...prevState,
-        tooltipOpen: { ...prevState.tooltipOpen, [anchor]: true },
-        tooltipAnchor: { ...prevState.tooltipAnchor, [anchor]: anchorEl },
-      }
-    });
+    this.setState((prevState) => ({
+      ...prevState,
+      tooltipOpen: { ...prevState.tooltipOpen, [anchor]: true },
+      tooltipAnchor: { ...prevState.tooltipAnchor, [anchor]: anchorEl },
+    }));
   }
 
   onTooltipClose(anchor) {
-    this.setState((prevState) => {
-      return {
-        ...prevState,
-        tooltipOpen: { ...prevState.tooltipOpen, [anchor]: false },
-      }
-    });
+    this.setState((prevState) => ({
+      ...prevState,
+      tooltipOpen: { ...prevState.tooltipOpen, [anchor]: false },
+    }));
   }
 
   renderTooltip({ name, text }) {
@@ -84,7 +79,6 @@ class DocumentStatusBar extends Component {
       </Popover>
     );
   }
-
 
   renderCheckInOutButtons() {
     let label;
@@ -106,7 +100,7 @@ class DocumentStatusBar extends Component {
           this.props.updateDocument(this.props.document_id, { locked: !this.props.locked }, {
             adjustLock: true,
             instanceKey: this.props.instanceKey,
-          })
+          });
         }}
         onMouseOver={this.onTooltipOpen.bind(this, 'checkInOut')}
         onMouseOut={this.onTooltipClose.bind(this, 'checkInOut')}
@@ -127,7 +121,7 @@ class DocumentStatusBar extends Component {
       maxHeight: '24px',
       minHeight: '24px',
       marginLeft: '6px',
-      color: 'gray'
+      color: 'gray',
     };
     return (
       <>
@@ -139,7 +133,7 @@ class DocumentStatusBar extends Component {
           />
         )}
       </>
-    )
+    );
   }
 
   renderDeleteButton() {
@@ -147,16 +141,17 @@ class DocumentStatusBar extends Component {
     if (this.props.locked && !this.props.lockedByMe) return null;
 
     return (
-      <IconButton style={{ float: 'right', marginTop: '5px' }}
-        tooltip='Delete document'
-        tooltipPosition='top-left'
+      <IconButton
+        style={{ float: 'right', marginTop: '5px' }}
+        tooltip="Delete document"
+        tooltipPosition="top-left"
         onClick={() => {
           this.props.openDeleteDialog(
-            'Destroying "' + this.props.resourceName + '"',
+            `Destroying "${this.props.resourceName}"`,
             'Deleting this document will destroy all its associated highlights and links, as well as the content of the document itself.',
             'Destroy document',
             { documentId: this.props.document_id },
-            DOCUMENT_DELETE
+            DOCUMENT_DELETE,
           );
         }}
       >
@@ -172,10 +167,10 @@ class DocumentStatusBar extends Component {
       backgroundColor: this.props.document_kind === 'canvas' ? '#424242' : '#ccc',
       paddingLeft: '7px',
       zIndex: 2,
-    }
+    };
 
     return (
-      <div style={style} >
+      <div style={style}>
         {this.renderCheckInOutButtons()}
         {this.renderSaveIcon()}
         {this.renderLastSaved()}
@@ -186,15 +181,15 @@ class DocumentStatusBar extends Component {
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch) => bindActionCreators({
   updateDocument,
-  openDeleteDialog
+  openDeleteDialog,
 }, dispatch);
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(DocumentStatusBar);

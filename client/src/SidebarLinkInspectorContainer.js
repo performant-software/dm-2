@@ -11,15 +11,15 @@ class SidebarLinkInspectorContainer extends Component {
     return (
       <div>
         <FlatButton
-          label='Return to Table of Contents'
+          label="Return to Table of Contents"
           icon={<ArrowBack />}
           onClick={this.props.closeSidebarTarget}
-          id='returnToTOCButton'
+          id="returnToTOCButton"
         />
         <LinkInspector
           target={this.props.target}
           openDocumentIds={this.props.openDocumentIds}
-          id='sidebarLinkInspector'
+          id="sidebarLinkInspector"
           writeEnabled={this.props.writeEnabled}
           adminEnabled={this.props.adminEnabled}
         />
@@ -28,11 +28,11 @@ class SidebarLinkInspectorContainer extends Component {
   }
 }
 
-const mapDispatchToProps = dispatch => bindActionCreators({
-  closeSidebarTarget
+const mapDispatchToProps = (dispatch) => bindActionCreators({
+  closeSidebarTarget,
 }, dispatch);
 
 export default connect(
   null,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(SidebarLinkInspectorContainer);

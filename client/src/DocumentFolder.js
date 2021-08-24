@@ -13,7 +13,7 @@ import LinkableSummary from './LinkableSummary';
 
 const titleChangeDelayMs = 800;
 
-const FolderContents = props => {
+const FolderContents = (props) => {
   switch (props.contents) {
     case 'loading':
       return <p style={{ color: grey600 }}>Loading...</p>;
@@ -30,60 +30,62 @@ const FolderContents = props => {
             writeEnabled={props.writeEnabled}
             adminEnabled={props.adminEnabled}
             allDraggable={props.allDraggable}
-            insideFolder={true}
-            inContents={true}
+            insideFolder
+            inContents
             parentFolderId={props.parentFolderId}
           />
         );
       }
       return <p style={{ color: grey600 }}>Empty</p>;
   }
-}
+};
 
 class DocumentFolder extends Component {
   render() {
     return (
-      <LinkableSummary {...this.props} isFolder={true} borderBold={this.props.isOver} noMargin={true}>
+      <LinkableSummary {...this.props} isFolder borderBold={this.props.isOver} noMargin>
         <div style={{ display: 'flex' }}>
           <TextField
-            autoComplete='off'
+            autoComplete="off"
             inputStyle={{ color: grey900, height: 'auto' }}
             className="folder-name-textfield"
-            multiLine={true}
-            id={'folderTitleField-' + this.props.item.id}
+            multiLine
+            id={`folderTitleField-${this.props.item.id}`}
             defaultValue={this.props.item.document_title}
             disabled={!this.props.writeEnabled}
             underlineShow={false}
             onChange={(event, newValue) => {
-              window.clearTimeout(this['folderTitleChangeTimeout_' + this.props.item.id]);
-              this['folderTitleChangeTimeout_' + this.props.item.id] = window.setTimeout(() => {
-                this.props.updateFolder(this.props.item.id, {title: newValue});
+              window.clearTimeout(this[`folderTitleChangeTimeout_${this.props.item.id}`]);
+              this[`folderTitleChangeTimeout_${this.props.item.id}`] = window.setTimeout(() => {
+                this.props.updateFolder(this.props.item.id, { title: newValue });
               }, titleChangeDelayMs);
             }}
-            onClick={event => {
+            onClick={(event) => {
               event.stopPropagation();
               return 0;
             }}
           />
-          {this.props.isOpen && this.props.adminEnabled &&
+          {this.props.isOpen && this.props.adminEnabled
+            && (
             <IconButton
               style={{ width: '18px', height: '18px', padding: '0' }}
               iconStyle={{ width: '18px', height: '18px' }}
               onClick={() => {
                 this.props.openDeleteDialog(
-                  'Destroying "' + this.props.item.document_title + '"',
+                  `Destroying "${this.props.item.document_title}"`,
                   'Deleting this folder will destroy all its contents. If you wish to preserve any documents or folders inside, click Cancel and move them out of this folder before deleting it.',
                   'Destroy folder',
                   { folderId: this.props.item.id, parentType: this.props.item.parent_type, parentId: this.props.parentId },
-                  FOLDER_DELETE
+                  FOLDER_DELETE,
                 );
               }}
             >
               <DeleteForever />
             </IconButton>
-          }
+            )}
         </div>
-        {this.props.isOpen &&
+        {this.props.isOpen
+          && (
           <FolderContents
             contents={this.props.contents}
             writeEnabled={this.props.writeEnabled}
@@ -92,27 +94,27 @@ class DocumentFolder extends Component {
             openDocumentIds={this.props.openDocumentIds}
             parentFolderId={this.props.item.id}
           />
-        }
+          )}
       </LinkableSummary>
     );
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   openFolderContents: state.folders.openFolderContents,
-  projectId: state.project.id
+  projectId: state.project.id,
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch) => bindActionCreators({
   openFolder,
   closeFolder,
   updateDocument,
   updateFolder,
   loadProject,
-  openDeleteDialog
+  openDeleteDialog,
 }, dispatch);
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(DocumentFolder);

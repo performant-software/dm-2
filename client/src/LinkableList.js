@@ -10,52 +10,56 @@ import DocumentFolder from './DocumentFolder';
 import ListDropTarget from './ListDropTarget';
 
 class LinkableList extends Component {
-
   renderFolder(item, buoyancyTarget, targetParentId, targetParentType) {
-    const { allDraggable, inContents, writeEnabled, adminEnabled, openDocumentIds, openFolderContents } = this.props;
+    const {
+      allDraggable, inContents, writeEnabled, adminEnabled, openDocumentIds, openFolderContents,
+    } = this.props;
     const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
-    let contents = openFolderContents[item.id];
+    const contents = openFolderContents[item.id];
     if (inContents && writeEnabled) {
       return (
         <div key={itemKey}>
-          <ListDropTarget 
-            {...this.props} 
-            isFolder={false} 
-            item={item} 
-            buoyancyTarget={buoyancyTarget} 
-            targetParentId={targetParentId} 
-            targetParentType={targetParentType} 
+          <ListDropTarget
+            {...this.props}
+            isFolder={false}
+            item={item}
+            buoyancyTarget={buoyancyTarget}
+            targetParentId={targetParentId}
+            targetParentType={targetParentType}
           />
-          <ListDropTarget 
-            {...this.props} 
-            isFolder={true} 
-            item={item} 
-            buoyancyTarget={0} 
-            targetParentType = 'DocumentFolder'
-            targetParentId={item.id} 
+          <ListDropTarget
+            {...this.props}
+            isFolder
+            item={item}
+            buoyancyTarget={0}
+            targetParentType="DocumentFolder"
+            targetParentId={item.id}
           />
         </div>
-      )
+      );
     }
     return (
-        <DocumentFolder
-          item={item} key={itemKey}
-          inContents={true}
-          isDraggable={allDraggable}
-          writeEnabled={writeEnabled}
-          adminEnabled={adminEnabled}
-          openDocumentIds={openDocumentIds}
-          isOpen={contents}
-          contents={contents}
-          handleClick={() => {contents ? this.props.closeFolder(item.id) : this.props.openFolder(item.id);}}
-          handleDoubleClick={() => {}}
-        />
-      );
+      <DocumentFolder
+        item={item}
+        key={itemKey}
+        inContents
+        isDraggable={allDraggable}
+        writeEnabled={writeEnabled}
+        adminEnabled={adminEnabled}
+        openDocumentIds={openDocumentIds}
+        isOpen={contents}
+        contents={contents}
+        handleClick={() => { contents ? this.props.closeFolder(item.id) : this.props.openFolder(item.id); }}
+        handleDoubleClick={() => {}}
+      />
+    );
   }
 
   renderItem(item, buoyancyTarget, targetParentId, targetParentType) {
-    const { inContents, writeEnabled, openDocuments, openDocumentIds, originKey } = this.props;
+    const {
+      inContents, writeEnabled, openDocuments, openDocumentIds, originKey,
+    } = this.props;
     const itemKey = `${item.document_kind}-${item.id}-${item.link_id}`;
 
     let primaryText = item.document_title;
@@ -79,20 +83,21 @@ class LinkableList extends Component {
     }
     return (
       <div key={itemKey}>
-        {writeEnabled &&
-          <ListDropTarget 
-            {...this.props} 
+        {writeEnabled
+          && (
+          <ListDropTarget
+            {...this.props}
             buoyancyTarget={buoyancyTarget}
-            targetParentId={targetParentId} 
-            targetParentType={targetParentType} 
+            targetParentId={targetParentId}
+            targetParentType={targetParentType}
           />
-        }
+          )}
         <LinkableSummary
           item={item}
-          inContents={true}
+          inContents
           writeEnabled={writeEnabled}
           noMargin={inContents && writeEnabled}
-          key={`${item.document_kind}-${item.id}${item.highlight_id ? '-' + item.highlight_id : ''}`}
+          key={`${item.document_kind}-${item.id}${item.highlight_id ? `-${item.highlight_id}` : ''}`}
           isDraggable={writeEnabled}
           isOpen={openDocumentIds && openDocumentIds.includes(item.document_id.toString())}
           handleClick={() => {
@@ -102,12 +107,10 @@ class LinkableList extends Component {
             if (originKey) {
               const [originId, originTimeOpened] = originKey.split('-');
               pos = openDocuments
-                .findIndex(doc => 
-                  doc.id === parseInt(originId, 10) 
-                  && doc.timeOpened === parseInt(originTimeOpened, 10)
-                ) + 1;
+                .findIndex((doc) => doc.id === parseInt(originId, 10)
+                  && doc.timeOpened === parseInt(originTimeOpened, 10)) + 1;
             }
-            this.props.openDocument(item.document_id, target, inContents, pos)
+            this.props.openDocument(item.document_id, target, inContents, pos);
           }}
           // TODO use this for rename function
           handleDoubleClick={() => {}}
@@ -120,55 +123,56 @@ class LinkableList extends Component {
   }
 
   render() {
-    const { items, inContents, writeEnabled, insideFolder, parentFolderId, projectId, highlightId } = this.props;
+    const {
+      items, inContents, writeEnabled, insideFolder, parentFolderId, projectId, highlightId,
+    } = this.props;
     let targetParentId = projectId;
     let targetParentType = 'Project';
     if (insideFolder) {
       targetParentId = parentFolderId;
       targetParentType = 'DocumentFolder';
-    }
-    else if (!inContents) {
+    } else if (!inContents) {
       targetParentId = highlightId;
       targetParentType = 'Highlight';
     }
 
     return (
-      <List style={{paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
+      <List style={{ paddingTop: '0', margin: insideFolder ? '16px -16px -24px -56px' : 'initial' }}>
         <div>
           {items.map((item, index) => {
             if (item.document_kind === 'folder') {
               return this.renderFolder(item, index, targetParentId, targetParentType);
-            } else {
-              return this.renderItem(item, index, targetParentId, targetParentType);
             }
+            return this.renderItem(item, index, targetParentId, targetParentType);
           })}
-          {writeEnabled &&
-            <ListDropTarget 
-              {...this.props} 
-              buoyancyTarget={items.length} 
-              targetParentId={targetParentId} 
-              targetParentType={targetParentType} 
+          {writeEnabled
+            && (
+            <ListDropTarget
+              {...this.props}
+              buoyancyTarget={items.length}
+              targetParentId={targetParentId}
+              targetParentType={targetParentType}
             />
-          }
+            )}
         </div>
       </List>
     );
   }
 }
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   openFolderContents: state.folders.openFolderContents,
-  projectId: state.project.id
+  projectId: state.project.id,
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch) => bindActionCreators({
   openDocument,
   openFolder,
   closeFolder,
-  selectSidebarTarget
+  selectSidebarTarget,
 }, dispatch);
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(LinkableList);

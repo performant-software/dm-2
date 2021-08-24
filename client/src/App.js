@@ -16,7 +16,7 @@ export default class App extends Component {
       <MuiThemeProvider muiTheme={getMuiTheme({
         ...darkBaseTheme,
         palette: {
-          primary1Color: grey900
+          primary1Color: grey900,
         },
         slider: {
           trackColor: grey400,
@@ -24,13 +24,14 @@ export default class App extends Component {
           handleColorZero: grey200,
           handleFillColor: grey200,
           selectionColor: grey200,
-          rippleColor: grey400
-        }
-      })}>
+          rippleColor: grey400,
+        },
+      })}
+      >
         <div>
           <main>
-            <Route exact path='/' component={Home} />
-            <Route path='/:slug' component={Project} />
+            <Route exact path="/" component={Home} />
+            <Route path="/:slug" component={Project} />
           </main>
         </div>
       </MuiThemeProvider>
