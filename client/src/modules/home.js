@@ -119,6 +119,7 @@ export default function(state = initialState, action) {
       return {
         ...state,
         approvalPendingShown: true,
+        userAuthError: false,
         registrationShown: false,
         loginShown: false,
         authMenuShown: false
@@ -175,6 +176,7 @@ export default function(state = initialState, action) {
     case AUTH_MENU_HIDDEN:
       return {
         ...state,
+        userAuthError: false,
         authMenuShown: false
       };
 
@@ -220,6 +222,7 @@ export default function(state = initialState, action) {
     case CONFIRM_USER_SUCCESS:
       return {
         ...state,
+        userAuthError: false,
         confirmUserSuccessDialogShown: true,
         confirmUserErrored: false,
       };
@@ -227,12 +230,15 @@ export default function(state = initialState, action) {
     case CONFIRM_USER_SUCCESS_DIALOG_CLOSED:
       return {
         ...state,
+        userAuthError: false,
         confirmUserSuccessDialogShown: false,
+        confirmUserErrored: false,
       }
 
     case CONFIRM_USER_ERRORED:
       return {
         ...state,
+        userAuthError: false,
         confirmUserSuccessDialogShown: true,
         confirmUserErrored: true,
       };
