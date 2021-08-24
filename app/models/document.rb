@@ -42,7 +42,7 @@ class Document < Linkable
     hostname = ENV['HOSTNAME']
     if tile_source_url.include?(hostname)
       spl = tile_source_url.split(hostname)
-      tile_source_url = '/' + spl[1]
+      tile_source_url = spl[1]
     elsif /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url)
       capt = /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url).captures
       tile_source_url =  '/' + capt[-1]

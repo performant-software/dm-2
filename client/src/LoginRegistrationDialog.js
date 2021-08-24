@@ -47,6 +47,7 @@ class LoginRegistrationDialog extends Component {
           onClick={() => {
             this.props.registerUser({
               email: this.props.userEmail,
+              uid: this.props.userEmail,
               name: this.props.userName,
               password: this.props.userPassword,
               password_confirmation: this.props.userPasswordConfirmation,
