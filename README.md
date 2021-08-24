@@ -60,6 +60,7 @@ AWS_SECRET_ACCESS_KEY
 EMAIL_FROM
 HOSTNAME
 LANG
+PROTOCOL
 RACK_ENV
 RAILS_LOG_TO_STDOUT
 RAILS_SERVE_STATIC_FILES
@@ -76,11 +77,12 @@ RACK_ENV=production
 RAILS_ENV=production
 RAILS_LOG_TO_STDOUT=enabled
 RAILS_SERVE_STATIC_FILES=enabled
+PROTOCOL=https
 ```
 
 The `SECRET_KEY_BASE` environment variable is used to encrypt the passwords on your DM2 instance, so it is important to keep it secure and unguessable. Here's a good site for generating a secret key: https://www.grc.com/passwords.htm
 
-Set the `HOSTNAME` environment variable to the host of your Heroku application. For example, if your application is hosted at `https://my-project.herokuapp.com`, you would set the `HOSTNAME` variable to `my-project.herokuapp.com`.
+Set the `HOSTNAME` and `PROTOCOL` environment variables to the hostname and protocol of your Heroku application. For example, if your application is hosted at `https://my-project.herokuapp.com`, you would set the `HOSTNAME` variable to `my-project.herokuapp.com`, and the `PROTOCOL` variable to `https`.
 
 The `EMAIL_FROM` environment variable is used for sending emails via SendGrid. This should be set to the email address you would like to appear in the "From" field in registration confirmation emails. Additionally, SendGrid has changed their authentication scheme from username/password to API keys. Thus, to set the SendGrid environment variables, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `SENDGRID_PASSWORD` environment variable, and set the `SENDGRID_USERNAME` environment variable to `apikey`.
 

@@ -1,3 +1,4 @@
-<p><%= @email %> has registered to join your Digital Mappa instance at <%= ENV['HOSTNAME'] %>.</p>
+<% @protocol = ENV['PROTOCOL'] || 'http' %>
+<p><%= @email %> has registered to join your Digital Mappa instance at <%=  @protocol + '://' + ENV['HOSTNAME'] %>.</p>
 <p>You have received this email because you are designated as an administrator for this instance.</p>
 <p>An instance admin can approve this registration by visiting the website and reviewing the user list.</p>
