@@ -70,9 +70,7 @@ const markerRadius = 4.0;
 const doubleClickTimeout = 500;
 const markerThumbnailSize = 100;
 const fabricViewportScale = 2000;
-const minZoomImageRatio = 0.9;
-const maxZoomPixelRatio = 5.0;
-const maxZoomLevel = 7.5;
+const maxZoomPixelRatio = 2.25;
 
 class CanvasResource extends Component {
   constructor(props) {
@@ -93,6 +91,7 @@ class CanvasResource extends Component {
       totalPages: 0,
       layerName: '',
       zoomLevel: 0,
+      maxZoom: 0,
       minZoom: 0,
     };
   }
@@ -151,9 +150,7 @@ class CanvasResource extends Component {
       prefixUrl: '/images/',
       showNavigationControl: false,
       tileSources: [],
-      minZoomImageRatio: minZoomImageRatio,
-      maxZoomPixelRatio: maxZoomPixelRatio,
-      maxZoomLevel,
+      maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
       gestureSettingsMouse: { clickToZoom: false },
       showNavigator: true,
@@ -244,6 +241,9 @@ class CanvasResource extends Component {
     }
 
     viewer.addHandler('update-viewport', () => {
+      const maxZoom = this.osdViewer.viewport.getMaxZoom();
+      const minZoom = this.osdViewer.viewport.getMinZoom();
+      this.setState((prevState) => ({ ...prevState, minZoom, maxZoom }));
       if (!this.viewportUpdatedForPageYet) {
         this.renderHighlights(overlay, highlight_map);
         this.viewportUpdatedForPageYet = true;
@@ -286,7 +286,7 @@ class CanvasResource extends Component {
       } else if (event.zoom <= minZoom) {
         zoomLevel = minZoom;
       }
-      this.setState((prevState) => ({ ...prevState, zoomLevel, minZoom }));
+      this.setState((prevState) => ({ ...prevState, zoomLevel, minZoom, maxZoom }));
     });
 
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
@@ -1382,7 +1382,7 @@ class CanvasResource extends Component {
               axis='y'
               step={0.01}
               min={this.state.minZoom}
-              max={maxZoomLevel}
+              max={this.state.maxZoom}
               value={this.state.zoomLevel}
               onChange={this.zoomControlChange.bind(this)}
             />
