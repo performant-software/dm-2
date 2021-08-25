@@ -165,7 +165,21 @@ class LoginRegistrationDialog extends Component {
         {this.props.confirmUserSuccessDialogShown && (
           <p style={{ color: blue900 }}>
             {this.props.confirmUserErrored && 'There was an error confirming your email address.'}
-            {!this.props.confirmUserErrored && 'Your email has been successfully confirmed. You may now log in.'}
+            {!this.props.confirmUserErrored && (
+              <>
+                <p>
+                  Congratulations, your <i>Digital Mappa</i> account and
+                  email are confirmed! You may now log in.
+                </p>
+                <p>
+                  Once an administrator approves your account, you may start using this
+                  <i>Digital Mappa</i> instance in accordance with the permissions set by this
+                  instance's administrator. To access any non-public projects on this DM instance,
+                  you will still need to be added to a specific project by its project
+                  administrator.
+                </p>
+              </>
+            )}
           </p>
         )}
         {showEmailField &&
