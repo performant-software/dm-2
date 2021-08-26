@@ -155,8 +155,8 @@ class DocumentStatusBar extends Component {
             'Destroying "' + this.props.resourceName + '"',
             (<p>
               Deleting this document will destroy <strong>all its associated highlights
-              and links, and any annotations made on the document</strong>, in addition to the content
-              of the document itself.
+              and links, and any child annotations original to the document</strong>,
+              in addition to the content of the document itself.
             </p>),
             'Destroy document',
             { documentId: this.props.document_id },

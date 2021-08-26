@@ -77,8 +77,8 @@ class DocumentFolder extends Component {
                       <strong>Deleting this folder will destroy all its contents.</strong>
                     </p>
                     <p>
-                      That means that all contained documents or folders, and any annotations
-                      made on those documents, will be destroyed.
+                      That means that all contained documents or folders, and any child annotations
+                      original to those documents, will be destroyed.
                     </p>
                     <p>
                       If you wish to preserve any documents or folders inside, click
