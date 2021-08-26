@@ -5,7 +5,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings, checkInAll } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
-import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar } from './modules/documentGrid';
+import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar, fetchLock } from './modules/documentGrid';
 import { selectHighlight } from './modules/textEditor';
 import Dialog from 'material-ui/Dialog';
 import Snackbar from 'material-ui/Snackbar';
@@ -116,6 +116,15 @@ class Project extends Component {
     window.hideRollover = this.hideRollover.bind(this);
     if (this.props.match.params.slug !== 'new') {
       this.props.loadProject(this.props.match.params.slug, this.props.projectTitle)
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.currentUser !== this.props.currentUser && this.props.match.params.slug !== 'new') {
+      this.props.loadProject(this.props.match.params.slug, this.props.projectTitle);
+      this.props.openDocumentIds.forEach((id) => {
+        this.props.fetchLock(id);
+      });
     }
   }
 
@@ -305,7 +314,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   checkInAll,
   updateSnackBar,
   hideSettings,
-  selectHighlight
+  selectHighlight,
+  fetchLock,
 }, dispatch);
 
 export default connect(

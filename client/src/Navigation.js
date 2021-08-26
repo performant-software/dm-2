@@ -3,6 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { clearSelection } from './modules/annotationViewer'
 import { push } from 'react-router-redux';
+import { withRouter } from 'react-router';
 import AppBar from 'material-ui/AppBar';
 import FlatButton from 'material-ui/FlatButton';
 import Popover from 'material-ui/Popover';
@@ -36,8 +37,10 @@ const LoginMenuBody = props => {
           .then(() => {
             props.clearSelection()
             props.hideAuthMenu();
-            props.load();
-            props.returnHome();
+            if (props.location && props.location.pathname === '/') {
+              props.load();
+              props.returnHome();
+            }
           });
         }} />
         {props.currentUser.attributes.admin &&
@@ -167,4 +170,4 @@ const mapDispatchToProps = dispatch => bindActionCreators({
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(Navigation);
+)(withRouter((props) => <Navigation {...props} />));

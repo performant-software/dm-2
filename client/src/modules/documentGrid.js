@@ -59,6 +59,8 @@ export const REFRESH_DOCUMENTS = 'document_grid/REFRESH_DOCUMENTS';
 export const GET_CURRENT_DOC_CONTENT = 'document_grid/GET_CURRENT_DOC_CONTENT';
 export const GET_CURRENT_DOC_CONTENT_SUCCESS = 'document_grid/GET_CURRENT_DOC_CONTENT_SUCCESS';
 export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CONTENT_ERRORED';
+export const FETCH_LOCK_SUCCESS = 'document_grid/FETCH_LOCK_SUCCESS';
+export const FETCH_LOCK_ERRORED = 'document_grid/FETCH_LOCK_ERRORED';
 
 
 export const layoutOptions = [
@@ -350,6 +352,28 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: openDocumentsMoveCopy
+      };
+
+    case FETCH_LOCK_SUCCESS:
+      const {
+        documentId,
+        locked,
+        locked_by_me,
+        locked_by_user_name,
+       } = action;
+      const openDocumentsFetchUpdated = state.openDocuments.map((doc) => {
+        if (+doc.id === +documentId) {
+          return {
+            ...doc,
+            locked,
+            locked_by_me,
+            locked_by_user_name,
+          };
+        } else return doc;
+      });
+      return {
+        ...state,
+        openDocuments: openDocumentsFetchUpdated
       };
 
     default:
@@ -1405,6 +1429,37 @@ export function refreshCurrentDocContent(documentId) {
     }))
     .catch(() => dispatch({
       type: GET_CURRENT_DOC_CONTENT_ERRORED
+    }));
+  };
+}
+
+export function fetchLock(documentId) {
+  return function(dispatch) {
+    fetch(`/documents/${documentId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => dispatch({
+      type: FETCH_LOCK_SUCCESS,
+      documentId,
+      locked: document.locked,
+      locked_by_me: document.locked_by_me,
+      locked_by_user_name: document.locked_by_user_name,
+    }))
+    .catch(() => dispatch({
+      type: FETCH_LOCK_ERRORED
     }));
   };
 }
