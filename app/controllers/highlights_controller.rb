@@ -114,6 +114,6 @@ class HighlightsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def highlight_params
-      params.require(:highlight).permit(:uid, :target, :document_id, :excerpt, :color)
+      params.require(:highlight).permit(:uid, :target, :document_id, :excerpt, :color, :title)
     end
 end
