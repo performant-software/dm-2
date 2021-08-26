@@ -72,7 +72,19 @@ class DocumentFolder extends Component {
               onClick={() => {
                 this.props.openDeleteDialog(
                   'Destroying "' + this.props.item.document_title + '"',
-                  'Deleting this folder will destroy all its contents. If you wish to preserve any documents or folders inside, click Cancel and move them out of this folder before deleting it.',
+                  (<>
+                    <p>
+                      <strong>Deleting this folder will destroy all its contents.</strong>
+                    </p>
+                    <p>
+                      That means that all contained documents or folders, and any annotations
+                      made on those documents, will be destroyed.
+                    </p>
+                    <p>
+                      If you wish to preserve any documents or folders inside, click
+                      Cancel and move them out of this folder before deleting it.
+                    </p>
+                  </>),
                   'Destroy folder',
                   { folderId: this.props.item.id, parentType: this.props.item.parent_type, parentId: this.props.parentId },
                   FOLDER_DELETE
