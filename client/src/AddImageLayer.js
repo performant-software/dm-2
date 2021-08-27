@@ -30,7 +30,7 @@ class AddImageLayer extends Component {
       linkError: false,
       uploadErrorMessage: null,
       uploading: false,
-      newImageUrl: null,
+      newImageUrls: [],
     }
   }
 
@@ -38,7 +38,7 @@ class AddImageLayer extends Component {
     if (this.props.image_urls.length > prevProps.image_urls.length) {
       this.props.image_urls.forEach(url =>{
         if (!prevProps.image_urls.includes(url)) {
-          this.setState({ newImageUrl: url });
+          this.setState((prevState) => ({ ...prevState, newImageUrls: prevState.newImageUrls.concat([url]) }));
         }
       })
     }      
@@ -57,19 +57,21 @@ class AddImageLayer extends Component {
     let newTileSources = [];
     switch (addTileSourceMode) {
       case UPLOAD_SOURCE_TYPE:
-        if (this.props.image_urls && this.props.image_urls.length > 0 && this.state.newImageUrl) {
-          const url = this.state.newImageUrl;
-          const filename = decodeURIComponent(url.substring(
-            url.lastIndexOf('/')+1,
-            url.lastIndexOf('.')
-          ));
-          newTileSources.push({
-            type: 'image',
-            url,
-            name: filename,
-          });
-          if (shouldSetThumbnail && newTileSources.length > 0)
-            imageUrlForThumbnail = newTileSources[0].url;
+        if (this.props.image_urls && this.props.image_urls.length > 0 
+        && this.state.newImageUrls && this.state.newImageUrls.length > 0) {
+          this.state.newImageUrls.forEach((url) => {
+            const filename = decodeURIComponent(url.substring(
+              url.lastIndexOf('/')+1,
+              url.lastIndexOf('.')
+            ));
+            newTileSources.push({
+              type: 'image',
+              url,
+              name: filename,
+            });
+            if (shouldSetThumbnail && newTileSources.length > 0)
+              imageUrlForThumbnail = newTileSources[0].url;
+          })
         }
         break;
 
@@ -120,7 +122,14 @@ class AddImageLayer extends Component {
   }
 
   renderUploadButton(buttonStyle,iconStyle) {
-    const { document_id, replaceDocument } = this.props;
+    const {
+      content,
+      document_id,
+      replaceDocument,
+      setAddTileSourceMode,
+      setLastSaved,
+      setSaving,
+    } = this.props;
     return (
       <ActiveStorageProvider
         endpoint={{
@@ -142,8 +151,8 @@ class AddImageLayer extends Component {
             uploadErrorMessage: null,
             uploading: false,
           });
-          this.props.setLastSaved(new Date().toLocaleString('en-US'));
-          this.props.setSaving({ doneSaving: true });
+          setLastSaved(new Date().toLocaleString('en-US'));
+          setSaving({ doneSaving: true });
         }}
         onError={() => {
           this.setState({
@@ -165,8 +174,8 @@ class AddImageLayer extends Component {
               type="file"
               disabled={!ready}
               onChange={(e) => {
-                this.props.setAddTileSourceMode(
-                  this.props.document_id,
+                setAddTileSourceMode(
+                  document_id,
                   UPLOAD_SOURCE_TYPE
                 );
                 this.setState({
@@ -174,10 +183,11 @@ class AddImageLayer extends Component {
                   uploadErrorMessage: null,
                   uploading: true,
                 });
-                this.props.setSaving({ doneSaving: false });
+                setSaving({ doneSaving: false });
                 handleUpload(e.currentTarget.files);
               }}
               style={{ display: 'none' }}
+              multiple={content && content.tileSources && content.tileSources.length > 0}
             />
           </RaisedButton>
         )}
@@ -232,7 +242,18 @@ class AddImageLayer extends Component {
     
     return (
       <div style={divStyle}>
-        <h2 style={textStyle}>Add an Image</h2>
+        <h2 style={textStyle}>
+          {content && content.tileSources && content.tileSources.length > 0 && (
+            <>
+              Add image layer(s)
+            </>
+          )}
+          {!content || !content.tileSources || content.tileSources.length === 0 && (
+            <>
+              Add an image
+            </>
+          )}
+        </h2>
         <p style={textStyle}>Choose an image source.</p>
     
         {this.renderUploadButton(buttonStyle, iconStyle)}
