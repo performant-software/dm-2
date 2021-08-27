@@ -116,7 +116,7 @@ class TextResource extends Component {
     this.editorViewWrapper = React.createRef();
 
     this.tools = [
-      { name: 'highlight-color', width: buttonWidth },
+      { name: 'highlight-color', width: buttonWidth, text: 'Change highlight color' },
       { name: 'highlight', width: buttonWidth, text: 'Highlight selected text' },
       { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'text-color', width: buttonWidth, text: 'Change text color' },
@@ -278,6 +278,8 @@ class TextResource extends Component {
               }
             }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
           />
         );
 
@@ -544,7 +546,7 @@ class TextResource extends Component {
         open={this.state.tooltipOpen[toolName]}
         anchorEl={this.state.tooltipAnchor[toolName]}
         zDepth={5}
-        className="tooltip-popover"
+        className={`tooltip-popover ${toolName === 'highlight-color' ? 'highlight-color-tooltip' : ''}`}
         anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
         targetOrigin={{horizontal: 'middle', vertical: 'top'}}
         useLayerForClickAway={false}
@@ -1567,6 +1569,7 @@ class TextResource extends Component {
                 }
               </>
             )}
+            {this.renderTooltipFromHidden({ toolName: 'highlight-color', text: 'Change highlight color' })}
             {this.renderTooltipFromHidden({ toolName: 'font-family', text: 'Font' })}
             {this.renderTooltipFromHidden({ toolName: 'font-size', text: 'Font size (pt)' })}
           </ToolbarGroup>
