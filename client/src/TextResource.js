@@ -546,7 +546,7 @@ class TextResource extends Component {
         open={this.state.tooltipOpen[toolName]}
         anchorEl={this.state.tooltipAnchor[toolName]}
         zDepth={5}
-        className={`tooltip-popover ${toolName === 'highlight-color' ? 'highlight-color-tooltip' : ''}`}
+        className={`tooltip-popover ${toolName === 'highlight-color' ? 'extra-margin-tooltip' : ''}`}
         anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
         targetOrigin={{horizontal: 'middle', vertical: 'top'}}
         useLayerForClickAway={false}

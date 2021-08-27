@@ -131,9 +131,9 @@ class Navigation extends Component {
             </IconButton>
           )}
           iconElementRight={
-            <div>
+            <div style={{ display: 'flex' }}>
               {!this.props.isHome && 
-                <div style={{display: 'inline'}}>
+                <div style={{display: 'flex'}}>
                   <SearchBar projectID={this.props.inputId } />
                   <DropDownMenu
                     value={this.props.currentLayout}
@@ -186,7 +186,7 @@ class Navigation extends Component {
           open={this.state.layoutTooltipOpen}
           anchorEl={this.state.layoutTooltipAnchor}
           zDepth={5}
-          className="tooltip-popover"
+          className="tooltip-popover extra-margin-tooltip"
           anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
           targetOrigin={{horizontal: 'middle', vertical: 'top'}}
           useLayerForClickAway={false}
