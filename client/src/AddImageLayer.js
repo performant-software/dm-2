@@ -122,48 +122,66 @@ class AddImageLayer extends Component {
   renderUploadButton(buttonStyle,iconStyle) {
     const { document_id, replaceDocument } = this.props;
     return (
-        <ActiveStorageProvider
-            endpoint={{
-              path: `/documents/${document_id}/add_images`,
-              model: 'Document',
-              attribute: 'images',
-              protocol: 'https',
-              method: 'PUT'
-            }}
-            multiple={true}
-            onSubmit={document => {
-              replaceDocument({ ...document, locked_by_me: document.locked ? true : false });
-              this.addTileSource(UPLOAD_SOURCE_TYPE);
-              this.setState( { ...this.state, uploadErrorMessage: null, uploading: false } );
-              this.props.setLastSaved(new Date().toLocaleString('en-US'));
-              this.props.setSaving({ doneSaving: true });
-            }}
-            onError={ () => {
-              this.setState( { ...this.state, uploadErrorMessage: "Unable to process file.", uploading: false } );
-            }}
-            render={({ handleUpload, uploads, ready}) => (
-            <RaisedButton
-              containerElement='label'
-              style={buttonStyle}
-              icon={<CloudUpload style={iconStyle}/>}
-              label='Upload from Computer'
-              disabled={this.state.uploading}
-            >                
-              <input
-              key='upload-form'
-              type='file'
+      <ActiveStorageProvider
+        endpoint={{
+          path: `/documents/${document_id}/add_images`,
+          model: 'Document',
+          attribute: 'images',
+          protocol: 'https',
+          method: 'PUT',
+        }}
+        multiple={true}
+        onSubmit={(document) => {
+          replaceDocument({
+            ...document,
+            locked_by_me: document.locked ? true : false,
+          });
+          this.addTileSource(UPLOAD_SOURCE_TYPE);
+          this.setState({
+            ...this.state,
+            uploadErrorMessage: null,
+            uploading: false,
+          });
+          this.props.setLastSaved(new Date().toLocaleString('en-US'));
+          this.props.setSaving({ doneSaving: true });
+        }}
+        onError={() => {
+          this.setState({
+            ...this.state,
+            uploadErrorMessage: 'Unable to process file.',
+            uploading: false,
+          });
+        }}
+        render={({ handleUpload, uploads, ready }) => (
+          <RaisedButton
+            containerElement="label"
+            style={buttonStyle}
+            icon={<CloudUpload style={iconStyle} />}
+            label="Upload from Computer"
+            disabled={this.state.uploading}
+          >
+            <input
+              key="upload-form"
+              type="file"
               disabled={!ready}
               onChange={(e) => {
-                this.props.setAddTileSourceMode(this.props.document_id, UPLOAD_SOURCE_TYPE);
-                this.setState({ ...this.state, uploadErrorMessage: null, uploading: true });
+                this.props.setAddTileSourceMode(
+                  this.props.document_id,
+                  UPLOAD_SOURCE_TYPE
+                );
+                this.setState({
+                  ...this.state,
+                  uploadErrorMessage: null,
+                  uploading: true,
+                });
                 this.props.setSaving({ doneSaving: false });
-                handleUpload(e.currentTarget.files)
+                handleUpload(e.currentTarget.files);
               }}
               style={{ display: 'none' }}
-              />
-            </RaisedButton>
-            )}
-        />
+            />
+          </RaisedButton>
+        )}
+      />
     );
   }
 
@@ -204,71 +222,82 @@ class AddImageLayer extends Component {
   render() {
     const { document_id, writeEnabled, addTileSourceMode, content } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
-
-    if( !writeEnabled || !tileSourceMode ) return null;
-
+    
+    if (!writeEnabled || !tileSourceMode) return null;
+    
     const divStyle = { margin: 20 };
     const textStyle = { color: 'white' };
     const buttonStyle = { margin: 12, height: 60 };
-    const iconStyle = { width: 50, height: 50}
-
+    const iconStyle = { width: 50, height: 50 };
+    
     return (
-        <div style={divStyle} >
-            <h2 style={textStyle}>Add an Image</h2>
-            <p style={textStyle}>Choose an image source.</p>
-
-            { this.renderUploadButton(buttonStyle,iconStyle) }
-            
-            <RaisedButton
-                    label='Link to IIIF'
-                    icon={<InsertLink style={iconStyle}/>}
-                    onClick={this.onIIIFLink}
-                    disabled={this.state.uploading}
-                    style={buttonStyle}
+      <div style={divStyle}>
+        <h2 style={textStyle}>Add an Image</h2>
+        <p style={textStyle}>Choose an image source.</p>
+    
+        {this.renderUploadButton(buttonStyle, iconStyle)}
+    
+        <RaisedButton
+          label="Link to IIIF"
+          icon={<InsertLink style={iconStyle} />}
+          onClick={this.onIIIFLink}
+          disabled={this.state.uploading}
+          style={buttonStyle}
+        />
+        <RaisedButton
+          label="Link to Web"
+          icon={<InsertLink style={iconStyle} />}
+          onClick={this.onWebLink}
+          disabled={this.state.uploading}
+          style={buttonStyle}
+        />
+    
+        {tileSourceMode !== UPLOAD_SOURCE_TYPE && (
+          <div>
+            <TextField
+              inputStyle={{ color: 'white' }}
+              floatingLabelStyle={{ color: 'white' }}
+              errorText={this.state.linkError ? 'Please enter a valid URL.' : ''}
+              floatingLabelText={
+                tileSourceMode ? tileSourceTypeLabels[tileSourceMode].textField : ''
+              }
+              onChange={(event, newValue) => {
+                this.setState({ ...this.state, newTileSourceValue: newValue });
+              }}
             />
             <RaisedButton
-                    label='Link to Web'
-                    icon={<InsertLink style={iconStyle}/>}
-                    onClick={this.onWebLink}
-                    disabled={this.state.uploading}
-                    style={buttonStyle}
+              label="Add Image"
+              style={{ margin: 30, verticalAlign: 'top' }}
+              onClick={this.onLinkSubmit}
             />
-
-            { tileSourceMode !== UPLOAD_SOURCE_TYPE &&
-                <div>
-                    <TextField
-                        inputStyle={{ color: 'white' }}
-                        floatingLabelStyle={{ color: 'white' }}
-                        errorText={ this.state.linkError ? "Please enter a valid URL." : "" }
-                        floatingLabelText={tileSourceMode ? tileSourceTypeLabels[tileSourceMode].textField : ''}
-                        onChange={(event, newValue) => {this.setState( { ...this.state, newTileSourceValue: newValue}) }}
-                    />
-                    <RaisedButton
-                        label='Add Image'
-                        style={ {margin: 30, verticalAlign:'top'} }
-                        onClick={this.onLinkSubmit}
-                    />
-                </div>
-            }
-            { tileSourceMode === UPLOAD_SOURCE_TYPE &&
-              this.state.uploading ?
-                <div>
-                  <h2 style={{ color: 'white'}}>Uploading image...</h2>
-                  <CircularProgress size={80} thickness={5} color={'white'} />
-                </div>
-              : this.state.uploadErrorMessage != null && 
-                <div>
-                  <p style={{ color: 'white'}}><Error style={{ margin: 5, color: 'white'}}/>{this.state.uploadErrorMessage}</p>
-                </div> 
-            }   
-
-{content.tileSources && content.tileSources.length > 0 && (
-          <FlatButton label='Cancel' style={{ color: 'white' }} onClick={this.onCancel} />     
-)}  
-        </div>
+          </div>
+        )}
+        {tileSourceMode === UPLOAD_SOURCE_TYPE && this.state.uploading ? (
+          <div>
+            <h2 style={{ color: 'white' }}>Uploading image...</h2>
+            <CircularProgress size={80} thickness={5} color="white" />
+          </div>
+        ) : (
+          this.state.uploadErrorMessage != null && (
+            <div>
+              <p style={{ color: 'white' }}>
+                <Error style={{ margin: 5, color: 'white' }} />
+                {this.state.uploadErrorMessage}
+              </p>
+            </div>
+          )
+        )}
+    
+        {content.tileSources && content.tileSources.length > 0 && (
+          <FlatButton
+            label="Cancel"
+            style={{ color: 'white' }}
+            onClick={this.onCancel}
+          />
+        )}
+      </div>
     );
   }
-
 }
 
 const mapStateToProps = state => ({
