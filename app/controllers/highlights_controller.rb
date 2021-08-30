@@ -44,6 +44,10 @@ class HighlightsController < ApplicationController
 
   # DELETE /highlights/1
   def destroy
+    @links = @highlight.highlights_links.map{ |hll| Link.where(:id => hll.link_id).first }
+    @links.each { |link|
+      link.renumber_all(true)
+    }
     @highlight.destroy
   end
 
@@ -53,13 +57,35 @@ class HighlightsController < ApplicationController
 
     new_highlights = highlight_entries.collect{ |entry|
       highlight = Highlight.where(uid: entry[:highlightUid], document_id: entry[:documentId]).first
-      new_attributes = highlight.attributes.merge({'uid' => entry[:newHighlightUid], 'document_id' => new_document_id})
-      new_attributes.delete('id')
-      new_highlight = Highlight.create new_attributes
-      highlight.links_to.each do |linkable|
-        new_highlight.add_link_to(linkable)
+      if !highlight.nil?
+        if highlight.uid.include?("text_highlight")
+          new_attributes = highlight.attributes.merge({
+            'uid' => entry[:newHighlightUid],
+            'target' => entry[:newHighlightUid], 
+            'document_id' => new_document_id
+          })
+        else
+          new_attributes = highlight.attributes.merge({
+            'uid' => entry[:newHighlightUid], 
+            'document_id' => new_document_id
+          })
+        end
+        new_attributes.delete('id')
+        new_highlight = Highlight.create new_attributes
+        if !highlight.highlights_links.nil? && highlight.highlights_links.length() > 0
+          all_links = highlight.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| { :link => Link.where(:id => hll.link_id).first, :position => hll.position } }
+          all_links.each do |linkable_obj|
+            if !linkable_obj[:link].nil?
+              new_highlight.add_link_from_duplication(linkable_obj[:link], highlight[:id], linkable_obj[:position])
+            end
+          end
+          if new_highlight.highlights_links.length() > 0
+            sorted_hlls = new_highlight.highlights_links.sort_by{ |hll| hll.position }
+            Link.renumber(sorted_hlls)
+          end
+        end
+        new_highlight
       end
-      new_highlight
     }
 
     render json: new_highlights

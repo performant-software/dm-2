@@ -6,7 +6,6 @@ import { fabric } from 'openseadragon-fabricjs-overlay/fabric/fabric.adapted';
 import { openSeaDragonFabricOverlay } from 'openseadragon-fabricjs-overlay/openseadragon-fabricjs-overlay';
 import Slider from 'material-ui/Slider';
 import IconButton from 'material-ui/IconButton';
-
 import PanTool from 'material-ui/svg-icons/action/pan-tool';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
 import CropSquare from 'material-ui/svg-icons/image/crop-square';
@@ -16,13 +15,36 @@ import Edit from 'material-ui/svg-icons/image/edit';
 import Colorize from 'material-ui/svg-icons/image/colorize';
 import ShowChart from 'material-ui/svg-icons/editor/show-chart';
 import DeleteForever from 'material-ui/svg-icons/action/delete-forever';
+import AddToPhotos from 'material-ui/svg-icons/image/add-to-photos';
+import RemoveFromPhotos from './icons/RemoveFromPhotos';
+import Done from 'material-ui/svg-icons/action/done';
+import Cancel from 'material-ui/svg-icons/navigation/close';
+import { LayerBackward, LayerForward } from 'react-bootstrap-icons';
 import { yellow500, cyan100 } from 'material-ui/styles/colors';
-
-import { setCanvasHighlightColor, toggleCanvasColorPicker, setImageUrl, setIsPencilMode, setAddTileSourceMode, UPLOAD_SOURCE_TYPE, setZoomControl } from './modules/canvasEditor';
-import { addHighlight, updateHighlight, setHighlightThumbnail, openDeleteDialog, CANVAS_HIGHLIGHT_DELETE } from './modules/documentGrid';
+import {
+  setCanvasHighlightColor,
+  toggleCanvasColorPicker,
+  setImageUrl,
+  setIsPencilMode,
+  setAddTileSourceMode,
+  UPLOAD_SOURCE_TYPE,
+  toggleEditLayerName,
+} from './modules/canvasEditor';
+import {
+  addHighlight,
+  updateHighlight,
+  setHighlightThumbnail,
+  openDeleteDialog,
+  CANVAS_HIGHLIGHT_DELETE,
+  moveLayer,
+  CANVAS_LAYER_DELETE,
+  renameLayer,
+} from './modules/documentGrid';
 import { checkTileSource } from './modules/iiif';
 import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
+import TextField from 'material-ui/TextField';
+import deepEqual from 'deep-equal';
 
 // overlay these modules
 openSeaDragonFabricOverlay(OpenSeadragon, fabric);
@@ -46,19 +68,73 @@ fabric.Object.prototype._renderStroke = function(ctx) {
 const strokeWidth = 3.0;
 const markerRadius = 4.0;
 const doubleClickTimeout = 500;
-const markerThumbnailSize = 100
-const fabricViewportScale = 2000
-const minZoomImageRatio = 0.9
-const maxZoomPixelRatio = 10.0
+const markerThumbnailSize = 100;
+const fabricViewportScale = 2000;
+const maxZoomPixelRatio = 2.25;
 
 class CanvasResource extends Component {
   constructor(props) {
     super(props);
     this.osdId =`openseadragon-${this.props.document_id}-${Date.now()}`;
     this.osdViewer = null;
+    this.upButton = null;
+    this.downButton = null;
+    this.layerSelect = null;
+    this.imageLayerControls = null;
     this.highlight_map = {};
     this.viewportUpdatedYet = false;
     this.currentMode = 'pan';
+    this.hasOpenedOnce = false;
+
+    this.state = {
+      currentPage: 0,
+      totalPages: 0,
+      layerName: '',
+      zoomLevel: 0,
+      maxZoom: 0,
+      minZoom: 0,
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.content && this.props.content 
+        && this.props.content.tileSources && this.props.content.tileSources[0]
+        && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources))
+    {
+      this.openTileSources(this.props.content.tileSources);
+      if (this.props.content.tileSources.length !== prevProps.content.tileSources.length) {
+        this.osdViewer.goToPage(0);
+        this.setState({ totalPages: this.props.content.tileSources.length });
+      } else {
+        this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+      }
+      const hasLayerControls = this.osdViewer.controls 
+        && this.osdViewer.controls.find(ctrl => ctrl.element.className === 'image-layer-controls');
+      if (this.hasLayers() && !hasLayerControls) {
+        this.osdViewer.addControl(this.imageLayerControls, {
+          anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
+          autoFade: false,
+        });
+      } else if (!this.hasLayers() && hasLayerControls) {
+        this.osdViewer.removeControl(this.imageLayerControls);
+      }
+      this.props.setSaving({ doneSaving: true });
+      this.props.setLastSaved(new Date().toLocaleString('en-US'));
+    }
+    if (this.layerSelect 
+        && prevProps.content && this.props.content  && this.props.content.tileSources
+        && !deepEqual(prevProps.content.iiifTileNames, this.props.content.iiifTileNames)) {
+      this.refreshLayerSelect(this.props.content.tileSources);
+      this.props.setSaving({ doneSaving: true });
+      this.props.setLastSaved(new Date().toLocaleString('en-US'));
+    }
+    if (prevProps.pageToChange[this.getInstanceKey()] !== this.props.pageToChange[this.getInstanceKey()]) {
+      this.osdViewer.goToPage(this.props.pageToChange[this.getInstanceKey()] || 0);
+    }
+    if (this.props.highlightsHidden[this.getInstanceKey()] !== prevProps.highlightsHidden[this.getInstanceKey()]
+      && !this.props.highlightsHidden[this.getInstanceKey()]) {
+      this.osdViewer.raiseEvent( 'update-viewport', {} );
+    }
   }
 
   componentDidMount() {
@@ -71,15 +147,84 @@ class CanvasResource extends Component {
 
     const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
-      prefixUrl: 'https://openseadragon.github.io/openseadragon/images/',
+      prefixUrl: '/images/',
       showNavigationControl: false,
       tileSources: [],
-      minZoomImageRatio: minZoomImageRatio,
-      maxZoomPixelRatio: maxZoomPixelRatio,
+      maxZoomPixelRatio,
       navigatorSizeRatio: 0.15,
       gestureSettingsMouse: { clickToZoom: false },
-      showNavigator: true
+      showNavigator: true,
+      sequenceMode: true,
+      showSequenceControl: false,
+      preserveViewport: true,
+      preserveImageSizeOnResize: true,
     });
+    const hasLayers = this.hasLayers();
+
+    const upButton = this.upButton = new OpenSeadragon.Button({
+      tooltip: "Previous layer",
+      srcRest: "/images/up_rest.png",
+      srcGroup: "/images/up_grouphover.png",
+      srcHover: "/images/up_hover.png",
+      srcDown: "/images/up_pressed.png",
+      onRelease: () => {
+        let prevPage = this.state.currentPage - 1;
+        if (this.state && this.state.totalPages && this.state.currentPage === 0) {
+          // Wrap around if at beginning
+          prevPage = this.state.totalPages - 1;
+        }
+        viewer.goToPage(prevPage);
+      },
+    });
+    const layerSelect = this.layerSelect = OpenSeadragon.makeNeutralElement('select');
+    layerSelect.style = '';
+    layerSelect.className = 'image-layer-select';
+    layerSelect.name = `${this.getInstanceKey()}-layer-select`;
+    layerSelect.addEventListener('change', () => {
+      viewer.goToPage(parseInt(layerSelect.value, 10));
+    });
+    
+    if (hasLayers) {
+      content.tileSources.forEach((tileSource, index) => {
+        const opt = OpenSeadragon.makeNeutralElement('option');
+        opt.value = index;
+        opt.label = `${index+1}: ${this.getLayerName(index)}`;
+        layerSelect.appendChild(opt);
+      });
+    }
+
+    const downButton = this.downButton = new OpenSeadragon.Button({
+      tooltip: "Next layer",
+      srcRest: "/images/down_rest.png",
+      srcGroup: "/images/down_grouphover.png",
+      srcHover: "/images/down_hover.png",
+      srcDown: "/images/down_pressed.png",
+      onRelease: () => {
+        let nextPage = this.state.currentPage + 1;
+        if (this.state && this.state.totalPages && this.state.currentPage === (this.state.totalPages-1)) {
+          // Wrap around if at end
+          nextPage = 0;
+        }
+        viewer.goToPage(nextPage);
+      },
+    });
+
+    const wrapper = this.imageLayerControls = OpenSeadragon.makeNeutralElement('div');
+    wrapper.className = 'image-layer-controls';
+    const buttons = [upButton, downButton];
+    const buttonGroup = new OpenSeadragon.ButtonGroup({ buttons });
+    buttonGroup.element.className = 'layer-button-group';
+    wrapper.appendChild(buttonGroup.element);
+    wrapper.appendChild(layerSelect);
+    wrapper.innerTracker = new OpenSeadragon.MouseTracker({
+      element: wrapper,
+    });
+    if (hasLayers) {
+      viewer.addControl(wrapper, {
+        anchor: OpenSeadragon.ControlAnchor.TOP_LEFT,
+        autoFade: false,
+      });
+    }
 
     const overlay = this.overlay = viewer.fabricjsOverlay({scale: fabricViewportScale});
 
@@ -88,13 +233,17 @@ class CanvasResource extends Component {
     const firstTileSource = tileSources[0];
 
     if (firstTileSource) {
-      imageUrlForThumbnail = this.openTileSource(firstTileSource)
+      this.setState({ totalPages: tileSources.length });
+      imageUrlForThumbnail = this.openTileSources(tileSources);
     } else {
       // we don't have an image yet, so this causes AddImageLayer to display
       setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);
     }
 
     viewer.addHandler('update-viewport', () => {
+      const maxZoom = this.osdViewer.viewport.getMaxZoom();
+      const minZoom = this.osdViewer.viewport.getMinZoom();
+      this.setState((prevState) => ({ ...prevState, minZoom, maxZoom }));
       if (!this.viewportUpdatedForPageYet) {
         this.renderHighlights(overlay, highlight_map);
         this.viewportUpdatedForPageYet = true;
@@ -113,19 +262,31 @@ class CanvasResource extends Component {
       overlay.resizecanvas();
     });
 
-    viewer.addHandler('page', () => {
+    viewer.addHandler('page', (event) => {
+      const pageNumber = parseInt(event.page, 10);
+      if (this.layerSelect) {
+        this.layerSelect.selectedIndex = pageNumber;
+      }
+
       this.markObjectsDirtyNextUpdate = true;
+      this.setState({
+        currentPage: pageNumber,
+        layerName: this.getLayerName(pageNumber),
+      });
     });
 
     viewer.addHandler('open', this.onOpen.bind(this) );
 
     viewer.addHandler('zoom', event => {
-      const max = this.osdViewer.viewport.getMaxZoom();
-      const min = this.osdViewer.viewport.getMinZoom();
-      //JONAH const exponential_range = (value-Math.log1p(value));  // flattens out default exponential zoom. zoom now fairly linear -Jonah
-      //JONAH this.osdViewer.viewport.zoomTo(min + ((max - min) * exponential_range));
-      // this sets the zoom control based on zoom level (when adjusted through mouse wheel)
-      this.props.setZoomControl(this.getInstanceKey(), Math.min(Math.max((event.zoom - min) / (max - min), 0.0), 1.0));
+      const maxZoom = this.osdViewer.viewport.getMaxZoom();
+      const minZoom = this.osdViewer.viewport.getMinZoom();
+      let zoomLevel = maxZoom;
+      if (event.zoom <= maxZoom) {
+        zoomLevel = event.zoom;
+      } else if (event.zoom <= minZoom) {
+        zoomLevel = minZoom;
+      }
+      this.setState((prevState) => ({ ...prevState, zoomLevel, minZoom, maxZoom }));
     });
 
     overlay.fabricCanvas().freeDrawingBrush.color = initialColor;
@@ -133,21 +294,38 @@ class CanvasResource extends Component {
 
     overlay.fabricCanvas().on('object:selected', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-          window.setFocusHighlight(document_id, event.target._highlightUid); // the code that pops up the annotation
+          window.setFocusHighlight(document_id, event.target._highlightUid, key); // the code that pops up the annotation
           overlay.fabricCanvas().discardActiveObject();
+      } else if (this.currentMode === 'edit' && event && event.target._isTarget) {
+        for (let i = 0; i < 3; i++){ // For some reason it's necessary to do this multiple times
+          overlay.fabricCanvas().forEachObject((obj) => {
+            if (obj && obj._isTargetChild) {
+              overlay.fabricCanvas().remove(obj);
+            }
+          });
+        }
       }
     });
     overlay.fabricCanvas().on('mouse:down', this.canvasMouseDown.bind(this) );
     overlay.fabricCanvas().on('mouse:move', this.canvasMouseMove.bind(this) );
     overlay.fabricCanvas().on('mouse:up', this.canvasMouseUp.bind(this) );
     overlay.fabricCanvas().on('object:modified', event => {
-      if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid ) {
+      if( this.currentMode === 'edit' && event && event.target && event.target._highlightUid && !event.target._isTargetChild ) {
           const highlight_id = this.highlight_map[event.target._highlightUid].id;
           if (highlight_id && imageUrlForThumbnail) {
             const highlightCoords = event.target._isMarker ?
               this.computeMarkerThumbBounds(event.target) :
               event.target.aCoords
-            updateHighlight(highlight_id, {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))});
+            
+            this.props.setSaving({ doneSaving: false });
+            updateHighlight(
+              highlight_id, 
+              {target: JSON.stringify(event.target.toJSON(['_highlightUid', '_isMarker']))},
+              () => {
+                this.props.setSaving({ doneSaving: true });
+                this.props.setLastSaved(new Date().toLocaleString('en-US'));
+              }
+            );
             setHighlightThumbnail(highlight_id, imageUrlForThumbnail, highlightCoords, event.target.toSVG());
           }
       }
@@ -156,7 +334,7 @@ class CanvasResource extends Component {
     // rollover highlights
     overlay.fabricCanvas().on('mouse:over', event => {
       if (this.currentMode === 'pan' && event.target && event.target._highlightUid) {
-        window.showRollover(this.props.document_id, event.target._highlightUid);
+        window.showRollover(this.props.document_id, event.target._highlightUid, key);
       }
     });
     overlay.fabricCanvas().on('mouse:out', function(event) {
@@ -173,6 +351,7 @@ class CanvasResource extends Component {
         path._highlightUid = highlightUid;
         path.perPixelTargetFind = true;
         this.overlay.fabricCanvas().setActiveObject(path);
+        this.props.setSaving({ doneSaving: false });
         addHighlight(
           document_id,
           highlightUid,
@@ -181,6 +360,8 @@ class CanvasResource extends Component {
           'Pencil highlight',
           savedHighlight => {
             setHighlightThumbnail(savedHighlight.id, imageUrlForThumbnail, path.aCoords, path.toSVG());
+            this.props.setSaving({ doneSaving: true });
+            this.props.setLastSaved(new Date().toLocaleString('en-US'));
           });
       }
     });
@@ -192,39 +373,68 @@ class CanvasResource extends Component {
     };
   }
 
-  openTileSource(firstTileSource) {
+  openTileSources(tileSources) {
     const key = this.getInstanceKey()
-    let imageUrlForThumbnail
+    let imageUrlForThumbnail = '';
+    let firstTileSource = tileSources[0];
 
-    if (firstTileSource.type === 'image' && firstTileSource.url) {
+    if (firstTileSource && firstTileSource.type === 'image' && firstTileSource.url) {
       imageUrlForThumbnail = firstTileSource.url
       // don't force ssl for localhost
       if( imageUrlForThumbnail.match(/^http:\/\/localhost/) ) {
         this.props.setImageUrl(key, imageUrlForThumbnail);
-        this.osdViewer.open({ type: 'image', url: imageUrlForThumbnail })
+        if (tileSources.length > 1) {
+          const newTileSources = [{ type: 'image', url: imageUrlForThumbnail }, ...tileSources.slice(1)]
+          this.osdViewer.open(newTileSources);
+        } else this.osdViewer.open([{ type: 'image', url: imageUrlForThumbnail }]);
       } else {
         const tileSourceSSL = imageUrlForThumbnail.replace('http:', 'https:')
         this.props.setImageUrl(key, tileSourceSSL);
-        this.osdViewer.open({ type: 'image', url: tileSourceSSL })
+        if (tileSources.length > 1) {
+          const newTileSources = [{ type: 'image', url: tileSourceSSL }, ...tileSources.slice(1)]
+          this.osdViewer.open(newTileSources);
+        } else this.osdViewer.open([{ type: 'image', url: tileSourceSSL }]);
       }
-    }
-    else {
-      let resourceURL = firstTileSource.replace('http:', 'https:')
+    } else if (firstTileSource && typeof firstTileSource === 'string') {
+      // Tile source is a string, so it's IIIF
+      let resourceURL = firstTileSource.replace('http:', 'https:').replace('/info.json', '');
       imageUrlForThumbnail = resourceURL + '/full/!400,400/0/default.png'
       this.props.setImageUrl(key, imageUrlForThumbnail);
       checkTileSource(
         resourceURL,
-        (validResourceURL) => { this.osdViewer.open(validResourceURL) },
+        (validResourceURL) => { 
+          if (tileSources.length > 1) {
+            const newTileSources = [validResourceURL, ...tileSources.slice(1)]
+            this.osdViewer.open(newTileSources);
+          } else this.osdViewer.open([validResourceURL]);
+        },
         (errorResponse) => { console.log( errorResponse ) }
       )
     }
+    this.refreshLayerSelect(tileSources);
 
-    return imageUrlForThumbnail
+    return imageUrlForThumbnail;
+  }
+
+  refreshLayerSelect(tileSources) {
+    if (this.layerSelect) {
+      const selected = this.layerSelect.selectedIndex;
+      while (this.layerSelect.firstChild) {
+        this.layerSelect.removeChild(this.layerSelect.lastChild);
+      }
+      tileSources.forEach((t, index) => {
+        const opt = OpenSeadragon.makeNeutralElement('option');
+        opt.value = index;
+        opt.label = `${index+1}: ${this.getLayerName(index)}`;
+        this.layerSelect.appendChild(opt);
+      });
+      this.layerSelect.selectedIndex = selected;
+    }
   }
 
   // if a first target for this window has been specified, pan and zoom to it.
   onOpen() {
-    if( this.props.firstTarget ) {
+    if( this.props.firstTarget && !this.hasOpenedOnce ) {
       let targetHighLight = null;
       for( let key in this.props.highlight_map ) {
         let currentHighlight = this.props.highlight_map[key]
@@ -242,7 +452,8 @@ class CanvasResource extends Component {
         // back out a little so we can see highlight in context
         const targetRect = new OpenSeadragon.Rect(x-0.1,y-0.1,w+0.2,h+0.2)
         const viewport = this.osdViewer.viewport;
-        viewport.fitBoundsWithConstraints( targetRect )
+        viewport.fitBoundsWithConstraints( targetRect );
+        this.hasOpenedOnce = true;
         // console.log(`tr: ${targetRect.toString()} tr2: ${targetRect2.toString()}`)
       }
     }
@@ -296,15 +507,25 @@ class CanvasResource extends Component {
             this.overlay.fabricCanvas().discardActiveObject();
 
             const highlight_id = this.highlight_map[selectedObject._highlightUid].id;
-            this.props.updateHighlight(highlight_id, {color: newColor, target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))});
+            this.props.setSaving({ doneSaving: false });
+            this.props.updateHighlight(
+              highlight_id,
+              {color: newColor, target: JSON.stringify(selectedObject.toJSON(['_highlightUid', '_isMarker']))},
+              () => {
+                this.props.setSaving({ doneSaving: true });
+                this.props.setLastSaved(new Date().toLocaleString('en-US'));
+              }
+            );
           }
           break;
 
       case 'lineDraw':
         if( this.checkDoubleClick() ) {
+          this.drawLine(this.pointerCoords, true);
           this.endLineMode();
         } else {
           this.drawLine(this.pointerCoords, true);
+          this.prevLineEndPoint = this.pointerCoords;
         }
         break;
       default:
@@ -315,9 +536,9 @@ class CanvasResource extends Component {
   canvasMouseMove(o) {
     if( this.currentMode === 'edit' || this.currentMode === 'pan' ) return;
 
-    if (this.currentMode === 'lineDraw') {
-      //this.pointerCoords = this.overlay.fabricCanvas().getPointer(o.e);
-      //this.drawLine(this.pointerCoords, false);
+    if (this.currentMode === 'lineDraw' && this.lineInProgress) {
+      this.pointerCoords = this.overlay.fabricCanvas().getPointer(o.e);
+      this.drawLine(this.pointerCoords, false);
     }
 
     if( this.newShape && this.isMouseDown ) {
@@ -369,6 +590,7 @@ class CanvasResource extends Component {
     const svg = this.newShape.toSVG();
     const imageUrlForThumbnail = this.props.imageURLs[key]
 
+    this.props.setSaving({ doneSaving: false });
     this.props.addHighlight(
       this.props.document_id,
       this.newShape._highlightUid,
@@ -382,6 +604,8 @@ class CanvasResource extends Component {
             aCoords,
             svg
           );
+          this.props.setSaving({ doneSaving: true });
+          this.props.setLastSaved(new Date().toLocaleString('en-US'));
       });
     this.panClick(); // jonah *** change here the current mode to 'pan'
     this.newShape = null;
@@ -391,7 +615,25 @@ class CanvasResource extends Component {
     const jsonBlob = {objects: []};
     for (const highlightUid in highlight_map) {
       const highlight = highlight_map[highlightUid];
-      jsonBlob.objects.push(JSON.parse(highlight.target));
+      const parsedHighlight = JSON.parse(highlight.target);
+      if( this.props.firstTarget ) {
+        if( highlight.id === this.props.firstTarget ) {
+          for (let i = 0; i < 3; i += 1) {
+            // Copy the object 3 times to make the glow more visible
+            jsonBlob.objects.push({ ...parsedHighlight,
+              selectable: false,
+              hoverCursor: 'default',
+              _isTargetChild: true,
+              shadow: new fabric.Shadow({
+                color: 'blue',
+                blur: 10,
+              }),
+            });
+          }
+          parsedHighlight._isTarget = true;
+        }
+      }
+      jsonBlob.objects.push(parsedHighlight);
     }
     const jsonString = JSON.stringify(jsonBlob);
     const zoom = overlay.fabricCanvas().getZoom();
@@ -404,7 +646,7 @@ class CanvasResource extends Component {
         object.strokeWidth = strokeWidth / zoom;
         object.dirty = true;
         object.perPixelTargetFind = true;
-        object.selectable = true;
+        if (!object._isTargetChild) object.selectable = true;
 
         if (!this.props.writeEnabled) {
           object.hoverCursor = 'default';
@@ -450,16 +692,25 @@ class CanvasResource extends Component {
         );
           this.overlay.fabricCanvas().remove(oldCircle);
           this.overlay.fabricCanvas().add(this.lineInProgress);
-      }
-      else {
-        // otherwise, add to the line
+      } else if (this.prevLineEndPoint && !activeShape) {
         // if we are just hovering make a line
+        const oldHoverLine = this.hoverLine;
+        this.hoverLine = new fabric.Polyline(
+          [{ x: this.prevLineEndPoint.x, y: this.prevLineEndPoint.y}, { x: pointer.x, y: pointer.y }],
+          lineOptions
+        );
+        this.overlay.fabricCanvas().remove(oldHoverLine);
+        this.overlay.fabricCanvas().add(this.hoverLine);
+        
+      } else {
+        // otherwise, add to the line
           const oldPolyline = this.lineInProgress;
+          const oldHoverLine = this.hoverLine;
           const points = oldPolyline.points.concat({ x: pointer.x, y: pointer.y });
           this.lineInProgress = new fabric.Polyline( points, lineOptions );
+          this.overlay.fabricCanvas().remove(oldHoverLine);
           this.overlay.fabricCanvas().remove(oldPolyline);
           this.overlay.fabricCanvas().add(this.lineInProgress);
-          console.log("drawing line in progress "+ pointer.x, pointer.y);
       }
     }
     else {
@@ -513,6 +764,7 @@ class CanvasResource extends Component {
     this.addShape(marker);
     const highlightCoords = this.computeMarkerThumbBounds(markerCoords)
 
+    this.props.setSaving({ doneSaving: false });
     // save as a highlight
     this.props.addHighlight(
       this.props.document_id,
@@ -527,6 +779,8 @@ class CanvasResource extends Component {
             highlightCoords,
             marker.toSVG()
           );
+          this.props.setSaving({ doneSaving: true });
+          this.props.setLastSaved(new Date().toLocaleString('en-US'));
     });
   }
 
@@ -543,6 +797,7 @@ class CanvasResource extends Component {
     const highlightUid = `dm_canvas_highlight_${Date.now()}`;
     this.lineInProgress['_highlightUid'] = highlightUid;
 
+    this.props.setSaving({ doneSaving: false });
     this.props.addHighlight(
       this.props.document_id,
       this.lineInProgress._highlightUid,
@@ -556,6 +811,8 @@ class CanvasResource extends Component {
           aCoords,
           svg
         );
+        this.props.setSaving({ doneSaving: true });
+        this.props.setLastSaved(new Date().toLocaleString('en-US'));
     });
     this.lineInProgress = null;
     this.overlay.fabricCanvas().defaultCursor = 'default';
@@ -703,12 +960,94 @@ class CanvasResource extends Component {
 
   }
 
+  moveLayerClick(direction) {
+    this.props.setSaving({ doneSaving: false });
+    this.props.moveLayer({
+      documentId: this.props.document_id,
+      origin: this.state.currentPage,
+      direction,
+      editorKey: this.getInstanceKey(),
+    });
+  }
+
+  deleteLayerClick() {
+    this.props.openDeleteDialog(
+      'Deleting layer',
+      `This will delete layer ${this.state.currentPage + 1}, ${this.getLayerName(this.state.currentPage)}, from the stack.`,
+      'Delete layer',
+      {
+        documentId: this.props.document_id,
+        layer: this.state.currentPage,
+        editorKey: this.getInstanceKey(),
+      },
+      CANVAS_LAYER_DELETE
+    );
+  }
+
+  editLayerNameClick() {
+    this.props.toggleEditLayerName({
+      editorKey: this.getInstanceKey(),
+      value: true,
+    });
+    this.setState({
+      layerName: this.getLayerName(this.state.currentPage),
+    })
+  }
+
+  cancelEditLayerName() {
+    this.props.toggleEditLayerName({
+      editorKey: this.getInstanceKey(),
+      value: false,
+    });
+  }
+
+  getLayerName(page) {
+    const { content } = this.props;
+    const currentLayer = content.tileSources[page];
+    let currentLayerName = 'Untitled image layer';
+    if (typeof currentLayer === 'string') {
+      // Tile source is a string, so it's IIIF
+      if (content.iiifTileNames && content.iiifTileNames.find(tile => tile.url === currentLayer)) {
+        currentLayerName = content.iiifTileNames.find(tile => tile.url === currentLayer).name;
+      } else {
+        currentLayerName = 'IIIF layer';
+      }
+    } else if (currentLayer && currentLayer.name) {
+      currentLayerName = currentLayer.name;
+    } else if (currentLayer && currentLayer.url) {
+      const url = currentLayer.url;
+      currentLayerName = decodeURIComponent(url.substring(url.lastIndexOf('/')+1, url.lastIndexOf('.')));
+    }
+    return currentLayerName;
+  }
+
+  onChangeLayerName(event, newValue) {
+    this.setState({
+      layerName: newValue,
+    })
+  }
+
+  submitLayerName(e) {
+    e.preventDefault();
+    const target = e.currentTarget[`layer${this.state.currentPage}-name`];
+    let layerNamePayload = {};
+    if (target && target.value) {
+      layerNamePayload = {
+        documentId: this.props.document_id,
+        layer: this.state.currentPage,
+        name: target.value,
+        editorKey: this.getInstanceKey(),
+      };
+      this.props.renameLayer(layerNamePayload);
+      this.props.setSaving({ doneSaving: false });
+    }
+  }
+
   zoomControlChange(event, value) {
     if (this.osdViewer && this.osdViewer.viewport) {
-      const max = this.osdViewer.viewport.getMaxZoom();
-      const min = this.osdViewer.viewport.getMinZoom();
-      const exponential_range = (value-Math.log1p(value));  // flattens out default exponential zoom. zoom now fairly linear -Jonah
-      this.osdViewer.viewport.zoomTo(min + ((max - min) * exponential_range));
+      const zoomLevel = value;
+      this.setState({ zoomLevel });
+      this.osdViewer.viewport.zoomTo(zoomLevel);
     }
   }
 
@@ -717,8 +1056,36 @@ class CanvasResource extends Component {
     return `${document_id}-${timeOpened}`;
   }
 
+  hasLayers() {
+    const { content } = this.props;
+    return (
+      content 
+      && content.tileSources 
+      && Array.isArray(content.tileSources) 
+      && content.tileSources.length > 1
+    );
+  }
+
   render() {
-    const { document_id, content, image_thumbnail_urls, addTileSourceMode, image_urls, highlightsHidden, displayColorPickers, highlightColors, toggleCanvasColorPicker, setCanvasHighlightColor, writeEnabled, lockedByMe, globalCanvasDisplay } = this.props;
+    const {
+      loading,
+      document_id,
+      content,
+      image_thumbnail_urls,
+      addTileSourceMode,
+      setAddTileSourceMode,
+      image_urls,
+      highlightsHidden,
+      displayColorPickers,
+      highlightColors,
+      toggleCanvasColorPicker,
+      setCanvasHighlightColor,
+      writeEnabled,
+      lockedByMe,
+      globalCanvasDisplay,
+      setLastSaved,
+      setSaving,
+    } = this.props;
     const key = this.getInstanceKey();
 
     this.highlight_map = this.props.highlight_map;
@@ -737,14 +1104,31 @@ class CanvasResource extends Component {
     const iconBackdropStyleSpaced = Object.assign({}, iconBackdropStyle);
     iconBackdropStyleSpaced.marginLeft = '12px';
 
+    const floatingIconBackdropStyle = {
+      width: '16px',
+      height: '16px',
+      paddingTop: '2px',
+      paddingLeft: '5px',
+    };
+
     const iconStyle = {
       width: '18px',
       height: '18px'
+    };
+
+    const smallIconStyle = {
+      width: '16px',
+      height: '16px',
+    };
+
+    const tooltipStyle = {
+      pointerEvents: 'none',
     }
 
     let editable = ( writeEnabled && lockedByMe );
     const mode = addTileSourceMode[document_id];
     const highlightHidden = !editable && highlightsHidden[key]
+    const hasLayers = this.hasLayers();
 
     if( !editable && this.currentMode !== 'pan' ) {
       this.panClick();
@@ -760,6 +1144,9 @@ class CanvasResource extends Component {
         }
       }
     }
+    
+    const currentLayerName = this.getLayerName(this.state.currentPage);
+    const editingLayerName = this.props.editingLayerName[key];
 
     return (
       <div style={{ display: 'flex', flexGrow: '1', padding: '10px' }}>
@@ -777,40 +1164,228 @@ class CanvasResource extends Component {
                 }}
                 toggleColorPicker={() => {toggleCanvasColorPicker(key);}}
               />
-              <IconButton tooltip='Open highlight and navigate image.' onClick={this.panClick.bind(this)} style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Open highlight and navigate image"
+                onClick={this.panClick.bind(this)}
+                style={this.currentMode === 'pan' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <PanTool />
               </IconButton>
-              <IconButton tooltip='Select and change highlight shape.' onClick={this.editShapeClick.bind(this)} style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Select and change highlight shape"
+                onClick={this.editShapeClick.bind(this)}
+                style={this.currentMode === 'edit' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <CropFree />
               </IconButton>
-              <IconButton tooltip='Draw rectangular shapes.' onClick={this.rectClick.bind(this)} style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw rectangular shapes"
+                onClick={this.rectClick.bind(this)}
+                style={this.currentMode === 'rect' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <CropSquare />
               </IconButton>
-              <IconButton tooltip='Draw circular shapes.' onClick={this.circleClick.bind(this)} style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw circular shapes"
+                onClick={this.circleClick.bind(this)}
+                style={this.currentMode === 'circle' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <PanoramaFishEye />
               </IconButton>
-              <IconButton tooltip='Add markers.' onClick={this.markerClick.bind(this)} style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Add markers"
+                onClick={this.markerClick.bind(this)}
+                style={this.currentMode === 'marker' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <Place />
               </IconButton>
-              <IconButton tooltip='Enter free drawing mode.' onClick={this.pencilClick.bind(this)} style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Enter free drawing mode"
+                onClick={this.pencilClick.bind(this)}
+                style={this.currentMode === 'freeDraw' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <Edit />
               </IconButton>
-              <IconButton tooltip='Draw lines.' onClick={this.lineClick.bind(this)} style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Draw lines"
+                onClick={this.lineClick.bind(this)}
+                style={this.currentMode === 'lineDraw' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <ShowChart />
               </IconButton>
-              <IconButton tooltip='Change the color of a shape.' onClick={this.colorizeClick.bind(this)} style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Change the color of a shape"
+                onClick={this.colorizeClick.bind(this)}
+                style={this.currentMode === 'colorize' ? iconBackdropStyleActive : iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <Colorize />
               </IconButton>
-              <IconButton tooltip='Delete selected highlight.' onClick={this.deleteHighlightClick.bind(this)} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Delete selected highlight"
+                onClick={this.deleteHighlightClick.bind(this)}
+                style={iconBackdropStyleSpaced}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <DeleteForever />
               </IconButton>
-              {/* <IconButton tooltip='Add more layers to image.' onClick={() => {setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE);}} style={iconBackdropStyleSpaced} iconStyle={iconStyle}>
+              <IconButton
+                tooltip="Add more layers to image"
+                onClick={() => setAddTileSourceMode(document_id, UPLOAD_SOURCE_TYPE)}
+                style={iconBackdropStyleSpaced}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+                disabled={loading}
+              >
                 <AddToPhotos />
-              </IconButton> */}
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || (this.state && this.state.currentPage === 0) || loading}
+                tooltip="Move layer up"
+                onClick={() => this.moveLayerClick(-1)}
+                style={iconBackdropStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <LayerForward size={16} />
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || !(content && content.tileSources && this.state && this.state.currentPage !== content.tileSources.length-1) || loading}
+                tooltip="Move layer down"
+                onClick={() => this.moveLayerClick(1)}
+                style={iconBackdropStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <LayerBackward size={16} />
+              </IconButton>
+              <IconButton
+                disabled={!hasLayers || loading}
+                tooltip="Delete layer"
+                onClick={this.deleteLayerClick.bind(this)}
+                style={iconBackdropStyle}
+                iconStyle={iconStyle}
+                tooltipStyles={tooltipStyle}
+              >
+                <RemoveFromPhotos />
+              </IconButton>
+              {hasLayers && (
+                <form 
+                  className="tile-name-form"
+                  onSubmit={this.submitLayerName.bind(this)}
+                  style={editingLayerName ? {} : { overflow: 'hidden' }}
+                >
+                  <div
+                    className="current-tile"
+                    style={editingLayerName ? {} : { overflow: 'hidden' }}
+                  >
+                    <span className="current-tile-page">
+                      {this.state.currentPage+1}
+                    </span>
+                    <span className="current-tile-name">
+                      {`: ${!editingLayerName ? currentLayerName : ''}`}
+                    </span>
+                  </div>
+                  {editingLayerName && (
+                    <TextField
+                      name={`layer${this.state.currentPage}-name`}
+                      disabled={loading}
+                      value={this.state.layerName}
+                      inputStyle={{
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        paddingLeft: '5px',
+                        flex: '1 1 auto',
+                      }}
+                      style={{
+                        overflow: 'hidden',
+                        borderBottom: '1px solid white',
+                        height: '24px',
+                        width: 'auto',
+                        flex: '1 1 auto',
+                        maxWidth: '100%',
+                      }}
+                      underlineShow={false}
+                      autoComplete='off'
+                      onChange={this.onChangeLayerName.bind(this)}
+                    />
+                  )}
+                  {!editingLayerName && (
+                    <IconButton
+                      disabled={loading}
+                      tooltip="Edit layer name"
+                      type="button"
+                      onClick={this.editLayerNameClick.bind(this)}
+                      style={{ width: '16px', height: 'auto', paddingLeft: '2px' }}
+                      iconStyle={smallIconStyle}
+                      tooltipStyles={tooltipStyle}
+                    >
+                      <Edit color="white" />
+                    </IconButton>
+                  )}
+                  {editingLayerName && (
+                    <>
+                      <IconButton
+                        disabled={loading}
+                        tooltip="Save"
+                        type="submit"
+                        style={floatingIconBackdropStyle}
+                        iconStyle={smallIconStyle}
+                        tooltipStyles={tooltipStyle}
+                      >
+                        <Done color="green" />
+                      </IconButton>
+                      <IconButton
+                        disabled={loading}
+                        tooltip="Cancel"
+                        type="button"
+                        onClick={this.cancelEditLayerName.bind(this)}
+                        style={floatingIconBackdropStyle}
+                        iconStyle={smallIconStyle}
+                        tooltipStyles={tooltipStyle}
+                      >
+                        <Cancel color="red" />
+                      </IconButton>
+                    </>
+                  )}
+                </form>
+              )}
+
             </div>
           }
           <div style={{ width: '100%', display: 'flex', alignItems: 'stretch', flexGrow: '1' }}>
-            <Slider sliderStyle={{marginTop: '0'}} axis='y' step={0.01} value={this.props.zoomControls[key] || 0} onChange={this.zoomControlChange.bind(this)} />
+            <Slider
+              sliderStyle={{marginTop: '0'}}
+              axis='y'
+              step={0.01}
+              min={this.state.minZoom}
+              max={this.state.maxZoom}
+              value={this.state.zoomLevel}
+              onChange={this.zoomControlChange.bind(this)}
+            />
             <div id={this.osdId} style={{ flexGrow: 1 }}></div>
           </div>
         </div>
@@ -821,7 +1396,9 @@ class CanvasResource extends Component {
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
           content={content}
-          openTileSource={this.openTileSource.bind(this)}
+          openTileSources={this.openTileSources.bind(this)}
+          setLastSaved={setLastSaved}
+          setSaving={setSaving}
         />
       </div>
     );
@@ -835,8 +1412,10 @@ const mapStateToProps = state => ({
   addTileSourceMode: state.canvasEditor.addTileSourceMode,
   imageURLs: state.canvasEditor.imageURLs,
   isPencilMode: state.canvasEditor.isPencilMode,
-  zoomControls: state.canvasEditor.zoomControls,
-  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay
+  globalCanvasDisplay: state.canvasEditor.globalCanvasDisplay,
+  pageToChange: state.canvasEditor.pageToChange,
+  loading: state.documentGrid.loading,
+  editingLayerName: state.canvasEditor.editingLayerName,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -848,8 +1427,10 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   setCanvasHighlightColor,
   toggleCanvasColorPicker,
   setIsPencilMode,
-  setZoomControl,
-  openDeleteDialog
+  openDeleteDialog,
+  moveLayer,
+  renameLayer,
+  toggleEditLayerName,
 }, dispatch);
 
 export default connect(

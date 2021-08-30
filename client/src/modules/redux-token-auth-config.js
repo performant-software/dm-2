@@ -7,11 +7,14 @@ const config = {
     name: 'name',
     approved: 'approved',
     admin: 'admin',
-    id: 'id'
+    id: 'id',
+    confirmed: 'confirmed',
   },
   userRegistrationAttributes: {
     name: 'name',
-    password_confirmation: 'password_confirmation'
+    password_confirmation: 'password_confirmation',
+    email: 'email',
+    uid: 'uid',
   }
 }
 

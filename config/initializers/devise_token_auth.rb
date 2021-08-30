@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 DeviseTokenAuth.setup do |config|
   # By default the authorization headers will change after each request. The
   # client is responsible for keeping track of the changing tokens. Change
@@ -8,6 +10,11 @@ DeviseTokenAuth.setup do |config|
   # By default, users will need to re-authenticate after 2 weeks. This setting
   # determines how long tokens will remain valid after they are issued.
   # config.token_lifespan = 2.weeks
+
+  # Limiting the token_cost to just 4 in testing will increase the performance of
+  # your test suite dramatically. The possible cost value is within range from 4
+  # to 31. It is recommended to not use a value more than 10 in other environments.
+  config.token_cost = Rails.env.test? ? 4 : 10
 
   # Sets the max number of concurrent devices per user, which is 10 by default.
   # After this limit is reached, the oldest tokens will be removed.
@@ -45,4 +52,10 @@ DeviseTokenAuth.setup do |config|
   # If, however, you wish to integrate with legacy Devise authentication, you can
   # do so by enabling this flag. NOTE: This feature is highly experimental!
   # config.enable_standard_devise_support = false
+
+  # By default DeviseTokenAuth will not send confirmation email, even when including
+  # devise confirmable module. If you want to use devise confirmable module and
+  # send email, set it to true. (This is a setting for compatibility)
+  config.send_confirmation_email = true
+  config.default_confirm_success_url = "#{ENV['PROTOCOL'] || 'http'}://#{ENV['HOSTNAME']}/confirmed"
 end

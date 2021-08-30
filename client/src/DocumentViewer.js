@@ -14,7 +14,8 @@ import VisibilityOff from 'material-ui/svg-icons/action/visibility-off';
 import Description from 'material-ui/svg-icons/action/description';
 import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocumentWindow, layoutOptions } from './modules/documentGrid';
-import { toggleHighlights } from './modules/canvasEditor'
+import { toggleCanvasHighlights } from './modules/canvasEditor';
+import { toggleTextHighlights } from './modules/textEditor';
 import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
@@ -81,6 +82,21 @@ class DocumentViewer extends Component {
     this.titleChangeDelayMs = 800;
 
     this.elementRef = React.createRef();
+
+    this.state = {
+      resourceName: this.props.resourceName,
+      lastSaved: '',
+      doneSaving: true,
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.resourceName !== prevProps.resourceName) {
+      this.setState({
+        resourceName: this.props.resourceName,
+      });
+      this.props.updateDocument(this.props.document_id, {title: this.props.resourceName}, {refreshLists: true});
+    }
   }
 
   componentDidMount() {
@@ -92,15 +108,25 @@ class DocumentViewer extends Component {
     return ( writeEnabled && lockedByMe );
   }
 
+  setLastSaved(lastSaved) {
+    this.setState({ lastSaved });
+  }
+
   onChangeTitle = (event, newValue) => {
+    this.setSaving({ doneSaving: false })
+    this.setState({
+      resourceName: newValue,
+    })
     window.clearTimeout(this.titleChangeTimeout);
     this.titleChangeTimeout = window.setTimeout(() => {
       this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
-    }, this.titleChangeDelayMs);
+      this.setLastSaved(new Date().toLocaleString('en-US'));
+      this.setSaving({ doneSaving: true })
+    }, this.titleChangeDelayMs);;
   }
 
   onToggleHighlights() {
-    const key = this.getInstanceKey()
+    const key = this.getInstanceKey();
     const currentState = this.props.highlightsHidden[key] === true ? true : false
     this.props.toggleHighlights( key, !currentState )
   }
@@ -115,6 +141,10 @@ class DocumentViewer extends Component {
     this.props.closeDocumentTargets(this.props.document_id)
   }
 
+  setSaving({ doneSaving }) {
+    this.setState({ doneSaving });
+  }
+
   renderTitleBar() {
     const iconStyle = {
       padding: '0',
@@ -122,7 +152,7 @@ class DocumentViewer extends Component {
       height: '20px'
     };
     const buttonStyle = Object.assign({ margin: '2px' }, iconStyle);
-    const highlightsHidden = this.props.highlightsHidden[this.getInstanceKey()] 
+    const highlightsHidden = this.props.highlightsHidden[this.getInstanceKey()];
 
     return (
       this.props.connectDragSource(
@@ -136,14 +166,21 @@ class DocumentViewer extends Component {
               style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
               autoComplete='off'
               inputStyle={{ color: this.props.document_kind === 'canvas' ? '#FFF' : '#000' }}
-              defaultValue={this.props.resourceName}
+              value={this.state.resourceName}
               underlineShow={false}
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
             />
-            { this.props.document_kind === 'canvas' && !this.isEditable() &&
+            { !this.isEditable() &&
               <IconButton tooltip='Toggle highlights' onClick={this.onToggleHighlights.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
-                { highlightsHidden ? <VisibilityOff color='#FFF' /> : <Visibility color='#FFF' /> }
+                { highlightsHidden 
+                  ? <VisibilityOff
+                      color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'}
+                    /> 
+                  : <Visibility
+                      color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'}
+                    /> 
+                }
               </IconButton>
             }
             <IconButton tooltip='Close document' onClick={this.onCloseDocument.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
@@ -156,18 +193,31 @@ class DocumentViewer extends Component {
   }
 
   renderStatusBar() {
-    const { document_kind, document_id, locked, lockedByMe, lockedByUserName, resourceName, writeEnabled } = this.props;
+    const {
+      document_kind,
+      document_id,
+      loading,
+      locked,
+      lockedByMe,
+      lockedByUserName,
+      resourceName,
+      writeEnabled
+    } = this.props;
 
     return (
-      <DocumentStatusBar 
+      <DocumentStatusBar
+        loading={loading}
         document_id={document_id}
-        document_kind={document_kind} 
+        document_kind={document_kind}
+        instanceKey={this.getInstanceKey()}
         locked={locked}
         lockedByUserName={lockedByUserName}
         lockedByMe={lockedByMe}
-        resourceName={resourceName} 
-        writeEnabled={writeEnabled} >
-      </DocumentStatusBar>
+        resourceName={resourceName}
+        writeEnabled={writeEnabled}
+        lastSaved={this.state.lastSaved}
+        doneSaving={this.state.doneSaving}
+      />
     );
   }
 
@@ -178,6 +228,7 @@ class DocumentViewer extends Component {
     const width = (documentGridOffsetWidth / currentLayout.cols) - 100
     const rows = currentLayout.rows < numRows ? currentLayout.rows : numRows;
     const height = ((windowHeight - 72.0) / rows) - 16;
+    const highlightsHidden = this.props.highlightsHidden[this.getInstanceKey()];
 
     return (
       <Paper
@@ -193,6 +244,7 @@ class DocumentViewer extends Component {
           flexShrink: '1'
         }}
         zDepth={2}
+        className={this.props.document_kind !== 'canvas' && !this.isEditable() && highlightsHidden ? 'highlights-hidden' : ''}
       >
         {connectDropTarget(
           <div style={{
@@ -203,7 +255,11 @@ class DocumentViewer extends Component {
             flexDirection: 'column'
           }}>
             { this.renderTitleBar() }
-            <DocumentInner {...this.props} />
+            <DocumentInner 
+              setLastSaved={this.setLastSaved.bind(this)}
+              setSaving={this.setSaving.bind(this)}
+              {...this.props}
+            />
             { this.renderStatusBar() }
           </div>
         )}
@@ -221,19 +277,20 @@ DocumentViewer = DragSource(
   collectDrop
 )(DocumentViewer));
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state, ownProps) => ({
   openDocuments: state.documentGrid.openDocuments,
+  loading: state.documentGrid.loading,
   currentLayout: layoutOptions[state.documentGrid.currentLayout],
   sidebarWidth:  state.project.sidebarWidth,
-  highlightsHidden: state.canvasEditor.highlightsHidden
+  highlightsHidden: ownProps.document_kind === 'canvas' ? state.canvasEditor.highlightsHidden : state.textEditor.highlightsHidden,
 });
 
-const mapDispatchToProps = dispatch => bindActionCreators({
+const mapDispatchToProps = (dispatch, props) => bindActionCreators({
   updateDocument,
   closeDocument,
   moveDocumentWindow,
   closeDocumentTargets,
-  toggleHighlights
+  toggleHighlights: props.document_kind === 'canvas' ? toggleCanvasHighlights : toggleTextHighlights,
 }, dispatch);
 
 export default connect(

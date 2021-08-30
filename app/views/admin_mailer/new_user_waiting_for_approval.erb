@@ -1,2 +1,9 @@
-<p><%= @email %> has registered to join your Digital Mappa instance.</p>
+<% @protocol = ENV['PROTOCOL'] || 'http' %>
+<p><%= @email %> has registered to join your Digital Mappa instance at <%=  @protocol + '://' + ENV['HOSTNAME'] %>.</p>
+<p>You have received this email because you are designated as an administrator for this instance.</p>
 <p>An instance admin can approve this registration by visiting the website and reviewing the user list.</p>
+<p>
+  <strong>Reminder</strong>: once a new user is approved on this DM instance, to work on a specific project, they will
+  still need to be added to that project as a collaborator. <a href="https://www.digitalmappa.org/collaborators">Click here
+  for instructions for adding collaborators.</a>
+</p>

@@ -1,8 +1,7 @@
 
 // Add new CSS styles here
 const supportedTextStyles = { 
-    color: { cssKey: "color", default: "#000" },
-    fontSize: { cssKey: "font-size", default: "normal" }, 
+    fontSize: { cssKey: "font-size", default: "12pt" },
     textDecoration: { cssKey: "text-decoration", default: "none" }
 }
 

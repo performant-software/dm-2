@@ -3,6 +3,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { DropTarget } from 'react-dnd';
 import { openFolder, closeFolder, moveFolder, addTree } from './modules/folders';
+import { addLink, moveLink } from './modules/annotationViewer';
 import { moveDocument } from './modules/documentGrid';
 import { loadProject } from './modules/project';
 import DocumentFolder from './DocumentFolder';
@@ -10,7 +11,7 @@ import {NativeTypes} from 'react-dnd-html5-backend';
 import { parseIIIFManifest } from './modules/iiif';
 
 const ListTargetInner = props => {
-  const { isFolder, isOver, writeEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
+  const { isFolder, isOver, writeEnabled, adminEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
   if (isFolder) {
     let contents = openFolderContents[item.id];
     return <DocumentFolder
@@ -18,6 +19,7 @@ const ListTargetInner = props => {
       inContents={true}
       isDraggable={allDraggable}
       writeEnabled={writeEnabled}
+      adminEnabled={adminEnabled}
       openDocumentIds={openDocumentIds}
       isOpen={contents}
       isOver={isOver}
@@ -67,9 +69,38 @@ function handleFileSystemDrop(props,monitorItem) {
 }
 
 function handleDMItemDrop(props,monitorItem) {
-  const handler = monitorItem.isFolder ? props.moveFolder : props.moveDocument;
-  const targetID = props.targetParentType === 'Project' ? null : props.targetParentId
-  handler(monitorItem.id, targetID, props.buoyancyTarget )
+  let handler = props.moveDocument;
+  let idToPass = monitorItem.id;
+  if (props.inContents && monitorItem.isFolder) {
+    handler = props.moveFolder;
+  } else if (!props.inContents) {
+    if (
+      props.targetParentType === monitorItem.linkable_type 
+      && props.targetParentId === monitorItem.linkable_id
+    ) {
+      // Target and monitorItem are the same
+      return;
+    } else if (
+      !props.items.find(item => 
+        (monitorItem.linkable_type === 'Highlight' && item.highlight_id === monitorItem.linkable_id)
+        || (monitorItem.linkable_type === 'Document' && item.document_id === monitorItem.linkable_id)
+      )
+    ) {
+      // Link isn't yet in list
+      const origin = {
+        linkable_id: props.highlightId || props.documentId,
+        linkable_type: props.highlightId ? 'Highlight' : 'Document'
+      }
+      props.addLink(origin, monitorItem, props.buoyancyTarget, origin.linkable_type);
+      return;
+    } else {
+      // Link in list, just needs to reorder
+      idToPass = monitorItem.link_id;
+      handler = props.moveLink;
+    }
+  }
+  const targetID = props.targetParentType === 'Project' ? null : props.targetParentId;
+  handler(idToPass, targetID, props.targetParentType, props.buoyancyTarget )
   .then(() => {
     // TODO these shouldn't happen until we get an OK back from the server
     if (monitorItem.existingParentType === 'Project' || props.targetParentType === 'Project')
@@ -84,7 +115,13 @@ function handleDMItemDrop(props,monitorItem) {
 const listDropTarget = {
   canDrop(props, monitor) {
     const monitorItem = monitor.getItem();
-    if( props.item && monitorItem.isFolder && (monitorItem.id === props.item.id || (monitorItem.descendant_folder_ids && monitorItem.descendant_folder_ids.includes(props.item.id)))) {
+    if (
+      (props.item && monitorItem.isFolder && (monitorItem.id === props.item.id 
+        || (monitorItem.descendant_folder_ids && monitorItem.descendant_folder_ids.includes(props.item.id))
+      )) 
+      || (monitorItem.isLinkItem && props.inContents)
+      || (monitorItem.files && !props.inContents)
+    ) {
       return false;
     }
     return true;
@@ -110,6 +147,18 @@ function collect(connect, monitor) {
 }
 
 class ListDropTarget extends Component {
+  componentDidUpdate(prevProps) {
+    if (this.props.addedLink !== prevProps.addedLink) {
+      const { id, highlight_id, document_id, position, listType } = this.props.addedLink;
+      if (position === this.props.buoyancyTarget) {
+        if (listType === 'Highlight') {
+          this.props.moveLink(id, highlight_id, 'Highlight', position + 1);
+        } else if (listType === 'Document') {
+          this.props.moveLink(id, document_id, 'Document', position + 1);
+        }
+      }
+    }
+  }
   render() {
     return this.props.connectDropTarget(
       <div>
@@ -120,11 +169,11 @@ class ListDropTarget extends Component {
 }
 
 ListDropTarget = DropTarget(['contentsSummary', NativeTypes.FILE], listDropTarget, collect)(ListDropTarget);
-// ListDropTarget = DropTarget(['contentsSummary'], listDropTarget, collect)(ListDropTarget);
 
 const mapStateToProps = state => ({
   openFolderContents: state.folders.openFolderContents,
-  projectId: state.project.id
+  projectId: state.project.id,
+  addedLink: state.annotationViewer.addedLink,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -132,6 +181,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   closeFolder,
   moveFolder,
   moveDocument,
+  addLink,
+  moveLink,
   loadProject,
   addTree
 }, dispatch);

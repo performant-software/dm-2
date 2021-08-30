@@ -5,17 +5,195 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+.github-picker {
+  z-index: 3001;
+}
+
+.hidden-tools-popover {
+  background-color: rgb(232, 232, 232) !important;
+}
+
+.hidden-tools-popover > div {
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+}
+
+.hidden-tools-popover > div > div {
+  display: flex;
+}
+
+.tooltip-popover {
+  font-family: Roboto, sans-serif;
+  font-size: 10px;
+  line-height: 22px;
+  padding: 0px 8px;
+  color: white !important;
+  background-color: rgb(100, 100, 100) !important;
+  opacity: 0.9 !important;
+  box-shadow: none !important;
+  margin-top: 6px !important;
+}
+
+.tooltip-above {
+  margin-top: 0 !important;
+  font-size: 14px !important;
+  padding: 4px 12px !important;
+}
+
+.font-size-dropdown {
+  margin-top: -8px !important;
+  margin-left: -24px !important;
+  margin-right: -24px !important;
+}
+
+.font-size-dropdown > div {
+  padding: 0 !important;
+  margin-left: 24px !important;
+  margin-right: 0 !important;
+}
+
+.font-size-dropdown svg {
+  display: none !important;
+}
+
+.font-family-dropdown {
+  margin-top: -8px !important;
+  margin-right: -18px !important;
+}
+
+.hidden-tools-popover .font-size-dropdown,
+.hidden-tools-popover .font-family-dropdown {
+  margin-top: 0px !important;
+}
+
+.hidden-tools-popover .font-size-dropdown > div,
+.hidden-tools-popover .font-family-dropdown > div {
+  margin-top: -4px !important;
+}
+
+.folder-name-textfield {
+  flex-grow: 1;
+  height: auto !important;
+  margin-top: -3px;
+  margin-bottom: -10px;
+  word-wrap: normal;
+  cursor: text !important;
+  color: #212121 !important;
+}
+
+.folder-name-textfield textarea {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  cursor: text !important;
+  color: #212121 !important;
+}
+
 .dm-highlight .selected {
   border: 2px solid blue;
 }
 
-.ProseMirror-menubar {
-  min-height: 48px !important;
+.dm-highlight .targeted {
+  box-shadow: 0 0px 8px blue, 0 0px 8px blue, 0 0px 8px blue;
+  z-index: 1;
+  position: relative;
 }
 
-.ProseMirror {
-  /* max-height: 1000px;
-  overflow-y: scroll; */
+.highlights-hidden .dm-highlight {
+  background-color: white !important;
+}
+
+.highlights-hidden .dm-highlight .targeted {
+	box-shadow: none !important;
+}
+
+.highlights-hidden  .dm-highlight .selected {
+  border: none !important;
+}
+
+.current-tile {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+  margin-left: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: 18px;
+  padding-right: 3px;
+}
+
+.current-tile-page {
+  font-weight: bold;
+  color: white;
+}
+
+.current-tile-name {
+  overflow: hidden;
+}
+
+.tile-name-form {
+  display: flex;
+  text-overflow: ellipsis;
+  width: 100%;
+  flex: 0 1 auto;
+  align-items: center;
+  height: 18px;
+}
+
+.image-layer-controls {
+  display: flex !important;
+  align-items: center;
+}
+
+.layer-button-group {
+  display: flex !important;
+  flex-direction: column;
+  margin-top: -5px !important;
+}
+
+.layer-button-group div {
+  margin-bottom: -8px !important;
+}
+
+.image-layer-select {
+  background: white;
+  height: 28px;
+  padding: 0px 2px;
+  margin-top: -4px;
+}
+
+.one-column div.ProseMirror {
+  column-count: 1;
+}
+.two-column div.ProseMirror {
+  column-count: 2;
+}
+.three-column div.ProseMirror {
+  column-count: 3;
+}
+
+.editorview-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.editorview-loading-indicator {
+  left: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.33);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ProseMirror-menubar {
+  min-height: 48px !important;
 }
 
 .ProseMirror:focus {

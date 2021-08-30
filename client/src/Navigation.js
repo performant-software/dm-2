@@ -11,8 +11,10 @@ import MenuItem from 'material-ui/MenuItem';
 import CircularProgress from 'material-ui/CircularProgress';
 import Divider from 'material-ui/Divider';
 import DropDownMenu from 'material-ui/DropDownMenu';
-
+import NavigationArrowUpward from 'material-ui/svg-icons/navigation/arrow-upward';
+import MenuIcon from 'material-ui/svg-icons/navigation/menu';
 import MoreVert from 'material-ui/svg-icons/navigation/more-vert';
+import IconButton from 'material-ui/IconButton';
 import { signOutUser } from './modules/redux-token-auth-config';
 import { toggleSidebar } from './modules/project';
 import { load, showRegistration, showLogin, toggleAuthMenu, hideAuthMenu, showAdminDialog } from './modules/home';
@@ -23,7 +25,10 @@ import AdminDialog from './AdminDialog';
 import SearchBar from './SearchBar';
 
 const LoginMenuBody = props => {
-  if (props.currentUser && props.currentUser.isSignedIn) {
+  if (props.currentUser 
+    && props.currentUser.isSignedIn
+    && props.currentUser.attributes
+    && props.currentUser.attributes.confirmed) {
     return (
       <div>
         <MenuItem primaryText = 'Sign out' onClick={() => {
@@ -57,9 +62,18 @@ const LoginMenuBody = props => {
 
 class Navigation extends Component {
 
+  onCloseProject = () => {
+    this.props.clearSelection()
+    this.props.returnHome()
+  }
+
   render() {
     let userMenuLabel = '';
-    if (this.props.currentUser.attributes.id) { // if a user is signed in
+    if (this.props.currentUser 
+      && this.props.currentUser.isSignedIn 
+      && this.props.currentUser.attributes 
+      && this.props.currentUser.attributes.confirmed
+    ) { // if a user is signed in
       userMenuLabel += this.props.currentUser.attributes.name;
       if (!this.props.currentUser.attributes.approved) {
         userMenuLabel += ' (Pending approval)';
@@ -75,7 +89,9 @@ class Navigation extends Component {
             }
           </div>}
           showMenuIconButton={!this.props.isHome}
-          onLeftIconButtonClick={this.props.toggleSidebar}
+          iconElementLeft={this.props.isHome ? (<div />) : (
+            <IconButton onClick={this.props.toggleSidebar} ><MenuIcon color="white" /></IconButton>
+          )}
           iconElementRight={
             <div>
               {!this.props.isHome && 
@@ -101,6 +117,9 @@ class Navigation extends Component {
                 labelPosition='before'
                 onClick={event => {this.props.toggleAuthMenu(event.currentTarget);}}
               />
+              {!this.props.isHome && (
+                <IconButton onClick={this.onCloseProject} ><NavigationArrowUpward color="white" /></IconButton>
+              )}
             </div>
           }
           style={{position: 'fixed', top: 0, zIndex: 9999}}

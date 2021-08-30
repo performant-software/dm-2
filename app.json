@@ -32,6 +32,9 @@
     "HOSTNAME": {
       "required": true
     },
+    "PROTOCOL": {
+      "required": false
+    },
     "ACTIVE_STORAGE_SERVICE": {
       "required": false
     },

@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import { push } from 'react-router-redux';
 
 import CreateNewFolder from 'material-ui/svg-icons/file/create-new-folder';
 import { white } from 'material-ui/styles/colors'
@@ -10,21 +9,14 @@ import { createTextDocument, createCanvasDocument } from './modules/documentGrid
 import { createFolder } from './modules/folders';
 import AddDocumentButton from './AddDocumentButton';
 import LinkableList from './LinkableList';
-import ArrowBack from 'material-ui/svg-icons/navigation/arrow-back';
 import { Toolbar, ToolbarGroup, FlatButton, Drawer, IconButton } from 'material-ui';
 import Settings from 'material-ui/svg-icons/action/settings';
 import MoveToInbox from 'material-ui/svg-icons/content/move-to-inbox';
-import { clearSelection } from './modules/annotationViewer'
 
 class TableOfContents extends Component {
 
-  onCloseProject = () => {
-    this.props.clearSelection()
-    this.props.returnHome()
-  }
-
   render() {
-    const { sidebarWidth, sidebarOpen, showSettings, projectId, contentsChildren, openDocumentIds, writeEnabled } = this.props
+    const { sidebarWidth, sidebarOpen, adminEnabled, projectId, contentsChildren, openDocumentIds, writeEnabled } = this.props
 
     return (
       <Drawer open={sidebarOpen} width={sidebarWidth}>
@@ -33,7 +25,6 @@ class TableOfContents extends Component {
             { writeEnabled &&
               <Toolbar noGutter={true} style={{marginLeft: 10, background: white}}>
                 <ToolbarGroup >
-                  <IconButton onClick={this.onCloseProject} ><ArrowBack /></IconButton>
                   <AddDocumentButton 
                     label='New Item' 
                     documentPopoverOpen={this.props.documentPopoverOpen} 
@@ -48,9 +39,23 @@ class TableOfContents extends Component {
                     icon={<CreateNewFolder />}
                     onClick={() => {this.props.createFolder(projectId, 'Project');}}
                   />
-                    <IconButton onClick={this.props.checkInAllClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><MoveToInbox /></IconButton>
-                  { showSettings && 
-                    <IconButton onClick={this.props.settingsClick} style={{ width: '44px', height: '44px', marginLeft: '6px' }} iconStyle={{ width: '20px', height: '20px' }}><Settings /></IconButton>
+                    <IconButton
+                      onClick={this.props.checkInAllClick}
+                      style={{ width: '44px', height: '44px', marginLeft: '6px' }}
+                      iconStyle={{ width: '20px', height: '20px' }}
+                      tooltip="Check In All Documents"
+                    >
+                      <MoveToInbox />
+                    </IconButton>
+                  { adminEnabled && 
+                    <IconButton 
+                      onClick={this.props.settingsClick}
+                      style={{ width: '44px', height: '44px', marginLeft: '6px' }}
+                      iconStyle={{ width: '20px', height: '20px' }}
+                      tooltip="Project Settings"
+                    >
+                      <Settings />
+                    </IconButton>
                   }
                 </ToolbarGroup>
               </Toolbar>
@@ -61,6 +66,7 @@ class TableOfContents extends Component {
               openDocumentIds={openDocumentIds} 
               allDraggable={writeEnabled} 
               writeEnabled={writeEnabled} 
+              adminEnabled={adminEnabled}
             />
           </div>
         </div>
@@ -76,8 +82,6 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
-  returnHome: () => push('/'),
-  clearSelection,
   openDocumentPopover,
   closeDocumentPopover,
   createTextDocument,

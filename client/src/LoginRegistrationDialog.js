@@ -6,7 +6,19 @@ import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
 import { red500, blue900 } from 'material-ui/styles/colors';
 import { registerUser, signInUser } from './modules/redux-token-auth-config';
-import { load, hideLogin, hideRegistration, showApprovalPending, hideApprovalPending, userEmailChanged, userNameChanged, userPasswordChanged, userPasswordConfirmationChanged, userAuthErrored } from './modules/home';
+import {
+  load,
+  hideLogin,
+  hideRegistration,
+  showApprovalPending,
+  hideApprovalPending,
+  userEmailChanged,
+  userNameChanged,
+  userPasswordChanged,
+  userPasswordConfirmationChanged,
+  userAuthErrored,
+  closeConfirmDialog,
+} from './modules/home';
 
 class LoginRegistrationDialog extends Component {
   render() {
@@ -23,23 +35,26 @@ class LoginRegistrationDialog extends Component {
       title = 'Register new user';
       actions.push(
         <FlatButton
-          label='Cancel'
+          label="Cancel"
           primary={true}
           onClick={this.props.hideRegistration}
         />
       );
       actions.push(
         <FlatButton
-          label='Register'
+          label="Register"
           primary={true}
           onClick={() => {
             this.props.registerUser({
               email: this.props.userEmail,
+              uid: this.props.userEmail,
               name: this.props.userName,
               password: this.props.userPassword,
-              password_confirmation: this.props.userPasswordConfirmation
+              password_confirmation: this.props.userPasswordConfirmation,
             })
-            .then(this.props.showApprovalPending)
+            .then(() => {
+              this.props.showApprovalPending();
+            })
             .catch(this.props.userAuthErrored);
           }}
         />
@@ -55,26 +70,37 @@ class LoginRegistrationDialog extends Component {
       title = 'Approval pending';
       actions.push(
         <FlatButton
-          label='OK'
+          label="OK"
           primary={true}
           onClick={this.props.hideApprovalPending}
         />
       );
       open = true;
       requestedClose = this.props.hideApprovalPending;
+    } else if (this.props.confirmUserSuccessDialogShown) {
+      title = this.props.confirmUserErrored ? 'Email confirmation error' : 'Email confirmed succesfully';
+      actions.push(
+        <FlatButton
+          label="OK"
+          primary={true}
+          onClick={this.props.closeConfirmDialog}
+        />
+      );
+      open = true;
+      requestedClose = this.props.closeConfirmDialog;
     }
     else if (this.props.loginShown) {
       title = 'Sign in';
       actions.push(
         <FlatButton
-          label='Cancel'
+          label="Cancel"
           primary={true}
           onClick={this.props.hideLogin}
         />
       );
       actions.push(
         <FlatButton
-          label='Sign in'
+          label="Sign in"
           primary={true}
           onClick={() => {
             this.props.signInUser({
@@ -106,48 +132,99 @@ class LoginRegistrationDialog extends Component {
         actions={actions}
       >
         {this.props.userAuthError &&
-          <p style={{ color: red500 }}>User authentication error</p>
+          <>
+            <p style={{ color: red500 }}>
+              User authentication error
+            </p>
+            {this.props.userAuthError.response && this.props.userAuthError.response.data 
+            && this.props.userAuthError.response.data.errors && (
+              <p>
+                {Array.isArray(this.props.userAuthError.response.data.errors)
+                  && this.props.userAuthError.response.data.errors.length > 0 
+                  && this.props.userAuthError.response.data.errors[0].toString()}
+                {!Array.isArray(this.props.userAuthError.response.data.errors)
+                  && Array.isArray(this.props.userAuthError.response.data.errors.full_messages)
+                  && this.props.userAuthError.response.data.errors.full_messages.length > 0
+                  && this.props.userAuthError.response.data.errors.full_messages[0].toString()
+                }
+              </p>
+            )}
+          </>
         }
         {this.props.approvalPendingShown &&
-          <p style={{ color: blue900 }}>Your account has been created, but a site administrator must approve it before you can proceed to work with projects. An email has been sent to the administrators for this site.</p>
+          <>
+            <p style={{ color: blue900 }}>
+              Your account has been created, but your email must be confirmed before you may log in.
+            </p>
+            <p style={{ color: blue900 }}>
+              In addition, a site administrator must approve your account before you can proceed to work with projects.
+              An email has been sent to the administrators for this site.
+            </p>
+          </>
         }
+        {this.props.confirmUserSuccessDialogShown && (
+          <p style={{ color: blue900 }}>
+            {this.props.confirmUserErrored && 'There was an error confirming your email address.'}
+            {!this.props.confirmUserErrored && (
+              <>
+                <p>
+                  Congratulations, your <i>Digital Mappa</i> account and
+                  email are confirmed! You may now log in.
+                </p>
+                <p>
+                  Once an administrator approves your account, you may start using this
+                  <i>Digital Mappa</i> instance in accordance with the permissions set by this
+                  instance's administrator. To access any non-public projects on this DM instance,
+                  you will still need to be added to a specific project by its project
+                  administrator.
+                </p>
+              </>
+            )}
+          </p>
+        )}
         {showEmailField &&
           <div>
             <TextField
-              floatingLabelText='Email'
-              hintText='me@example.com'
+              floatingLabelText="Email"
+              hintText="me@example.com"
               value={this.props.userEmail}
               onChange={this.props.userEmailChanged}
+              type="email"
+              autoComplete="email"
             /><br />
           </div>
         }
         {showNameField &&
           <div>
             <TextField
-              floatingLabelText='Display name'
+              floatingLabelText="Display name"
               value={this.props.userName}
               onChange={this.props.userNameChanged}
+              type="text"
+              autoComplete="name"
             /><br />
           </div>
         }
         {showPasswordField &&
           <div>
             <TextField
-              type='password'
-              floatingLabelText='Password'
+              type="password"
+              floatingLabelText="Password"
               value={this.props.userPassword}
               onChange={this.props.userPasswordChanged}
+              autoComplete={this.props.registrationShown ? 'new-password' : 'current-password'}
             /><br />
           </div>
         }
         {showPasswordConfirmationField &&
           <div>
             <TextField
-              type='password'
-              floatingLabelText='Confirm password'
+              type="password"
+              floatingLabelText="Confirm password"
               value={this.props.userPasswordConfirmation}
               onChange={this.props.userPasswordConfirmationChanged}
               errorText={this.props.userPassword !== this.props.userPasswordConfirmation ? 'Passwords much match' : null}
+              autoComplete="new-password"
             /><br />
           </div>
         }
@@ -164,7 +241,9 @@ const mapStateToProps = state => ({
   userName: state.home.userName,
   userPassword: state.home.userPassword,
   userPasswordConfirmation: state.home.userPasswordConfirmation,
-  userAuthError: state.home.userAuthError
+  userAuthError: state.home.userAuthError,
+  confirmUserSuccessDialogShown: state.home.confirmUserSuccessDialogShown,
+  confirmUserErrored: state.home.confirmUserErrored,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -179,7 +258,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   userPasswordConfirmationChanged,
   registerUser,
   signInUser,
-  userAuthErrored
+  userAuthErrored,
+  closeConfirmDialog,
 }, dispatch);
 
 export default connect(

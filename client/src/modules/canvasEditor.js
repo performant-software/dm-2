@@ -3,13 +3,16 @@ export const HIDE_COLOR_PICKER = 'canvasEditor/HIDE_COLOR_PICKER';
 export const TOGGLE_COLOR_PICKER = 'canvasEditor/TOGGLE_COLOR_PICKER';
 export const SET_ADD_TILE_SOURCE_MODE = 'canvasEditor/SET_ADD_TILE_SOURCE_MODE';
 export const SET_IS_PENCIL_MODE = 'canvasEditor/SET_IS_PENCIL_MODE';
-export const SET_ZOOM_CONTROL = 'canvasEditor/SET_ZOOM_CONTROL';
 export const SET_GLOBAL_CANVAS_DISPLAY = 'canvasEditor/SET_GLOBAL_CANVAS_DISPLAY';
 export const SET_IMAGE_URL = 'canvasEditor/SET_IMAGE_URL';
 export const TOGGLE_HIGHLIGHTS = 'canvasEditor/TOGGLE_HIGHLIGHTS';
 export const IIIF_TILE_SOURCE_TYPE = 'iiif';
 export const IMAGE_URL_SOURCE_TYPE = 'image_url';
 export const UPLOAD_SOURCE_TYPE = 'upload';
+export const PAGE_TO_CHANGE = 'canvasEditor/PAGE_TO_CHANGE';
+export const RENAME_LAYER = 'canvasEditor/RENAME_LAYER';
+export const RENAME_LAYER_SUCCESS = 'canvasEditor/RENAME_LAYER_SUCCESS';
+export const TOGGLE_EDIT_LAYER_NAME = 'canvasEditor/TOGGLE_EDIT_LAYER_NAME';
 
 const initialState = {
   highlightColors: {},
@@ -18,8 +21,9 @@ const initialState = {
   highlightsHidden: {},
   imageURLs: {},
   isPencilMode: {},
-  zoomControls: {},
-  globalCanvasDisplay: true
+  globalCanvasDisplay: true,
+  pageToChange: {},
+  editingLayerName: {},
 };
 
 export default function(state = initialState, action) {
@@ -72,14 +76,6 @@ export default function(state = initialState, action) {
         isPencilMode: updatedPencilMode
       };
 
-    case SET_ZOOM_CONTROL:
-      let updatedZoomControls = Object.assign({}, state.zoomControls);
-      updatedZoomControls[action.editorKey] = action.zoomValue;
-      return {
-        ...state,
-        zoomControls: updatedZoomControls
-      };
-
     case SET_GLOBAL_CANVAS_DISPLAY:
       return {
         ...state,
@@ -92,6 +88,28 @@ export default function(state = initialState, action) {
       return {
         ...state,
         highlightsHidden
+      };
+    
+    case PAGE_TO_CHANGE:
+      let updatedPageToChange = Object.assign({}, state.pageToChange);
+      updatedPageToChange[action.editorKey] = action.pageToChange;
+      return {
+        ...state,
+        pageToChange: updatedPageToChange,
+      };
+    
+    case TOGGLE_EDIT_LAYER_NAME:
+      let updatedEditingLayerName = Object.assign({}, state.editingLayerName);
+      updatedEditingLayerName[action.editorKey] = action.value;
+      return {
+        ...state,
+        editingLayerName: updatedEditingLayerName,
+      };
+    
+    case RENAME_LAYER_SUCCESS:
+      return {
+        ...state,
+        loading: false,
       };
 
     default:
@@ -152,7 +170,7 @@ export function setIsPencilMode(editorKey, isPencilMode) {
   }
 }
 
-export function toggleHighlights(editorKey, value) {
+export function toggleCanvasHighlights(editorKey, value) {
   return function(dispatch) {
     dispatch({
       type: TOGGLE_HIGHLIGHTS,
@@ -162,21 +180,31 @@ export function toggleHighlights(editorKey, value) {
   };
 }
 
-export function setZoomControl(editorKey, zoomValue) {
-  return function(dispatch) {
-    dispatch({
-      type: SET_ZOOM_CONTROL,
-      editorKey,
-      zoomValue
-    });
-  }
-}
-
 export function setGlobalCanvasDisplay(value) {
   return function(dispatch) {
     dispatch({
       type: SET_GLOBAL_CANVAS_DISPLAY,
       value
+    });
+  }
+}
+
+export function changePage({ editorKey, page }) {
+  return function(dispatch) {
+    dispatch({
+      type: PAGE_TO_CHANGE,
+      pageToChange: page,
+      editorKey,
+    });
+  }
+}
+
+export function toggleEditLayerName({ editorKey, value }) {
+  return function(dispatch) {
+    dispatch({
+      type: TOGGLE_EDIT_LAYER_NAME,
+      editorKey,
+      value,
     });
   }
 }

@@ -16,7 +16,16 @@ import DraggableLinkIcon from './DraggableLinkIcon';
 const LinkList = function(props) {
   if (props.items && props.items.length > 0) {
     return (
-      <LinkableList items={props.items} writeEnabled={props.writeEnabled} openDocumentIds={props.openDocumentIds} />
+      <LinkableList
+        items={props.items}
+        originKey={props.originKey}
+        writeEnabled={props.writeEnabled}
+        adminEnabled={props.adminEnabled}
+        openDocuments={props.openDocuments}
+        openDocumentIds={props.openDocumentIds}
+        highlightId={props.highlight_id}
+        documentId={props.document_id}
+      />
     );
   }
   return null;
@@ -57,7 +66,7 @@ const linkTarget = {
     }
 
     // this is a fresh link, create it...
-    props.addLink(origin, target);
+    props.addLink(origin, target, null, origin.linkable_type);
   }
 };
 
@@ -70,16 +79,18 @@ function collect(connect, monitor) {
 
 class LinkDropTarget extends Component {
   render() {
-    return this.props.connectDropTarget(
+    return (
       <div style={{marginTop: '8px'}}>
         <div style={{maxWidth: '350px', maxHeight: '450px', margin: 10, overflowY: 'auto'}}>
           <LinkList {...this.props} />
         </div>
-        <div style={{ height: '64px', margin: '0 8px 8px 8px', padding: '0 16px', borderRadius: '4px', border: `1px ${this.props.isOver ? 'black' : grey400} dashed`, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {!this.props.isOver &&
-            <Subheader style={{ fontStyle: 'italic', padding: '0' }}>Drop link here.</Subheader>
-          }
-        </div>
+        {(this.props.connectDropTarget(
+          <div style={{ height: '64px', margin: '0 8px 8px 8px', padding: '0 16px', borderRadius: '4px', border: `1px ${this.props.isOver ? 'black' : grey400} dashed`, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {!this.props.isOver &&
+              <Subheader style={{ fontStyle: 'italic', padding: '0' }}>Drop link here.</Subheader>
+            }
+          </div>
+        ))}
       </div>
     );
   }
@@ -126,7 +137,18 @@ class LinkInspector extends Component {
     const buttonId = `addNewDocumentButton-${this.props.idString}`;
     return (
       <div style={{ marginBottom: '8px' }}>
-        <LinkArea items={items} openDocumentIds={this.props.openDocumentIds} loading={target.loading} document_id={target.document_id} highlight_id={target.highlight_id} addLink={this.props.addLink} writeEnabled={this.props.writeEnabled} />
+        <LinkArea
+          items={items}
+          openDocuments={this.props.openDocuments}
+          openDocumentIds={this.props.openDocumentIds}
+          loading={target.loading}
+          originKey={target.originKey}
+          document_id={target.document_id}
+          highlight_id={target.highlight_id}
+          addLink={this.props.addLink}
+          writeEnabled={this.props.writeEnabled}
+          adminEnabled={this.props.adminEnabled}
+        />
         {this.props.writeEnabled && 
           <div>
             <RaisedButton

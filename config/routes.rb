@@ -5,8 +5,13 @@ Rails.application.routes.draw do
   resources :links, except: [:index, :update]
   resources :highlights, except: :index
   resources :projects
-  mount_devise_token_auth_for 'User', at: '/auth'
+  mount_devise_token_auth_for 'User', at: '/auth', controllers: {
+    registrations: 'registrations',
+  }
 
+  devise_scope :user do
+    get '/confirmed' => 'confirmations#complete_confirmation'
+  end
   get '/users/update'
   get '/users/list_admin' => 'users#list_admin'
   patch '/users/:id' => 'users#admin_update'
@@ -21,6 +26,10 @@ Rails.application.routes.draw do
   post '/document_folders/:id/add_tree' => 'document_folders#add_tree'
   get '/projects/:id/search' => 'projects#search'
   post '/projects/:id/check_in' => 'projects#check_in'
+  patch '/links/:id/move' => 'links#move'
+  patch '/documents/:id/move_layer' => 'documents#move_layer'
+  patch '/documents/:id/delete_layer' => 'documents#delete_layer'
+  patch '/documents/:id/rename_layer' => 'documents#rename_layer'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?

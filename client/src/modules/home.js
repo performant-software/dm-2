@@ -27,6 +27,9 @@ export const UPDATE_USER_SUCCESS = 'home/UPDATE_USER_SUCCESS';
 export const DELETE_USER_LOADING = 'home/DELETE_USER_LOADING';
 export const DELETE_USER_ERRORED = 'home/DELETE_USER_ERRORED';
 export const DELETE_USER_SUCCESS = 'home/DELETE_USER_SUCCESS';
+export const CONFIRM_USER_SUCCESS = 'home/CONFIRM_USER_SUCCESS';
+export const CONFIRM_USER_ERRORED = 'home/CONFIRM_USER_ERRORED';
+export const CONFIRM_USER_SUCCESS_DIALOG_CLOSED = 'home/CONFIRM_USER_SUCCESS_DIALOG_CLOSED';
 
 const initialState = {
   projects: [],
@@ -45,7 +48,10 @@ const initialState = {
   adminDialogShown: false,
   userAdminList: [],
   userAdminListLoading: false,
-  userAdminListErrored: false
+  userAdminListErrored: false,
+  confirmUserSuccessDialogShown: false,
+  confirmUserErrored: false,
+  confirmUserErroredDialogShown: false,
 };
 
 export default function(state = initialState, action) {
@@ -113,6 +119,7 @@ export default function(state = initialState, action) {
       return {
         ...state,
         approvalPendingShown: true,
+        userAuthError: false,
         registrationShown: false,
         loginShown: false,
         authMenuShown: false
@@ -156,7 +163,7 @@ export default function(state = initialState, action) {
     case USER_AUTH_ERRORED:
       return {
         ...state,
-        userAuthError: true
+        userAuthError: action.error
       };
 
     case AUTH_MENU_TOGGLED:
@@ -169,6 +176,7 @@ export default function(state = initialState, action) {
     case AUTH_MENU_HIDDEN:
       return {
         ...state,
+        userAuthError: false,
         authMenuShown: false
       };
 
@@ -211,6 +219,30 @@ export default function(state = initialState, action) {
         userAdminList: action.users
       };
 
+    case CONFIRM_USER_SUCCESS:
+      return {
+        ...state,
+        userAuthError: false,
+        confirmUserSuccessDialogShown: true,
+        confirmUserErrored: false,
+      };
+
+    case CONFIRM_USER_SUCCESS_DIALOG_CLOSED:
+      return {
+        ...state,
+        userAuthError: false,
+        confirmUserSuccessDialogShown: false,
+        confirmUserErrored: false,
+      }
+
+    case CONFIRM_USER_ERRORED:
+      return {
+        ...state,
+        userAuthError: false,
+        confirmUserSuccessDialogShown: true,
+        confirmUserErrored: true,
+      };
+      
     default:
       return state;
   }
@@ -497,3 +529,47 @@ function createAlphaNumericComparator( field ) {
   }  
 }
 
+export function confirmUser(token) {
+  return function(dispatch) {
+    fetch(`/auth/confirmation?confirmation_token=${token}`, {
+      method: 'GET',
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(res => {
+      if (res.account_confirmation_success === "true" || res.account_confirmation_success === true) {
+        dispatch({
+          type: CONFIRM_USER_SUCCESS
+        });
+      } else {
+        throw Error(res);
+      }
+    })
+    .catch((err) => {
+      dispatch({
+        type: CONFIRM_USER_ERRORED,
+        err
+      });
+    })
+  }
+}
+
+export function closeConfirmDialog() {
+  return function (dispatch) {
+    dispatch({
+      type: CONFIRM_USER_SUCCESS_DIALOG_CLOSED,
+    })
+  }
+}

@@ -54,7 +54,9 @@ export default class SearchResultsPopup extends Component {
                     inContents={false} 
                     openDocumentIds={this.props.openDocumentIds}
                     allDraggable={false} 
-                    writeEnabled={false} />
+                    writeEnabled={false}
+                    adminEnabled={false}
+                  />
                   :
                   <div style={{padding: '15px'}}>
                     No documents found.

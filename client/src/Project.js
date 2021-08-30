@@ -29,31 +29,34 @@ class Project extends Component {
     this.rolloverTimer = null;
   }
 
-  setFocusHighlight(document_id, highlight_id) {
+  setFocusHighlight(document_id, highlight_id, key) {
     this.hideRollover(highlight_id)
-    const target = this.createTarget(document_id, highlight_id)
+    const target = this.createTarget(document_id, highlight_id, key)
     if (target) {
       this.props.selectTarget(target);
     }
   }
 
-  selectTextHighlight(document_id, highlight_id) {
-    if (this.props.highlightSelectModes[document_id]) {
-      this.props.selectHighlight(document_id, highlight_id);
-    }
-    // if the clicked highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
-    else if (this.props.selectedHighlights[document_id] !== highlight_id) {
-      this.setFocusHighlight(document_id, highlight_id);
+  selectTextHighlight(document_id, highlight_id, key) {
+    if (!(key && this.props.highlightsHidden && this.props.highlightsHidden[key])) {
+      if (this.props.highlightSelectModes[key]) {
+        this.props.selectHighlight(key, highlight_id);
+      }
+      // if the clicked highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
+      else if (this.props.selectedHighlights[key] !== highlight_id) {
+        this.setFocusHighlight(document_id, highlight_id, key);
+      }
     }
   }
 
-  showRollover(document_id, highlight_id) {
-    // if the hovered highlight is currently selected, don't proceed with the normal popover behavior to facilitate editing the highlighted text
-    if (this.props.selectedHighlights[document_id] === highlight_id) return;
+  showRollover(document_id, highlight_id, key) {
+    // if this doc's highlights are hidden, or the hovered highlight is currently selected,
+    // don't proceed with the normal popover behavior to facilitate editing the highlighted text
+    if ((key && this.props.highlightsHidden && this.props.highlightsHidden[key]) || this.props.selectedHighlights[key] === highlight_id) return;
     const existingPopover = this.props.selectedTargets.find( target => !target.rollover && target.uid === highlight_id )
     if( !existingPopover ) {
       this.activateRolloverTimer( () => {
-        const target = this.createTarget(document_id, highlight_id)
+        const target = this.createTarget(document_id, highlight_id, key)
         if (target) {
           target.rollover = true
           this.props.selectTarget(target);
@@ -74,12 +77,13 @@ class Project extends Component {
     }
   }
 
-  createTarget( documentID, highlightID ) {
+  createTarget( documentID, highlightID, key ) {
     const resource = this.props.openDocuments.find(resource => resource.id.toString() === documentID.toString());
     const target = resource && highlightID ? resource.highlight_map[highlightID] : resource;
     if (target) {
       let newTarget = { ...target }
       newTarget.document_id = documentID;
+      newTarget.originKey = key;
       newTarget.highlight_id = highlightID ? target.id : null;
       newTarget.document_title = resource.title;
       newTarget.document_kind = resource.document_kind;
@@ -140,8 +144,10 @@ class Project extends Component {
           targets={this.props.selectedTargets}
           closeHandler={this.props.closeTarget}
           mouseDownHandler={this.props.promoteTarget}
+          openDocuments={this.props.openDocuments}
           openDocumentIds={this.props.openDocumentIds}
           writeEnabled={this.props.writeEnabled}
+          adminEnabled={this.props.adminEnabled}
           sidebarWidth={this.props.sidebarWidth}
         />
         <SearchResultsPopupLayer
@@ -154,8 +160,8 @@ class Project extends Component {
     );
   }
 
-  getSelectedHighlight(document_id) {
-    return this.props.selectedHighlights[document_id];
+  getSelectedHighlight(key) {
+    return this.props.selectedHighlights[key];
   }
 
   renderDocumentViewer = (document,index) => {
@@ -173,7 +179,7 @@ class Project extends Component {
         getHighlightMap={function() {return document.highlight_map;}}
         image_thumbnail_urls={document.image_thumbnail_urls}
         image_urls={document.image_urls}
-        linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id);}}
+        linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id, undefined, key);}}
         writeEnabled={this.props.writeEnabled}
         locked={document.locked}
         lockedByUserName={document.locked_by_user_name}
@@ -242,7 +248,7 @@ class Project extends Component {
           isLoading={loading}
         />
         <TableOfContents
-          showSettings={adminEnabled}
+          adminEnabled={adminEnabled}
           settingsClick={this.props.showSettings}
           checkInAllClick={ () => this.props.checkInAll(projectId) }
           sidebarWidth={sidebarWidth} 
@@ -282,7 +288,8 @@ const mapStateToProps = state => ({
   selectedTargets:    state.annotationViewer.selectedTargets,
   sidebarTarget:      state.annotationViewer.sidebarTarget,
   highlightSelectModes: state.textEditor.highlightSelectModes,
-  selectedHighlights: state.textEditor.selectedHighlights
+  selectedHighlights: state.textEditor.selectedHighlights,
+  highlightsHidden:   state.textEditor.highlightsHidden,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({

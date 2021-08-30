@@ -17,18 +17,19 @@ class Linkable < ApplicationRecord
     target_obj = target.to_obj
     # include link id so we can access it directly later
     target_obj[:link_id] = link.id
+    # include highlight uid if applicable
+    if !target_obj[:highlight_id].nil?
+      hl = Highlight.where(:id => target_obj[:highlight_id]).first
+      if !hl.nil?
+        target_obj[:highlight_uid] = hl.uid
+      end
+    end
     target_obj
   end
 
   def links_to    
     all_links = self.a_links + self.b_links
     all_links.map { |link| to_link_obj(link) }.compact
-  end
-
-  def add_link_to(linked)
-    unless self.links_to.include? linked #TODO: make more efficient, e.g. by validating uniqueness
-      link = Link.create(linkable_a: self, linkable_b: linked)
-    end
   end
 
   def thumbnail_url

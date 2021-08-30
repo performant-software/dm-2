@@ -27,6 +27,48 @@ class LinksController < ApplicationController
   def create
     @link = Link.new(new_link_params)
 
+    # Create highlights associations with positions
+    if @link.linkable_a_type == 'Highlight'
+      if @link.save
+        @link.highlights_links.create(
+          :link_id => @link[:id], 
+          :highlight_id => @link.linkable_a_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity and return
+      end
+    end
+    if @link.linkable_b_type == 'Highlight'
+      if @link.save
+        @link.highlights_links.create(
+          :link_id => @link[:id], 
+          :highlight_id => @link.linkable_b_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity and return
+      end
+    end
+    if @link.linkable_a_type == 'Document'
+      if @link.save
+        @link.documents_links.create(
+          :link_id => @link[:id], 
+          :document_id => @link.linkable_a_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity and return
+      end
+    end
+    if @link.linkable_b_type == 'Document'
+      if @link.save
+        @link.documents_links.create(
+          :link_id => @link[:id], 
+          :document_id => @link.linkable_b_id,
+        )
+      else
+        render json: @link.errors, status: :unprocessable_entity and return
+      end
+    end
+
     if @link.save
       render json: @link, status: :created, location: @link
     else
@@ -34,17 +76,18 @@ class LinksController < ApplicationController
     end
   end
 
-  # PATCH/PUT /links/1
-  # def update
-  #   if @link.update(link_params)
-  #     render json: @link
-  #   else
-  #     render json: @link.errors, status: :unprocessable_entity
-  #   end
-  # end
+
+  # PATCH/PUT /links/1/move
+  def move
+    @link = Link.find(params[:id])
+    move_params = request.parameters
+    @link.move_to(move_params[:position], move_params["targetParentType"], move_params["targetId"])
+  end
+  
 
   # DELETE /links/1
   def destroy
+    @link.renumber_all(true)
     @link.destroy
   end
 
@@ -60,7 +103,4 @@ class LinksController < ApplicationController
       params.require(:link).permit(:linkable_a_id, :linkable_a_type, :linkable_b_id, :linkable_b_type)
     end
 
-    # def link_params
-    #   params.require(:link).permit()
-    # end
 end

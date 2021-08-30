@@ -1,0 +1,6 @@
+<p><%= t(:welcome).capitalize + ' ' + @email %>!</p>
+
+<p><%= t '.confirm_link_msg' %> </p>
+
+<% @protocol = ENV['PROTOCOL'] || 'http' %>
+<p><%= link_to t('.confirm_account_link'), @protocol + '://' + (ENV['HOSTNAME'] + '?confirmationToken=' + @token).html_safe %></p>
