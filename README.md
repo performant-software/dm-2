@@ -19,23 +19,6 @@ DM2 is a single page React application backed by a Ruby on Rails server running 
 Heroku Installation
 -------------
 
-<<<<<<< HEAD
-To install DM2 on Heroku, create a new app and point it at this respository. You will need to provision SendGrid and Heroku PostGres. The following config variables should be set for the application:
-
-* AWS_ACCESS_KEY_ID
-* AWS_BUCKET
-* AWS_REGION
-* AWS_SECRET_ACCESS_KEY
-* HOSTNAME
-* LANG
-* RACK_ENV
-* RAILS_LOG_TO_STDOUT
-* RAILS_SERVE_STATIC_FILES
-* SENDGRID_PASSWORD
-* SENDGRID_USERNAME
-
-You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket.  See aws.amazon.com for more information.
-=======
 ### Create app
 
 To install DM2 on Heroku, create a new app and point it at this respository, using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
@@ -85,7 +68,6 @@ SECRET_KEY_BASE
 SENDGRID_PASSWORD
 SENDGRID_USERNAME
 ```
->>>>>>> 9b2b8462ad2c0c49eca6b4e02e6309bbb882f000
 
 Here are some default settings for provisioning a production server:
 
@@ -206,3 +188,4 @@ To convert an existing application to use a different file storage service, a ra
 
     bundle exec rake active_storage:aws_to_local
     bundle exec rake active_storage:local_to_aws
+
