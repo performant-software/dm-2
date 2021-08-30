@@ -188,4 +188,3 @@ To convert an existing application to use a different file storage service, a ra
 
     bundle exec rake active_storage:aws_to_local
     bundle exec rake active_storage:local_to_aws
-
