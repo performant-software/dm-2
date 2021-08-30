@@ -91,7 +91,7 @@ class CanvasResource extends Component {
       totalPages: 0,
       layerName: '',
       zoomLevel: 0,
-      maxZoom: 0,
+      maxZoom: 100,
       minZoom: 0,
     };
   }
@@ -243,7 +243,13 @@ class CanvasResource extends Component {
     viewer.addHandler('update-viewport', () => {
       const maxZoom = this.osdViewer.viewport.getMaxZoom();
       const minZoom = this.osdViewer.viewport.getMinZoom();
-      this.setState((prevState) => ({ ...prevState, minZoom, maxZoom }));
+      let zoomLevel = maxZoom;
+      if (this.state.zoomLevel <= minZoom) {
+        zoomLevel = minZoom;
+      } else if (this.state.zoomLevel <= maxZoom) {
+        zoomLevel = this.state.zoomLevel;
+      } 
+      this.setState((prevState) => ({ ...prevState, minZoom, maxZoom, zoomLevel }));
       if (!this.viewportUpdatedForPageYet) {
         this.renderHighlights(overlay, highlight_map);
         this.viewportUpdatedForPageYet = true;
@@ -281,11 +287,11 @@ class CanvasResource extends Component {
       const maxZoom = this.osdViewer.viewport.getMaxZoom();
       const minZoom = this.osdViewer.viewport.getMinZoom();
       let zoomLevel = maxZoom;
-      if (event.zoom <= maxZoom) {
-        zoomLevel = event.zoom;
-      } else if (event.zoom <= minZoom) {
+      if (event.zoom <= minZoom) {
         zoomLevel = minZoom;
-      }
+      } else if (event.zoom <= maxZoom) {
+        zoomLevel = event.zoom;
+      } 
       this.setState((prevState) => ({ ...prevState, zoomLevel, minZoom, maxZoom }));
     });
 
