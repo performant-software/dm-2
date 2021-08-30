@@ -31,7 +31,12 @@ class TableOfContents extends Component {
                     openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} 
                     closeDocumentPopover={this.props.closeDocumentPopover} 
                     textClick={() => {this.props.createTextDocument(projectId, 'Project');}} 
-                    imageClick={() => {this.props.createCanvasDocument(projectId, 'Project');}} 
+                    imageClick={() => {
+                      this.props.createCanvasDocument({
+                        parentId: projectId,
+                        parentType: 'Project',
+                      });
+                    }} 
                     idString='tableOfContents' 
                   />
                   <FlatButton
