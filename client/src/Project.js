@@ -174,11 +174,13 @@ class Project extends Component {
   }
 
   renderDocumentViewer = (document,index) => {
+    const { projectId, writeEnabled } = this.props;
     const key = `${document.id}-${document.timeOpened}`;
     return (
       <DocumentViewer
         key={key}
         index={index}
+        projectId={projectId}
         document_id={document.id}
         timeOpened={document.timeOpened}
         resourceName={document.title}
@@ -189,7 +191,7 @@ class Project extends Component {
         image_thumbnail_urls={document.image_thumbnail_urls}
         image_urls={document.image_urls}
         linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id, undefined, key);}}
-        writeEnabled={this.props.writeEnabled}
+        writeEnabled={writeEnabled}
         locked={document.locked}
         lockedByUserName={document.locked_by_user_name}
         lockedByMe={document.locked_by_me}

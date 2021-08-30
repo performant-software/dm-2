@@ -1091,6 +1091,7 @@ class CanvasResource extends Component {
       globalCanvasDisplay,
       setLastSaved,
       setSaving,
+      projectId,
     } = this.props;
     const key = this.getInstanceKey();
 
@@ -1401,6 +1402,7 @@ class CanvasResource extends Component {
           image_urls={image_urls}
           image_thumbnail_urls={image_thumbnail_urls}
           document_id={document_id}
+          projectId={projectId}
           content={content}
           openTileSources={this.openTileSources.bind(this)}
           setLastSaved={setLastSaved}
