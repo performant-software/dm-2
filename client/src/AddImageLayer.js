@@ -12,7 +12,7 @@ import InsertLink from 'material-ui/svg-icons/editor/insert-link';
 import Error from 'material-ui/svg-icons/alert/error';
 
 import { setAddTileSourceMode, setImageUrl, IIIF_TILE_SOURCE_TYPE, IMAGE_URL_SOURCE_TYPE, UPLOAD_SOURCE_TYPE, changePage } from './modules/canvasEditor';
-import { replaceDocument, updateDocument, setDocumentThumbnail } from './modules/documentGrid';
+import deepEqual from 'deep-equal';
 
 const tileSourceTypeLabels = {};
 tileSourceTypeLabels[IIIF_TILE_SOURCE_TYPE] = {select: 'IIIF', textField: 'Link to IIIF Image Information URI'};
@@ -31,6 +31,7 @@ class AddImageLayer extends Component {
       uploadErrorMessage: null,
       uploading: false,
       newImageUrls: [],
+      addingNewLayers: false,
     }
   }
 
@@ -41,7 +42,13 @@ class AddImageLayer extends Component {
           this.setState((prevState) => ({ ...prevState, newImageUrls: prevState.newImageUrls.concat([url]) }));
         }
       })
-    }      
+    }
+    if (prevProps.content && this.props.content 
+        && this.props.content.tileSources && this.props.content.tileSources[0]
+        && !deepEqual(prevProps.content.tileSources, this.props.content.tileSources))
+    {
+      this.setState({addingNewLayers: true});
+    }
   }
 
   addTileSource = (addTileSourceMode) => {
@@ -102,7 +109,11 @@ class AddImageLayer extends Component {
         newTileSources.push(this.state.newTileSourceValue);
     }
 
-    this.setState( { ...this.state, newTileSourceValue: null } );
+    this.setState(prevState => ({
+      ...prevState,
+      newImageUrls: [],
+      newTileSourceValue: null,
+    }));
     this.props.setAddTileSourceMode(this.props.document_id, null);
 
     if (shouldSetThumbnail && imageUrlForThumbnail) {
@@ -130,6 +141,7 @@ class AddImageLayer extends Component {
       setLastSaved,
       setSaving,
     } = this.props;
+    const allowNewLayers = this.state.addingNewLayers || (content && content.tileSources && content.tileSources.length > 0);
     return (
       <ActiveStorageProvider
         endpoint={{
@@ -187,7 +199,7 @@ class AddImageLayer extends Component {
                 handleUpload(e.currentTarget.files);
               }}
               style={{ display: 'none' }}
-              multiple={content && content.tileSources && content.tileSources.length > 0}
+              multiple={allowNewLayers}
             />
           </RaisedButton>
         )}
@@ -232,6 +244,7 @@ class AddImageLayer extends Component {
   render() {
     const { document_id, writeEnabled, addTileSourceMode, content } = this.props;
     const tileSourceMode = addTileSourceMode[document_id];
+    const allowNewLayers = this.state.addingNewLayers || (content && content.tileSources && content.tileSources.length > 0);
     
     if (!writeEnabled || !tileSourceMode) return null;
     
@@ -243,18 +256,18 @@ class AddImageLayer extends Component {
     return (
       <div style={divStyle}>
         <h2 style={textStyle}>
-          {content && content.tileSources && content.tileSources.length > 0 && (
+          {allowNewLayers && (
             <>
               Add image layer(s)
             </>
           )}
-          {!content || !content.tileSources || content.tileSources.length === 0 && (
+          {!allowNewLayers && (
             <>
               Add an image
             </>
           )}
         </h2>
-        <p style={textStyle}>Choose an image source.</p>
+        <p style={textStyle}>Choose an image source:</p>
     
         {this.renderUploadButton(buttonStyle, iconStyle)}
     
@@ -309,7 +322,7 @@ class AddImageLayer extends Component {
           )
         )}
     
-        {content.tileSources && content.tileSources.length > 0 && (
+        {allowNewLayers && (
           <FlatButton
             label="Cancel"
             style={{ color: 'white' }}
