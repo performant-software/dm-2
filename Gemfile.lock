@@ -117,6 +117,8 @@ GEM
     nokogiri (1.12.3)
       mini_portile2 (~> 2.6.1)
       racc (~> 1.4)
+    nokogiri (1.12.3-x64-mingw32)
+      racc (~> 1.4)
     orm_adapter (0.5.0)
     pg (1.1.4)
     pg_search (2.1.4)
@@ -181,6 +183,8 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.9)
       thread_safe (~> 0.1)
+    tzinfo-data (1.2021.1)
+      tzinfo (>= 1.0.0)
     warden (1.2.9)
       rack (>= 2.0.9)
     websocket-driver (0.7.5)
@@ -189,6 +193,7 @@ GEM
 
 PLATFORMS
   ruby
+  x64-mingw32
 
 DEPENDENCIES
   active_model_serializers
@@ -212,7 +217,7 @@ DEPENDENCIES
   tzinfo-data
 
 RUBY VERSION
-   ruby 2.5.7p206
+   ruby 2.7.3p183
 
 BUNDLED WITH
    2.2.23
