@@ -34,6 +34,10 @@ body {
   margin-top: 6px !important;
 }
 
+.extra-margin-tooltip {
+  margin-top: 17px !important;
+}
+
 .tooltip-above {
   margin-top: 0 !important;
   font-size: 14px !important;

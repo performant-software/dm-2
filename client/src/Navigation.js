@@ -65,6 +65,35 @@ const LoginMenuBody = props => {
 
 class Navigation extends Component {
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      layoutTooltipOpen: false,
+      layoutTooltipAnchor: null,
+    };
+  }
+
+  onTooltipOpen (e) {
+    e.persist();
+    const layoutTooltipAnchor = e.currentTarget;
+    e.preventDefault();
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        layoutTooltipOpen: true,
+        layoutTooltipAnchor,
+      }
+    });
+  }
+
+  onTooltipClose () {
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        layoutTooltipOpen: false,
+      }
+    });
+  }
   onCloseProject = () => {
     this.props.clearSelection()
     this.props.returnHome()
@@ -93,12 +122,18 @@ class Navigation extends Component {
           </div>}
           showMenuIconButton={!this.props.isHome}
           iconElementLeft={this.props.isHome ? (<div />) : (
-            <IconButton onClick={this.props.toggleSidebar} ><MenuIcon color="white" /></IconButton>
+            <IconButton
+              onClick={this.props.toggleSidebar}
+              tooltip="Expand/collapse sidebar"
+              tooltipPosition="bottom-right"
+            >
+              <MenuIcon color="white" />
+            </IconButton>
           )}
           iconElementRight={
-            <div>
+            <div style={{ display: 'flex' }}>
               {!this.props.isHome && 
-                <div style={{display: 'inline'}}>
+                <div style={{display: 'flex'}}>
                   <SearchBar projectID={this.props.inputId } />
                   <DropDownMenu
                     value={this.props.currentLayout}
@@ -106,6 +141,8 @@ class Navigation extends Component {
                     style={{ height: '42px' }}
                     labelStyle={{ color: 'white', lineHeight: '50px', height: '30px' }}
                     menuStyle={{ marginTop: '52px' }}
+                    onMouseOver={this.onTooltipOpen.bind(this)}
+                    onMouseOut={this.onTooltipClose.bind(this)}
                   >
                     {layoutOptions.map((option, index) => (
                       <MenuItem key={index} value={index} primaryText={option.description} />
@@ -121,7 +158,13 @@ class Navigation extends Component {
                 onClick={event => {this.props.toggleAuthMenu(event.currentTarget);}}
               />
               {!this.props.isHome && (
-                <IconButton onClick={this.onCloseProject} ><NavigationArrowUpward color="white" /></IconButton>
+                <IconButton
+                  onClick={this.onCloseProject}
+                  tooltip="Return to project list"
+                  tooltipPosition="bottom-left"
+                >
+                  <NavigationArrowUpward color="white" />
+                </IconButton>
               )}
             </div>
           }
@@ -138,6 +181,18 @@ class Navigation extends Component {
           <Menu>
             <LoginMenuBody {...this.props} />
           </Menu>
+        </Popover>
+        <Popover
+          open={this.state.layoutTooltipOpen}
+          anchorEl={this.state.layoutTooltipAnchor}
+          zDepth={5}
+          className="tooltip-popover extra-margin-tooltip"
+          anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+          targetOrigin={{horizontal: 'middle', vertical: 'top'}}
+          useLayerForClickAway={false}
+          autoCloseWhenOffScreen={false}
+        >
+          Set grid layout
         </Popover>
         <LoginRegistrationDialog />
         <AdminDialog />

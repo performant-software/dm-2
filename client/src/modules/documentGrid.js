@@ -943,7 +943,7 @@ export function setHighlightThumbnail(highlightId, image_url, coords, svg_string
   }
 }
 
-export function createCanvasDocument(parentId, parentType, callback) {
+export function createCanvasDocument({ parentId, parentType, callback, viaUpload }) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -982,7 +982,7 @@ export function createCanvasDocument(parentId, parentType, callback) {
         document,
         documentPosition: getState().documentGrid.openDocuments.length
       });
-      dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
+      if (!viaUpload) dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
       if (parentType === 'Project') // refresh project if document has been added to its table of contents
         dispatch(loadProject(getState().project.id));
       return document;
@@ -1461,5 +1461,90 @@ export function fetchLock(documentId) {
     .catch(() => dispatch({
       type: FETCH_LOCK_ERRORED
     }));
+  };
+}
+
+function addImage ({ documentId, signedId }) {
+  return fetch(`/documents/${documentId}/add_images`, {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'access-token': localStorage.getItem('access-token'),
+      'token-type': localStorage.getItem('token-type'),
+      'client': localStorage.getItem('client'),
+      'expiry': localStorage.getItem('expiry'),
+      'uid': localStorage.getItem('uid')
+    },
+    method: 'PUT',
+    body: JSON.stringify({
+      document: {
+        images: [signedId]
+      }
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw Error(response.statusText);
+    }
+    return response;
+  })
+  .then(response => response.json())
+}
+
+function addTileSourceToNewDoc ({ document }) {
+  return function(dispatch) {
+    let tileSources = [];
+    let imageUrlForThumbnail = '';
+    document.image_urls.forEach((url) => {
+      const filename = decodeURIComponent(url.substring(
+        url.lastIndexOf('/')+1,
+        url.lastIndexOf('.')
+      ));
+      tileSources.push({
+        type: 'image',
+        url,
+        name: filename,
+      });
+      imageUrlForThumbnail = url;
+    })
+    const newContent = { ...document.content, tileSources };
+    dispatch(setAddTileSourceMode(document.id, null));
+    dispatch(setDocumentThumbnail(document.id, imageUrlForThumbnail));
+    dispatch(updateDocument(document.id, {
+      content: newContent
+    }, { replaceThisDocument: true }));
+  }
+}
+
+export function createMultipleCanvasDocs ({
+  projectId, signedIds, firstDocumentId, addTileSource
+}) {
+  return function(dispatch) {
+    addImage({
+      documentId: firstDocumentId,
+      signedId: signedIds.pop(),
+    })
+    .then(document => {
+      dispatch(replaceDocument(document));
+    })
+    .then(() => {
+      addTileSource(UPLOAD_SOURCE_TYPE);
+      signedIds.forEach(signedId => {
+        dispatch(createCanvasDocument({
+          parentId: projectId,
+          parentType: 'Project',
+          viaUpload: true,
+          callback: (docWithoutImage) => {
+            addImage({
+              documentId: docWithoutImage.id,
+              signedId,
+            })
+            .then(document => {
+              dispatch(addTileSourceToNewDoc({ document }));
+            })
+          },
+        }))
+      })
+    });
   };
 }

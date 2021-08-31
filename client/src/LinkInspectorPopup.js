@@ -24,7 +24,7 @@ class LinkInspectorPopup extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      titleBuffer: props.target.excerpt,
+      titleBuffer: props.target.title ? props.target.title : props.target.excerpt,
       titleUpdateTimer: null,
       titleHasFocus: false      
     }
@@ -53,7 +53,7 @@ class LinkInspectorPopup extends Component {
       window.clearTimeout(titleUpdateTimer);
     }
     titleUpdateTimer = window.setTimeout(function() {
-      this.props.updateHighlight(this.props.target.id, {excerpt: newTitle}); 
+      this.props.updateHighlight(this.props.target.id, {title: newTitle}); 
     }.bind(this), timeUpdateDelay);
 
     this.setState( {...this.state, titleBuffer: newTitle, titleUpdateTimer })

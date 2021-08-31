@@ -68,7 +68,7 @@ class LinkableList extends Component {
               color: 'black',
             }}
           >
-            {item.excerpt}
+            {item.title ? item.title : item.excerpt}
           </span>
           {' '}
           in
