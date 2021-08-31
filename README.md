@@ -9,19 +9,30 @@ DM2 was developed under the direction of Martin Foys and his team at the Univers
 
 DM2 design was inspired by the DM project (https://github.com/performant-software/DM) developed originally at Drew University by Martin Foys and others.
 
+- [Technical overview](#technical-overview)
+- [Heroku installation](#heroku-installation)
+  * [Create app](#create-app)
+  * [Provision resources](#provision-resources)
+  * [Configuration variables](#configuration-variables)
+  * [Set up database](#set-up-database)
+- [Local installation](#local-installation)
+  * [With Docker Compose](#with-docker-compose)
+  * [With Heroku local development environment](#with-heroku-local-development-environment)
+  * [Manually](#manually)
+- [Active Storage](#active-storage)
 
-Technical Overview
+Technical overview
 ---------------
 
-DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It utilizes the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and relases are issued on the GitHub repo at https://github.com/performant-software/dm-2 . 
+DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It utilizes the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
 
 
-Heroku Installation
+Heroku installation
 -------------
 
 ### Create app
 
-To install DM2 on Heroku, create a new app and point it at this respository, using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
+To install DM2 on Heroku, create a new app and point it at this repository, using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
 
 ```sh
 heroku create --stack heroku-18
@@ -112,11 +123,49 @@ heroku run rails db:migrate && heroku run rails db:seed
 
 DM2 should now be up and running on your Heroku instance! 
 
-The first user account created is automatically given admin powers. Thereafter, that user can grant other users access and privledges using the Admin menu in the top right corner of the interface. 
+The first user account created is automatically given admin powers. Thereafter, that user can grant other users access and privileges using the Admin menu in the top right corner of the interface. 
 
-
-Heroku Local Development Environment 
+Local installation
 -------------
+
+### With Docker Compose
+
+DM2 can be installed quickly using Docker Compose. The only requirements are [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) themselves.
+
+First, clone the repo from GitHub, `cd` into the repo directory, and copy the sample environment variables into `.env` and `config/application.yml`.
+
+```sh
+git clone https://github.com/performant-software/dm-2.git
+cd dm-2
+cp .env.sample .env
+cp config/application.sample.yml config/application.yml
+```
+
+Edit the environment variables as necessary. The sample values are all standard for a development environment, except for those left blank: `SECRET_KEY_BASE` should be a secure encryption key, and `SENDGRID_PASSWORD` should be a SendGrid API Key. For more information about these variables, see above section on [configuration variables](#configuration-variables).
+
+Then, use Docker Compose to build the necessary Docker images:
+```sh
+docker-compose build
+```
+
+Run any pending database migrations:
+```sh
+docker-compose run --rm rails db:migrate
+```
+
+And finally, boot the application:
+```sh
+docker-compose up
+```
+
+After boot completes, the app should be up and running on `localhost:3000`.
+
+You may stop the application at any time by opening another shell in the same `dm-2` directory and running:
+```sh
+docker-compose down
+```
+
+### With Heroku local development environment
 
 DM2 is a pretty standard Ruby on Rails 5.x application. It uses a PostgreSQL and has been developed using PostgreSQL v11.1. It was developed using Ruby 2.5.7 and Bundler 2.2.23. Setting up PostgresSQL, Ruby, and Bundler are beyond the scope of this README, but plenty of information is available online about these tools.
 
@@ -159,10 +208,9 @@ Note that this runs two servers, one on port 3000 for Ruby on Rails and one on 3
 
 Please note that the development environment stores files on local disk in the /storage directory by default. You can configure different storage solutions in config/storage.yml. See the Rails ActiveStorage documentation for more details.
 
-Installation without Heroku Toolset
--------------
+### Manually
 
-Installation without the Heroku tool set is possible but requires setup specific to your enviroment. Follow the steps given above, except when it comes time to run the application, run the client and the server with these commands:
+Installation without Docker or the Heroku toolset is possible but requires setup specific to your environment. Follow the steps given above, except when it comes time to run the application, run the client and the server with these commands:
 
 To run the client:
    

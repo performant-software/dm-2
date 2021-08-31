@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:11.12
+    environment:
+      POSTGRES_USER: dm2_staging
+      POSTGRES_PASSWORD: dm2_staging_password
+    command: postgres -c listen_addresses='*'
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+  app:
+    build: .
+    command: bash -c "rm -f tmp/pids/server.pid && cd /opt/app && foreman start -f Procfile.dev"
+    volumes:
+      - .:/opt/app
+    ports:
+      - "3001:3001"
+      - "3000:3000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://dm2_staging:dm2_staging_password@db
