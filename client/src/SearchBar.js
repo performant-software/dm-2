@@ -32,7 +32,7 @@ class SearchBar extends Component {
 
     render() {
         return (
-            <div style={{display: 'inline', marginRight: '30px'} }>
+            <div style={{display: 'flex', marginRight: '30px'} }>
                 <TextField 
                     inputStyle={{color: 'white'}} 
                     hintStyle={{color: grey500 }}
@@ -40,6 +40,7 @@ class SearchBar extends Component {
                     onKeyPress={this.onKeypress}
                     onChange={this.onChange}
                     value={this.props.search.searchPhraseBuffer}
+                    style={{ marginTop: '2px' }}
                 />
                 <IconButton onClick={this.onSearch} >
                     <Search color='white'/>
