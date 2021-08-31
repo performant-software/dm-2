@@ -24,18 +24,10 @@ Heroku Installation
 To install DM2 on Heroku, create a new app and point it at this respository, using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
 
 ```sh
-heroku create --stack heroku-18
+heroku create --stack heroku-20
 ```
 
-If you did not provision your app using the Heroku CLI, you may need to manually switch the stack to `heroku-18`, as this app currently relies on a version of Ruby that may not be supported by the current default stack (`heroku-20` at the time of writing). This can be done with the following command:
-
-```sh
-heroku stack:set heroku-18
-```
-
-and will be activated at next build. For more information, see [Heroku-18 Stack](https://devcenter.heroku.com/articles/heroku-18-stack) and [Heroku Ruby Support](https://devcenter.heroku.com/articles/ruby-support#ruby-versions).
-
-You will also need to activate both the Ruby and Node.JS buildpacks. This can be done from the Heroku CLI:
+You will need to activate both the Ruby and Node.JS buildpacks. This can be done from the Heroku CLI:
 
 ```sh
 heroku buildpacks:set heroku/ruby
