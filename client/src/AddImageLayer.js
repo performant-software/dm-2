@@ -49,12 +49,7 @@ class AddImageLayer extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.addTileSourceMode[this.props.document_id] !== prevProps.addTileSourceMode[this.props.document_id]) {
-      console.log('tile source mode changed');
-      console.log(this.props.addTileSourceMode[this.props.document_id]);
-    }
     if (this.props.image_urls.length > prevProps.image_urls.length) {
-      console.log('image urls changed');
       if (this.props.addTileSourceMode[this.props.document_id] === UPLOAD_SOURCE_TYPE) {
         this.props.image_urls.forEach(url =>{
           if (!prevProps.image_urls.includes(url)) {
