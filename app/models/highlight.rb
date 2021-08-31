@@ -133,6 +133,7 @@ class Highlight < Linkable
       document_kind: self.document_kind,
       document_title: self.document_title,
       excerpt: self.excerpt,
+      tite: self.title,
       color: self.color,
       thumbnail_url: self.thumbnail_url
     }

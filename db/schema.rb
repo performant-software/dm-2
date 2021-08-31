@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_08_23_142423) do
+ActiveRecord::Schema.define(version: 2021_08_26_133446) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
@@ -85,6 +85,7 @@ ActiveRecord::Schema.define(version: 2021_08_23_142423) do
     t.datetime "updated_at", null: false
     t.string "excerpt"
     t.string "color"
+    t.string "title"
     t.index ["document_id"], name: "index_highlights_on_document_id"
   end
 
