@@ -50,11 +50,15 @@ class AddImageLayer extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.image_urls.length > prevProps.image_urls.length) {
-      this.props.image_urls.forEach(url =>{
-        if (!prevProps.image_urls.includes(url)) {
-          this.setState((prevState) => ({ ...prevState, newImageUrls: prevState.newImageUrls.concat([url]) }));
-        }
-      })
+      if (this.props.addTileSourceMode[this.props.document_id] === UPLOAD_SOURCE_TYPE) {
+        this.props.image_urls.forEach(url =>{
+          if (!prevProps.image_urls.includes(url)) {
+            this.setState((prevState) => ({ ...prevState, newImageUrls: prevState.newImageUrls.concat([url]) }));
+          }
+        })
+      } else {
+        this.setState({ newImageUrls: [] });
+      }
     }
     if (prevProps.content && this.props.content 
         && this.props.content.tileSources && this.props.content.tileSources[0]
