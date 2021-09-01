@@ -118,7 +118,7 @@ It is possible use local storage, however this is only recommended for testing p
 Once these things are done, migrate the database using the following command:
 
 ```
-heroku run rails db:migrate && heroku run rails db:seed
+heroku run rails db:migrate
 ```
 
 DM2 should now be up and running on your Heroku instance! 

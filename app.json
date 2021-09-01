@@ -2,7 +2,7 @@
   "name": "dm-2",
   "description": "",
   "scripts": {
-    "postdeploy": "bundle exec rake db:migrate && bundle exec rake db:seed"
+    "postdeploy": "bundle exec rake db:migrate"
   },
   "repository": "https://github.com/performant-software/dm-2",
   "env": {
