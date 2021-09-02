@@ -135,6 +135,7 @@ export default function(state = initialState, action) {
     case OPEN_DOCUMENT_ERRORED:
     case PATCH_ERRORED:
     case POST_ERRORED:
+    case MOVE_DOCUMENT_ERRORED:
     case DELETE_ERRORED:
       console.log('document error');
       console.log(action.type);
@@ -309,6 +310,7 @@ export default function(state = initialState, action) {
         loading: false
       }
 
+    case MOVE_DOCUMENT_SUCCESS:
     case DELETE_HIGHLIGHT_SUCCESS:
       return {
         ...state,
