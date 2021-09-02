@@ -34,7 +34,9 @@ Heroku installation
 
 ### Create app
 
-To install DM2 on Heroku, create a new app and point it at this repository, using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
+To install DM2 on Heroku, use the "Deploy to Heroku" button above.
+
+You may also create a new app and point it at this repository using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
 
 ```sh
 heroku create --stack heroku-18
