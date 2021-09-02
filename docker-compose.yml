@@ -3,16 +3,15 @@ services:
   db:
     image: postgres:11.12
     environment:
-      POSTGRES_USER: dm2_staging
-      POSTGRES_PASSWORD: dm2_staging_password
+      POSTGRES_DB: dm2_staging
+      POSTGRES_USER: dm2_dev_user
+      POSTGRES_PASSWORD: dm2_dev_password
     command: postgres -c listen_addresses='*'
     volumes:
-      - ./tmp/db:/var/lib/postgresql/data
+      - ./tmp/dev-db:/var/lib/postgresql/data
   app:
     build: .
-    command: bash -c "rm -f tmp/pids/server.pid && cd /opt/app && foreman start -f Procfile.dev"
-    volumes:
-      - .:/opt/app
+    command: bash -c "rm -f tmp/pids/server.pid && cd /opt/app && bundle exec foreman start -f Procfile.dev"
     ports:
       - "3001:3001"
       - "3000:3000"
@@ -20,5 +19,7 @@ services:
       - db
     env_file:
       - .env
-    environment:
-      DATABASE_URL: postgres://dm2_staging:dm2_staging_password@db
+    environment: # May be overridden by values in .env
+      DATABASE_URL: postgres://dm2_dev_user:dm2_dev_password@db
+      RACK_ENV: development
+      RAILS_ENV: development

@@ -17,6 +17,8 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
   * [Set up database](#set-up-database)
 - [Local installation](#local-installation)
   * [With Docker Compose](#with-docker-compose)
+    + [Development environment](#development-environment)
+    + [Production environment](#production-environment)
   * [With Heroku local development environment](#with-heroku-local-development-environment)
   * [Manually](#manually)
 - [Active Storage](#active-storage)
@@ -141,6 +143,8 @@ cp .env.sample .env
 cp config/application.sample.yml config/application.yml
 ```
 
+#### Development environment
+
 Edit the environment variables as necessary. The sample values are all standard for a development environment, except for those left blank: `SECRET_KEY_BASE` should be a secure encryption key, and `SENDGRID_PASSWORD` should be a SendGrid API Key. For more information about these variables, see above section on [configuration variables](#configuration-variables).
 
 Then, use Docker Compose to build the necessary Docker images:
@@ -150,7 +154,7 @@ docker-compose build
 
 Run any pending database migrations:
 ```sh
-docker-compose run --rm rails db:migrate
+docker-compose run --rm app rails db:migrate
 ```
 
 And finally, boot the application:
@@ -158,7 +162,61 @@ And finally, boot the application:
 docker-compose up
 ```
 
+If you wish to mount the code directory from your local filesystem onto the Docker container in order to develop on it and use hot-reloading features, you can use the following command:
+```sh
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
 After boot completes, the app should be up and running on `localhost:3000`.
+
+You may stop the application at any time by opening another shell in the same `dm-2` directory and running:
+```sh
+docker-compose down
+```
+
+#### Production environment
+
+Edit the environment variables as necessary. In addition to those listed for the development environment, it is necessary to uncomment and set the variables listed under "Required for production environments" and "Required for running Docker Compose in a production environment." The following are also required:
+
+```env
+RAILS_ENV=production 
+RACK_ENV=production
+PROTOCOL=https
+```
+
+<details>
+  <summary>
+    Note about HTTPS and production
+  </summary>
+
+  As you have set the three above variables to `production` and `https`, the app will be served from port 443 over HTTPS. 
+
+  You will need a valid HTTPS certificate to run the app in production. You may also need to run Nginx with a reverse proxy, etc. to run from a hostname other than localhost. That is outside the scope of this README.
+
+  It is **not recommended** and **not supported**, but if you wish to just get the app up and running quickly over localhost, you may change `/config/environments/production.rb:41` to `config.force_ssl = false`, and set `PROTOCOL` back to `http`. This is not secure, but will allow you to run the app over plain HTTP without a certificate.
+</details>
+
+Then, use Docker Compose to build the necessary Docker images:
+```sh
+docker-compose build
+```
+
+Run any pending database migrations using the `docker-compose.prod.yml` overrides:
+```sh
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml run --rm app rails db:migrate
+```
+
+And finally, boot the application in detached mode using the same overrides:
+```sh
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+During boot, you may wish to view logs for the application:
+```sh
+docker-compose logs -f -t
+```
+
+After boot completes, the app should be up and running on `localhost:443`.
 
 You may stop the application at any time by opening another shell in the same `dm-2` directory and running:
 ```sh
