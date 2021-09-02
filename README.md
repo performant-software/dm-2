@@ -22,7 +22,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
   * [With Heroku local development environment](#with-heroku-local-development-environment)
   * [Manually](#manually)
 - [Active Storage](#active-storage)
-- [Upgrade from 0.x](#upgrade-from-0.x)
+- [Upgrade from 0.x](#upgrade-from-0x)
 
 Technical overview
 ---------------
