@@ -1,14 +1,32 @@
 {
   "name": "dm-2",
-  "description": "",
+  "description": "Digital Mappa 2",
   "scripts": {
     "postdeploy": "bundle exec rake db:migrate"
   },
   "repository": "https://github.com/performant-software/dm-2",
   "env": {
+    "EMAIL_PORT": {
+      "required": false
+    },
+    "EMAIL_SERVER": {
+      "required": false
+    },
+    "EMAIL_USERNAME": {
+      "required": false
+    },
+    "EMAIL_PASSWORD": {
+      "required": false
+    },
+    "HOSTNAME": {
+      "required": true
+    },
     "LANG": {
       "required": true,
       "value": "en_US.UTF-8"
+    },
+    "PROTOCOL": {
+      "required": false
     },
     "RACK_ENV": {
       "required": true,
@@ -28,12 +46,6 @@
     },
     "SECRET_KEY_BASE": {
       "required": true
-    },
-    "HOSTNAME": {
-      "required": true
-    },
-    "PROTOCOL": {
-      "required": false
     },
     "ACTIVE_STORAGE_SERVICE": {
       "required": false
@@ -61,13 +73,14 @@
   ],
   "buildpacks": [
     {
-      "url": "heroku/ruby"
+      "url": "heroku/nodejs"
     },
     {
-      "url": "heroku/nodejs"
+      "url": "heroku/ruby"
     },
     {
       "url": "https://github.com/heroku/heroku-buildpack-activestorage-preview"
     }
-  ]
+  ],
+  "stack": "heroku-18"
 }
