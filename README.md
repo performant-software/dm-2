@@ -26,7 +26,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
 Technical overview
 ---------------
 
-DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It is primarily built to use the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
+DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses Active Storage for image uploads and ImageMagick for image processing. It is primarily built to use the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
 
 
 Heroku installation
@@ -155,7 +155,7 @@ Next, there are slightly different instructions depending on whether you intend 
 
 #### Development environment
 
-Edit the environment variables as necessary. The sample values are all standard for a development environment, except for those left blank. `SECRET_KEY_BASE` should be a secure encryption key; `EMAIL_PASSWORD` should be a SendGrid API Key (if using SendGrid, otherwise the other email related fields will also need to be changed to reflect your chosen SMTP server). For more information about these variables, see above section on [configuration variables](#configuration-variables).
+Edit `.env` as necessary. The sample values are all standard for a development environment, except for those left blank. `SECRET_KEY_BASE` should be a secure encryption key; `EMAIL_PASSWORD` should be a SendGrid API Key (if using SendGrid, otherwise the other email related fields will also need to be changed to reflect your chosen SMTP server). For more information about these variables, see above section on [configuration variables](#configuration-variables).
 
 Then, use Docker Compose to build the necessary Docker images:
 ```sh
@@ -186,7 +186,7 @@ docker-compose down
 
 #### Production environment
 
-Edit the environment variables as necessary. In addition to those listed for the development environment, it is necessary to uncomment and set the variables listed under "Required for production environments" and "Required for running Docker Compose in a production environment." The following are also required:
+Edit `.env` as necessary. In addition to those listed for the development environment, it is necessary to uncomment and set the variables listed under "Required for production environments" and "Required for running Docker Compose in a production environment." The following are also required:
 
 ```env
 RAILS_ENV=production 
@@ -274,7 +274,7 @@ Note that this runs two servers, one on port 3000 for Ruby on Rails and one on 3
 
 6) Visit http://localhost:3000 to view the application. 
 
-Please note that the development environment stores files on local disk in the /storage directory by default. You can configure different storage solutions in config/storage.yml. See the Rails ActiveStorage documentation for more details.
+Please note that the development environment stores files on local disk in the /storage directory by default. You can configure different storage solutions in config/storage.yml. See the Rails Active Storage documentation for more details.
 
 ### Manually
 
@@ -295,7 +295,7 @@ PORT=3001 && bundle exec puma -C config/puma.rb
 Active Storage
 -------------
 
-Active storage is used to handle the uploading/downloading of files. Files can either be stored locally on the disk or on a file storage service, such as Amazon S3. For ease of toggling in different environments, the file storage service can be specified as an environment variable in the `application.yml` file.
+Active Storage is used to handle the uploading/downloading of files. Files can either be stored locally on the disk or on a file storage service, such as Amazon S3. For ease of toggling in different environments, the file storage service can be specified as an environment variable in the `application.yml` file.
 
     ACTIVE_STORAGE_SERVICE: 'local'
     ACTIVE_STORAGE_SERVICE: 'amazon'
