@@ -22,6 +22,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
   * [With Heroku local development environment](#with-heroku-local-development-environment)
   * [Manually](#manually)
 - [Active Storage](#active-storage)
+- [Upgrade from 0.x](#upgrade-from-0.x)
 
 Technical overview
 ---------------
@@ -308,3 +309,9 @@ To convert an existing application to use a different file storage service, a ra
 
     bundle exec rake active_storage:aws_to_local
     bundle exec rake active_storage:local_to_aws
+
+
+Upgrade from 0.x
+-------------
+
+In order to upgrade from 0.x to 1.0, please read the [upgrade guide in the DM2 wiki](https://github.com/performant-software/dm-2/wiki/v0.x-to-v1.0-upgrade-guide).
