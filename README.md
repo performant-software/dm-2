@@ -143,6 +143,8 @@ cp .env.sample .env
 cp config/application.sample.yml config/application.yml
 ```
 
+Next, there are slightly different instructions depending on whether you intend to run DM2 in a production or development environment.
+
 #### Development environment
 
 Edit the environment variables as necessary. The sample values are all standard for a development environment, except for those left blank: `SECRET_KEY_BASE` should be a secure encryption key, and `SENDGRID_PASSWORD` should be a SendGrid API Key. For more information about these variables, see above section on [configuration variables](#configuration-variables).
