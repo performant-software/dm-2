@@ -172,7 +172,7 @@ And finally, boot the application:
 docker-compose up
 ```
 
-If you wish to mount the code directory from your local filesystem onto the Docker container in order to develop on it and use hot-reloading features, you can use the following command:
+If you wish to mount the code directory from your local filesystem onto the Docker container in order to develop on it, store local uploads, and use hot-reloading features, you can use the following command:
 ```sh
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
@@ -194,6 +194,8 @@ RACK_ENV=production
 PROTOCOL=https
 ```
 
+It may also be necessary to configure Amazon S3 for Active Storage to function in production. See [below section on Active Storage](#active-storage).
+
 <details>
   <summary>
     Note about HTTPS and production
@@ -201,9 +203,9 @@ PROTOCOL=https
 
   As you have set the three above variables to `production` and `https`, the app will be served from port 443 over HTTPS. 
 
-  You will need a valid HTTPS certificate to run the app in production. You may also need to run Nginx with a reverse proxy, etc. to run from a hostname other than localhost. That is outside the scope of this README.
+  You will need a valid HTTPS certificate to run the app in production. You will likely also need to run Nginx with a reverse proxy, etc. to run from a hostname other than `localhost`. If you wish to run your app from `localhost` in production and use SSL certificates without a reverse proxy, you can follow [this guide](https://gist.github.com/tadast/9932075) and change `Procfile.prod` to match the `puma` command listed there. These configurations are outside the scope of this README.
 
-  It is **not recommended** and **not supported**, but if you wish to just get the app up and running quickly over localhost, you may change `/config/environments/production.rb:41` to `config.force_ssl = false`, and set `PROTOCOL` back to `http`. This is not secure, but will allow you to run the app over plain HTTP without a certificate.
+  It is **not recommended** and **not supported**, but if you wish to just get the app up and running quickly from `localhost`, you may change `/config/environments/production.rb:41` to `config.force_ssl = false`, and set `PROTOCOL` back to `http`. This is not secure, but will allow you to run the app over plain HTTP without a certificate. Local file upload and storage may fail with this configuration due to protocol differences.
 </details>
 
 Then, use Docker Compose to build the necessary Docker images:
@@ -226,7 +228,7 @@ During boot, you may wish to view logs for the application:
 docker-compose logs -f -t
 ```
 
-After boot completes, the app should be up and running on `localhost:443`.
+After boot completes, the app should be up and running on `localhost:443` (see above note about HTTPS and production).
 
 You may stop the application at any time by opening another shell in the same `dm-2` directory and running:
 ```sh
