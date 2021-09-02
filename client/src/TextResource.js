@@ -36,7 +36,7 @@ import CropFree from 'material-ui/svg-icons/image/crop-free';
 import ViewColumn from 'material-ui/svg-icons/action/view-column';
 import { Hr, Table } from 'react-bootstrap-icons';
 import PageMargins from './icons/PageMargins';
-import { Schema, DOMSerializer } from 'prosemirror-model';
+import { Schema, DOMSerializer, Node } from 'prosemirror-model';
 import { EditorState, TextSelection, Plugin } from 'prosemirror-state';
 import { EditorView, Decoration, DecorationSet } from 'prosemirror-view';
 import { AddMarkStep, RemoveMarkStep, ReplaceStep } from 'prosemirror-transform';
@@ -95,6 +95,7 @@ import {
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
+import LinkTooltip from './TextLinkTooltipPlugin';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
@@ -749,6 +750,12 @@ class TextResource extends Component {
     });
 
     plugins.push(highlightTargetPlugin);
+
+    const linkPreviewPlugin = new Plugin({
+      view(editorView) { return new LinkTooltip(editorView) }
+    });
+
+    plugins.push(linkPreviewPlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
