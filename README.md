@@ -26,7 +26,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
 Technical overview
 ---------------
 
-DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It utilizes the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
+DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses ActiveStorage for image uploads and ImageMagick for image processing. It is primarily built to use the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
 
 
 Heroku installation
@@ -57,7 +57,7 @@ heroku buildpacks:add --index 1 heroku/nodejs
 
 ### Provision resources
 
-You will need to provision SendGrid and Heroku Postgres using the Heroku Resources section.
+You will need to provision Heroku Postgres and SendGrid (or another email provider) using the Heroku Resources section.
 
 You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket. See https://aws.amazon.com/ for more information.
 
@@ -71,6 +71,10 @@ AWS_BUCKET
 AWS_REGION
 AWS_SECRET_ACCESS_KEY
 EMAIL_FROM
+EMAIL_PASSWORD
+EMAIL_PORT
+EMAIL_SERVER
+EMAIL_USERNAME
 HOSTNAME
 LANG
 PROTOCOL
@@ -78,8 +82,6 @@ RACK_ENV
 RAILS_LOG_TO_STDOUT
 RAILS_SERVE_STATIC_FILES
 SECRET_KEY_BASE
-SENDGRID_PASSWORD
-SENDGRID_USERNAME
 ```
 
 Here are some default settings for provisioning a production server:
@@ -97,12 +99,18 @@ The `SECRET_KEY_BASE` environment variable is used to encrypt the passwords on y
 
 Set the `HOSTNAME` and `PROTOCOL` environment variables to the hostname and protocol of your Heroku application. For example, if your application is hosted at `https://my-project.herokuapp.com`, you would set the `HOSTNAME` variable to `my-project.herokuapp.com`, and the `PROTOCOL` variable to `https`.
 
-The `EMAIL_FROM` environment variable is used for sending emails via SendGrid. This should be set to the email address you would like to appear in the "From" field in registration confirmation emails. Additionally, SendGrid has changed their authentication scheme from username/password to API keys. Thus, to set the SendGrid environment variables, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `SENDGRID_PASSWORD` environment variable, and set the `SENDGRID_USERNAME` environment variable to `apikey`.
+The `EMAIL_FROM` environment variable is used for sending emails. This should be set to the email address you would like to appear in the "From" field in registration confirmation emails. 
+
+If you are using SendGrid for emails, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `EMAIL_PASSWORD` environment variable, and set the `EMAIL_USERNAME` environment variable to `apikey`. The other defaults for SendGrid are port 587 and server `smtp.sendgrid.net`.
 
 ```env
-SENDGRID_USERNAME=apikey
-SENDGRID_PASSWORD=SG.abcdefghijklmnopqrstuvwxyz
+EMAIL_PORT=587
+EMAIL_SERVER=smtp.sendgrid.net
+EMAIL_USERNAME=apikey
+EMAIL_PASSWORD=SG.abcdefghijklmnopqrstuvwxyz
 ```
+
+If you are not using SendGrid, these variables will need to be updated for whatever service you intend to use for outbound SMTP.
 
 By default, the production environment will use AWS as the Active Storage service. This will require the following environment variables to be set:
 
@@ -147,7 +155,7 @@ Next, there are slightly different instructions depending on whether you intend 
 
 #### Development environment
 
-Edit the environment variables as necessary. The sample values are all standard for a development environment, except for those left blank: `SECRET_KEY_BASE` should be a secure encryption key, and `SENDGRID_PASSWORD` should be a SendGrid API Key. For more information about these variables, see above section on [configuration variables](#configuration-variables).
+Edit the environment variables as necessary. The sample values are all standard for a development environment, except for those left blank. `SECRET_KEY_BASE` should be a secure encryption key; `EMAIL_PASSWORD` should be a SendGrid API Key (if using SendGrid, otherwise the other email related fields will also need to be changed to reflect your chosen SMTP server). For more information about these variables, see above section on [configuration variables](#configuration-variables).
 
 Then, use Docker Compose to build the necessary Docker images:
 ```sh
