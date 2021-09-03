@@ -95,6 +95,7 @@ import {
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
+import LinkTooltip from './TextLinkTooltipPlugin';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
@@ -749,6 +750,12 @@ class TextResource extends Component {
     });
 
     plugins.push(highlightTargetPlugin);
+
+    const linkPreviewPlugin = new Plugin({
+      view(editorView) { return new LinkTooltip(editorView) }
+    });
+
+    plugins.push(linkPreviewPlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
