@@ -44,8 +44,7 @@ class LinkTooltip {
       return;
     }
     // Viewport coordinates
-    let start = view.coordsAtPos(from),
-      end = view.coordsAtPos(to);
+    let start = view.coordsAtPos(from);
       
     // Parent bounding box
     let box = this.tooltip.offsetParent.getBoundingClientRect();
@@ -71,7 +70,18 @@ class LinkTooltip {
     if (tooltipRect.right > box.right) {
       const overflow = tooltipRect.right - box.right;
       this.tooltip.style.left = `${origTooltipLeft - overflow - 20}px`;
-
+    }
+    
+    // Handle vertical overflow
+    if (tooltipRect.top < box.top) {
+      const lineHeight = start.bottom - start.top;
+      tooltipBottom = box.top - scrollTop - (lineHeight + 3);
+      this.tooltip.style.bottom = `${tooltipBottom}px`;
+      tooltipRect = this.tooltip.getBoundingClientRect();
+      const diff = tooltipRect.top - start.bottom;
+      if (diff > 10) {
+        this.tooltip.style.bottom = `${tooltipBottom + diff - 10}px`;
+      }
     }
   }
 
