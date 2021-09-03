@@ -20,6 +20,8 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
     + [Development environment](#development-environment)
     + [Production environment](#production-environment)
   * [With Heroku local development environment](#with-heroku-local-development-environment)
+    + [Requirements](#requirements)
+    + [Setup](#setup)
   * [Manually](#manually)
 - [Active Storage](#active-storage)
 - [Upgrade from 0.x](#upgrade-from-0x)
@@ -40,18 +42,10 @@ To install DM2 on Heroku, use the "Deploy to Heroku" button above.
 You may also create a new app and point it at this repository using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
 
 ```sh
-heroku create --stack heroku-18
+heroku create --stack heroku-20
 ```
 
-If you did not provision your app using the Heroku CLI, you may need to manually switch the stack to `heroku-18`, as this app currently relies on a version of Ruby that may not be supported by the current default stack (`heroku-20` at the time of writing). This can be done with the following command:
-
-```sh
-heroku stack:set heroku-18
-```
-
-and will be activated at next build. For more information, see [Heroku-18 Stack](https://devcenter.heroku.com/articles/heroku-18-stack) and [Heroku Ruby Support](https://devcenter.heroku.com/articles/ruby-support#ruby-versions).
-
-You will also need to activate both the Ruby and Node.JS buildpacks. This can be done from the Heroku CLI:
+You will need to activate both the Ruby and Node.JS buildpacks. This can be done from the Heroku CLI:
 
 ```sh
 heroku buildpacks:set heroku/ruby
@@ -140,6 +134,7 @@ The first user account created is automatically given admin powers. Thereafter, 
 
 Local installation
 -------------
+
 
 ### With Docker Compose
 
@@ -240,7 +235,17 @@ docker-compose down
 
 ### With Heroku local development environment
 
-DM2 is a pretty standard Ruby on Rails 5.x application. It uses a PostgreSQL and has been developed using PostgreSQL v11.1. It was developed using Ruby 2.5.7 and Bundler 2.2.23. Setting up PostgresSQL, Ruby, and Bundler are beyond the scope of this README, but plenty of information is available online about these tools.
+#### Requirements
+
+- Ruby 2.7.4
+- Bundler 2.2.26+
+- PostgreSQL 11.12+
+- Node.js 16.x
+- Yarn 1.x
+
+#### Setup
+
+DM2 is a Ruby on Rails 5.x/React application. Setting up PostgresSQL, Ruby, Bundler, Node.JS, and Yarn are beyond the scope of this README, but plenty of information is available online about these tools.
 
 Once the dependencies mentioned above are installed, please follow these steps:
 
