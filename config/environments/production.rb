@@ -84,11 +84,11 @@ Rails.application.configure do
   config.action_mailer.perform_caching = false
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.smtp_settings = {
-    :user_name => ENV['SENDGRID_USERNAME'],
-    :password => ENV['SENDGRID_PASSWORD'],
+    :user_name => ENV['EMAIL_USERNAME'],
+    :password => ENV['EMAIL_PASSWORD'],
     :domain => ENV['HOSTNAME'],
-    :address => 'smtp.sendgrid.net',
-    :port => 587,
+    :address => ENV['EMAIL_SERVER'],
+    :port => ENV['EMAIL_PORT'],
     :authentication => :plain,
     :enable_starttls_auto => true
   }

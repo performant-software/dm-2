@@ -15,6 +15,7 @@
 /storage/*
 .env
 /ttl
+.DS_Store
 
 .byebug_history
 .vscode
