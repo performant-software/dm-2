@@ -24,7 +24,10 @@ body {
 
 .link-tooltip {
   position: absolute;
-  z-index: 30;
+  z-index: 10000;
+  max-width: 250px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   background: white;
   border: 1px solid silver;
   border-radius: 2px;
@@ -33,30 +36,6 @@ body {
   -webkit-transform: translateX(-50%);
   transform: translateX(-50%);
   box-shadow: 0px 2px 5px #616161;
-}
-
-.link-tooltip:before {
-  content: "";
-  height: 0; width: 0;
-  position: absolute;
-  left: 50%;
-  margin-left: -5px;
-  bottom: -6px;
-  border: 5px solid transparent;
-  border-bottom-width: 0;
-  border-top-color: silver;
-}
-
-.link-tooltip:after {
-  content: "";
-  height: 0; width: 0;
-  position: absolute;
-  left: 50%;
-  margin-left: -5px;
-  bottom: -4.5px;
-  border: 5px solid transparent;
-  border-bottom-width: 0;
-  border-top-color: white;
 }
 .link-tooltip a {
   text-decoration: none;

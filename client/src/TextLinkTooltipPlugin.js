@@ -47,16 +47,32 @@ class LinkTooltip {
     let start = view.coordsAtPos(from),
       end = view.coordsAtPos(to);
       
-    // Tooltip bounding box
+    // Parent bounding box
     let box = this.tooltip.offsetParent.getBoundingClientRect();
     const scrollTop = this.tooltip.offsetParent.scrollTop;
-    // Find a center-ish x position from the selection endpoints (when
-    // crossing lines, end may be more to the left)
-    let left = Math.max((start.left + end.left) / 2, start.left + 3);
-    this.tooltip.style.left = left - box.left + 'px';
-    this.tooltip.style.bottom = box.bottom - start.top - scrollTop + 'px';
-    // TODO: Handle links at top of viewport
-    this.tooltip.innerHTML = `<a href="${href}" target="_blank">${href}</a>`;
+    const origTooltipLeft = start.left - box.left;
+    this.tooltip.style.left = `${origTooltipLeft}px`;
+    let tooltipBottom = box.bottom - start.top - scrollTop;
+    this.tooltip.style.bottom = `${tooltipBottom}px`;
+    let text = href;
+    if (text.length > 30) {
+      text = `${text.substring(0, 27)}...`;
+    }
+
+    this.tooltip.innerHTML = `<a href="${href}" target="_blank">${text}</a>`;
+
+    let tooltipRect = this.tooltip.getBoundingClientRect();
+
+    // Handle horizontal overflow
+    if (tooltipRect.left < box.left) {
+      const overflow = box.left - tooltipRect.left;
+      this.tooltip.style.left = `${origTooltipLeft + overflow + 5}px`;
+    }
+    if (tooltipRect.right > box.right) {
+      const overflow = tooltipRect.right - box.right;
+      this.tooltip.style.left = `${origTooltipLeft - overflow - 20}px`;
+
+    }
   }
 
   destroy() {
