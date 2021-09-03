@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import { withRouter } from 'react-router';
 import Dialog from 'material-ui/Dialog';
 import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
@@ -30,6 +31,7 @@ class LoginRegistrationDialog extends Component {
     let showEmailField = false;
     let showPasswordField = false;
     let showPasswordConfirmationField = false;
+    const { location } = this.props;
 
     if (this.props.registrationShown) {
       title = 'Register new user';
@@ -47,6 +49,7 @@ class LoginRegistrationDialog extends Component {
           onClick={() => {
             this.props.registerUser({
               email: this.props.userEmail,
+              uid: this.props.userEmail,
               name: this.props.userName,
               password: this.props.userPassword,
               password_confirmation: this.props.userPasswordConfirmation,
@@ -108,7 +111,9 @@ class LoginRegistrationDialog extends Component {
             })
             .then(() => {
               this.props.hideLogin();
-              this.props.load();
+              if (location && location.pathname === '/') {
+                this.props.load();
+              }
             })
             .catch(this.props.userAuthErrored);
           }}
@@ -164,7 +169,21 @@ class LoginRegistrationDialog extends Component {
         {this.props.confirmUserSuccessDialogShown && (
           <p style={{ color: blue900 }}>
             {this.props.confirmUserErrored && 'There was an error confirming your email address.'}
-            {!this.props.confirmUserErrored && 'Your email has been successfully confirmed. You may now log in.'}
+            {!this.props.confirmUserErrored && (
+              <>
+                <p>
+                  Congratulations, your <i>Digital Mappa</i> account and
+                  email are confirmed! You may now log in.
+                </p>
+                <p>
+                  Once an administrator approves your account, you may start using this
+                  <i>Digital Mappa</i> instance in accordance with the permissions set by this
+                  instance's administrator. To access any non-public projects on this DM instance,
+                  you will still need to be added to a specific project by its project
+                  administrator.
+                </p>
+              </>
+            )}
           </p>
         )}
         {showEmailField &&
@@ -250,4 +269,4 @@ const mapDispatchToProps = dispatch => bindActionCreators({
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(LoginRegistrationDialog);
+)(withRouter(props => <LoginRegistrationDialog {...props} />));

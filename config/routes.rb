@@ -5,7 +5,9 @@ Rails.application.routes.draw do
   resources :links, except: [:index, :update]
   resources :highlights, except: :index
   resources :projects
-  mount_devise_token_auth_for 'User', at: '/auth'
+  mount_devise_token_auth_for 'User', at: '/auth', controllers: {
+    registrations: 'registrations',
+  }
 
   devise_scope :user do
     get '/confirmed' => 'confirmations#complete_confirmation'

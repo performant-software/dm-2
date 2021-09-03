@@ -5,7 +5,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings, checkInAll } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
-import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar } from './modules/documentGrid';
+import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar, fetchLock } from './modules/documentGrid';
 import { selectHighlight } from './modules/textEditor';
 import Dialog from 'material-ui/Dialog';
 import Snackbar from 'material-ui/Snackbar';
@@ -119,6 +119,15 @@ class Project extends Component {
     }
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.currentUser !== this.props.currentUser && this.props.match.params.slug !== 'new') {
+      this.props.loadProject(this.props.match.params.slug, this.props.projectTitle);
+      this.props.openDocumentIds.forEach((id) => {
+        this.props.fetchLock(id);
+      });
+    }
+  }
+
   renderDeleteDialog() {
     const { deleteDialogTitle, closeDeleteDialog, deleteDialogSubmit, deleteDialogOpen, deleteDialogBody, confirmDeleteDialog } = this.props;
 
@@ -165,11 +174,13 @@ class Project extends Component {
   }
 
   renderDocumentViewer = (document,index) => {
+    const { projectId, writeEnabled } = this.props;
     const key = `${document.id}-${document.timeOpened}`;
     return (
       <DocumentViewer
         key={key}
         index={index}
+        projectId={projectId}
         document_id={document.id}
         timeOpened={document.timeOpened}
         resourceName={document.title}
@@ -180,7 +191,7 @@ class Project extends Component {
         image_thumbnail_urls={document.image_thumbnail_urls}
         image_urls={document.image_urls}
         linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id, undefined, key);}}
-        writeEnabled={this.props.writeEnabled}
+        writeEnabled={writeEnabled}
         locked={document.locked}
         lockedByUserName={document.locked_by_user_name}
         lockedByMe={document.locked_by_me}
@@ -305,7 +316,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   checkInAll,
   updateSnackBar,
   hideSettings,
-  selectHighlight
+  selectHighlight,
+  fetchLock,
 }, dispatch);
 
 export default connect(

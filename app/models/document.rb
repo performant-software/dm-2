@@ -8,6 +8,8 @@ class Document < Linkable
   has_many_attached :images
   has_many :documents, as: :parent, dependent: :destroy
   has_many :document_folders, as: :parent, dependent: :destroy
+  has_many :documents_links, :dependent => :destroy
+  has_many :links, through: :documents_links
 
   include PgSearch
   include TreeNode
@@ -40,7 +42,7 @@ class Document < Linkable
     hostname = ENV['HOSTNAME']
     if tile_source_url.include?(hostname)
       spl = tile_source_url.split(hostname)
-      tile_source_url = '/' + spl[1]
+      tile_source_url = spl[1]
     elsif /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url)
       capt = /(localhost)(\:[0-9]+)?(\/)(.+)/.match(tile_source_url).captures
       tile_source_url =  '/' + capt[-1]
@@ -213,6 +215,11 @@ class Document < Linkable
 
   def descendant_folder_ids
     nil
+  end
+
+  def links_to
+    all_links = self.documents_links.sort_by{ |dl| dl.position }.map{ |dl| Link.where(:id => dl.link_id).first }
+    all_links.map { |link| self.to_link_obj(link) }.compact
   end
 
   def to_obj

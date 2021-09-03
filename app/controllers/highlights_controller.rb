@@ -44,7 +44,7 @@ class HighlightsController < ApplicationController
 
   # DELETE /highlights/1
   def destroy
-    @links = Link.where(:linkable_b_type => 'Highlight', :linkable_b_id => @highlight.id)
+    @links = @highlight.highlights_links.map{ |hll| Link.where(:id => hll.link_id).first }
     @links.each { |link|
       link.renumber_all(true)
     }
@@ -114,6 +114,6 @@ class HighlightsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def highlight_params
-      params.require(:highlight).permit(:uid, :target, :document_id, :excerpt, :color)
+      params.require(:highlight).permit(:uid, :target, :document_id, :excerpt, :color, :title)
     end
 end

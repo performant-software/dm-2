@@ -24,6 +24,7 @@ const LinkList = function(props) {
         openDocuments={props.openDocuments}
         openDocumentIds={props.openDocumentIds}
         highlightId={props.highlight_id}
+        documentId={props.document_id}
       />
     );
   }
@@ -65,7 +66,7 @@ const linkTarget = {
     }
 
     // this is a fresh link, create it...
-    props.addLink(origin, target);
+    props.addLink(origin, target, null, origin.linkable_type);
   }
 };
 

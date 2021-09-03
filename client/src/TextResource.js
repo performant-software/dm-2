@@ -113,8 +113,10 @@ class TextResource extends Component {
     this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
     this.scheduledContentUpdate = null;
 
+    this.editorViewWrapper = React.createRef();
+
     this.tools = [
-      { name: 'highlight-color', width: buttonWidth },
+      { name: 'highlight-color', width: buttonWidth, text: 'Change highlight color' },
       { name: 'highlight', width: buttonWidth, text: 'Highlight selected text' },
       { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'text-color', width: buttonWidth, text: 'Change text color' },
@@ -216,6 +218,9 @@ class TextResource extends Component {
     if (this.state.targetHighlights !== prevState.targetHighlights) {
       this.createEditorState();
     }
+    if (this.props.index !== prevProps.index && this.state.currentScrollTop && this.editorViewWrapper.current) {
+      this.editorViewWrapper.current.scrollTo(0, this.state.currentScrollTop);
+    }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
       this.props.setLastSaved(new Date().toLocaleString('en-US'));
@@ -273,6 +278,8 @@ class TextResource extends Component {
               }
             }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
           />
         );
 
@@ -539,7 +546,7 @@ class TextResource extends Component {
         open={this.state.tooltipOpen[toolName]}
         anchorEl={this.state.tooltipAnchor[toolName]}
         zDepth={5}
-        className="tooltip-popover"
+        className={`tooltip-popover ${toolName === 'highlight-color' ? 'extra-margin-tooltip' : ''}`}
         anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
         targetOrigin={{horizontal: 'middle', vertical: 'top'}}
         useLayerForClickAway={false}
@@ -595,7 +602,22 @@ class TextResource extends Component {
       this.setState({ toolbarWidth: node.offsetWidth });
     }
   }
-
+  
+  mergeRefs (...refs) {
+    const filteredRefs = refs.filter(Boolean);
+    if (!filteredRefs.length) return null;
+    if (filteredRefs.length === 1) return filteredRefs[0];
+    return inst => {
+      for (const ref of filteredRefs) {
+        if (typeof ref === 'function') {
+          ref(inst);
+        } else if (ref) {
+          ref.current = inst;
+        }
+      }
+    };
+  };
+  
   onScrollChange (node) {
     if (node !== null && node.scrollTop !== this.state.currentScrollTop) {
       this.setState({ currentScrollTop: node.scrollTop });
@@ -1433,6 +1455,7 @@ class TextResource extends Component {
           display: 'inline-block',
           position: 'relative',
         }}
+        key="tableMenu"
       >
         <IconButton
           disabled={loading}
@@ -1546,6 +1569,7 @@ class TextResource extends Component {
                 }
               </>
             )}
+            {this.renderTooltipFromHidden({ toolName: 'highlight-color', text: 'Change highlight color' })}
             {this.renderTooltipFromHidden({ toolName: 'font-family', text: 'Font' })}
             {this.renderTooltipFromHidden({ toolName: 'font-size', text: 'Font size (pt)' })}
           </ToolbarGroup>
@@ -1787,7 +1811,7 @@ class TextResource extends Component {
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
         <div
-          ref={this.onScrollChange.bind(this)}
+          ref={this.mergeRefs(this.editorViewWrapper, this.onScrollChange.bind(this))}
           className="editorview-wrapper" 
           style={{
             overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',

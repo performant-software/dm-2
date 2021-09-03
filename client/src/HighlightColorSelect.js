@@ -6,7 +6,20 @@ export default class HighlightColorSelect extends Component {
   render() {
     return (
       <span style={{zIndex: '3001'}}>
-        <div onClick={this.props.toggleColorPicker} style={{ padding: '2px', borderRadius: '1px', boxShadow: '0 0 0 1px rgba(0,0,0,.1)', display: 'inline-block', cursor: 'pointer', marginRight: '8px', backgroundColor: '#FFF' }}>
+        <div
+          onClick={this.props.toggleColorPicker}
+          style={{
+            padding: '2px',
+            borderRadius: '1px',
+            boxShadow: '0 0 0 1px rgba(0,0,0,.1)',
+            display: 'inline-block',
+            cursor: 'pointer',
+            marginRight: '8px',
+            backgroundColor: '#FFF'
+          }}
+          onMouseOver={this.props.onMouseOver}
+          onMouseOut={this.props.onMouseOut}
+        >
           <div style={{ height: '16px', width: '32px', background: this.props.highlightColor, borderRadius: '2px'}}></div>
         </div>
         {this.props.displayColorPicker &&
