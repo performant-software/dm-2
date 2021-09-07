@@ -16,6 +16,7 @@ import TableOfContents from './TableOfContents';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
 import SearchResultsPopupLayer from './SearchResultsPopupLayer';
+import BatchImagePrompt from './BatchImagePrompt';
 
 const rolloverTimeout = 500
 
@@ -165,6 +166,7 @@ class Project extends Component {
         />
         { this.renderDeleteDialog() }
         <ProjectSettingsDialog />
+        <BatchImagePrompt />
       </div>
     );
   }

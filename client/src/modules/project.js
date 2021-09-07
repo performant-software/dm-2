@@ -32,6 +32,8 @@ export const CREATE_PERMISSION_ERRORED = 'project/CREATE_PERMISSION_ERRORED';
 export const CREATE_PERMISSION_SUCCESS = 'project/CREATE_PERMISSION_SUCCESS';
 export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
 export const TOGGLE_SIDEBAR = 'project/TOGGLE_SIDEBAR';
+export const HIDE_BATCH_IMAGE_PROMPT = 'project/HIDE_BATCH_IMAGE_PROMPT';
+export const SHOW_BATCH_IMAGE_PROMPT = 'project/SHOW_BATCH_IMAGE_PROMPT';
 
 const sidebarOpenWidth = 490
 
@@ -53,7 +55,8 @@ const initialState = {
   newPermissionError: null,
   deleteConfirmed: false,
   sidebarWidth: sidebarOpenWidth,
-  sidebarOpen: true
+  sidebarOpen: true,
+  batchImagePromptShown: false,
 };
 
 export default function(state = initialState, action) {
@@ -180,6 +183,18 @@ export default function(state = initialState, action) {
         sidebarOpen,
         sidebarWidth 
       };
+
+    case SHOW_BATCH_IMAGE_PROMPT:
+      return {
+        ...state,
+        batchImagePromptShown: action.projectId,
+      }
+
+    case HIDE_BATCH_IMAGE_PROMPT:
+      return {
+        ...state,
+        batchImagePromptShown: false,
+      }
 
     default:
       return state;
@@ -582,5 +597,22 @@ export function deleteProject(projectId) {
     .catch(() => dispatch({
       type: DELETE_ERRORED
     }));
+  }
+}
+
+export function hideBatchImagePrompt() {
+  return function(dispatch) {
+    dispatch({
+      type: HIDE_BATCH_IMAGE_PROMPT,
+    });
+  }
+}
+
+export function showBatchImagePrompt({ projectId }) {
+  return function(dispatch) {
+    dispatch({
+      type: SHOW_BATCH_IMAGE_PROMPT,
+      projectId,
+    });
   }
 }

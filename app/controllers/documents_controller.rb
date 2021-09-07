@@ -193,6 +193,12 @@ class DocumentsController < ApplicationController
     render json: @document
   end
 
+  # GET /image/1
+  def get_image_by_signed_id
+    @blob = ActiveStorage::Blob.find_signed(params['signed_id'])
+    render json: @blob
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_document
