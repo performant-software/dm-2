@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
-FROM ruby:2.5.7 AS dm2-dev
+FROM ruby:2.7.4 AS dm2-dev
 
 # Install node.js and yarn
 RUN apt-get update -qq && apt-get install -y curl sudo
-RUN curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 RUN apt-get install -y nodejs
-RUN npm install -g yarn@1.7.0
+RUN npm install -g yarn
 
 # Install bundler and API
 ENV INSTALL_PATH /opt/app
