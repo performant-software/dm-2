@@ -98,7 +98,6 @@ class DocumentViewer extends Component {
       this.setState({
         resourceName: this.props.resourceName,
       });
-      this.props.updateDocument(this.props.document_id, {title: this.props.resourceName}, {refreshLists: true});
     }
   }
 
@@ -122,10 +121,14 @@ class DocumentViewer extends Component {
     })
     window.clearTimeout(this.titleChangeTimeout);
     this.titleChangeTimeout = window.setTimeout(() => {
-      this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
+      this.props.updateDocument(this.props.document_id, {title: newValue}, {
+        refreshLists: true,
+        refreshDocumentContent: true,
+        timeOpened: this.props.timeOpened,
+      });
       this.setLastSaved(new Date().toLocaleString('en-US'));
       this.setSaving({ doneSaving: true })
-    }, this.titleChangeDelayMs);;
+    }, this.titleChangeDelayMs);
   }
 
   onToggleHighlights() {
