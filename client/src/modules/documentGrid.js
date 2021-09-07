@@ -1,7 +1,27 @@
-import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
-import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
-import {updateEditorState, selectHighlight, setHighlightSelectMode} from './textEditor';
-import {deleteFolder} from './folders';
+import {
+  TEXT_RESOURCE_TYPE,
+  CANVAS_RESOURCE_TYPE,
+  loadProject,
+  IMAGE_UPLOAD_STARTED,
+  IMAGE_UPLOAD_COMPLETE,
+  IMAGE_UPLOAD_ERRORED,
+  IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+} from './project';
+import {
+  addLink,
+  selectSidebarTarget,
+  closeSidebarTarget,
+  refreshTarget,
+  closeDocumentTargets,
+  refreshTargetByDocumentID,
+  closeTarget
+} from './annotationViewer';
+import {
+  updateEditorState,
+  selectHighlight,
+  setHighlightSelectMode
+} from './textEditor';
+import { deleteFolder } from './folders';
 import {
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
@@ -843,6 +863,12 @@ export function updateDocument(documentId, attributes, options) {
       if (options && options.refreshDocumentContent && options.timeOpened) {
         dispatch(refreshDocuments(document, options.timeOpened))
       }
+      if (options && options.addedTileSource && options.signedId) {
+        dispatch({
+          type: IMAGE_UPLOAD_COMPLETE,
+          signedId: options.signedId,
+        })
+      }
     })
     .catch(() => dispatch({
       type: PATCH_ERRORED
@@ -1500,13 +1526,13 @@ function addImage ({ documentId, signedId }) {
     })
     .then(response => response.json())
     .then(document => {
-      dispatch(addTileSourceToNewDoc({ document }));
+      dispatch(addTileSourceToNewDoc({ document, signedId }));
       dispatch(replaceDocument(document));
     });
   }
 }
 
-function addTileSourceToNewDoc ({ document }) {
+function addTileSourceToNewDoc ({ document, signedId }) {
   return function(dispatch) {
     let tileSources = [];
     let imageUrlForThumbnail = '';
@@ -1528,7 +1554,11 @@ function addTileSourceToNewDoc ({ document }) {
     dispatch(updateDocument(document.id, {
       content: newContent,
       title: tileSources[0].name,
-    }, { replaceThisDocument: true }));
+    }, {
+      refreshLists: true,
+      addedTileSource: true,
+      signedId,
+    }));
   }
 }
 
@@ -1597,6 +1627,10 @@ export function createMultipleCanvasDocs ({
   projectId, signedIds
 }) {
   return function(dispatch) {
+    dispatch({
+      type: IMAGE_UPLOAD_STARTED,
+      signedIds,
+    });
     signedIds.forEach(signedId => {
       fetch(`/images/${signedId}`, {
         headers: {
@@ -1618,7 +1652,18 @@ export function createMultipleCanvasDocs ({
       })
       .then(response => response.json())
       .then(image => {
-        console.log(image);
+        dispatch({
+          type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+          signedId,
+          image,
+        })
+      })
+      .catch(error => {
+        dispatch({
+          type: IMAGE_UPLOAD_ERRORED,
+          signedId,
+          error,
+        })
       })
       dispatch(createCanvasDocFromImage({
         parentId: projectId,

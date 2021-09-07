@@ -34,6 +34,10 @@ export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
 export const TOGGLE_SIDEBAR = 'project/TOGGLE_SIDEBAR';
 export const HIDE_BATCH_IMAGE_PROMPT = 'project/HIDE_BATCH_IMAGE_PROMPT';
 export const SHOW_BATCH_IMAGE_PROMPT = 'project/SHOW_BATCH_IMAGE_PROMPT';
+export const IMAGE_UPLOAD_STARTED = 'project/IMAGE_UPLOAD_STARTED';
+export const IMAGE_UPLOAD_COMPLETE = 'project/IMAGE_UPLOAD_COMPLETE';
+export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
+export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
 
 const sidebarOpenWidth = 490
 
@@ -57,6 +61,7 @@ const initialState = {
   sidebarWidth: sidebarOpenWidth,
   sidebarOpen: true,
   batchImagePromptShown: false,
+  uploads: [],
 };
 
 export default function(state = initialState, action) {
@@ -188,14 +193,56 @@ export default function(state = initialState, action) {
       return {
         ...state,
         batchImagePromptShown: action.projectId,
-      }
+      };
 
     case HIDE_BATCH_IMAGE_PROMPT:
       return {
         ...state,
         batchImagePromptShown: false,
-      }
+        uploads: [],
+      };
+    
+    case IMAGE_UPLOAD_STARTED:
+      const uploads = action.signedIds.map((signedId) => ({
+        signedId,
+        state: 'uploading',
+      }));
+      return {
+        ...state,
+        uploads,
+      };
+    
+    case IMAGE_UPLOAD_TO_RAILS_SUCCESS:
+      const uploadsWithFilename = state.uploads.map((upload) => ({
+        ...upload,
+        filename: upload.signedId === action.signedId ? action.image.filename : upload.filename,
+      }));
+      return {
+        ...state,
+        uploads: uploadsWithFilename,
+      };
 
+    case IMAGE_UPLOAD_COMPLETE:
+      const newUploads = state.uploads.map((upload) => ({
+        ...upload,
+        state: upload.signedId === action.signedId ? 'finished' : upload.state,
+      }));
+      return {
+        ...state,
+        uploads: newUploads,
+      };
+    
+    case IMAGE_UPLOAD_ERRORED:
+      const uploadsWithError = state.uploads.map((upload) => ({
+        ...upload,
+        state: upload.signedId === action.signedId ? 'error' : upload.state,
+        error: upload.signedId === action.signedId ? action.error : upload.state,
+      }));
+      return {
+        ...state,
+        uploads: uploadsWithError,
+      };
+      
     default:
       return state;
   }
