@@ -144,7 +144,7 @@ class BatchImagePrompt extends Component {
               <table style={{ marginTop: '20px', width: '100%' }}>
                 <tbody>
                   {this.props.uploads.map((upload) => (
-                    <TableRow upload={upload} />
+                    <TableRow upload={upload} key={upload.signedId} />
                   ))}
                 </tbody>
               </table>
