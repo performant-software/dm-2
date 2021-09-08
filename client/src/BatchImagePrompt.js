@@ -1,15 +1,20 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import Checkbox from 'material-ui/Checkbox';
 import Dialog from 'material-ui/Dialog';
+import DropDownMenu from 'material-ui/DropDownMenu';
 import FlatButton from 'material-ui/FlatButton';
-import RaisedButton from 'material-ui/RaisedButton';
 import LinearProgress from 'material-ui/LinearProgress';
+import RaisedButton from 'material-ui/RaisedButton';
+import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
+import TextField from 'material-ui/TextField';
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
-import { hideBatchImagePrompt } from './modules/project';
-import { createMultipleCanvasDocs } from './modules/documentGrid';
+import { hideBatchImagePrompt, startUploading } from './modules/project';
+import { createBatchImages } from './modules/documentGrid';
 import { DirectUploadProvider } from 'react-activestorage-provider';
 import { red400, green400, lightBlue400 } from 'material-ui/styles/colors';
+import MenuItem from 'material-ui/MenuItem/MenuItem';
 
 const TableRow = ({ upload }) => {
   const name = upload.filename || upload.signedId;
@@ -105,41 +110,167 @@ const TableRow = ({ upload }) => {
 }
 
 class BatchImagePrompt extends Component {
+  constructor(props) {
+    super(props);
+    this.defaultState = {
+      inFolder: false,
+      existingFolder: false,
+      newFolderName: '',
+      folderId: '',
+    };
+    this.state = {
+      ...this.defaultState,
+    };
+  }
+
+  updateCheck() {
+    this.setState((prevState) => {
+      return {
+        inFolder: !prevState.inFolder,
+      };
+    });
+  }
+
+  changeFolderType(event, value) {
+    this.setState({
+      existingFolder: value === 'existing',
+    })
+  }
+
+  selectFolder(event, index, value) {
+    this.setState({
+      folderId: value,
+    })
+  }
+
+  renderFolderChoice() {
+    const { contentsChildren } = this.props;
+    const { inFolder, existingFolder, folderId, newFolderName } = this.state;
+    const spaced = { marginBottom: '16px' };
+    const dropdownStyle = { width: '400px', marginTop: '-6px', marginBottom: '22px'  };
+    const grayStyle = { color: 'gray' };
+    return (
+      <>
+        <Checkbox
+          label="Place all uploads into a folder"
+          checked={inFolder}
+          onCheck={this.updateCheck.bind(this)}
+          style={spaced}
+        />
+        {inFolder && (
+          <>
+            <RadioButtonGroup
+              name="folderType"
+              defaultSelected="new"
+              onChange={this.changeFolderType.bind(this)}
+            >
+              <RadioButton
+                value="new"
+                label="New folder"
+                style={spaced}
+              />
+              <RadioButton
+                value="existing"
+                label="Existing folder"
+                style={spaced}
+                disabled={
+                  contentsChildren.filter(
+                    child => child['document_kind'] === 'folder'
+                  ).length === 0
+                }
+              />
+            </RadioButtonGroup>
+            {!existingFolder && (
+              <>
+                New folder:
+                {' '}
+                <TextField
+                  value={newFolderName}
+                  onChange={(e, val) => this.setState({ newFolderName: val })}
+                  hintText="Name"
+                  style={{ marginLeft: '4px', ...spaced }}
+                >
+                </TextField>
+              </>
+            )}
+            {existingFolder && (       
+              <DropDownMenu
+                value={folderId}
+                onChange={this.selectFolder.bind(this)}
+                style={dropdownStyle}
+                autoWidth={false}
+                labelStyle={folderId === '' ? grayStyle : ''}
+                menuStyle={{ paddingLeft: 0 }}
+              >
+                <MenuItem
+                  value={''}
+                  primaryText={'Choose an existing folder...'}
+                  disabled={folderId !== ''}
+                />
+                {contentsChildren
+                  .filter(child => child['document_kind'] === 'folder')
+                  .map(child => (
+                    <MenuItem
+                      key={child.id}
+                      value={child.id}
+                      primaryText={child.title}
+                    />
+                  ))}
+              </DropDownMenu>
+            )}
+          </>
+        )}
+      </>
+    )
+  }
+
   renderMultipleUploadButton({ projectId }) {
-    const { createMultipleCanvasDocs } = this.props;
+    const { createBatchImages, uploading } = this.props;
+    const { folderId, newFolderName, inFolder, existingFolder } = this.state;
+    const folderChoiceValid = 
+      !inFolder || 
+      (existingFolder === false && newFolderName !== '') ||
+      (existingFolder === true && folderId !== '');
     return (
       <DirectUploadProvider
         multiple
         onSuccess={(signedIds) => {
-          createMultipleCanvasDocs({
+          createBatchImages({
             projectId,
             signedIds,
-            addTileSource: this.addTileSource,
+            inFolder,
+            existingFolder,
+            folderId,
+            newFolderName,
           });
         }}
         render={({ handleUpload, uploads, ready }) => (
           <>
-            <RaisedButton
-              containerElement="label"
-              style={{ display: 'flex' }}
-              icon={<CloudUpload />}
-              label="Upload multiple"
-              disabled={
-                !ready ||
-                uploads.length > 0 ||
-                this.props.uploads.some((upload) => upload.state !== 'finished')
-              }
-            >
-              <input
-                type="file"
-                disabled={!ready}
-                multiple
-                onChange={(e) => {
-                  handleUpload(e.currentTarget.files);
-                }}
-                style={{ display: 'none' }}
-              />
-            </RaisedButton>
+            {!uploading && (
+              <RaisedButton
+                containerElement="label"
+                style={{ display: 'flex' }}
+                icon={<CloudUpload />}
+                label="Upload multiple"
+                disabled={
+                  !ready ||
+                  uploads.length > 0 ||
+                  this.props.uploads.some((upload) => upload.state !== 'finished') ||
+                  !folderChoiceValid
+                }
+              >
+                <input
+                  type="file"
+                  disabled={!ready}
+                  multiple
+                  onChange={(e) => {
+                    handleUpload(e.currentTarget.files);
+                    this.props.startUploading();
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </RaisedButton>
+            )}
             {this.props.uploads && this.props.uploads.length > 0 && (
               <table style={{ marginTop: '20px', width: '100%' }}>
                 <tbody>
@@ -156,7 +287,7 @@ class BatchImagePrompt extends Component {
   }
 
   render() {
-    const { batchImagePromptShown, hideBatchImagePrompt } = this.props;
+    const { batchImagePromptShown, hideBatchImagePrompt, uploading } = this.props;
     const projectId = batchImagePromptShown;
 
     return (
@@ -164,17 +295,24 @@ class BatchImagePrompt extends Component {
         title="Batch upload images"
         modal={false}
         open={!!batchImagePromptShown}
-        onRequestClose={hideBatchImagePrompt}
+        onRequestClose={() => {
+          hideBatchImagePrompt();
+          this.setState({ ...this.defaultState });
+        }}
         autoScrollBodyContent={true}
         actions={[
           <FlatButton
             label="Close"
             primary={true}
-            onClick={hideBatchImagePrompt}
+            onClick={() => {
+              hideBatchImagePrompt();
+              this.setState({ ...this.defaultState });
+            }}
           />,
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
+        {!uploading && this.renderFolderChoice()}
         {this.renderMultipleUploadButton({ projectId })}
       </Dialog>
     );
@@ -184,13 +322,16 @@ class BatchImagePrompt extends Component {
 const mapStateToProps = (state) => ({
   batchImagePromptShown: state.project.batchImagePromptShown,
   uploads: state.project.uploads,
+  uploading: state.project.uploading,
+  contentsChildren: state.project.contentsChildren,
 });
 
 const mapDispatchToProps = (dispatch) =>
   bindActionCreators(
     {
       hideBatchImagePrompt,
-      createMultipleCanvasDocs,
+      startUploading,
+      createBatchImages,
     },
     dispatch
   );

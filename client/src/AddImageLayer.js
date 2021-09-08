@@ -23,7 +23,6 @@ import {
   replaceDocument,
   updateDocument,
   setDocumentThumbnail,
-  createMultipleCanvasDocs,
 } from './modules/documentGrid';
 import deepEqual from 'deep-equal';
 
@@ -362,7 +361,6 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   setDocumentThumbnail,
   replaceDocument,
   changePage,
-  createMultipleCanvasDocs,
 }, dispatch);
 
 export default connect(

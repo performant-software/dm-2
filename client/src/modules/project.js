@@ -38,6 +38,7 @@ export const IMAGE_UPLOAD_STARTED = 'project/IMAGE_UPLOAD_STARTED';
 export const IMAGE_UPLOAD_COMPLETE = 'project/IMAGE_UPLOAD_COMPLETE';
 export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
 export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
+export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
 
 const sidebarOpenWidth = 490
 
@@ -62,6 +63,7 @@ const initialState = {
   sidebarOpen: true,
   batchImagePromptShown: false,
   uploads: [],
+  uploading: false,
 };
 
 export default function(state = initialState, action) {
@@ -199,7 +201,14 @@ export default function(state = initialState, action) {
       return {
         ...state,
         batchImagePromptShown: false,
+        uploading: false,
         uploads: [],
+      };
+
+    case SET_UPLOADING_TRUE:
+      return {
+        ...state,
+        uploading: true,
       };
     
     case IMAGE_UPLOAD_STARTED:
@@ -660,6 +669,14 @@ export function showBatchImagePrompt({ projectId }) {
     dispatch({
       type: SHOW_BATCH_IMAGE_PROMPT,
       projectId,
+    });
+  }
+}
+
+export function startUploading() {
+  return function(dispatch) {
+    dispatch({
+      type: SET_UPLOADING_TRUE,
     });
   }
 }

@@ -1569,14 +1569,35 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
   }
 }
 
-export function createMultipleCanvasDocs ({
-  projectId, signedIds
-}) {
+function createFolderForBatch({ projectId, newFolderName }) {
+  return fetch('/document_folders', {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'access-token': localStorage.getItem('access-token'),
+      'token-type': localStorage.getItem('token-type'),
+      'client': localStorage.getItem('client'),
+      'expiry': localStorage.getItem('expiry'),
+      'uid': localStorage.getItem('uid')
+    },
+    method: 'POST',
+    body: JSON.stringify({
+      title: newFolderName,
+      project_id: projectId,
+      parent_id: projectId,
+      parent_type: 'Project'
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw Error(response.statusText);
+    }
+    return response.json();
+  })
+}
+
+function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
   return function(dispatch) {
-    dispatch({
-      type: IMAGE_UPLOAD_STARTED,
-      signedIds,
-    });
     signedIds.forEach(signedId => {
       fetch(`/images/${signedId}`, {
         headers: {
@@ -1607,8 +1628,8 @@ export function createMultipleCanvasDocs ({
           image: image.blob,
         });
         dispatch(createCanvasDocWithImage({
-          parentId: projectId,
-          parentType: 'Project',
+          parentId,
+          parentType,
           signedId,
           filename,
           url: image.url,
@@ -1622,5 +1643,54 @@ export function createMultipleCanvasDocs ({
         })
       })
     })
+  }
+}
+
+export function createBatchImages ({
+  projectId,
+  signedIds,
+  inFolder,
+  existingFolder,
+  folderId,
+  newFolderName,
+}) {
+  return function(dispatch) {
+    dispatch({
+      type: IMAGE_UPLOAD_STARTED,
+      signedIds,
+    });
+    let parentId = projectId;
+    let parentType = 'Project';
+    if (inFolder) {
+      if (existingFolder && folderId) {
+        parentType = 'DocumentFolder';
+        parentId = parseInt(folderId, 10);
+        dispatch(createMultipleCanvasDocs({
+          parentId,
+          parentType,
+          signedIds,
+         }));
+      } else if (!existingFolder && newFolderName) {
+        parentType = 'DocumentFolder';
+        createFolderForBatch({
+          projectId,
+          newFolderName,
+        })
+        .then(folder => {
+          dispatch(createMultipleCanvasDocs({
+            parentId: folder.id,
+            parentType,
+            signedIds,
+           }));
+           dispatch(loadProject(projectId));
+        })
+      }
+    } else {
+      dispatch(createMultipleCanvasDocs({
+        parentId,
+        parentType,
+        signedIds,
+       }));
+    }
   };
 }
