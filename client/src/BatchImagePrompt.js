@@ -10,7 +10,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
-import { hideBatchImagePrompt, startUploading } from './modules/project';
+import { hideBatchImagePrompt, startUploading, getFolderData } from './modules/project';
 import { createBatchImages } from './modules/documentGrid';
 import { DirectUploadProvider } from 'react-activestorage-provider';
 import { red400, green400, lightBlue400 } from 'material-ui/styles/colors';
@@ -117,10 +117,32 @@ class BatchImagePrompt extends Component {
       existingFolder: false,
       newFolderName: '',
       folderId: '',
+      menuItemsToRender: [],
     };
     this.state = {
       ...this.defaultState,
     };
+  }
+
+  pushSelfAndDescendants({ parent, folderData, level }) {
+    if(!this.state.menuItemsToRender.some(item => item.key === parent.id)) {
+      const newItem = {
+        key: parent.id,
+        value: parent.id,
+        primaryText: `${level > 0 ? `└${'─'.repeat(level-1)}` : ''} ${parent.title}`,
+      };
+      this.setState((prevState) => ({ menuItemsToRender: [...prevState.menuItemsToRender, newItem] }));
+      folderData
+        .filter(child => 
+          child.parent_type === 'DocumentFolder' && 
+          child.parent_id === parent.id
+        )
+        .forEach(child => this.pushSelfAndDescendants({
+          parent: child,
+          folderData,
+          level: level+1,
+        }));
+    }
   }
 
   updateCheck() {
@@ -132,9 +154,17 @@ class BatchImagePrompt extends Component {
   }
 
   changeFolderType(event, value) {
+    const { folderData } = this.props;
     this.setState({
       existingFolder: value === 'existing',
     })
+    if (value === 'existing') {
+      folderData
+        .filter(child => child['parent_type'] === 'Project')
+        .forEach(child => this.pushSelfAndDescendants(
+          { parent: child, folderData, level: 0}
+        ));
+    }
   }
 
   selectFolder(event, index, value) {
@@ -207,15 +237,15 @@ class BatchImagePrompt extends Component {
                   primaryText={'Choose an existing folder...'}
                   disabled={folderId !== ''}
                 />
-                {contentsChildren
-                  .filter(child => child['document_kind'] === 'folder')
-                  .map(child => (
+                {
+                  this.state.menuItemsToRender.map(item => (
                     <MenuItem
-                      key={child.id}
-                      value={child.id}
-                      primaryText={child.title}
+                      key={item.key}
+                      value={item.value}
+                      primaryText={item.primaryText}
                     />
-                  ))}
+                  ))
+                }
               </DropDownMenu>
             )}
           </>
@@ -324,6 +354,7 @@ const mapStateToProps = (state) => ({
   uploads: state.project.uploads,
   uploading: state.project.uploading,
   contentsChildren: state.project.contentsChildren,
+  folderData: state.project.folderData,
 });
 
 const mapDispatchToProps = (dispatch) =>
@@ -332,6 +363,7 @@ const mapDispatchToProps = (dispatch) =>
       hideBatchImagePrompt,
       startUploading,
       createBatchImages,
+      getFolderData,
     },
     dispatch
   );

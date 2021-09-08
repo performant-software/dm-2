@@ -39,6 +39,7 @@ export const IMAGE_UPLOAD_COMPLETE = 'project/IMAGE_UPLOAD_COMPLETE';
 export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
 export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
 export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
+export const ADD_FOLDER_DATA = 'project/ADD_FOLDER_DATA';
 
 const sidebarOpenWidth = 490
 
@@ -64,6 +65,7 @@ const initialState = {
   batchImagePromptShown: false,
   uploads: [],
   uploading: false,
+  folderData: [],
 };
 
 export default function(state = initialState, action) {
@@ -203,6 +205,7 @@ export default function(state = initialState, action) {
         batchImagePromptShown: false,
         uploading: false,
         uploads: [],
+        folderData: [],
       };
 
     case SET_UPLOADING_TRUE:
@@ -251,6 +254,17 @@ export default function(state = initialState, action) {
         ...state,
         uploads: uploadsWithError,
       };
+
+    case ADD_FOLDER_DATA:
+      const folder = action.folder;
+      const newFolderData = state.folderData.slice(0);
+      if (!newFolderData.some(datum => datum.id === folder.id)) {
+        newFolderData.push(folder);
+      }
+      return {
+        ...state,
+        folderData: newFolderData,
+      }
       
     default:
       return state;
@@ -670,6 +684,7 @@ export function showBatchImagePrompt({ projectId }) {
       type: SHOW_BATCH_IMAGE_PROMPT,
       projectId,
     });
+    dispatch(getFolderData({ projectId }));
   }
 }
 
@@ -677,6 +692,71 @@ export function startUploading() {
   return function(dispatch) {
     dispatch({
       type: SET_UPLOADING_TRUE,
+    });
+  }
+}
+
+function getFolderDataFromIds({ folderIds }) {
+  return function(dispatch) {
+    folderIds.forEach(folderId => {
+      fetch(`/document_folders/${folderId}`, {
+        headers: {
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(folder => {
+        dispatch({
+          type: ADD_FOLDER_DATA,
+          folder,
+        })
+      })
+    });
+  }
+}
+
+export function getFolderData({ projectId }) {
+  return function(dispatch, getState) {
+    fetch(`/projects/${projectId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(project => {
+      let folderIds = [];
+      if (project.contents_children) { 
+        project.contents_children.filter(
+          child => child['document_kind'] === 'folder'
+        ).forEach(child => {
+          folderIds.push(child.id);
+          child.descendant_folder_ids.forEach(descendant => {
+            if (!folderIds.includes(descendant)) {
+              folderIds.push(descendant);
+            }
+          })
+        });
+        dispatch(getFolderDataFromIds({ folderIds }));
+      }
     });
   }
 }
