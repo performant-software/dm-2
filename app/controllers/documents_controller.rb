@@ -34,8 +34,18 @@ class DocumentsController < ApplicationController
 
   # POST /documents
   def create
+    lock = params.fetch(:locked, true)
     @document = Document.new(new_document_params)
-    @document.adjust_lock( current_user, true )
+    @document.adjust_lock( current_user, lock )
+
+    if !params[:images].nil? && params[:images].length() > 0
+      @document.images.attach(params[:images])
+      if @document.valid_images?
+        image = @document.images[0]
+        imagetitle, _, _ = image.filename.to_s.rpartition('.')
+        @document.update(title: imagetitle)
+      end
+    end
 
     if @document.save
       render json: @document, status: :created, location: @document
@@ -196,7 +206,8 @@ class DocumentsController < ApplicationController
   # GET /image/1
   def get_image_by_signed_id
     @blob = ActiveStorage::Blob.find_signed(params['signed_id'])
-    render json: @blob
+    @blobject = { :blob => @blob, :url => (url_for @blob) }
+    render json: @blobject
   end
 
   private

@@ -65,7 +65,7 @@ const TableRow = ({ upload }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            {upload.error}
+            {upload.error.toString()}
           </td>
         </tr>
       );

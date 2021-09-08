@@ -863,12 +863,6 @@ export function updateDocument(documentId, attributes, options) {
       if (options && options.refreshDocumentContent && options.timeOpened) {
         dispatch(refreshDocuments(document, options.timeOpened))
       }
-      if (options && options.addedTileSource && options.signedId) {
-        dispatch({
-          type: IMAGE_UPLOAD_COMPLETE,
-          signedId: options.signedId,
-        })
-      }
     })
     .catch(() => dispatch({
       type: PATCH_ERRORED
@@ -1499,70 +1493,7 @@ export function fetchLock(documentId) {
   };
 }
 
-function addImage ({ documentId, signedId }) {
-  return function(dispatch) {
-    fetch(`/documents/${documentId}/add_images`, {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'access-token': localStorage.getItem('access-token'),
-        'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      },
-      method: 'PUT',
-      body: JSON.stringify({
-        document: {
-          images: [signedId]
-        }
-      })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
-      dispatch(addTileSourceToNewDoc({ document, signedId }));
-      dispatch(replaceDocument(document));
-    });
-  }
-}
-
-function addTileSourceToNewDoc ({ document, signedId }) {
-  return function(dispatch) {
-    let tileSources = [];
-    let imageUrlForThumbnail = '';
-    document.image_urls.forEach((url) => {
-      const filename = decodeURIComponent(url.substring(
-        url.lastIndexOf('/')+1,
-        url.lastIndexOf('.')
-      ));
-      tileSources.push({
-        type: 'image',
-        url,
-        name: filename,
-      });
-      imageUrlForThumbnail = url;
-    })
-    const newContent = { ...document.content, tileSources };
-    dispatch(setAddTileSourceMode(document.id, null));
-    dispatch(setDocumentThumbnail(document.id, imageUrlForThumbnail));
-    dispatch(updateDocument(document.id, {
-      content: newContent,
-      title: tileSources[0].name,
-    }, {
-      refreshLists: true,
-      addedTileSource: true,
-      signedId,
-    }));
-  }
-}
-
-function createCanvasDocFromImage ({ parentId, parentType, signedId }) {
+function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filename }) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -1583,9 +1514,19 @@ function createCanvasDocFromImage ({ parentId, parentType, signedId }) {
         title: 'Loading',
         project_id: getState().project.id,
         document_kind: CANVAS_RESOURCE_TYPE,
-        content: { tileSources: [] },
+        content: {
+          tileSources: [
+            {
+              type: 'image',
+              url,
+              name: filename,
+            }
+          ]
+        },
         parent_id: parentId,
         parent_type: parentType,
+        locked: false,
+        images: [signedId],
       })
     })
     .then(response => {
@@ -1604,22 +1545,27 @@ function createCanvasDocFromImage ({ parentId, parentType, signedId }) {
       return document;
     })
     .then(document => {
-      dispatch(addImage({
-        documentId: document.id,
-        signedId,
-      }));
+      dispatch(setAddTileSourceMode(document.id, null));
+      dispatch(setDocumentThumbnail(document.id, url));
       return document;
     })
     .then(document => {
-      dispatch(updateDocument(
-        document.id,
-        { locked: false },
-        { adjustLock: true },
-      ))
+      dispatch({
+        type: IMAGE_UPLOAD_COMPLETE,
+        signedId,
+      });
+      return document;
     })
-    .catch(() => dispatch({
-      type: POST_ERRORED
-    }));
+    .catch((error) => {
+      dispatch({
+        type: IMAGE_UPLOAD_ERRORED,
+        signedId,
+        error,
+      });
+      dispatch({
+       type: POST_ERRORED
+      });
+    });
   }
 }
 
@@ -1652,11 +1598,21 @@ export function createMultipleCanvasDocs ({
       })
       .then(response => response.json())
       .then(image => {
+        const filename = image.blob.filename.substring(
+          0, image.blob.filename.lastIndexOf('.')
+        );
         dispatch({
           type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
           signedId,
-          image,
-        })
+          image: image.blob,
+        });
+        dispatch(createCanvasDocWithImage({
+          parentId: projectId,
+          parentType: 'Project',
+          signedId,
+          filename,
+          url: image.url,
+        }));
       })
       .catch(error => {
         dispatch({
@@ -1665,11 +1621,6 @@ export function createMultipleCanvasDocs ({
           error,
         })
       })
-      dispatch(createCanvasDocFromImage({
-        parentId: projectId,
-        parentType: 'Project',
-        signedId,
-      }))
     })
   };
 }
