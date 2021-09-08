@@ -10,7 +10,13 @@ import RaisedButton from 'material-ui/RaisedButton';
 import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
-import { hideBatchImagePrompt, startUploading, getFolderData } from './modules/project';
+import {
+  getFolderData,
+  hideBatchImagePrompt,
+  hideCloseDialog,
+  showCloseDialog,
+  startUploading,
+} from './modules/project';
 import { createBatchImages } from './modules/documentGrid';
 import { DirectUploadProvider } from 'react-activestorage-provider';
 import { red400, green400, lightBlue400 } from 'material-ui/styles/colors';
@@ -109,6 +115,30 @@ const TableRow = ({ upload }) => {
   }
 }
 
+const CloseDialog = ({ closeAction, cancelAction, open }) => {
+  return (
+    <Dialog
+      title="Close"
+      modal={true}
+      open={open}
+      actions={[
+        <FlatButton
+          label="Cancel"
+          primary
+          onClick={cancelAction}
+        />,
+        <FlatButton
+          label="Close"
+          secondary
+          onClick={closeAction}
+        />,
+      ]}
+    >
+      Are you sure you want to close this dialog? It may interrupt uploads in progress.
+    </Dialog>
+  );
+}
+
 class BatchImagePrompt extends Component {
   constructor(props) {
     super(props);
@@ -137,6 +167,11 @@ class BatchImagePrompt extends Component {
           child.parent_type === 'DocumentFolder' && 
           child.parent_id === parent.id
         )
+        .sort((a, b) => {
+          if (a.title.toLowerCase() < b.title.toLowerCase()) { return -1; }
+          if (a.title.toLowerCase() > b.title.toLowerCase()) { return 1; }
+          return 0;
+        })
         .forEach(child => this.pushSelfAndDescendants({
           parent: child,
           folderData,
@@ -161,6 +196,11 @@ class BatchImagePrompt extends Component {
     if (value === 'existing') {
       folderData
         .filter(child => child['parent_type'] === 'Project')
+        .sort((a, b) => {
+          if (a.title.toLowerCase() < b.title.toLowerCase()) { return -1; }
+          if (a.title.toLowerCase() > b.title.toLowerCase()) { return 1; }
+          return 0;
+        })
         .forEach(child => this.pushSelfAndDescendants(
           { parent: child, folderData, level: 0}
         ));
@@ -177,7 +217,7 @@ class BatchImagePrompt extends Component {
     const { contentsChildren } = this.props;
     const { inFolder, existingFolder, folderId, newFolderName } = this.state;
     const spaced = { marginBottom: '16px' };
-    const dropdownStyle = { width: '400px', marginTop: '-6px', marginBottom: '22px'  };
+    const dropdownStyle = { width: '100%', marginTop: '-6px', marginBottom: '22px'  };
     const grayStyle = { color: 'gray' };
     return (
       <>
@@ -255,7 +295,7 @@ class BatchImagePrompt extends Component {
   }
 
   renderMultipleUploadButton({ projectId }) {
-    const { createBatchImages, uploading } = this.props;
+    const { createBatchImages, uploading, startUploading } = this.props;
     const { folderId, newFolderName, inFolder, existingFolder } = this.state;
     const folderChoiceValid = 
       !inFolder || 
@@ -295,7 +335,7 @@ class BatchImagePrompt extends Component {
                   multiple
                   onChange={(e) => {
                     handleUpload(e.currentTarget.files);
-                    this.props.startUploading();
+                    startUploading();
                   }}
                   style={{ display: 'none' }}
                 />
@@ -317,7 +357,15 @@ class BatchImagePrompt extends Component {
   }
 
   render() {
-    const { batchImagePromptShown, hideBatchImagePrompt, uploading } = this.props;
+    const { 
+      batchImagePromptShown,
+      closeDialogShown,
+      hideBatchImagePrompt,
+      hideCloseDialog,
+      showCloseDialog,
+      uploading,
+      uploads,
+    } = this.props;
     const projectId = batchImagePromptShown;
 
     return (
@@ -326,24 +374,55 @@ class BatchImagePrompt extends Component {
         modal={false}
         open={!!batchImagePromptShown}
         onRequestClose={() => {
-          hideBatchImagePrompt();
-          this.setState({ ...this.defaultState });
+          if (uploading && uploads.length > 0 && uploads.some((upload) => upload.state !== 'finished')) {
+            showCloseDialog();
+          } else {
+            hideBatchImagePrompt();
+            this.setState({ ...this.defaultState });
+          }
         }}
         autoScrollBodyContent={true}
         actions={[
           <FlatButton
             label="Close"
-            primary={true}
+            primary
             onClick={() => {
-              hideBatchImagePrompt();
-              this.setState({ ...this.defaultState });
+              if (uploading && uploads.length > 0 && uploads.some((upload) => upload.state !== 'finished')) {
+                showCloseDialog();
+              } else {
+                hideBatchImagePrompt();
+                this.setState({ ...this.defaultState });
+              }
             }}
           />,
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
         {!uploading && this.renderFolderChoice()}
+        <div style={{ textAlign: 'center' }}>
+          {uploading && uploads.length > 0 && uploads.some((upload) => upload.state !== 'finished') && (<>
+            <p>Upload in progress. Closing this page before uploads complete may result in lost uploads.</p>
+            <p>It is also recommended not to close this dialog window.</p>
+          </>)}
+          {uploading && uploads.length > 0 && !uploads.some((upload) => upload.state !== 'finished') && (<>
+            <p>Upload complete!</p>
+            <p>You may now safely close this dialog window and/or page.</p>
+          </>)}
+        </div>
         {this.renderMultipleUploadButton({ projectId })}
+        <CloseDialog 
+          closeAction={() => {
+            console.log('he');
+            hideBatchImagePrompt();
+            hideCloseDialog();
+            this.setState({ ...this.defaultState });
+          }}
+          cancelAction={() => {
+            console.log('test');
+            hideCloseDialog();
+          }}
+          open={closeDialogShown}
+        />
       </Dialog>
     );
   }
@@ -355,6 +434,7 @@ const mapStateToProps = (state) => ({
   uploading: state.project.uploading,
   contentsChildren: state.project.contentsChildren,
   folderData: state.project.folderData,
+  closeDialogShown: state.project.closeDialogShown,
 });
 
 const mapDispatchToProps = (dispatch) =>
@@ -364,6 +444,8 @@ const mapDispatchToProps = (dispatch) =>
       startUploading,
       createBatchImages,
       getFolderData,
+      showCloseDialog,
+      hideCloseDialog,
     },
     dispatch
   );

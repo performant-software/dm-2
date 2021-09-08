@@ -40,6 +40,8 @@ export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
 export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
 export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
 export const ADD_FOLDER_DATA = 'project/ADD_FOLDER_DATA';
+export const SHOW_CLOSE_DIALOG = 'project/SHOW_CLOSE_DIALOG';
+export const HIDE_CLOSE_DIALOG = 'project/HIDE_CLOSE_DIALOG';
 
 const sidebarOpenWidth = 490
 
@@ -66,6 +68,7 @@ const initialState = {
   uploads: [],
   uploading: false,
   folderData: [],
+  closeDialogShown: false,
 };
 
 export default function(state = initialState, action) {
@@ -266,6 +269,17 @@ export default function(state = initialState, action) {
         folderData: newFolderData,
       }
       
+    case SHOW_CLOSE_DIALOG:
+      return {
+        ...state,
+        closeDialogShown: true,
+      }
+
+    case HIDE_CLOSE_DIALOG:
+      return {
+        ...state,
+        closeDialogShown: false,
+      }
     default:
       return state;
   }
@@ -758,5 +772,21 @@ export function getFolderData({ projectId }) {
         dispatch(getFolderDataFromIds({ folderIds }));
       }
     });
+  }
+}
+
+export function showCloseDialog() {
+  return function(dispatch) {
+    dispatch({
+      type: SHOW_CLOSE_DIALOG,
+    })
+  }
+}
+
+export function hideCloseDialog() {
+  return function(dispatch) {
+    dispatch({
+      type: HIDE_CLOSE_DIALOG,
+    })
   }
 }
