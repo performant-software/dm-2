@@ -183,9 +183,18 @@ class BatchImagePrompt extends Component {
 
   updateCheck() {
     this.setState((prevState) => {
-      return {
-        inFolder: !prevState.inFolder,
-      };
+      if (prevState.inFolder === false) {
+        return {
+          ...prevState,
+          inFolder: !prevState.inFolder,
+          existingFolder: false,
+        }
+      } else {
+        return {
+          ...prevState,
+          inFolder: !prevState.inFolder,
+        };
+      }
     });
   }
 
