@@ -199,8 +199,11 @@ class DocumentsController < ApplicationController
 
   # POST /documents/1/set_thumbnail
   def set_thumbnail
-    @document.add_thumbnail( params['image_url'] )
-    render json: @document
+    if @document.add_thumbnail( params['image_url'] )
+      render json: @document
+    else
+      render status: 408
+    end
   end
 
   # GET /image/1

@@ -870,7 +870,12 @@ export function updateDocument(documentId, attributes, options) {
   }
 }
 
-export function setDocumentThumbnail(documentId, image_url) {
+export function setDocumentThumbnail({
+    documentId,
+    image_url,
+    createdByBatch,
+    signedId,
+  }) {
   return function(dispatch, getState) {
     dispatch({
       type: UPDATE_DOCUMENT
@@ -893,7 +898,11 @@ export function setDocumentThumbnail(documentId, image_url) {
     })
     .then(response => {
       if (!response.ok) {
-        throw Error(response.statusText);
+        if (response.status === 408) {
+          throw Error('Unable to set thumbnail');
+        } else {
+          throw Error(response.statusText);
+        }
       }
       return response;
     })
@@ -915,10 +924,25 @@ export function setDocumentThumbnail(documentId, image_url) {
           dispatch(refreshTarget(index));
         }
       });
+      if (createdByBatch && signedId) {
+        dispatch({
+          type: IMAGE_UPLOAD_COMPLETE,
+          signedId,
+        });
+      }
     })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
+    .catch((error) => {
+      dispatch({
+        type: PATCH_ERRORED
+      });
+      if (createdByBatch && signedId) {
+        dispatch({
+          type: IMAGE_UPLOAD_ERRORED,
+          signedId,
+          error: error.message,
+        });
+      }
+    });
   }
 }
 
@@ -1258,7 +1282,10 @@ export function moveLayer({ documentId, origin, direction, editorKey }) {
         } else {
           imageUrlForThumbnail = firstTileSource;
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+        dispatch(setDocumentThumbnail({
+          documentId,
+          image_url: imageUrlForThumbnail,
+        }));
       }
       dispatch({
         type: REPLACE_DOCUMENT,
@@ -1337,7 +1364,10 @@ export function deleteLayer({ documentId, layer, editorKey }) {
         } else {
           imageUrlForThumbnail = firstTileSource;
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+        dispatch(setDocumentThumbnail({
+          documentId,
+          image_url: imageUrlForThumbnail
+        }));
       }
       dispatch({
         type: REPLACE_DOCUMENT,
@@ -1546,14 +1576,12 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
     })
     .then(document => {
       dispatch(setAddTileSourceMode(document.id, null));
-      dispatch(setDocumentThumbnail(document.id, url));
-      return document;
-    })
-    .then(document => {
-      dispatch({
-        type: IMAGE_UPLOAD_COMPLETE,
+      dispatch(setDocumentThumbnail({
+        documentId: document.id, 
+        image_url: url,
+        createdByBatch: true,
         signedId,
-      });
+      }));
       return document;
     })
     .catch((error) => {

@@ -133,7 +133,10 @@ class AddImageLayer extends Component {
     this.props.setAddTileSourceMode(this.props.document_id, null);
 
     if (shouldSetThumbnail && imageUrlForThumbnail) {
-      this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
+      this.props.setDocumentThumbnail({
+        documentId: this.props.document_id, 
+        image_url: imageUrlForThumbnail,
+      });
     }
 
     newContent.tileSources = existingTileSources.concat(newTileSources);

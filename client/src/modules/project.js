@@ -251,7 +251,7 @@ export default function(state = initialState, action) {
       const uploadsWithError = state.uploads.map((upload) => ({
         ...upload,
         state: upload.signedId === action.signedId ? 'error' : upload.state,
-        error: upload.signedId === action.signedId ? action.error : upload.state,
+        error: upload.signedId === action.signedId ? action.error : upload.error,
       }));
       return {
         ...state,

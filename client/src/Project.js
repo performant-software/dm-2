@@ -252,7 +252,22 @@ class Project extends Component {
   }
 
   render() {
-    const { title, projectId, loading, adminEnabled, sidebarWidth, contentsChildren, openDocumentIds, writeEnabled } = this.props
+    const {
+      title,
+      projectId,
+      loading,
+      adminEnabled,
+      sidebarWidth,
+      contentsChildren,
+      openDocumentIds,
+      writeEnabled,
+      uploads,
+      uploading,
+      batchImagePromptShown,
+    } = this.props;
+    const uploadsNotDone = uploads.some(
+      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+    );
     return (
       <div>
         <Navigation
@@ -275,12 +290,12 @@ class Project extends Component {
         { this.renderSnackbar() }
         {(loading || 
           (
-            this.props.uploads && 
-            this.props.uploads.length > 0 && 
-            this.props.uploads.some((upload) => upload.state !== 'finished')
+            uploads && 
+            uploads.length > 0 && 
+            uploadsNotDone
           ) ||
-          this.props.uploading ||
-          this.props.batchImagePromptShown)
+          uploading ||
+          batchImagePromptShown)
           && (
           <Beforeunload onBeforeunload={(event) => event.preventDefault()} />
         )}

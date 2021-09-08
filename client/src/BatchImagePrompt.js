@@ -36,15 +36,16 @@ const TableRow = ({ upload }) => {
     fontWeight: 'bold',
   };
   const progressTdStyle = {
-    width: '420px',
-    maxWidth: '420px',
-    minWidth: '420px',
+    width: '320px',
+    maxWidth: '320px',
+    minWidth: '320px',
     paddingRight: '10px',
   };
   const statusTdStyle = {
-    width: '100px',
-    maxWidth: '100px',
-    minWidth: '100px',
+    width: '200px',
+    maxWidth: '200px',
+    minWidth: '200px',
+    textAlign: 'right',
   }
   switch (upload.state) {
     case 'uploading':
@@ -269,7 +270,7 @@ class BatchImagePrompt extends Component {
                 onChange={this.selectFolder.bind(this)}
                 style={dropdownStyle}
                 autoWidth={false}
-                labelStyle={folderId === '' ? grayStyle : ''}
+                labelStyle={folderId === '' ? grayStyle : {}}
                 menuStyle={{ paddingLeft: 0 }}
               >
                 <MenuItem
@@ -297,6 +298,9 @@ class BatchImagePrompt extends Component {
   renderMultipleUploadButton({ projectId }) {
     const { createBatchImages, uploading, startUploading } = this.props;
     const { folderId, newFolderName, inFolder, existingFolder } = this.state;
+    const uploadsNotDone = this.props.uploads.some(
+      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+    );
     const folderChoiceValid = 
       !inFolder || 
       (existingFolder === false && newFolderName !== '') ||
@@ -325,7 +329,7 @@ class BatchImagePrompt extends Component {
                 disabled={
                   !ready ||
                   uploads.length > 0 ||
-                  this.props.uploads.some((upload) => upload.state !== 'finished') ||
+                  uploadsNotDone ||
                   !folderChoiceValid
                 }
               >
@@ -368,13 +372,17 @@ class BatchImagePrompt extends Component {
     } = this.props;
     const projectId = batchImagePromptShown;
 
+    const uploadsNotDone = uploads.some(
+      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+    );
+
     return (
       <Dialog
         title="Batch upload images"
         modal={false}
         open={!!batchImagePromptShown}
         onRequestClose={() => {
-          if (uploading && uploads.length > 0 && uploads.some((upload) => upload.state !== 'finished')) {
+          if (uploading && uploads.length > 0 && uploadsNotDone) {
             showCloseDialog();
           } else {
             hideBatchImagePrompt();
@@ -387,7 +395,7 @@ class BatchImagePrompt extends Component {
             label="Close"
             primary
             onClick={() => {
-              if (uploading && uploads.length > 0 && uploads.some((upload) => upload.state !== 'finished')) {
+              if (uploading && uploads.length > 0 && uploadsNotDone) {
                 showCloseDialog();
               } else {
                 hideBatchImagePrompt();
@@ -400,11 +408,11 @@ class BatchImagePrompt extends Component {
       >
         {!uploading && this.renderFolderChoice()}
         <div style={{ textAlign: 'center' }}>
-          {uploading && uploads.length > 0 && uploads.some((upload) => upload.state !== 'finished') && (<>
+          {uploading && uploads.length > 0 && uploadsNotDone && (<>
             <p>Upload in progress. Closing this page before uploads complete may result in lost uploads.</p>
             <p>It is also recommended not to close this dialog window.</p>
           </>)}
-          {uploading && uploads.length > 0 && !uploads.some((upload) => upload.state !== 'finished') && (<>
+          {uploading && uploads.length > 0 && !uploadsNotDone && (<>
             <p>Upload complete!</p>
             <p>You may now safely close this dialog window and/or page.</p>
           </>)}
@@ -412,13 +420,11 @@ class BatchImagePrompt extends Component {
         {this.renderMultipleUploadButton({ projectId })}
         <CloseDialog 
           closeAction={() => {
-            console.log('he');
             hideBatchImagePrompt();
             hideCloseDialog();
             this.setState({ ...this.defaultState });
           }}
           cancelAction={() => {
-            console.log('test');
             hideCloseDialog();
           }}
           open={closeDialogShown}
