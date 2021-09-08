@@ -24,6 +24,7 @@
     "prosemirror-view": "^1.18.11",
     "react": "^16.4.1",
     "react-activestorage-provider": "^0.6.0",
+    "react-beforeunload": "^2.5.1",
     "react-bootstrap-icons": "^1.5.0",
     "react-color": "^2.14.1",
     "react-dnd": "7.0.2",
