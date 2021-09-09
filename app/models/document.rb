@@ -150,7 +150,7 @@ class Document < Linkable
 
   def download_to_file(uri)
     begin
-      stream = URI.open(uri, :read_timeout => 30)
+      stream = URI.open(uri, :read_timeout => 10)
       return stream if stream.respond_to?(:path) # Already file-like
     
       # Workaround when open(uri) doesn't return File
