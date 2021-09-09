@@ -255,7 +255,7 @@ export default function(state = initialState, action) {
         state: upload.signedId === action.signedId ? 'error' : upload.state,
         error: upload.signedId === action.signedId ? action.error : upload.error,
       }));
-      const stillUploadingErrored = newUploads.some(upload => upload.state !== 'finished' && upload.state !== 'error');
+      const stillUploadingErrored = uploadsWithError.some(upload => upload.state !== 'finished' && upload.state !== 'error');
       return {
         ...state,
         uploads: uploadsWithError,
