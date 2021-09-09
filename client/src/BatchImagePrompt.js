@@ -354,6 +354,18 @@ class BatchImagePrompt extends Component {
                 />
               </RaisedButton>
             )}
+            {uploading && !(this.props.uploads && this.props.uploads.length > 0) && (
+              <>
+                <p>
+                  Loading...
+                </p>
+                <LinearProgress
+                  mode="indeterminate"
+                  color={lightBlue400}
+                  style={{ height: '12px' }}
+                />
+              </>
+            )}
             {this.props.uploads && this.props.uploads.length > 0 && (
               <table style={{ marginTop: '20px', width: '100%' }}>
                 <tbody>
