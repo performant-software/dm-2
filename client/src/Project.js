@@ -16,6 +16,8 @@ import TableOfContents from './TableOfContents';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
 import SearchResultsPopupLayer from './SearchResultsPopupLayer';
+import BatchImagePrompt from './BatchImagePrompt';
+import { Beforeunload } from 'react-beforeunload';
 
 const rolloverTimeout = 500
 
@@ -165,6 +167,7 @@ class Project extends Component {
         />
         { this.renderDeleteDialog() }
         <ProjectSettingsDialog />
+        <BatchImagePrompt />
       </div>
     );
   }
@@ -249,7 +252,22 @@ class Project extends Component {
   }
 
   render() {
-    const { title, projectId, loading, adminEnabled, sidebarWidth, contentsChildren, openDocumentIds, writeEnabled } = this.props
+    const {
+      title,
+      projectId,
+      loading,
+      adminEnabled,
+      sidebarWidth,
+      contentsChildren,
+      openDocumentIds,
+      writeEnabled,
+      uploads,
+      uploading,
+      batchImagePromptShown,
+    } = this.props;
+    const uploadsNotDone = uploads.some(
+      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+    );
     return (
       <div>
         <Navigation
@@ -270,6 +288,17 @@ class Project extends Component {
         { this.renderDialogLayers() }
         { this.renderDocumentGrid() }
         { this.renderSnackbar() }
+        {(loading || 
+          (
+            uploads && 
+            uploads.length > 0 && 
+            uploadsNotDone
+          ) ||
+          uploading ||
+          batchImagePromptShown)
+          && (
+          <Beforeunload onBeforeunload={(event) => event.preventDefault()} />
+        )}
       </div>
     );
   }
@@ -285,6 +314,9 @@ const mapStateToProps = state => ({
   contentsChildren:   state.project.contentsChildren,
   sidebarWidth:       state.project.sidebarWidth,
   sidebarIsDragging:  state.project.sidebarIsDragging,
+  uploads:            state.project.uploads,
+  uploading:          state.project.uploading,
+  batchImagePromptShown: state.project.batchImagePromptShown,
   writeEnabled:       state.project.currentUserPermissions.write,
   adminEnabled:       state.project.currentUserPermissions.admin,
   openDocuments:      state.documentGrid.openDocuments,

@@ -149,15 +149,19 @@ class Document < Linkable
   end
 
   def download_to_file(uri)
-    stream = URI.open(uri)
-    return stream if stream.respond_to?(:path) # Already file-like
-  
-    # Workaround when open(uri) doesn't return File
-    Tempfile.new.tap do |file|
-      file.binmode
-      IO.copy_stream(stream, file)
-      stream.close
-      file.rewind
+    begin
+      stream = URI.open(uri, :read_timeout => 30)
+      return stream if stream.respond_to?(:path) # Already file-like
+    
+      # Workaround when open(uri) doesn't return File
+      Tempfile.new.tap do |file|
+        file.binmode
+        IO.copy_stream(stream, file)
+        stream.close
+        file.rewind
+      end
+    rescue Net::ReadTimeout
+      return 'failed'
     end
   end
   
@@ -171,16 +175,21 @@ class Document < Linkable
       with_jpg = image_url.sub('.png', '.jpg')
       opened = download_to_file(with_jpg)
     end
-    processed = ImageProcessing::MiniMagick.source(opened)
-      .resize_to_fill(80, 80)
-      .convert('png')
-      .call
+    if opened != 'failed'
+      processed = ImageProcessing::MiniMagick.source(opened)
+        .resize_to_fill(80, 80)
+        .convert('png')
+        .call
 
-    self.highlights.each{|highlight|
-      highlight.set_thumbnail(image_url, nil)
-    }
+      self.highlights.each{|highlight|
+        highlight.set_thumbnail(image_url, nil)
+      }
 
-    self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+      self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+      return true
+    else
+      return false
+    end
   end
 
   def highlight_map

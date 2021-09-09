@@ -32,6 +32,16 @@ export const CREATE_PERMISSION_ERRORED = 'project/CREATE_PERMISSION_ERRORED';
 export const CREATE_PERMISSION_SUCCESS = 'project/CREATE_PERMISSION_SUCCESS';
 export const TOGGLE_DELETE_CONFIRMATION = 'project/TOGGLE_DELETE_CONFIRMATION';
 export const TOGGLE_SIDEBAR = 'project/TOGGLE_SIDEBAR';
+export const HIDE_BATCH_IMAGE_PROMPT = 'project/HIDE_BATCH_IMAGE_PROMPT';
+export const SHOW_BATCH_IMAGE_PROMPT = 'project/SHOW_BATCH_IMAGE_PROMPT';
+export const IMAGE_UPLOAD_STARTED = 'project/IMAGE_UPLOAD_STARTED';
+export const IMAGE_UPLOAD_COMPLETE = 'project/IMAGE_UPLOAD_COMPLETE';
+export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
+export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
+export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
+export const ADD_FOLDER_DATA = 'project/ADD_FOLDER_DATA';
+export const SHOW_CLOSE_DIALOG = 'project/SHOW_CLOSE_DIALOG';
+export const HIDE_CLOSE_DIALOG = 'project/HIDE_CLOSE_DIALOG';
 
 const sidebarOpenWidth = 490
 
@@ -53,7 +63,12 @@ const initialState = {
   newPermissionError: null,
   deleteConfirmed: false,
   sidebarWidth: sidebarOpenWidth,
-  sidebarOpen: true
+  sidebarOpen: true,
+  batchImagePromptShown: false,
+  uploads: [],
+  uploading: false,
+  folderData: [],
+  closeDialogShown: false,
 };
 
 export default function(state = initialState, action) {
@@ -181,6 +196,90 @@ export default function(state = initialState, action) {
         sidebarWidth 
       };
 
+    case SHOW_BATCH_IMAGE_PROMPT:
+      return {
+        ...state,
+        batchImagePromptShown: action.projectId,
+      };
+
+    case HIDE_BATCH_IMAGE_PROMPT:
+      return {
+        ...state,
+        batchImagePromptShown: false,
+        uploading: false,
+        uploads: [],
+        folderData: [],
+      };
+
+    case SET_UPLOADING_TRUE:
+      return {
+        ...state,
+        uploading: true,
+      };
+    
+    case IMAGE_UPLOAD_STARTED:
+      const uploads = action.signedIds.map((signedId) => ({
+        signedId,
+        state: 'uploading',
+      }));
+      return {
+        ...state,
+        uploads,
+      };
+    
+    case IMAGE_UPLOAD_TO_RAILS_SUCCESS:
+      const uploadsWithFilename = state.uploads.map((upload) => ({
+        ...upload,
+        filename: upload.signedId === action.signedId ? action.image.filename : upload.filename,
+      }));
+      return {
+        ...state,
+        uploads: uploadsWithFilename,
+      };
+
+    case IMAGE_UPLOAD_COMPLETE:
+      const newUploads = state.uploads.map((upload) => ({
+        ...upload,
+        state: upload.signedId === action.signedId ? 'finished' : upload.state,
+      }));
+      return {
+        ...state,
+        uploads: newUploads,
+      };
+    
+    case IMAGE_UPLOAD_ERRORED:
+      const uploadsWithError = state.uploads.map((upload) => ({
+        ...upload,
+        state: upload.signedId === action.signedId ? 'error' : upload.state,
+        error: upload.signedId === action.signedId ? action.error : upload.error,
+      }));
+      return {
+        ...state,
+        uploads: uploadsWithError,
+      };
+
+    case ADD_FOLDER_DATA:
+      const folder = action.folder;
+      const newFolderData = state.folderData.slice(0);
+      if (!newFolderData.some(datum => datum.id === folder.id)) {
+        newFolderData.push(folder);
+      }
+      return {
+        ...state,
+        folderData: newFolderData,
+      }
+      
+    case SHOW_CLOSE_DIALOG:
+      return {
+        ...state,
+        closeDialogShown: true,
+      }
+
+    case HIDE_CLOSE_DIALOG:
+      return {
+        ...state,
+        closeDialogShown: false,
+      }
     default:
       return state;
   }
@@ -582,5 +681,112 @@ export function deleteProject(projectId) {
     .catch(() => dispatch({
       type: DELETE_ERRORED
     }));
+  }
+}
+
+export function hideBatchImagePrompt() {
+  return function(dispatch) {
+    dispatch({
+      type: HIDE_BATCH_IMAGE_PROMPT,
+    });
+  }
+}
+
+export function showBatchImagePrompt({ projectId }) {
+  return function(dispatch) {
+    dispatch({
+      type: SHOW_BATCH_IMAGE_PROMPT,
+      projectId,
+    });
+    dispatch(getFolderData({ projectId }));
+  }
+}
+
+export function startUploading() {
+  return function(dispatch) {
+    dispatch({
+      type: SET_UPLOADING_TRUE,
+    });
+  }
+}
+
+function getFolderDataFromIds({ folderIds }) {
+  return function(dispatch) {
+    folderIds.forEach(folderId => {
+      fetch(`/document_folders/${folderId}`, {
+        headers: {
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(folder => {
+        dispatch({
+          type: ADD_FOLDER_DATA,
+          folder,
+        })
+      })
+    });
+  }
+}
+
+export function getFolderData({ projectId }) {
+  return function(dispatch, getState) {
+    fetch(`/projects/${projectId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(project => {
+      let folderIds = [];
+      if (project.contents_children) { 
+        project.contents_children.filter(
+          child => child['document_kind'] === 'folder'
+        ).forEach(child => {
+          folderIds.push(child.id);
+          child.descendant_folder_ids.forEach(descendant => {
+            if (!folderIds.includes(descendant)) {
+              folderIds.push(descendant);
+            }
+          })
+        });
+        dispatch(getFolderDataFromIds({ folderIds }));
+      }
+    });
+  }
+}
+
+export function showCloseDialog() {
+  return function(dispatch) {
+    dispatch({
+      type: SHOW_CLOSE_DIALOG,
+    })
+  }
+}
+
+export function hideCloseDialog() {
+  return function(dispatch) {
+    dispatch({
+      type: HIDE_CLOSE_DIALOG,
+    })
   }
 }

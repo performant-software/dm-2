@@ -1,7 +1,27 @@
-import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
-import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
-import {updateEditorState, selectHighlight, setHighlightSelectMode} from './textEditor';
-import {deleteFolder} from './folders';
+import {
+  TEXT_RESOURCE_TYPE,
+  CANVAS_RESOURCE_TYPE,
+  loadProject,
+  IMAGE_UPLOAD_STARTED,
+  IMAGE_UPLOAD_COMPLETE,
+  IMAGE_UPLOAD_ERRORED,
+  IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+} from './project';
+import {
+  addLink,
+  selectSidebarTarget,
+  closeSidebarTarget,
+  refreshTarget,
+  closeDocumentTargets,
+  refreshTargetByDocumentID,
+  closeTarget
+} from './annotationViewer';
+import {
+  updateEditorState,
+  selectHighlight,
+  setHighlightSelectMode
+} from './textEditor';
+import { deleteFolder } from './folders';
 import {
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
@@ -61,6 +81,7 @@ export const GET_CURRENT_DOC_CONTENT_SUCCESS = 'document_grid/GET_CURRENT_DOC_CO
 export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CONTENT_ERRORED';
 export const FETCH_LOCK_SUCCESS = 'document_grid/FETCH_LOCK_SUCCESS';
 export const FETCH_LOCK_ERRORED = 'document_grid/FETCH_LOCK_ERRORED';
+export const FROM_IMAGE_SUCCESS = 'document_grid/FROM_IMAGE_SUCCESS';
 
 
 export const layoutOptions = [
@@ -129,6 +150,12 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: openDocumentsCopy,
+        loading: false
+      }
+
+    case FROM_IMAGE_SUCCESS:
+      return {
+        ...state,
         loading: false
       }
 
@@ -843,7 +870,12 @@ export function updateDocument(documentId, attributes, options) {
   }
 }
 
-export function setDocumentThumbnail(documentId, image_url) {
+export function setDocumentThumbnail({
+    documentId,
+    image_url,
+    createdByBatch,
+    signedId,
+  }) {
   return function(dispatch, getState) {
     dispatch({
       type: UPDATE_DOCUMENT
@@ -866,7 +898,11 @@ export function setDocumentThumbnail(documentId, image_url) {
     })
     .then(response => {
       if (!response.ok) {
-        throw Error(response.statusText);
+        if (response.status === 408) {
+          throw Error('Unable to set thumbnail');
+        } else {
+          throw Error(response.statusText);
+        }
       }
       return response;
     })
@@ -888,10 +924,25 @@ export function setDocumentThumbnail(documentId, image_url) {
           dispatch(refreshTarget(index));
         }
       });
+      if (createdByBatch && signedId) {
+        dispatch({
+          type: IMAGE_UPLOAD_COMPLETE,
+          signedId,
+        });
+      }
     })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
+    .catch((error) => {
+      dispatch({
+        type: PATCH_ERRORED
+      });
+      if (createdByBatch && signedId) {
+        dispatch({
+          type: IMAGE_UPLOAD_ERRORED,
+          signedId,
+          error: error.message,
+        });
+      }
+    });
   }
 }
 
@@ -945,7 +996,7 @@ export function setHighlightThumbnail(highlightId, image_url, coords, svg_string
   }
 }
 
-export function createCanvasDocument({ parentId, parentType, callback, viaUpload }) {
+export function createCanvasDocument({ parentId, parentType, callback }) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -984,7 +1035,7 @@ export function createCanvasDocument({ parentId, parentType, callback, viaUpload
         document,
         documentPosition: getState().documentGrid.openDocuments.length
       });
-      if (!viaUpload) dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
+      dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
       if (parentType === 'Project') // refresh project if document has been added to its table of contents
         dispatch(loadProject(getState().project.id));
       return document;
@@ -1231,7 +1282,10 @@ export function moveLayer({ documentId, origin, direction, editorKey }) {
         } else {
           imageUrlForThumbnail = firstTileSource;
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+        dispatch(setDocumentThumbnail({
+          documentId,
+          image_url: imageUrlForThumbnail,
+        }));
       }
       dispatch({
         type: REPLACE_DOCUMENT,
@@ -1310,7 +1364,10 @@ export function deleteLayer({ documentId, layer, editorKey }) {
         } else {
           imageUrlForThumbnail = firstTileSource;
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+        dispatch(setDocumentThumbnail({
+          documentId,
+          image_url: imageUrlForThumbnail
+        }));
       }
       dispatch({
         type: REPLACE_DOCUMENT,
@@ -1466,8 +1523,82 @@ export function fetchLock(documentId) {
   };
 }
 
-function addImage ({ documentId, signedId }) {
-  return fetch(`/documents/${documentId}/add_images`, {
+function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filename }) {
+  return function(dispatch, getState) {
+    dispatch({
+      type: NEW_DOCUMENT
+    });
+
+    fetch('/documents', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'Loading',
+        project_id: getState().project.id,
+        document_kind: CANVAS_RESOURCE_TYPE,
+        content: {
+          tileSources: [
+            {
+              type: 'image',
+              url,
+              name: filename,
+            }
+          ]
+        },
+        parent_id: parentId,
+        parent_type: parentType,
+        locked: false,
+        images: [signedId],
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => {
+      dispatch({
+        type: FROM_IMAGE_SUCCESS,
+      });
+      if (parentType === 'Project') // refresh project if document has been added to its table of contents
+        dispatch(loadProject(getState().project.id));
+      return document;
+    })
+    .then(document => {
+      dispatch(setAddTileSourceMode(document.id, null));
+      dispatch(setDocumentThumbnail({
+        documentId: document.id, 
+        image_url: url,
+        createdByBatch: true,
+        signedId,
+      }));
+      return document;
+    })
+    .catch((error) => {
+      dispatch({
+        type: IMAGE_UPLOAD_ERRORED,
+        signedId,
+        error,
+      });
+      dispatch({
+       type: POST_ERRORED
+      });
+    });
+  }
+}
+
+function createFolderForBatch({ projectId, newFolderName }) {
+  return fetch('/document_folders', {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -1477,76 +1608,117 @@ function addImage ({ documentId, signedId }) {
       'expiry': localStorage.getItem('expiry'),
       'uid': localStorage.getItem('uid')
     },
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify({
-      document: {
-        images: [signedId]
-      }
+      title: newFolderName,
+      project_id: projectId,
+      parent_id: projectId,
+      parent_type: 'Project'
     })
   })
   .then(response => {
     if (!response.ok) {
       throw Error(response.statusText);
     }
-    return response;
+    return response.json();
   })
-  .then(response => response.json())
 }
 
-function addTileSourceToNewDoc ({ document }) {
+function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
   return function(dispatch) {
-    let tileSources = [];
-    let imageUrlForThumbnail = '';
-    document.image_urls.forEach((url) => {
-      const filename = decodeURIComponent(url.substring(
-        url.lastIndexOf('/')+1,
-        url.lastIndexOf('.')
-      ));
-      tileSources.push({
-        type: 'image',
-        url,
-        name: filename,
-      });
-      imageUrlForThumbnail = url;
+    signedIds.forEach(signedId => {
+      fetch(`/images/${signedId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
+        },
+        method: 'GET',
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then(response => response.json())
+      .then(image => {
+        const filename = image.blob.filename.substring(
+          0, image.blob.filename.lastIndexOf('.')
+        );
+        dispatch({
+          type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+          signedId,
+          image: image.blob,
+        });
+        dispatch(createCanvasDocWithImage({
+          parentId,
+          parentType,
+          signedId,
+          filename,
+          url: image.url,
+        }));
+      })
+      .catch(error => {
+        dispatch({
+          type: IMAGE_UPLOAD_ERRORED,
+          signedId,
+          error,
+        })
+      })
     })
-    const newContent = { ...document.content, tileSources };
-    dispatch(setAddTileSourceMode(document.id, null));
-    dispatch(setDocumentThumbnail(document.id, imageUrlForThumbnail));
-    dispatch(updateDocument(document.id, {
-      content: newContent
-    }, { replaceThisDocument: true }));
   }
 }
 
-export function createMultipleCanvasDocs ({
-  projectId, signedIds, firstDocumentId, addTileSource
+export function createBatchImages ({
+  projectId,
+  signedIds,
+  inFolder,
+  existingFolder,
+  folderId,
+  newFolderName,
 }) {
   return function(dispatch) {
-    addImage({
-      documentId: firstDocumentId,
-      signedId: signedIds.pop(),
-    })
-    .then(document => {
-      dispatch(replaceDocument(document));
-    })
-    .then(() => {
-      addTileSource(UPLOAD_SOURCE_TYPE);
-      signedIds.forEach(signedId => {
-        dispatch(createCanvasDocument({
-          parentId: projectId,
-          parentType: 'Project',
-          viaUpload: true,
-          callback: (docWithoutImage) => {
-            addImage({
-              documentId: docWithoutImage.id,
-              signedId,
-            })
-            .then(document => {
-              dispatch(addTileSourceToNewDoc({ document }));
-            })
-          },
-        }))
-      })
+    dispatch({
+      type: IMAGE_UPLOAD_STARTED,
+      signedIds,
     });
+    let parentId = projectId;
+    let parentType = 'Project';
+    if (inFolder) {
+      if (existingFolder && folderId) {
+        parentType = 'DocumentFolder';
+        parentId = parseInt(folderId, 10);
+        dispatch(createMultipleCanvasDocs({
+          parentId,
+          parentType,
+          signedIds,
+         }));
+      } else if (!existingFolder && newFolderName) {
+        parentType = 'DocumentFolder';
+        createFolderForBatch({
+          projectId,
+          newFolderName,
+        })
+        .then(folder => {
+          dispatch(createMultipleCanvasDocs({
+            parentId: folder.id,
+            parentType,
+            signedIds,
+           }));
+           dispatch(loadProject(projectId));
+        })
+      }
+    } else {
+      dispatch(createMultipleCanvasDocs({
+        parentId,
+        parentType,
+        signedIds,
+       }));
+    }
   };
 }

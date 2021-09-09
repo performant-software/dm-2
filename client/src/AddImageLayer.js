@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
-import ActiveStorageProvider, { DirectUploadProvider } from 'react-activestorage-provider';
+import ActiveStorageProvider from 'react-activestorage-provider';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 import CircularProgress from 'material-ui/CircularProgress';
@@ -23,7 +23,6 @@ import {
   replaceDocument,
   updateDocument,
   setDocumentThumbnail,
-  createMultipleCanvasDocs,
 } from './modules/documentGrid';
 import deepEqual from 'deep-equal';
 
@@ -134,7 +133,10 @@ class AddImageLayer extends Component {
     this.props.setAddTileSourceMode(this.props.document_id, null);
 
     if (shouldSetThumbnail && imageUrlForThumbnail) {
-      this.props.setDocumentThumbnail(this.props.document_id, imageUrlForThumbnail);
+      this.props.setDocumentThumbnail({
+        documentId: this.props.document_id, 
+        image_url: imageUrlForThumbnail,
+      });
     }
 
     newContent.tileSources = existingTileSources.concat(newTileSources);
@@ -222,65 +224,6 @@ class AddImageLayer extends Component {
         )}
       />
     );
-  }
-
-  renderMultipleUploadButton(buttonStyle, iconStyle) {
-    const {
-      document_id,
-      projectId,
-      setLastSaved,
-      setSaving,
-    } = this.props;
-    return (
-      <DirectUploadProvider
-        multiple
-        onSuccess={(signedIds) => {
-          this.props.createMultipleCanvasDocs({
-            projectId,
-            signedIds,
-            firstDocumentId: document_id,
-            addTileSource: this.addTileSource
-          });
-          this.setState({
-            ...this.state,
-            uploadErrorMessage: null,
-            uploading: false,
-          });
-          setLastSaved(new Date().toLocaleString('en-US'));
-          setSaving({ doneSaving: true });
-        }}
-        render={({ handleUpload, uploads, ready }) => (
-          <RaisedButton
-            containerElement="label"
-            style={buttonStyle}
-            icon={<CloudUpload style={iconStyle} />}
-            label="Upload multiple"
-            disabled={this.state.uploading}
-          >
-            <input
-              type="file"
-              disabled={!ready}
-              multiple
-              ref={this.hiddenFileInput}
-              onChange={(e) => {
-                setAddTileSourceMode(
-                  document_id,
-                  UPLOAD_SOURCE_TYPE
-                );
-                this.setState({
-                  ...this.state,
-                  uploadErrorMessage: null,
-                  uploading: true,
-                });
-                setSaving({ doneSaving: false });
-                handleUpload(e.currentTarget.files);
-              }}
-              style={{display: 'none'}}
-            />
-          </RaisedButton>
-        )}
-      />
-    )
   }
 
   onIIIFLink = () => {
@@ -405,13 +348,6 @@ class AddImageLayer extends Component {
             onClick={this.onCancel}
           />
         )}
-
-        {!allowNewLayers && (
-          <>
-            <p style={textStyle}>Or upload multiple images to several new documents:</p>
-            {this.renderMultipleUploadButton(buttonStyle, iconStyle)}
-          </>
-        )}
       </div>
     );
   }
@@ -428,7 +364,6 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   setDocumentThumbnail,
   replaceDocument,
   changePage,
-  createMultipleCanvasDocs,
 }, dispatch);
 
 export default connect(
