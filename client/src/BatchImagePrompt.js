@@ -403,7 +403,7 @@ class BatchImagePrompt extends Component {
         modal={false}
         open={!!batchImagePromptShown}
         onRequestClose={() => {
-          if (uploading && uploads.length > 0 && uploadsNotDone) {
+          if (uploading || (uploads.length > 0 && uploadsNotDone)) {
             showCloseDialog();
           } else {
             hideBatchImagePrompt();
@@ -416,7 +416,7 @@ class BatchImagePrompt extends Component {
             label="Close"
             primary
             onClick={() => {
-              if (uploading && uploads.length > 0 && uploadsNotDone) {
+              if (uploading || (uploads.length > 0 && uploadsNotDone)) {
                 showCloseDialog();
               } else {
                 hideBatchImagePrompt();
