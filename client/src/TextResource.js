@@ -34,6 +34,7 @@ import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
 import ViewColumn from 'material-ui/svg-icons/action/view-column';
+import InsertImage from 'material-ui/svg-icons/editor/insert-photo';
 import { Hr, Table } from 'react-bootstrap-icons';
 import PageMargins from './icons/PageMargins';
 import { Schema, DOMSerializer } from 'prosemirror-model';
@@ -128,6 +129,7 @@ class TextResource extends Component {
       { name: 'font-family', width: 148 },
       { name: 'font-size', width: 72 },
       { name: 'link', width: buttonWidth, text: 'Hyperlink' },
+      { name: 'image', width: buttonWidth, text: 'Insert image' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
       { name: 'table', width: buttonWidth, text: 'Insert/edit table' },
@@ -161,6 +163,13 @@ class TextResource extends Component {
       linkDialogBuffer: "",
       linkDialogBufferInvalid: false,
       createHyperlink: null,
+    }
+
+    this.initialImageDialogState = {
+      imageDialogOpen: false,
+      imageDialogBuffer: '',
+      imageDialogBufferInvalid: false,
+      createImage: null,
     }
 
     this.initialTableDialogState = {
@@ -212,6 +221,7 @@ class TextResource extends Component {
       ...this.initialLinkDialogState,
       ...this.initialTableDialogState,
       ...this.initialMarginDialogState,
+      ...this.initialImageDialogState,
     };
   }
   
@@ -389,6 +399,20 @@ class TextResource extends Component {
             disabled={loading}
           >
             <InsertLink />
+          </IconButton>
+        );
+
+      case 'image':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onImage.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <InsertImage />
           </IconButton>
         );
 
@@ -911,9 +935,21 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const cmd = addMark( markType, { href: url } );
       cmd( editorState, this.state.editorView.dispatch );
+      this.state.editorView.focus();
     }
     this.setState( {...this.state, linkDialogOpen: true, createHyperlink } );
-    this.state.editorView.focus();
+  }
+
+  onImage = (e) => {
+    e.preventDefault();
+    const createImage = (url) => {
+      const imageNodeType = this.state.documentSchema.nodes.image;
+      const editorState = this.getEditorState();
+      const cmd = replaceNodeWith(imageNodeType, { src: url });
+      cmd( editorState, this.state.editorView.dispatch );
+      this.state.editorView.focus();
+    }
+    this.setState( {...this.state, imageDialogOpen: true, createImage } );
   }
 
   onOrderedList(e) {
@@ -1637,6 +1673,57 @@ class TextResource extends Component {
     );
   }
 
+  onCancelImageDialog = () => {
+    // discard the buffer state and close dialog
+    this.setState({...this.state, ...this.initialImageDialogState});
+  }
+
+  onSubmitImageDialog = () => {
+    // call the callback if it is valid, otherwise, set error state and stay open
+    const url = this.state.imageDialogBuffer;
+    if( url && url.length > 0 && validURLRegex.test( url ) ) {
+      this.state.createImage( url );
+      this.setState({
+        ...this.state,
+        ...this.initialImageDialogState
+      });
+    } else {
+      this.setState({ ...this.state, imageDialogBufferInvalid: true });
+    }
+  }
+
+  renderImageDialog() {
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.onCancelImageDialog}
+      />,
+      <FlatButton
+        label="Insert"
+        primary={true}
+        onClick={this.onSubmitImageDialog}
+      />,
+    ];
+
+    return (
+      <Dialog
+          title="Insert Image"
+          actions={actions}
+          modal={true}
+          open={this.state.imageDialogOpen}
+          onRequestClose={this.onCancelImageDialog}
+        >
+          <TextField
+            value={this.state.imageDialogBuffer}
+            errorText={ this.state.imageDialogBufferInvalid ? "Please enter a valid URL." : "" }
+            floatingLabelText={"Enter a website URL."}
+            onChange={(event, newValue) => {this.setState( { imageDialogBuffer: newValue }) }}
+          />
+        </Dialog>
+    );
+  }
+
   onCancelTableDialog = () => {
     // discard the buffer state and close dialog
     this.setState({...this.state, ...this.initialTableDialogState});
@@ -1848,6 +1935,7 @@ class TextResource extends Component {
             columnCount={columnCount}
           />
           { this.renderLinkDialog() }
+          { this.renderImageDialog() }
           { this.renderTableDialog() }
           { this.renderMarginDialog() }
         </div>

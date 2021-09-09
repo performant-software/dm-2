@@ -90,10 +90,10 @@ function canInsert(state, nodeType) {
     return false
   }
 
-export function replaceNodeWith (nodeType) {
+export function replaceNodeWith (nodeType, attrs) {
     return function(state, dispatch) {
         if (canInsert(state, nodeType)) {
-            dispatch(state.tr.replaceSelectionWith(nodeType.create()));
+            dispatch(state.tr.replaceSelectionWith(nodeType.create(attrs)));
         }
         return true
     }
