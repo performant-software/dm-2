@@ -329,7 +329,7 @@ class BatchImagePrompt extends Component {
         }}
         render={({ handleUpload, uploads, ready }) => (
           <>
-            {!uploading && (
+            {!uploading && !(this.props.uploads && this.props.uploads.length > 0) && (
               <RaisedButton
                 containerElement="label"
                 style={{ display: 'flex' }}
@@ -427,13 +427,17 @@ class BatchImagePrompt extends Component {
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
-        {!uploading && this.renderFolderChoice()}
+        {
+          !uploading && 
+          !(this.props.uploads && this.props.uploads.length > 0) && 
+          this.renderFolderChoice()
+        }
         <div style={{ textAlign: 'center' }}>
           {uploading && uploads.length > 0 && uploadsNotDone && (<>
             <p>Upload in progress. Closing this page before uploads complete may result in lost uploads.</p>
             <p>It is also recommended not to close this dialog window.</p>
           </>)}
-          {uploading && uploads.length > 0 && !uploadsNotDone && (<>
+          {uploads && !uploading && uploads.length > 0 && !uploadsNotDone && (<>
             <p>Upload complete!</p>
             <p>You may now safely close this dialog window and/or page.</p>
           </>)}

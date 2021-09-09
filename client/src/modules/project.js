@@ -242,9 +242,11 @@ export default function(state = initialState, action) {
         ...upload,
         state: upload.signedId === action.signedId ? 'finished' : upload.state,
       }));
+      const stillUploadingComplete = newUploads.some(upload => upload.state !== 'finished' && upload.state !== 'error');
       return {
         ...state,
         uploads: newUploads,
+        uploading: stillUploadingComplete,
       };
     
     case IMAGE_UPLOAD_ERRORED:
@@ -253,9 +255,11 @@ export default function(state = initialState, action) {
         state: upload.signedId === action.signedId ? 'error' : upload.state,
         error: upload.signedId === action.signedId ? action.error : upload.error,
       }));
+      const stillUploadingErrored = newUploads.some(upload => upload.state !== 'finished' && upload.state !== 'error');
       return {
         ...state,
         uploads: uploadsWithError,
+        uploading: stillUploadingErrored,
       };
 
     case ADD_FOLDER_DATA:
