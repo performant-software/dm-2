@@ -6,7 +6,6 @@ module SearchTextHelper
       html = renderer.render(text_doc[:content])
       searchable = Nokogiri::HTML(html).xpath('//text()').map(&:text).join(' ')
       text_doc.update!(:search_text => searchable)
-      puts text_doc.id
     end
   end
 end
