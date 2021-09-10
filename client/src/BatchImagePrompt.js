@@ -69,8 +69,23 @@ const TableRow = ({ upload, mode }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            {mode === 'fromProps' && 'Processing'}
-            {mode !== 'fromProps' && 'Uploading'}
+            {mode === 'fromProps' ? 'Processing' : 'Uploading'}
+          </td>
+        </tr>
+    );
+    case 'doc-created':
+      return (
+        <tr key={id} style={progressTrStyle}>
+          <td style={nameTdStyle}>
+            {name}
+          </td>
+          <td style={progressTdStyle}><LinearProgress
+            mode="indeterminate"
+            color={green400}
+            style={{ height: '12px' }}
+          /></td>
+          <td style={statusTdStyle}>
+            Finalizing
           </td>
         </tr>
       );
@@ -104,8 +119,7 @@ const TableRow = ({ upload, mode }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            {mode === 'fromProps' && 'Complete'}
-            {mode !== 'fromProps' && 'Processing'}
+            {mode === 'fromProps' ? 'Complete' : 'Processing'}
           </td>
         </tr>
       );

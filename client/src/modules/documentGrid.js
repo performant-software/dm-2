@@ -6,6 +6,7 @@ import {
   IMAGE_UPLOAD_COMPLETE,
   IMAGE_UPLOAD_ERRORED,
   IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+  IMAGE_UPLOAD_DOC_CREATED,
 } from './project';
 import {
   addLink,
@@ -1556,6 +1557,10 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       dispatch({
         type: FROM_IMAGE_SUCCESS,
       });
+      dispatch({
+        type: IMAGE_UPLOAD_DOC_CREATED,
+        signedId,
+      });
       return document;
     }
     catch(error) {
@@ -1712,7 +1717,6 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           }
         })
       );
-      console.log(createdDocs);
       const docs = createdDocs.map(doc => ({
         signedId: doc.signedId,
         id: doc.id,
