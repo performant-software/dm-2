@@ -769,7 +769,7 @@ class TextResource extends Component {
   }
 
   toSearchText(document) {
-    return document.textBetween(0,document.textContent.length+1, ' ');
+    return document.textBetween(0,document.nodeSize - 2, ' ');
   }
 
   onHighlight = (e) => {

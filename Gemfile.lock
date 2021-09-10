@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/performant-software/storyblok-ruby-richtext-renderer.git
+  revision: 0a6c2e8e81560311569d49d06c0e32abd0effcd5
+  ref: 0a6c2e8e81560311569d49d06c0e32abd0effcd5
+  specs:
+    storyblok-richtext-renderer (0.0.6)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -210,6 +217,7 @@ DEPENDENCIES
   rails (~> 5.2.0)
   spring
   spring-watcher-listen (~> 2.0.0)
+  storyblok-richtext-renderer!
   tzinfo-data
 
 RUBY VERSION
