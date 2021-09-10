@@ -22,8 +22,16 @@ import { DirectUploadProvider } from 'react-activestorage-provider';
 import { red400, green400, lightBlue400 } from 'material-ui/styles/colors';
 import MenuItem from 'material-ui/MenuItem/MenuItem';
 
-const TableRow = ({ upload }) => {
-  const name = upload.filename || upload.signedId;
+const TableRow = ({ upload, mode }) => {
+  let name = '';
+  let id = '';
+  if (mode === 'fromProps') {
+    name = upload.filename || upload.signedId;
+    id = upload.signedId;
+  } else {
+    name = upload.file.name;
+    id = upload.id;
+  }
   const progressTrStyle = {
     marginTop: '20px',
   };
@@ -48,9 +56,10 @@ const TableRow = ({ upload }) => {
     textAlign: 'right',
   }
   switch (upload.state) {
+    case 'waiting':
     case 'uploading':
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td style={nameTdStyle}>
             {name}
           </td>
@@ -60,13 +69,14 @@ const TableRow = ({ upload }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            Uploading
+            {mode === 'fromProps' && 'Processing'}
+            {mode !== 'fromProps' && 'Uploading'}
           </td>
         </tr>
       );
     case 'error':
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td style={nameTdStyle}>
             {name}
           </td>
@@ -83,24 +93,25 @@ const TableRow = ({ upload }) => {
       );
     case 'finished':
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td style={nameTdStyle}>
             {name}
           </td>
           <td style={progressTdStyle}><LinearProgress
-            mode="determinate"
+            mode={mode === 'fromProps' ? 'determinate' : 'indeterminate'}
             value={100}
-            color={green400}
+            color={mode === 'fromProps' ? green400 : lightBlue400}
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            Complete
+            {mode === 'fromProps' && 'Complete'}
+            {mode !== 'fromProps' && 'Processing'}
           </td>
         </tr>
       );
     default:
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td><strong>{name}</strong></td>
           <td style={progressTdStyle}><LinearProgress
             mode="determinate"
@@ -344,7 +355,10 @@ class BatchImagePrompt extends Component {
               >
                 <input
                   type="file"
-                  disabled={!ready}
+                  disabled={!ready ||
+                    uploads.length > 0 ||
+                    uploadsNotDone ||
+                    !folderChoiceValid}
                   multiple
                   onChange={(e) => {
                     handleUpload(e.currentTarget.files);
@@ -356,21 +370,34 @@ class BatchImagePrompt extends Component {
             )}
             {uploading && !(this.props.uploads && this.props.uploads.length > 0) && (
               <>
-                <p>
-                  Loading...
-                </p>
-                <LinearProgress
-                  mode="indeterminate"
-                  color={lightBlue400}
-                  style={{ height: '12px' }}
-                />
+                {!(uploads && uploads.length > 0) && (
+                  <>
+                    <p>
+                      Loading...
+                    </p>
+                    <LinearProgress
+                      mode="indeterminate"
+                      color={lightBlue400}
+                      style={{ height: '12px' }}
+                    />
+                  </>
+                )}
+                {uploads && uploads.length > 0 && (
+                  <table style={{ marginTop: '20px', width: '100%' }}>
+                    <tbody>
+                      {uploads.map((upload) => (
+                        <TableRow upload={upload} key={upload.id} mode="initial" />
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </>
             )}
             {this.props.uploads && this.props.uploads.length > 0 && (
               <table style={{ marginTop: '20px', width: '100%' }}>
                 <tbody>
                   {this.props.uploads.map((upload) => (
-                    <TableRow upload={upload} key={upload.signedId} />
+                    <TableRow upload={upload} key={upload.signedId} mode="fromProps" />
                   ))}
                 </tbody>
               </table>
