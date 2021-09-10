@@ -235,7 +235,13 @@ class Document < Linkable
     if self.thumbnail.attached?
       url_for(self.thumbnail)
     elsif self.images.attached?
-      rails_representation_path(self.images[0].variant(combine_options: { resize: '80x80^', gravity: 'center', extent: '80x80' }).processed)
+      if !self.images[0].nil? && self.images[0].variable?
+        begin
+          rails_representation_path(self.images[0].variant(combine_options: { resize: '80x80^', gravity: 'center', extent: '80x80' }).processed)
+        rescue Aws::S3::Errors::ServiceError
+          return nil
+        end
+      end
     else
       return nil
     end
