@@ -19,7 +19,7 @@ import {
 } from './modules/project';
 import { createBatchImages } from './modules/documentGrid';
 import { DirectUploadProvider } from 'react-activestorage-provider';
-import { red400, green400, lightBlue400 } from 'material-ui/styles/colors';
+import { red400, red900, green400, lightBlue400 } from 'material-ui/styles/colors';
 import MenuItem from 'material-ui/MenuItem/MenuItem';
 
 const TableRow = ({ upload, mode }) => {
@@ -169,6 +169,7 @@ class BatchImagePrompt extends Component {
   constructor(props) {
     super(props);
     this.defaultState = {
+      tooMany: false,
       inFolder: false,
       existingFolder: false,
       newFolderName: '',
@@ -375,8 +376,13 @@ class BatchImagePrompt extends Component {
                     !folderChoiceValid}
                   multiple
                   onChange={(e) => {
-                    handleUpload(e.currentTarget.files);
-                    startUploading();
+                    if (e.currentTarget.files.length <= 50) {
+                      handleUpload(e.currentTarget.files);
+                      startUploading();
+                      this.setState({ tooMany: false });
+                    } else {
+                      this.setState({ tooMany: true });
+                    }
                   }}
                   style={{ display: 'none' }}
                 />
@@ -438,6 +444,8 @@ class BatchImagePrompt extends Component {
       (upload) => upload.state !== 'finished' && upload.state !== 'error'
     );
 
+    const showInitStuff = !uploading && !(this.props.uploads && this.props.uploads.length > 0);
+
     return (
       <Dialog
         title="Batch upload images"
@@ -468,13 +476,28 @@ class BatchImagePrompt extends Component {
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
-        {
-          !uploading && 
-          !(this.props.uploads && this.props.uploads.length > 0) && 
-          this.renderFolderChoice()
-        }
+        {(showInitStuff || this.state.tooMany) && (
+          <div style={{ marginBottom: '32px' }}>
+          {showInitStuff && (
+              <>
+                <p>
+                  Here you can upload <strong>up to 50 images</strong> in batch, and optionally into a folder.
+                </p>
+                <p>
+                  Note that this can be an intensive process that consumes a lot of memory, 
+                  and you should not leave the page until the process completes.
+                </p>
+              </>
+            )}
+            {this.state.tooMany && (
+              <p style={{ color: red900 }}>
+                Error: Limit of 50 images exceeded
+              </p>
+            )}
+          </div>
+        )}
         <div style={{ textAlign: 'center' }}>
-          {uploading && uploads.length > 0 && uploadsNotDone && (<>
+          {uploading && (<>
             <p>Upload in progress. Closing this page before uploads complete may result in lost uploads.</p>
             <p>It is also recommended not to close this dialog window.</p>
           </>)}
@@ -483,6 +506,7 @@ class BatchImagePrompt extends Component {
             <p>You may now safely close this dialog window and/or page.</p>
           </>)}
         </div>
+        {showInitStuff && this.renderFolderChoice()}
         {this.renderMultipleUploadButton({ projectId })}
         <CloseDialog 
           closeAction={() => {
