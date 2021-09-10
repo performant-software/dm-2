@@ -36,6 +36,9 @@ class DocumentsController < ApplicationController
   def create
     lock = params.fetch(:locked, true)
     @document = Document.new(new_document_params)
+    if !params[:mode].nil? && params[:mode] == 'batch'
+      @document.import_mode = true
+    end
     @document.adjust_lock( current_user, lock )
 
     if !params[:images].nil? && params[:images].length() > 0
@@ -47,7 +50,7 @@ class DocumentsController < ApplicationController
       end
     end
 
-    if @document.save
+    if @document.save!
       render json: @document, status: :created, location: @document
     else
       render json: @document.errors, status: :unprocessable_entity
@@ -93,6 +96,11 @@ class DocumentsController < ApplicationController
     destination_id = p[:destination_id].nil? ? @document.project_id : p[:destination_id]
     destination_type =  p[:destination_id].nil? ? "Project" : "DocumentFolder"
     @document.move_to(p[:position],destination_id,destination_type)
+    if @document.save
+      render json: @document, status: 200
+    else
+      render json: @document.errors, status: 500
+    end
   end
   
   # PUT /documents/1/add_images

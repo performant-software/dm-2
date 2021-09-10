@@ -29,7 +29,6 @@ import {
   RENAME_LAYER_SUCCESS,
   TOGGLE_EDIT_LAYER_NAME,
 } from './canvasEditor';
-import retryFetch from 'fetch-retry';
 import fetchWithTimeout from './fetch';
 import { defaultRequestTimeout } from './constants';
 
@@ -882,7 +881,7 @@ export function setDocumentThumbnail({
       type: UPDATE_DOCUMENT
     });
 
-    retryFetch(fetchWithTimeout)(`/documents/${documentId}/set_thumbnail`, {
+    fetchWithTimeout(`/documents/${documentId}/set_thumbnail`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -896,8 +895,7 @@ export function setDocumentThumbnail({
       body: JSON.stringify({
         image_url
       }),
-      retries: 3,
-      retryDelay: 3000,
+      retryDelay: 12000,
     })
     .then(response => {
       if (!response.ok) {
@@ -1519,7 +1517,7 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       type: NEW_DOCUMENT
     });
     try {
-      const response = await retryFetch(fetchWithTimeout)('/documents', {
+      const response = await fetchWithTimeout('/documents', {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -1547,9 +1545,9 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
           parent_type: parentType,
           locked: false,
           images: [signedId],
+          mode: 'batch',
         }),
-        retries: 3,
-        retryDelay: defaultRequestTimeout / 4,
+        retryDelay: defaultRequestTimeout,
       })
       if (!response.ok) {
         throw Error(response.statusText);
@@ -1557,12 +1555,6 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       const document = await response.json();
       dispatch({
         type: FROM_IMAGE_SUCCESS,
-      });
-      if (parentType === 'Project') // refresh project if document has been added to its table of contents
-        dispatch(loadProject(getState().project.id));
-      dispatch({
-        type: IMAGE_UPLOAD_COMPLETE,
-        signedId,
       });
       return document;
     }
@@ -1584,7 +1576,7 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
 }
 
 function createFolderForBatch({ projectId, newFolderName }) {
-  return retryFetch(fetchWithTimeout)('/document_folders', {
+  return fetchWithTimeout('/document_folders', {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -1601,8 +1593,7 @@ function createFolderForBatch({ projectId, newFolderName }) {
       parent_id: projectId,
       parent_type: 'Project'
     }),
-    retries: 3,
-    retryDelay: defaultRequestTimeout / 4,
+    retryDelay: defaultRequestTimeout,
   })
   .then(response => {
     if (!response.ok) {
@@ -1612,13 +1603,68 @@ function createFolderForBatch({ projectId, newFolderName }) {
   })
 }
 
-function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
+function moveDocumentsAsync({ docs, parentType, parentId }) {
   return async function(dispatch) {
+    dispatch({
+      type: MOVE_DOCUMENT
+    });
+
     try {
-      await Promise.all(
+      const url = parentType === 'Project' 
+        ? `/projects/${parentId}/move_many` 
+        : `/document_folders/${parentId}/move_many`;
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
+        },
+        method: 'PATCH',
+        body: JSON.stringify({
+          document_ids: docs.map(doc => doc.id),
+        }),
+      });
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      const res = await response.json();
+      docs.forEach((doc) => {
+        dispatch({
+          type: IMAGE_UPLOAD_COMPLETE,
+          signedId: doc.signedId,
+        });
+      });
+      dispatch({
+        type: MOVE_DOCUMENT_SUCCESS
+      });
+      return res;
+    } catch (e) {
+      docs.forEach((doc) => {
+        dispatch({
+          type: IMAGE_UPLOAD_ERRORED,
+          signedId: doc.signedId,
+          error: e.message,
+        });
+      });
+      dispatch({
+        type: MOVE_DOCUMENT_ERRORED
+      });
+    }
+  }
+}
+
+
+function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
+  return async function(dispatch, getState) {
+    try {
+      const createdDocs = await Promise.all(
         signedIds.map(async signedId => {
           try {
-            const response = await retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
+            const response = await fetchWithTimeout(`/images/${signedId}`, {
               headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -1629,8 +1675,7 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
                 'uid': localStorage.getItem('uid')
               },
               method: 'GET',
-              retries: 3,
-              retryDelay: defaultRequestTimeout / 4,
+              retryDelay: defaultRequestTimeout,
             })
             if (!response.ok) {
               throw Error(response.statusText);
@@ -1644,14 +1689,14 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
               signedId,
               image: image.blob,
             });
-            await dispatch(createCanvasDocWithImage({
+            const createdDoc = await dispatch(createCanvasDocWithImage({
               parentId,
               parentType,
               signedId,
               filename,
               url: image.url,
             }));
-            return Promise.resolve(image);
+            return Promise.resolve({ ...createdDoc, signedId });
           } 
           catch (error) {
             let errMsg = error.message;
@@ -1667,10 +1712,17 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           }
         })
       );
+      console.log(createdDocs);
+      const docs = createdDocs.map(doc => ({
+        signedId: doc.signedId,
+        id: doc.id,
+      }));
+      await dispatch(moveDocumentsAsync({ docs, parentId, parentType }));
+      if (parentType === 'Project') // refresh project if documents added to its table of contents
+        dispatch(loadProject(getState().project.id));
     } catch (error) {
       console.error(error);
     }
-
   }
 }
 
