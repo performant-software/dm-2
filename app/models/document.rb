@@ -238,6 +238,8 @@ class Document < Linkable
       begin
         if !self.images[0].nil? && self.images[0].variable?
           rails_representation_path(self.images[0].variant(combine_options: { resize: '80x80^', gravity: 'center', extent: '80x80' }).processed)
+        else
+          return nil
         end
       rescue Aws::S3::Errors::ServiceError
         return nil
