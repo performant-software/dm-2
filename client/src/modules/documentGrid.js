@@ -1614,59 +1614,63 @@ function createFolderForBatch({ projectId, newFolderName }) {
 
 function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
   return async function(dispatch) {
-    await Promise.all(
-      signedIds.map(async signedId => {
-        try {
-          const response = await retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'access-token': localStorage.getItem('access-token'),
-              'token-type': localStorage.getItem('token-type'),
-              'client': localStorage.getItem('client'),
-              'expiry': localStorage.getItem('expiry'),
-              'uid': localStorage.getItem('uid')
-            },
-            method: 'GET',
-            retries: 3,
-            retryDelay: defaultRequestTimeout / 4,
-          })
-          if (!response.ok) {
-            throw Error(response.statusText);
+    try {
+      await Promise.all(
+        signedIds.map(async signedId => {
+          try {
+            const response = await retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'access-token': localStorage.getItem('access-token'),
+                'token-type': localStorage.getItem('token-type'),
+                'client': localStorage.getItem('client'),
+                'expiry': localStorage.getItem('expiry'),
+                'uid': localStorage.getItem('uid')
+              },
+              method: 'GET',
+              retries: 3,
+              retryDelay: defaultRequestTimeout / 4,
+            })
+            if (!response.ok) {
+              throw Error(response.statusText);
+            }
+            const image = await response.json();
+            const filename = image.blob.filename.substring(
+              0, image.blob.filename.lastIndexOf('.')
+            );
+            dispatch({
+              type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+              signedId,
+              image: image.blob,
+            });
+            await dispatch(createCanvasDocWithImage({
+              parentId,
+              parentType,
+              signedId,
+              filename,
+              url: image.url,
+            }));
+            return Promise.resolve(image);
+          } 
+          catch (error) {
+            let errMsg = error.message;
+            if (error.name === 'AbortError') {
+              errMsg = 'Upload failed';
+            }
+            dispatch({
+              type: IMAGE_UPLOAD_ERRORED,
+              signedId,
+              error: errMsg,
+            });
+            return Promise.reject(error);
           }
-          const image = await response.json();
-          const filename = image.blob.filename.substring(
-            0, image.blob.filename.lastIndexOf('.')
-          );
-          dispatch({
-            type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
-            signedId,
-            image: image.blob,
-          });
-          dispatch(createCanvasDocWithImage({
-            parentId,
-            parentType,
-            signedId,
-            filename,
-            url: image.url,
-          }));
-          return Promise.resolve();
-        } 
-        catch (error) {
-          console.log(error);
-          let errMsg = error.message;
-          if (error.name === 'AbortError') {
-            errMsg = 'Upload failed';
-          }
-          dispatch({
-            type: IMAGE_UPLOAD_ERRORED,
-            signedId,
-            error: errMsg,
-          });
-          return Promise.reject(error);
-        }
-      })
-    );
+        })
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
   }
 }
 
@@ -1678,43 +1682,45 @@ export function createBatchImages ({
   folderId,
   newFolderName,
 }) {
-  return function(dispatch) {
+  return async function(dispatch) {
     dispatch({
       type: IMAGE_UPLOAD_STARTED,
       signedIds,
     });
     let parentId = projectId;
     let parentType = 'Project';
-    if (inFolder) {
-      if (existingFolder && folderId) {
-        parentType = 'DocumentFolder';
-        parentId = parseInt(folderId, 10);
-        dispatch(createMultipleCanvasDocs({
-          parentId,
-          parentType,
-          signedIds,
-         }));
-      } else if (!existingFolder && newFolderName) {
-        parentType = 'DocumentFolder';
-        createFolderForBatch({
-          projectId,
-          newFolderName,
-        })
-        .then(folder => {
-          dispatch(createMultipleCanvasDocs({
+    try { 
+      if (inFolder) {
+        if (existingFolder && folderId) {
+          parentType = 'DocumentFolder';
+          parentId = parseInt(folderId, 10);
+          await dispatch(createMultipleCanvasDocs({
+            parentId,
+            parentType,
+            signedIds,
+          }));
+        } else if (!existingFolder && newFolderName) {
+          parentType = 'DocumentFolder';
+          const folder = await createFolderForBatch({
+            projectId,
+            newFolderName,
+          });
+          await dispatch(createMultipleCanvasDocs({
             parentId: folder.id,
             parentType,
             signedIds,
-           }));
-           dispatch(loadProject(projectId));
-        })
+            }));
+          dispatch(loadProject(projectId));
+        }
+      } else {
+        await dispatch(createMultipleCanvasDocs({
+          parentId,
+          parentType,
+          signedIds,
+        }));
       }
-    } else {
-      dispatch(createMultipleCanvasDocs({
-        parentId,
-        parentType,
-        signedIds,
-       }));
+    } catch (error) {
+      console.error(error);
     }
   };
 }
