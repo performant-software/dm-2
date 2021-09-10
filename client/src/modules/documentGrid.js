@@ -1514,66 +1514,59 @@ export function fetchLock(documentId) {
 }
 
 function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filename }) {
-  return function(dispatch, getState) {
+  return async function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
     });
-
-    retryFetch(fetchWithTimeout)('/documents', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'access-token': localStorage.getItem('access-token'),
-        'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        title: 'Loading',
-        project_id: getState().project.id,
-        document_kind: CANVAS_RESOURCE_TYPE,
-        content: {
-          tileSources: [
-            {
-              type: 'image',
-              url,
-              name: filename,
-            }
-          ]
+    try {
+      const response = await retryFetch(fetchWithTimeout)('/documents', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
         },
-        parent_id: parentId,
-        parent_type: parentType,
-        locked: false,
-        images: [signedId],
-      }),
-      retries: 3,
-      retryDelay: defaultRequestTimeout / 4,
-    })
-    .then(response => {
+        method: 'POST',
+        body: JSON.stringify({
+          title: 'Loading',
+          project_id: getState().project.id,
+          document_kind: CANVAS_RESOURCE_TYPE,
+          content: {
+            tileSources: [
+              {
+                type: 'image',
+                url,
+                name: filename,
+              }
+            ]
+          },
+          parent_id: parentId,
+          parent_type: parentType,
+          locked: false,
+          images: [signedId],
+        }),
+        retries: 3,
+        retryDelay: defaultRequestTimeout / 4,
+      })
       if (!response.ok) {
         throw Error(response.statusText);
       }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
+      const document = await response.json();
       dispatch({
         type: FROM_IMAGE_SUCCESS,
       });
       if (parentType === 'Project') // refresh project if document has been added to its table of contents
         dispatch(loadProject(getState().project.id));
-      return document;
-    })
-    .then(document => {
       dispatch({
         type: IMAGE_UPLOAD_COMPLETE,
         signedId,
       });
       return document;
-    })
-    .catch((error) => {
+    }
+    catch(error) {
       let errMsg = error.message;
       if (error.name === 'AbortError') {
         errMsg = 'Upload failed';
@@ -1586,7 +1579,7 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       dispatch({
        type: POST_ERRORED
       });
-    });
+    }
   }
 }
 
@@ -1620,59 +1613,60 @@ function createFolderForBatch({ projectId, newFolderName }) {
 }
 
 function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
-  return function(dispatch) {
-    signedIds.forEach(signedId => {
-      retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'access-token': localStorage.getItem('access-token'),
-          'token-type': localStorage.getItem('token-type'),
-          'client': localStorage.getItem('client'),
-          'expiry': localStorage.getItem('expiry'),
-          'uid': localStorage.getItem('uid')
-        },
-        method: 'GET',
-        retries: 3,
-        retryDelay: defaultRequestTimeout / 4,
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw Error(response.statusText);
+  return async function(dispatch) {
+    await Promise.all(
+      signedIds.map(async signedId => {
+        try {
+          const response = await retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'access-token': localStorage.getItem('access-token'),
+              'token-type': localStorage.getItem('token-type'),
+              'client': localStorage.getItem('client'),
+              'expiry': localStorage.getItem('expiry'),
+              'uid': localStorage.getItem('uid')
+            },
+            method: 'GET',
+            retries: 3,
+            retryDelay: defaultRequestTimeout / 4,
+          })
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          const image = await response.json();
+          const filename = image.blob.filename.substring(
+            0, image.blob.filename.lastIndexOf('.')
+          );
+          dispatch({
+            type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+            signedId,
+            image: image.blob,
+          });
+          dispatch(createCanvasDocWithImage({
+            parentId,
+            parentType,
+            signedId,
+            filename,
+            url: image.url,
+          }));
+          return Promise.resolve();
+        } 
+        catch (error) {
+          console.log(error);
+          let errMsg = error.message;
+          if (error.name === 'AbortError') {
+            errMsg = 'Upload failed';
+          }
+          dispatch({
+            type: IMAGE_UPLOAD_ERRORED,
+            signedId,
+            error: errMsg,
+          });
+          return Promise.reject(error);
         }
-        return response;
       })
-      .then(response => response.json())
-      .then(image => {
-        const filename = image.blob.filename.substring(
-          0, image.blob.filename.lastIndexOf('.')
-        );
-        dispatch({
-          type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
-          signedId,
-          image: image.blob,
-        });
-        dispatch(createCanvasDocWithImage({
-          parentId,
-          parentType,
-          signedId,
-          filename,
-          url: image.url,
-        }));
-      })
-      .catch(error => {
-        console.log(error);
-        let errMsg = error.message;
-        if (error.name === 'AbortError') {
-          errMsg = 'Upload failed';
-        }
-        dispatch({
-          type: IMAGE_UPLOAD_ERRORED,
-          signedId,
-          error: errMsg,
-        })
-      })
-    })
+    );
   }
 }
 
