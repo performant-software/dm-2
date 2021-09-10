@@ -40,7 +40,7 @@ class DocumentsController < ApplicationController
 
     if !params[:images].nil? && params[:images].length() > 0
       @document.images.attach(params[:images])
-      if @document.valid_images?
+      if @document.valid_images? && @document.images[0]
         image = @document.images[0]
         imagetitle, _, _ = image.filename.to_s.rpartition('.')
         @document.update(title: imagetitle)

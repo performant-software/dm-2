@@ -876,8 +876,6 @@ export function updateDocument(documentId, attributes, options) {
 export function setDocumentThumbnail({
     documentId,
     image_url,
-    createdByBatch,
-    signedId,
   }) {
   return function(dispatch, getState) {
     dispatch({
@@ -929,28 +927,11 @@ export function setDocumentThumbnail({
           dispatch(refreshTarget(index));
         }
       });
-      if (createdByBatch && signedId) {
-        dispatch({
-          type: IMAGE_UPLOAD_COMPLETE,
-          signedId,
-        });
-      }
     })
-    .catch((error) => {
+    .catch(() => {
       dispatch({
         type: PATCH_ERRORED
       });
-      if (createdByBatch && signedId) {
-        let errMsg = error.message;
-        if (error.name === 'AbortError') {
-          errMsg = 'Unable to set thumbnail';
-        }
-        dispatch({
-          type: IMAGE_UPLOAD_ERRORED,
-          signedId,
-          error: errMsg,
-        });
-      }
     });
   }
 }
@@ -1586,12 +1567,10 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       return document;
     })
     .then(document => {
-      dispatch(setDocumentThumbnail({
-        documentId: document.id, 
-        image_url: url,
-        createdByBatch: true,
+      dispatch({
+        type: IMAGE_UPLOAD_COMPLETE,
         signedId,
-      }));
+      });
       return document;
     })
     .catch((error) => {
