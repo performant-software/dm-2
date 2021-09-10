@@ -24,7 +24,7 @@ gem 'devise_token_auth', '~> 1.1.5'
 gem 'active_model_serializers'
 gem 'bootsnap', '~> 1.7.7', require: false
 gem 'image_processing', '~> 1.2'
-gem 'aws-sdk-s3', '~> 1.48.0', require: false
+gem 'aws-sdk-s3', '~> 1.48.0'
 gem 'rack-cors', :require => 'rack/cors'
 gem 'pg_search'
 gem 'figaro'

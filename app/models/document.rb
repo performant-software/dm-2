@@ -232,6 +232,7 @@ class Document < Linkable
   end
 
   def thumbnail_url
+    require 'aws-sdk-s3'
     if self.thumbnail.attached?
       url_for(self.thumbnail)
     elsif self.images.attached?
@@ -241,7 +242,7 @@ class Document < Linkable
         else
           return nil
         end
-      rescue Aws::S3::Errors::ServiceError
+      rescue Aws::S3::Errors::ServiceError, Errno::ENOENT
         return nil
       end
     else
