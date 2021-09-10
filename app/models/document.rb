@@ -231,6 +231,16 @@ class Document < Linkable
     all_links.map { |link| self.to_link_obj(link) }.compact
   end
 
+  def thumbnail_url
+    if self.thumbnail.attached?
+      url_for(self.thumbnail)
+    elsif self.images.attached?
+      rails_representation_path(self.images[0].variant(combine_options: { resize: '80x80^', gravity: 'center', extent: '80x80' }).processed)
+    else
+      return nil
+    end
+  end
+  
   def to_obj
     {
       id: self.id, 

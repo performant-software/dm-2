@@ -29,6 +29,9 @@ import {
   RENAME_LAYER_SUCCESS,
   TOGGLE_EDIT_LAYER_NAME,
 } from './canvasEditor';
+import retryFetch from 'fetch-retry';
+import fetchWithTimeout from './fetch';
+import { defaultRequestTimeout } from './constants';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
@@ -873,15 +876,13 @@ export function updateDocument(documentId, attributes, options) {
 export function setDocumentThumbnail({
     documentId,
     image_url,
-    createdByBatch,
-    signedId,
   }) {
   return function(dispatch, getState) {
     dispatch({
       type: UPDATE_DOCUMENT
     });
 
-    fetch(`/documents/${documentId}/set_thumbnail`, {
+    retryFetch(fetchWithTimeout)(`/documents/${documentId}/set_thumbnail`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -894,7 +895,9 @@ export function setDocumentThumbnail({
       method: 'POST',
       body: JSON.stringify({
         image_url
-      })
+      }),
+      retries: 3,
+      retryDelay: 3000,
     })
     .then(response => {
       if (!response.ok) {
@@ -924,24 +927,11 @@ export function setDocumentThumbnail({
           dispatch(refreshTarget(index));
         }
       });
-      if (createdByBatch && signedId) {
-        dispatch({
-          type: IMAGE_UPLOAD_COMPLETE,
-          signedId,
-        });
-      }
     })
-    .catch((error) => {
+    .catch(() => {
       dispatch({
         type: PATCH_ERRORED
       });
-      if (createdByBatch && signedId) {
-        dispatch({
-          type: IMAGE_UPLOAD_ERRORED,
-          signedId,
-          error: error.message,
-        });
-      }
     });
   }
 }
@@ -1529,7 +1519,7 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       type: NEW_DOCUMENT
     });
 
-    fetch('/documents', {
+    retryFetch(fetchWithTimeout)('/documents', {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -1557,7 +1547,9 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
         parent_type: parentType,
         locked: false,
         images: [signedId],
-      })
+      }),
+      retries: 3,
+      retryDelay: defaultRequestTimeout / 4,
     })
     .then(response => {
       if (!response.ok) {
@@ -1575,20 +1567,21 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       return document;
     })
     .then(document => {
-      dispatch(setAddTileSourceMode(document.id, null));
-      dispatch(setDocumentThumbnail({
-        documentId: document.id, 
-        image_url: url,
-        createdByBatch: true,
+      dispatch({
+        type: IMAGE_UPLOAD_COMPLETE,
         signedId,
-      }));
+      });
       return document;
     })
     .catch((error) => {
+      let errMsg = error.message;
+      if (error.name === 'AbortError') {
+        errMsg = 'Upload failed';
+      }
       dispatch({
         type: IMAGE_UPLOAD_ERRORED,
         signedId,
-        error,
+        error: errMsg,
       });
       dispatch({
        type: POST_ERRORED
@@ -1598,7 +1591,7 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
 }
 
 function createFolderForBatch({ projectId, newFolderName }) {
-  return fetch('/document_folders', {
+  return retryFetch(fetchWithTimeout)('/document_folders', {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -1614,7 +1607,9 @@ function createFolderForBatch({ projectId, newFolderName }) {
       project_id: projectId,
       parent_id: projectId,
       parent_type: 'Project'
-    })
+    }),
+    retries: 3,
+    retryDelay: defaultRequestTimeout / 4,
   })
   .then(response => {
     if (!response.ok) {
@@ -1627,7 +1622,7 @@ function createFolderForBatch({ projectId, newFolderName }) {
 function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
   return function(dispatch) {
     signedIds.forEach(signedId => {
-      fetch(`/images/${signedId}`, {
+      retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -1638,6 +1633,8 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           'uid': localStorage.getItem('uid')
         },
         method: 'GET',
+        retries: 3,
+        retryDelay: defaultRequestTimeout / 4,
       })
       .then(response => {
         if (!response.ok) {
@@ -1664,10 +1661,15 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
         }));
       })
       .catch(error => {
+        console.log(error);
+        let errMsg = error.message;
+        if (error.name === 'AbortError') {
+          errMsg = 'Upload failed';
+        }
         dispatch({
           type: IMAGE_UPLOAD_ERRORED,
           signedId,
-          error,
+          error: errMsg,
         })
       })
     })
