@@ -98,6 +98,7 @@ import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
 import LinkTooltip from './TextLinkTooltipPlugin';
 import ImageTooltip from './TextImageTooltipPlugin';
+import { DirectUploadProvider } from 'react-activestorage-provider';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
@@ -172,6 +173,8 @@ class TextResource extends Component {
       imageDialogBuffer: '',
       imageDialogBufferInvalid: false,
       createImage: null,
+      uploadedImage: null,
+      imageUploadText: '',
     }
 
     this.initialTableDialogState = {
@@ -1689,7 +1692,7 @@ class TextResource extends Component {
   onSubmitImageDialog = () => {
     // call the callback if it is valid, otherwise, set error state and stay open
     const url = this.state.imageDialogBuffer;
-    if( url && url.length > 0 && validImageRegex.test( url ) ) {
+    if( url && url.length > 0 && (validImageRegex.test( url ) || this.state.uploadedImage) ) {
       this.state.createImage( url );
       this.setState({
         ...this.state,
@@ -1722,11 +1725,76 @@ class TextResource extends Component {
           open={this.state.imageDialogOpen}
           onRequestClose={this.onCancelImageDialog}
         >
+          <DirectUploadProvider
+            onSuccess={async signedIds => {
+              this.setState({ uploadedImage: true });
+              try { 
+                const response = await fetch(`/images/${signedIds[0]}`, {
+                  headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'access-token': localStorage.getItem('access-token'),
+                    'token-type': localStorage.getItem('token-type'),
+                    'client': localStorage.getItem('client'),
+                    'expiry': localStorage.getItem('expiry'),
+                    'uid': localStorage.getItem('uid')
+                  },
+                  method: 'GET',
+                })
+                if (!response.ok) {
+                  throw Error(response.statusText);
+                }
+                const finishedUpload = await response.json();
+                this.setState({ imageDialogBuffer: finishedUpload.url });
+                this.setState({ imageUploadText: 'Image upload complete, you may now click "Insert" below.' });
+              } catch (error) {
+                this.setState({ imageUploadText: error.message });
+              }
+            }}
+            render={({ handleUpload, uploads, ready }) => (
+              <div>
+                <input
+                  type="file"
+                  disabled={!ready}
+                  onChange={e => handleUpload(e.currentTarget.files)}
+                />
+                {uploads.map(upload => {
+                  switch (upload.state) {
+                    case 'waiting':
+                      return <p key={upload.id}>Waiting to upload {upload.file.name}</p>
+                    case 'uploading':
+                      return (
+                        <p key={upload.id}>
+                          Uploading {upload.file.name}: {upload.progress}%
+                        </p>
+                      )
+                    case 'error':
+                      return (
+                        <p key={upload.id}>
+                          Error uploading {upload.file.name}: {upload.error}
+                        </p>
+                      )
+                    case 'finished':
+                      return (
+                        <p key={upload.id}>Finished uploading {upload.file.name}</p>
+                      )
+                  }
+                })}
+                {this.state.imageUploadText !== '' && (
+                  <p>{this.state.imageUploadText}</p>
+                )}
+                {this.state.imageUploadText === '' && (
+                  <p>or</p>
+                )}
+              </div>
+            )}
+          />          
           <TextField
             value={this.state.imageDialogBuffer}
             errorText={ this.state.imageDialogBufferInvalid ? "Please enter a valid image URL." : "" }
             floatingLabelText={"Enter an image URL."}
             onChange={(event, newValue) => {this.setState( { imageDialogBuffer: newValue }) }}
+            disabled={this.state.uploadedImage}
           />
         </Dialog>
     );
