@@ -787,7 +787,7 @@ class TextResource extends Component {
       view(editorView) { return new ImageTooltip(editorView) }
     });
     
-    plugins.push(imageResizePlugin);
+    if(this.isEditable()) plugins.push(imageResizePlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
