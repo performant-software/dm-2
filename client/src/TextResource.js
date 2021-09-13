@@ -97,6 +97,7 @@ import {
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
 import LinkTooltip from './TextLinkTooltipPlugin';
+import ImageTooltip from './TextImageTooltipPlugin';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
@@ -105,6 +106,7 @@ const lineHeights = [1, 1.15, 1.5, 2];
 const buttonWidth = 48;
 
 const validURLRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})).?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
+const validImageRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})).?)(?::\d{2,5})?(?:[/?#]\S*)?\.(?:jpg|gif|png)$/i
 
 class TextResource extends Component {
 
@@ -780,6 +782,12 @@ class TextResource extends Component {
     });
 
     plugins.push(linkPreviewPlugin);
+
+    const imageResizePlugin = new Plugin({
+      view(editorView) { return new ImageTooltip(editorView) }
+    });
+    
+    plugins.push(imageResizePlugin);
 
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
@@ -1681,7 +1689,7 @@ class TextResource extends Component {
   onSubmitImageDialog = () => {
     // call the callback if it is valid, otherwise, set error state and stay open
     const url = this.state.imageDialogBuffer;
-    if( url && url.length > 0 && validURLRegex.test( url ) ) {
+    if( url && url.length > 0 && validImageRegex.test( url ) ) {
       this.state.createImage( url );
       this.setState({
         ...this.state,
@@ -1716,8 +1724,8 @@ class TextResource extends Component {
         >
           <TextField
             value={this.state.imageDialogBuffer}
-            errorText={ this.state.imageDialogBufferInvalid ? "Please enter a valid URL." : "" }
-            floatingLabelText={"Enter a website URL."}
+            errorText={ this.state.imageDialogBufferInvalid ? "Please enter a valid image URL." : "" }
+            floatingLabelText={"Enter an image URL."}
             onChange={(event, newValue) => {this.setState( { imageDialogBuffer: newValue }) }}
           />
         </Dialog>
