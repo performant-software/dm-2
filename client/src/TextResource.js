@@ -174,6 +174,7 @@ class TextResource extends Component {
       imageDialogBufferInvalid: false,
       createImage: null,
       uploadedImage: null,
+      uploadingImage: false,
       imageUploadText: '',
     }
 
@@ -1709,11 +1710,13 @@ class TextResource extends Component {
         label="Cancel"
         primary={true}
         onClick={this.onCancelImageDialog}
+        disabled={this.state.uploadingImage}
       />,
       <FlatButton
         label="Insert"
         primary={true}
         onClick={this.onSubmitImageDialog}
+        disabled={this.state.uploadingImage}
       />,
     ];
 
@@ -1747,8 +1750,10 @@ class TextResource extends Component {
                 const finishedUpload = await response.json();
                 this.setState({ imageDialogBuffer: finishedUpload.url });
                 this.setState({ imageUploadText: 'Image upload complete, you may now click "Insert" below.' });
+                this.setState({ uploadingImage: false });
               } catch (error) {
                 this.setState({ imageUploadText: error.message });
+                this.setState({ uploadingImage: false });
               }
             }}
             render={({ handleUpload, uploads, ready }) => (
@@ -1756,16 +1761,21 @@ class TextResource extends Component {
                 <input
                   type="file"
                   disabled={!ready}
-                  onChange={e => handleUpload(e.currentTarget.files)}
+                  onChange={e => {
+                    this.setState({ uploadingImage: true });
+                    handleUpload(e.currentTarget.files);
+                  }}
                 />
                 {uploads.map(upload => {
                   switch (upload.state) {
                     case 'waiting':
                       return <p key={upload.id}>Waiting to upload {upload.file.name}</p>
                     case 'uploading':
+                      const { progress } = upload;
+                      const progressString = parseFloat(progress).toFixed(2).toString();
                       return (
                         <p key={upload.id}>
-                          Uploading {upload.file.name}: {upload.progress}%
+                          Uploading {upload.file.name}: {progressString}%
                         </p>
                       )
                     case 'error':
@@ -1794,7 +1804,7 @@ class TextResource extends Component {
             errorText={ this.state.imageDialogBufferInvalid ? "Please enter a valid image URL." : "" }
             floatingLabelText={"Enter an image URL."}
             onChange={(event, newValue) => {this.setState( { imageDialogBuffer: newValue }) }}
-            disabled={this.state.uploadedImage}
+            disabled={this.state.uploadedImage || this.state.uploadingImage}
           />
         </Dialog>
     );
