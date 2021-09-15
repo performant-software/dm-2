@@ -170,6 +170,7 @@ class BatchImagePrompt extends Component {
     super(props);
     this.defaultState = {
       tooMany: false,
+      tooBig: false,
       inFolder: false,
       existingFolder: false,
       newFolderName: '',
@@ -376,12 +377,23 @@ class BatchImagePrompt extends Component {
                     !folderChoiceValid}
                   multiple
                   onChange={(e) => {
-                    if (e.currentTarget.files.length <= 50) {
-                      handleUpload(e.currentTarget.files);
-                      startUploading();
-                      this.setState({ tooMany: false });
+                    const { files } = e.currentTarget;
+                    if (files.length > 5) {
+                      this.setState((prevState) => ({ ...prevState, tooBig: false, tooMany: true }));
                     } else {
-                      this.setState({ tooMany: true });
+                      let batchSize = 0.0;
+                      for (let i = 0; i < files.length; i += 1) {
+                        const sizeInBytes = files[i].size;
+                        const sizeInMB = sizeInBytes / (1024*1024);
+                        batchSize += sizeInMB;
+                      }
+                      if (batchSize <= 25) {
+                        handleUpload(files);
+                        startUploading();
+                        this.setState((prevState) => ({ ...prevState, tooBig: false, tooMany: false }));
+                      } else {
+                        this.setState((prevState) => ({ ...prevState, tooBig: true, tooMany: false }));
+                      }
                     }
                   }}
                   style={{ display: 'none' }}
@@ -476,12 +488,16 @@ class BatchImagePrompt extends Component {
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
-        {(showInitStuff || this.state.tooMany) && (
+        {(showInitStuff || this.state.tooMany || this.state.tooBig) && (
           <div style={{ marginBottom: '32px' }}>
           {showInitStuff && (
               <>
                 <p>
-                  Here you can upload <strong>up to 50 images</strong> in batch, and optionally into a folder.
+                  Here you can upload
+                  {' '}
+                  <strong>up to 5 images or a total of 25 MB</strong>
+                  {' '}
+                  in batch, and optionally into a folder.
                 </p>
                 <p>
                   Note that this can be an intensive process that consumes a lot of memory, 
@@ -491,7 +507,12 @@ class BatchImagePrompt extends Component {
             )}
             {this.state.tooMany && (
               <p style={{ color: red900 }}>
-                Error: Limit of 50 images exceeded
+                Error: Limit of 5 images exceeded
+              </p>
+            )}
+            {this.state.tooBig && (
+              <p style={{ color: red900 }}>
+                Error: Limit of 25 MB exceeded
               </p>
             )}
           </div>
