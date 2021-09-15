@@ -1,5 +1,5 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in]
+  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in, :move_many]
   before_action :validate_user_approved, only: [:create]
 
   before_action only: [:update, :destroy] do
@@ -69,6 +69,15 @@ class ProjectsController < ApplicationController
   def check_in
     checked_in_doc_ids = @project.check_in_all(current_user)
     render json: { checked_in_docs: checked_in_doc_ids }
+  end
+
+  # PATCH /projects/1/move_many
+  def move_many
+    @document_ids = params[:document_ids]
+    Document.where(id: @document_ids).sort_by(&:title).reverse!.each {|doc|
+      doc.move_to(0, params[:id], 'Project')
+    }
+    render json: @project, status: 200
   end
 
   private

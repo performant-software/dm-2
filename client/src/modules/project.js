@@ -42,6 +42,7 @@ export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
 export const ADD_FOLDER_DATA = 'project/ADD_FOLDER_DATA';
 export const SHOW_CLOSE_DIALOG = 'project/SHOW_CLOSE_DIALOG';
 export const HIDE_CLOSE_DIALOG = 'project/HIDE_CLOSE_DIALOG';
+export const IMAGE_UPLOAD_DOC_CREATED = 'project/IMAGE_UPLOAD_DOC_CREATED';
 
 const sidebarOpenWidth = 490
 
@@ -237,6 +238,16 @@ export default function(state = initialState, action) {
         uploads: uploadsWithFilename,
       };
 
+    case IMAGE_UPLOAD_DOC_CREATED:
+      const createdUploads = state.uploads.map((upload) => ({
+        ...upload,
+        state: upload.signedId === action.signedId ? 'doc-created' : upload.state,
+      }));
+      return {
+        ...state,
+        uploads: createdUploads,
+      };
+      
     case IMAGE_UPLOAD_COMPLETE:
       const newUploads = state.uploads.map((upload) => ({
         ...upload,

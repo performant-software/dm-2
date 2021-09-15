@@ -6,6 +6,7 @@ import {
   IMAGE_UPLOAD_COMPLETE,
   IMAGE_UPLOAD_ERRORED,
   IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+  IMAGE_UPLOAD_DOC_CREATED,
 } from './project';
 import {
   addLink,
@@ -29,7 +30,6 @@ import {
   RENAME_LAYER_SUCCESS,
   TOGGLE_EDIT_LAYER_NAME,
 } from './canvasEditor';
-import retryFetch from 'fetch-retry';
 import fetchWithTimeout from './fetch';
 import { defaultRequestTimeout } from './constants';
 
@@ -882,7 +882,7 @@ export function setDocumentThumbnail({
       type: UPDATE_DOCUMENT
     });
 
-    retryFetch(fetchWithTimeout)(`/documents/${documentId}/set_thumbnail`, {
+    fetchWithTimeout(`/documents/${documentId}/set_thumbnail`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -896,8 +896,7 @@ export function setDocumentThumbnail({
       body: JSON.stringify({
         image_url
       }),
-      retries: 3,
-      retryDelay: 3000,
+      retryDelay: 12000,
     })
     .then(response => {
       if (!response.ok) {
@@ -1514,66 +1513,57 @@ export function fetchLock(documentId) {
 }
 
 function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filename }) {
-  return function(dispatch, getState) {
+  return async function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
     });
-
-    retryFetch(fetchWithTimeout)('/documents', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'access-token': localStorage.getItem('access-token'),
-        'token-type': localStorage.getItem('token-type'),
-        'client': localStorage.getItem('client'),
-        'expiry': localStorage.getItem('expiry'),
-        'uid': localStorage.getItem('uid')
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        title: 'Loading',
-        project_id: getState().project.id,
-        document_kind: CANVAS_RESOURCE_TYPE,
-        content: {
-          tileSources: [
-            {
-              type: 'image',
-              url,
-              name: filename,
-            }
-          ]
+    try {
+      const response = await fetchWithTimeout('/documents', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
         },
-        parent_id: parentId,
-        parent_type: parentType,
-        locked: false,
-        images: [signedId],
-      }),
-      retries: 3,
-      retryDelay: defaultRequestTimeout / 4,
-    })
-    .then(response => {
+        method: 'POST',
+        body: JSON.stringify({
+          title: 'Loading',
+          project_id: getState().project.id,
+          document_kind: CANVAS_RESOURCE_TYPE,
+          content: {
+            tileSources: [
+              {
+                type: 'image',
+                url,
+                name: filename,
+              }
+            ]
+          },
+          parent_id: parentId,
+          parent_type: parentType,
+          locked: false,
+          images: [signedId],
+          mode: 'batch',
+        }),
+        retryDelay: defaultRequestTimeout,
+      })
       if (!response.ok) {
         throw Error(response.statusText);
       }
-      return response;
-    })
-    .then(response => response.json())
-    .then(document => {
+      const document = await response.json();
       dispatch({
         type: FROM_IMAGE_SUCCESS,
       });
-      if (parentType === 'Project') // refresh project if document has been added to its table of contents
-        dispatch(loadProject(getState().project.id));
-      return document;
-    })
-    .then(document => {
       dispatch({
-        type: IMAGE_UPLOAD_COMPLETE,
+        type: IMAGE_UPLOAD_DOC_CREATED,
         signedId,
       });
       return document;
-    })
-    .catch((error) => {
+    }
+    catch(error) {
       let errMsg = error.message;
       if (error.name === 'AbortError') {
         errMsg = 'Upload failed';
@@ -1586,12 +1576,12 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
       dispatch({
        type: POST_ERRORED
       });
-    });
+    }
   }
 }
 
 function createFolderForBatch({ projectId, newFolderName }) {
-  return retryFetch(fetchWithTimeout)('/document_folders', {
+  return fetchWithTimeout('/document_folders', {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -1608,8 +1598,7 @@ function createFolderForBatch({ projectId, newFolderName }) {
       parent_id: projectId,
       parent_type: 'Project'
     }),
-    retries: 3,
-    retryDelay: defaultRequestTimeout / 4,
+    retryDelay: defaultRequestTimeout,
   })
   .then(response => {
     if (!response.ok) {
@@ -1619,10 +1608,17 @@ function createFolderForBatch({ projectId, newFolderName }) {
   })
 }
 
-function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
-  return function(dispatch) {
-    signedIds.forEach(signedId => {
-      retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
+function moveDocumentsAsync({ docs, parentType, parentId }) {
+  return async function(dispatch) {
+    dispatch({
+      type: MOVE_DOCUMENT
+    });
+
+    try {
+      const url = parentType === 'Project' 
+        ? `/projects/${parentId}/move_many` 
+        : `/document_folders/${parentId}/move_many`;
+      const response = await fetch(url, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -1632,47 +1628,105 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           'expiry': localStorage.getItem('expiry'),
           'uid': localStorage.getItem('uid')
         },
-        method: 'GET',
-        retries: 3,
-        retryDelay: defaultRequestTimeout / 4,
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response;
-      })
-      .then(response => response.json())
-      .then(image => {
-        const filename = image.blob.filename.substring(
-          0, image.blob.filename.lastIndexOf('.')
-        );
+        method: 'PATCH',
+        body: JSON.stringify({
+          document_ids: docs.map(doc => doc.id),
+        }),
+      });
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      const res = await response.json();
+      docs.forEach((doc) => {
         dispatch({
-          type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
-          signedId,
-          image: image.blob,
+          type: IMAGE_UPLOAD_COMPLETE,
+          signedId: doc.signedId,
         });
-        dispatch(createCanvasDocWithImage({
-          parentId,
-          parentType,
-          signedId,
-          filename,
-          url: image.url,
-        }));
-      })
-      .catch(error => {
-        console.log(error);
-        let errMsg = error.message;
-        if (error.name === 'AbortError') {
-          errMsg = 'Upload failed';
-        }
+      });
+      dispatch({
+        type: MOVE_DOCUMENT_SUCCESS
+      });
+      return res;
+    } catch (e) {
+      docs.forEach((doc) => {
         dispatch({
           type: IMAGE_UPLOAD_ERRORED,
-          signedId,
-          error: errMsg,
+          signedId: doc.signedId,
+          error: e.message,
+        });
+      });
+      dispatch({
+        type: MOVE_DOCUMENT_ERRORED
+      });
+    }
+  }
+}
+
+
+function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
+  return async function(dispatch, getState) {
+    try {
+      const createdDocs = await Promise.all(
+        signedIds.map(async signedId => {
+          try {
+            const response = await fetchWithTimeout(`/images/${signedId}`, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'access-token': localStorage.getItem('access-token'),
+                'token-type': localStorage.getItem('token-type'),
+                'client': localStorage.getItem('client'),
+                'expiry': localStorage.getItem('expiry'),
+                'uid': localStorage.getItem('uid')
+              },
+              method: 'GET',
+              retryDelay: defaultRequestTimeout,
+            })
+            if (!response.ok) {
+              throw Error(response.statusText);
+            }
+            const image = await response.json();
+            const filename = image.blob.filename.substring(
+              0, image.blob.filename.lastIndexOf('.')
+            );
+            dispatch({
+              type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+              signedId,
+              image: image.blob,
+            });
+            const createdDoc = await dispatch(createCanvasDocWithImage({
+              parentId,
+              parentType,
+              signedId,
+              filename,
+              url: image.url,
+            }));
+            return Promise.resolve({ ...createdDoc, signedId });
+          } 
+          catch (error) {
+            let errMsg = error.message;
+            if (error.name === 'AbortError') {
+              errMsg = 'Upload failed';
+            }
+            dispatch({
+              type: IMAGE_UPLOAD_ERRORED,
+              signedId,
+              error: errMsg,
+            });
+            return Promise.reject(error);
+          }
         })
-      })
-    })
+      );
+      const docs = createdDocs.map(doc => ({
+        signedId: doc.signedId,
+        id: doc.id,
+      }));
+      await dispatch(moveDocumentsAsync({ docs, parentId, parentType }));
+      if (parentType === 'Project') // refresh project if documents added to its table of contents
+        dispatch(loadProject(getState().project.id));
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
 
@@ -1684,43 +1738,45 @@ export function createBatchImages ({
   folderId,
   newFolderName,
 }) {
-  return function(dispatch) {
+  return async function(dispatch) {
     dispatch({
       type: IMAGE_UPLOAD_STARTED,
       signedIds,
     });
     let parentId = projectId;
     let parentType = 'Project';
-    if (inFolder) {
-      if (existingFolder && folderId) {
-        parentType = 'DocumentFolder';
-        parentId = parseInt(folderId, 10);
-        dispatch(createMultipleCanvasDocs({
-          parentId,
-          parentType,
-          signedIds,
-         }));
-      } else if (!existingFolder && newFolderName) {
-        parentType = 'DocumentFolder';
-        createFolderForBatch({
-          projectId,
-          newFolderName,
-        })
-        .then(folder => {
-          dispatch(createMultipleCanvasDocs({
+    try { 
+      if (inFolder) {
+        if (existingFolder && folderId) {
+          parentType = 'DocumentFolder';
+          parentId = parseInt(folderId, 10);
+          await dispatch(createMultipleCanvasDocs({
+            parentId,
+            parentType,
+            signedIds,
+          }));
+        } else if (!existingFolder && newFolderName) {
+          parentType = 'DocumentFolder';
+          const folder = await createFolderForBatch({
+            projectId,
+            newFolderName,
+          });
+          await dispatch(createMultipleCanvasDocs({
             parentId: folder.id,
             parentType,
             signedIds,
-           }));
-           dispatch(loadProject(projectId));
-        })
+            }));
+          dispatch(loadProject(projectId));
+        }
+      } else {
+        await dispatch(createMultipleCanvasDocs({
+          parentId,
+          parentType,
+          signedIds,
+        }));
       }
-    } else {
-      dispatch(createMultipleCanvasDocs({
-        parentId,
-        parentType,
-        signedIds,
-       }));
+    } catch (error) {
+      console.error(error);
     }
   };
 }

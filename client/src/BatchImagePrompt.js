@@ -19,11 +19,19 @@ import {
 } from './modules/project';
 import { createBatchImages } from './modules/documentGrid';
 import { DirectUploadProvider } from 'react-activestorage-provider';
-import { red400, green400, lightBlue400 } from 'material-ui/styles/colors';
+import { red400, red900, green400, lightBlue400 } from 'material-ui/styles/colors';
 import MenuItem from 'material-ui/MenuItem/MenuItem';
 
-const TableRow = ({ upload }) => {
-  const name = upload.filename || upload.signedId;
+const TableRow = ({ upload, mode }) => {
+  let name = '';
+  let id = '';
+  if (mode === 'fromProps') {
+    name = upload.filename || upload.signedId;
+    id = upload.signedId;
+  } else {
+    name = upload.file.name;
+    id = upload.id;
+  }
   const progressTrStyle = {
     marginTop: '20px',
   };
@@ -48,9 +56,10 @@ const TableRow = ({ upload }) => {
     textAlign: 'right',
   }
   switch (upload.state) {
+    case 'waiting':
     case 'uploading':
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td style={nameTdStyle}>
             {name}
           </td>
@@ -60,13 +69,29 @@ const TableRow = ({ upload }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            Uploading
+            {mode === 'fromProps' ? 'Processing' : 'Uploading'}
+          </td>
+        </tr>
+    );
+    case 'doc-created':
+      return (
+        <tr key={id} style={progressTrStyle}>
+          <td style={nameTdStyle}>
+            {name}
+          </td>
+          <td style={progressTdStyle}><LinearProgress
+            mode="indeterminate"
+            color={green400}
+            style={{ height: '12px' }}
+          /></td>
+          <td style={statusTdStyle}>
+            Finalizing
           </td>
         </tr>
       );
     case 'error':
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td style={nameTdStyle}>
             {name}
           </td>
@@ -83,24 +108,24 @@ const TableRow = ({ upload }) => {
       );
     case 'finished':
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td style={nameTdStyle}>
             {name}
           </td>
           <td style={progressTdStyle}><LinearProgress
-            mode="determinate"
+            mode={mode === 'fromProps' ? 'determinate' : 'indeterminate'}
             value={100}
-            color={green400}
+            color={mode === 'fromProps' ? green400 : lightBlue400}
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            Complete
+            {mode === 'fromProps' ? 'Complete' : 'Processing'}
           </td>
         </tr>
       );
     default:
       return (
-        <tr key={upload.signedId} style={progressTrStyle}>
+        <tr key={id} style={progressTrStyle}>
           <td><strong>{name}</strong></td>
           <td style={progressTdStyle}><LinearProgress
             mode="determinate"
@@ -144,6 +169,8 @@ class BatchImagePrompt extends Component {
   constructor(props) {
     super(props);
     this.defaultState = {
+      tooMany: false,
+      tooBig: false,
       inFolder: false,
       existingFolder: false,
       newFolderName: '',
@@ -344,11 +371,30 @@ class BatchImagePrompt extends Component {
               >
                 <input
                   type="file"
-                  disabled={!ready}
+                  disabled={!ready ||
+                    uploads.length > 0 ||
+                    uploadsNotDone ||
+                    !folderChoiceValid}
                   multiple
                   onChange={(e) => {
-                    handleUpload(e.currentTarget.files);
-                    startUploading();
+                    const { files } = e.currentTarget;
+                    if (files.length > 5) {
+                      this.setState((prevState) => ({ ...prevState, tooBig: false, tooMany: true }));
+                    } else {
+                      let batchSize = 0.0;
+                      for (let i = 0; i < files.length; i += 1) {
+                        const sizeInBytes = files[i].size;
+                        const sizeInMB = sizeInBytes / (1024*1024);
+                        batchSize += sizeInMB;
+                      }
+                      if (batchSize <= 25) {
+                        handleUpload(files);
+                        startUploading();
+                        this.setState((prevState) => ({ ...prevState, tooBig: false, tooMany: false }));
+                      } else {
+                        this.setState((prevState) => ({ ...prevState, tooBig: true, tooMany: false }));
+                      }
+                    }
                   }}
                   style={{ display: 'none' }}
                 />
@@ -356,21 +402,34 @@ class BatchImagePrompt extends Component {
             )}
             {uploading && !(this.props.uploads && this.props.uploads.length > 0) && (
               <>
-                <p>
-                  Loading...
-                </p>
-                <LinearProgress
-                  mode="indeterminate"
-                  color={lightBlue400}
-                  style={{ height: '12px' }}
-                />
+                {!(uploads && uploads.length > 0) && (
+                  <>
+                    <p>
+                      Loading...
+                    </p>
+                    <LinearProgress
+                      mode="indeterminate"
+                      color={lightBlue400}
+                      style={{ height: '12px' }}
+                    />
+                  </>
+                )}
+                {uploads && uploads.length > 0 && (
+                  <table style={{ marginTop: '20px', width: '100%' }}>
+                    <tbody>
+                      {uploads.map((upload) => (
+                        <TableRow upload={upload} key={upload.id} mode="initial" />
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </>
             )}
             {this.props.uploads && this.props.uploads.length > 0 && (
               <table style={{ marginTop: '20px', width: '100%' }}>
                 <tbody>
                   {this.props.uploads.map((upload) => (
-                    <TableRow upload={upload} key={upload.signedId} />
+                    <TableRow upload={upload} key={upload.signedId} mode="fromProps" />
                   ))}
                 </tbody>
               </table>
@@ -396,6 +455,8 @@ class BatchImagePrompt extends Component {
     const uploadsNotDone = uploads.some(
       (upload) => upload.state !== 'finished' && upload.state !== 'error'
     );
+
+    const showInitStuff = !uploading && !(this.props.uploads && this.props.uploads.length > 0);
 
     return (
       <Dialog
@@ -427,13 +488,37 @@ class BatchImagePrompt extends Component {
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
-        {
-          !uploading && 
-          !(this.props.uploads && this.props.uploads.length > 0) && 
-          this.renderFolderChoice()
-        }
+        {(showInitStuff || this.state.tooMany || this.state.tooBig) && (
+          <div style={{ marginBottom: '32px' }}>
+          {showInitStuff && (
+              <>
+                <p>
+                  Here you can upload
+                  {' '}
+                  <strong>up to 5 images or a total of 25 MB</strong>
+                  {' '}
+                  in batch, and optionally into a folder.
+                </p>
+                <p>
+                  Note that this can be an intensive process that consumes a lot of memory, 
+                  and you should not leave the page until the process completes.
+                </p>
+              </>
+            )}
+            {this.state.tooMany && (
+              <p style={{ color: red900 }}>
+                Error: Limit of 5 images exceeded
+              </p>
+            )}
+            {this.state.tooBig && (
+              <p style={{ color: red900 }}>
+                Error: Limit of 25 MB exceeded
+              </p>
+            )}
+          </div>
+        )}
         <div style={{ textAlign: 'center' }}>
-          {uploading && uploads.length > 0 && uploadsNotDone && (<>
+          {uploading && (<>
             <p>Upload in progress. Closing this page before uploads complete may result in lost uploads.</p>
             <p>It is also recommended not to close this dialog window.</p>
           </>)}
@@ -442,6 +527,7 @@ class BatchImagePrompt extends Component {
             <p>You may now safely close this dialog window and/or page.</p>
           </>)}
         </div>
+        {showInitStuff && this.renderFolderChoice()}
         {this.renderMultipleUploadButton({ projectId })}
         <CloseDialog 
           closeAction={() => {
