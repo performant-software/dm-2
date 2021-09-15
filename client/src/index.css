@@ -44,6 +44,23 @@ body {
   color: blue;
 }
 
+.image-tooltip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.image-tooltip span {
+  font-size: 14px;
+  color: blue;
+  cursor: pointer;
+}
+
+.image-tooltip-div {
+  border-right: 1px solid gray;
+  padding-right: 6px;
+  margin-right: 6px;
+}
+
 .tooltip-popover {
   font-family: Roboto, sans-serif;
   font-size: 10px;
