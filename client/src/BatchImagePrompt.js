@@ -169,8 +169,7 @@ class BatchImagePrompt extends Component {
   constructor(props) {
     super(props);
     this.defaultState = {
-      tooMany: false,
-      tooBig: false,
+      invalidFiles: null,
       inFolder: false,
       existingFolder: false,
       newFolderName: '',
@@ -371,7 +370,7 @@ class BatchImagePrompt extends Component {
               >
                 <input
                   type="file"
-                  accept="image/png, image/jpeg"
+                  accept="image/png, image/jpg, image/jpeg"
                   disabled={!ready ||
                     uploads.length > 0 ||
                     uploadsNotDone ||
@@ -380,20 +379,27 @@ class BatchImagePrompt extends Component {
                   onChange={(e) => {
                     const { files } = e.currentTarget;
                     if (files.length > 5) {
-                      this.setState((prevState) => ({ ...prevState, tooBig: false, tooMany: true }));
+                      this.setState((prevState) => ({ ...prevState, invalidFiles: 'count' }));
                     } else {
+                      const validFileFormats = ['image/png', 'image/jpeg', 'image/jpg'];
                       let batchSize = 0.0;
+                      let filesAreValidFormat = true;
                       for (let i = 0; i < files.length; i += 1) {
                         const sizeInBytes = files[i].size;
                         const sizeInMB = sizeInBytes / (1024*1024);
                         batchSize += sizeInMB;
+                        if (!validFileFormats.includes(files[i].type)) {
+                          filesAreValidFormat = false;
+                        }
                       }
-                      if (batchSize <= 25) {
+                      if (batchSize <= 25 && filesAreValidFormat) {
                         handleUpload(files);
                         startUploading();
-                        this.setState((prevState) => ({ ...prevState, tooBig: false, tooMany: false }));
+                        this.setState((prevState) => ({ ...prevState, invalidFiles: null }));
+                      } else if (batchSize > 25) {
+                        this.setState((prevState) => ({ ...prevState, invalidFiles: 'size' }));
                       } else {
-                        this.setState((prevState) => ({ ...prevState, tooBig: true, tooMany: false }));
+                        this.setState((prevState) => ({ ...prevState, invalidFiles: 'format' }));
                       }
                     }
                   }}
@@ -489,7 +495,7 @@ class BatchImagePrompt extends Component {
         ]}
         contentStyle={{ width: '90%', maxWidth: '1000px' }}
       >
-        {(showInitStuff || this.state.tooMany || this.state.tooBig) && (
+        {(showInitStuff || this.state.invalidFiles) && (
           <div style={{ marginBottom: '32px' }}>
           {showInitStuff && (
               <>
@@ -506,14 +512,19 @@ class BatchImagePrompt extends Component {
                 </p>
               </>
             )}
-            {this.state.tooMany && (
+            {this.state.invalidFiles === 'count' && (
               <p style={{ color: red900 }}>
                 Error: Limit of 5 images exceeded
               </p>
             )}
-            {this.state.tooBig && (
+            {this.state.invalidFiles === 'size' && (
               <p style={{ color: red900 }}>
                 Error: Limit of 25 MB exceeded
+              </p>
+            )}
+            {this.state.invalidFiles === 'format' && (
+              <p style={{ color: red900 }}>
+                Error: File must be of type JPG or PNG
               </p>
             )}
           </div>
