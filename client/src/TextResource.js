@@ -1788,6 +1788,10 @@ class TextResource extends Component {
                       return (
                         <p key={upload.id}>Finished uploading {upload.file.name}</p>
                       )
+                    default:
+                      return (
+                        <p key={upload.id}>{upload.file.name} status unknown</p>
+                      )
                   }
                 })}
                 {this.state.imageUploadText !== '' && (
