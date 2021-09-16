@@ -203,6 +203,7 @@ class AddImageLayer extends Component {
             <input
               key="upload-form"
               type="file"
+              accept="image/png, image/jpeg"
               disabled={!ready}
               onChange={(e) => {
                 setAddTileSourceMode(

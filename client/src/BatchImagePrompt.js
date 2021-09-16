@@ -371,6 +371,7 @@ class BatchImagePrompt extends Component {
               >
                 <input
                   type="file"
+                  accept="image/png, image/jpeg"
                   disabled={!ready ||
                     uploads.length > 0 ||
                     uploadsNotDone ||
