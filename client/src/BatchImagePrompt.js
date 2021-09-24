@@ -378,7 +378,7 @@ class BatchImagePrompt extends Component {
                   multiple
                   onChange={(e) => {
                     const { files } = e.currentTarget;
-                    if (files.length > 5) {
+                    if (files.length > 50) {
                       this.setState((prevState) => ({ ...prevState, invalidFiles: 'count' }));
                     } else {
                       const validFileFormats = ['image/png', 'image/jpeg', 'image/jpg'];
@@ -392,11 +392,11 @@ class BatchImagePrompt extends Component {
                           filesAreValidFormat = false;
                         }
                       }
-                      if (batchSize <= 25 && filesAreValidFormat) {
+                      if (batchSize <= 250 && filesAreValidFormat) {
                         handleUpload(files);
                         startUploading();
                         this.setState((prevState) => ({ ...prevState, invalidFiles: null }));
-                      } else if (batchSize > 25) {
+                      } else if (batchSize > 250) {
                         this.setState((prevState) => ({ ...prevState, invalidFiles: 'size' }));
                       } else {
                         this.setState((prevState) => ({ ...prevState, invalidFiles: 'format' }));

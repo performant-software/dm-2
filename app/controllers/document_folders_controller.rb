@@ -77,15 +77,6 @@ class DocumentFoldersController < ApplicationController
     render json: descendants
   end
 
-  # PATCH /document_folders/1/move_many
-  def move_many
-    @document_ids = params[:document_ids]
-    Document.where(id: @document_ids).sort_by(&:title).reverse!.each do |doc|
-      doc.move_to(0, params[:id], 'DocumentFolder')
-    end
-    render json: @document_folder, status: 200
-  end
-
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_document_folder

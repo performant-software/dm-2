@@ -17,7 +17,7 @@ class DocumentsController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :lock] do
+  before_action only: [:create, :lock, :create_batch] do
     validate_user_write(@project)
   end
   before_action only: [:move] do
@@ -219,6 +219,32 @@ class DocumentsController < ApplicationController
     @blob = ActiveStorage::Blob.find_signed(params['signed_id'])
     @blobject = { :blob => @blob, :url => (url_for @blob) }
     render json: @blobject
+  end
+
+  # POST /documents/create_batch
+  def create_batch
+    job_id = BatchWorker.perform_async(new_document_params.to_h, params[:images], current_user.id)
+    @job = { id: job_id }
+    if @job
+      render json: @job, status: 202
+    else
+      render status: 500
+    end
+  end
+
+  # GET /jobs/1
+  def get_job_by_id
+    job_id = params['job_id']
+    status = Sidekiq::Status::status(job_id)
+    if status.nil?
+      render status: 404
+    elsif Sidekiq::Status::queued?(job_id) || Sidekiq::Status::working?(job_id) || Sidekiq::Status::retrying?(job_id) || Sidekiq::Status::interrupted?(job_id)
+      render status: 202
+    elsif Sidekiq::Status::failed?(job_id)
+      render status: 500
+    else
+      render status: 200
+    end
   end
 
   private
