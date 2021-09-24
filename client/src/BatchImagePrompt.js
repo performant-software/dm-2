@@ -502,7 +502,7 @@ class BatchImagePrompt extends Component {
                 <p>
                   Here you can upload
                   {' '}
-                  <strong>up to 5 images or a total of 25 MB</strong>
+                  <strong>up to 50 images or a total of 250 MB</strong>
                   {' '}
                   in batch, and optionally into a folder.
                 </p>
@@ -514,12 +514,12 @@ class BatchImagePrompt extends Component {
             )}
             {this.state.invalidFiles === 'count' && (
               <p style={{ color: red900 }}>
-                Error: Limit of 5 images exceeded
+                Error: Limit of 50 images exceeded
               </p>
             )}
             {this.state.invalidFiles === 'size' && (
               <p style={{ color: red900 }}>
-                Error: Limit of 25 MB exceeded
+                Error: Limit of 250 MB exceeded
               </p>
             )}
             {this.state.invalidFiles === 'format' && (
