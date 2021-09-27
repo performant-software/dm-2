@@ -392,11 +392,11 @@ class BatchImagePrompt extends Component {
                           filesAreValidFormat = false;
                         }
                       }
-                      if (batchSize <= 250 && filesAreValidFormat) {
+                      if (batchSize <= 150 && filesAreValidFormat) {
                         handleUpload(files);
                         startUploading();
                         this.setState((prevState) => ({ ...prevState, invalidFiles: null }));
-                      } else if (batchSize > 250) {
+                      } else if (batchSize > 150) {
                         this.setState((prevState) => ({ ...prevState, invalidFiles: 'size' }));
                       } else {
                         this.setState((prevState) => ({ ...prevState, invalidFiles: 'format' }));
@@ -502,7 +502,7 @@ class BatchImagePrompt extends Component {
                 <p>
                   Here you can upload
                   {' '}
-                  <strong>up to 50 images or a total of 250 MB</strong>
+                  <strong>up to 50 images or a total of 150 MB</strong>
                   {' '}
                   in batch, and optionally into a folder.
                 </p>
@@ -519,7 +519,7 @@ class BatchImagePrompt extends Component {
             )}
             {this.state.invalidFiles === 'size' && (
               <p style={{ color: red900 }}>
-                Error: Limit of 250 MB exceeded
+                Error: Limit of 150 MB exceeded
               </p>
             )}
             {this.state.invalidFiles === 'format' && (
