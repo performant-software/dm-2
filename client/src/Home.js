@@ -47,6 +47,7 @@ class Home extends Component {
                 fullWidth={true} icon={<AddCircle />}
                 style={{padding: '12px 0', height: 'auto'}}
                 onClick={this.props.newProject}
+                disabled={this.props.loading}
               />
             </div>
           }
