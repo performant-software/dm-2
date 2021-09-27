@@ -85,7 +85,7 @@ const TableRow = ({ upload, mode }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            Finalizing
+            Processing
           </td>
         </tr>
       );
@@ -378,7 +378,7 @@ class BatchImagePrompt extends Component {
                   multiple
                   onChange={(e) => {
                     const { files } = e.currentTarget;
-                    if (files.length > 5) {
+                    if (files.length > 50) {
                       this.setState((prevState) => ({ ...prevState, invalidFiles: 'count' }));
                     } else {
                       const validFileFormats = ['image/png', 'image/jpeg', 'image/jpg'];
@@ -392,11 +392,11 @@ class BatchImagePrompt extends Component {
                           filesAreValidFormat = false;
                         }
                       }
-                      if (batchSize <= 25 && filesAreValidFormat) {
+                      if (batchSize <= 150 && filesAreValidFormat) {
                         handleUpload(files);
                         startUploading();
                         this.setState((prevState) => ({ ...prevState, invalidFiles: null }));
-                      } else if (batchSize > 25) {
+                      } else if (batchSize > 150) {
                         this.setState((prevState) => ({ ...prevState, invalidFiles: 'size' }));
                       } else {
                         this.setState((prevState) => ({ ...prevState, invalidFiles: 'format' }));
@@ -502,7 +502,7 @@ class BatchImagePrompt extends Component {
                 <p>
                   Here you can upload
                   {' '}
-                  <strong>up to 5 images or a total of 25 MB</strong>
+                  <strong>up to 50 images or a total of 150 MB</strong>
                   {' '}
                   in batch, and optionally into a folder.
                 </p>
@@ -514,12 +514,12 @@ class BatchImagePrompt extends Component {
             )}
             {this.state.invalidFiles === 'count' && (
               <p style={{ color: red900 }}>
-                Error: Limit of 5 images exceeded
+                Error: Limit of 50 images exceeded
               </p>
             )}
             {this.state.invalidFiles === 'size' && (
               <p style={{ color: red900 }}>
-                Error: Limit of 25 MB exceeded
+                Error: Limit of 150 MB exceeded
               </p>
             )}
             {this.state.invalidFiles === 'format' && (

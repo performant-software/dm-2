@@ -30,6 +30,8 @@ gem 'pg_search'
 gem 'figaro'
 gem 'open-uri'
 gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: '0a6c2e8e81560311569d49d06c0e32abd0effcd5'
+gem 'sidekiq', '~>6.2'
+gem 'sidekiq-status'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

@@ -54,7 +54,7 @@ heroku buildpacks:add --index 1 heroku/nodejs
 
 ### Provision resources
 
-You will need to provision Heroku Postgres and SendGrid (or another email provider) using the Heroku Resources section.
+You will need to provision Heroku Postgres, Heroku Redis, and SendGrid (or another email provider) using the Heroku Resources section.
 
 You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket. See https://aws.amazon.com/ for more information.
 
@@ -74,10 +74,12 @@ EMAIL_SERVER
 EMAIL_USERNAME
 HOSTNAME
 LANG
+MALLOC_ARENA_MAX
 PROTOCOL
 RACK_ENV
 RAILS_LOG_TO_STDOUT
 RAILS_SERVE_STATIC_FILES
+REDIS_PROVIDER
 SECRET_KEY_BASE
 ```
 
@@ -85,10 +87,12 @@ Here are some default settings for provisioning a production server:
 
 ```env
 LANG=en_US.UTF-8
+MALLOC_ARENA_MAX=2
 RACK_ENV=production
 RAILS_ENV=production
 RAILS_LOG_TO_STDOUT=enabled
 RAILS_SERVE_STATIC_FILES=enabled
+REDIS_PROVIDER=REDIS_URL
 PROTOCOL=https
 ```
 
@@ -148,6 +152,8 @@ cd dm-2
 cp .env.sample .env
 cp config/application.sample.yml config/application.yml
 ```
+
+**Note**: In `.env`, when using Docker Compose, you must comment out the `REDIS_URL` environment variable.
 
 Next, there are slightly different instructions depending on whether you intend to run DM2 in a production or development environment.
 
@@ -242,12 +248,15 @@ docker-compose down
 - PostgreSQL 11.12+
 - Node.js 16.x
 - Yarn 1.x
+- Redis 6+
 
 #### Setup
 
-DM2 is a Ruby on Rails 5.x/React application. Setting up PostgresSQL, Ruby, Bundler, Node.JS, and Yarn are beyond the scope of this README, but plenty of information is available online about these tools.
+DM2 is a Ruby on Rails 5.x/React application. Setting up PostgresSQL, Ruby, Bundler, Node.JS, Redis, and Yarn are beyond the scope of this README, but plenty of information is available online about these tools.
 
-Once the dependencies mentioned above are installed, please follow these steps:
+Ensure that both PostgreSQL and Redis services are running.
+
+Once the dependencies mentioned above are installed and running, please follow these steps:
 
 1) Clone this repo to your local drive:
 
@@ -300,6 +309,12 @@ Then run the server:
    
 ```sh
 PORT=3001 && bundle exec puma -C config/puma.rb
+```
+
+Finally, run the task queue:
+
+```sh
+bundle exec sidekiq -e development -C config/sidekiq.yml
 ```
 
 Active Storage

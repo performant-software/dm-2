@@ -1,5 +1,12 @@
 version: "3.9"
 services:
+  redis_db:
+    image: redis:6-alpine
+    command: redis-server
+    ports:
+      - '6379:6379'
+    volumes:
+      - './tmp/redis-dev:/data'
   db:
     image: postgres:11.12
     environment:
@@ -17,9 +24,12 @@ services:
       - "3000:3000"
     depends_on:
       - db
+      - redis_db
     env_file:
       - .env
     environment: # May be overridden by values in .env
       DATABASE_URL: postgres://dm2_dev_user:dm2_dev_password@db
       RACK_ENV: development
       RAILS_ENV: development
+      REDIS_URL: redis://redis_db:6379
+      REDIS_PROVIDER: REDIS_URL

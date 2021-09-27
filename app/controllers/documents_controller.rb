@@ -17,7 +17,7 @@ class DocumentsController < ApplicationController
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :lock] do
+  before_action only: [:create, :lock, :create_batch] do
     validate_user_write(@project)
   end
   before_action only: [:move] do
@@ -221,6 +221,32 @@ class DocumentsController < ApplicationController
     render json: @blobject
   end
 
+  # POST /documents/create_batch
+  def create_batch
+    job_id = BatchWorker.perform_async(new_document_params.to_h, params[:images], current_user.id)
+    @job = { id: job_id }
+    if @job
+      render json: @job, status: 202
+    else
+      render status: 500
+    end
+  end
+
+  # POST /jobs
+  #   :jobs - The array of jobs to check
+  #     [:id] - The ID of the job
+  #     [:signed_id] - The signed ID of the associated image
+  def get_jobs_by_id
+    @jobs = jobs_params[:jobs].to_a
+    @jobs_with_status = []
+    @jobs.each { |job|
+      job_with_status = job.to_h
+      job_with_status[:status] = Sidekiq::Status::status(job[:id])
+      @jobs_with_status << job_with_status
+    }
+    render json: @jobs_with_status, status: 200
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_document
@@ -239,5 +265,9 @@ class DocumentsController < ApplicationController
 
     def document_params
       params.require(:document).permit(:title, :parent_id, :parent_type, :search_text, :images => [], :content => {})
+    end
+
+    def jobs_params
+      params.permit(jobs: [:signed_id, :id])
     end
 end

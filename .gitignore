@@ -23,6 +23,7 @@
 convert/node_modules
 
 latest.dump
+dump.rdb
 # Ignore application configuration
 /config/application.yml
 

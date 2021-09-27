@@ -83,3 +83,4 @@ production:
   database: dm2_production
   username: <%= ENV['DM2_DATABASE_USER'] %>
   password: <%= ENV['DM2_DATABASE_PASSWORD'] %>
+  url: <%= ENV['DATABASE_URL'] %>

@@ -1,5 +1,10 @@
 version: "3.9"
 services:
+  redis_db:
+    env_file:
+      - .env
+    volumes:
+      - "${DATABASE_FS_MOUNT}/redis:/data"
   db:
     env_file:
       - .env
@@ -8,7 +13,7 @@ services:
       POSTGRES_USER: "${DM2_DATABASE_USER}"
       POSTGRES_PASSWORD: "${DM2_DATABASE_PASSWORD}"
     volumes:
-      - "${DATABASE_FS_MOUNT}:/var/lib/postgresql/data"
+      - "${DATABASE_FS_MOUNT}/postgresql:/var/lib/postgresql/data"
 
   app:
     restart: always
@@ -17,5 +22,7 @@ services:
       DATABASE_URL: postgres://${DM2_DATABASE_USER}:${DM2_DATABASE_PASSWORD}@db
       RACK_ENV: production
       RAILS_ENV: production
+      REDIS_URL: redis://redis_db:6379
+      REDIS_PROVIDER: REDIS_URL
     ports:
       - "443:443"

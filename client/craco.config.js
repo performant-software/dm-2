@@ -10,10 +10,8 @@ module.exports = {
           const ForkTsCheckerWebpackPlugin = webpackConfig.plugins.find(
             (plugin) => plugin.constructor.name === "ForkTsCheckerWebpackPlugin"
           );
-
-          // If we can't find the loader then throw an error.
           if (!ForkTsCheckerWebpackPlugin) {
-            throw new Error("could not find ForkTsCheckerWebpackPlugin");
+            return webpackConfig;
           }
 
           if (!pluginOptions.memoryLimit) {

@@ -61,15 +61,27 @@
     },
     "AWS_BUCKET": {
       "required": false
+    },
+    "REDIS_PROVIDER": {
+      "required": true,
+      "value": "REDIS_URL"
+    },
+    "MALLOC_ARENA_MAX": {
+      "required": true,
+      "value": 2
     }
   },
   "formation": {
     "web": {
       "quantity": 1
+    },
+    "worker": {
+      "quantity": 1
     }
   },
   "addons": [
-    "heroku-postgresql"
+    "heroku-postgresql",
+    "heroku-redis"
   ],
   "buildpacks": [
     {
