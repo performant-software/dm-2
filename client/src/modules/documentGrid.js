@@ -1688,13 +1688,21 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
             const res = await response.json();
             if (attempt > 20) {
               res
-                .filter(job => !finishedStatuses.includes(job.status))
+                .filter(job => job.status !== 'complete')
                 .forEach(job => {
-                  dispatch({
-                    type: IMAGE_UPLOAD_ERRORED,
-                    signedId: job.signed_id,
-                    error: 'Request timed out',
-                  });
+                  if (job.status === 'failed' || job.status === 'interrupted') {
+                    dispatch({
+                      type: IMAGE_UPLOAD_ERRORED,
+                      signedId: job.signed_id,
+                      error: job.status,
+                    });
+                  } else {
+                    dispatch({
+                      type: IMAGE_UPLOAD_ERRORED,
+                      signedId: job.signed_id,
+                      error: 'Request timed out',
+                    });
+                  }
                 });
               return false;
             }
