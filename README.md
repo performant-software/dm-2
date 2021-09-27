@@ -153,6 +153,8 @@ cp .env.sample .env
 cp config/application.sample.yml config/application.yml
 ```
 
+**Note**: In `.env`, when using Docker Compose, you must comment out the `REDIS_URL` environment variable.
+
 Next, there are slightly different instructions depending on whether you intend to run DM2 in a production or development environment.
 
 #### Development environment
