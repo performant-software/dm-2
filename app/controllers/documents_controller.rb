@@ -232,19 +232,19 @@ class DocumentsController < ApplicationController
     end
   end
 
-  # GET /jobs/1
-  def get_job_by_id
-    job_id = params['job_id']
-    status = Sidekiq::Status::status(job_id)
-    if status.nil?
-      render status: 404
-    elsif Sidekiq::Status::queued?(job_id) || Sidekiq::Status::working?(job_id) || Sidekiq::Status::retrying?(job_id) || Sidekiq::Status::interrupted?(job_id)
-      render status: 202
-    elsif Sidekiq::Status::failed?(job_id)
-      render status: 500
-    else
-      render status: 200
-    end
+  # POST /jobs
+  #   :jobs - The array of jobs to check
+  #     [:id] - The ID of the job
+  #     [:signed_id] - The signed ID of the associated image
+  def get_jobs_by_id
+    @jobs = jobs_params[:jobs].to_a
+    @jobs_with_status = []
+    @jobs.each { |job|
+      job_with_status = job.to_h
+      job_with_status[:status] = Sidekiq::Status::status(job[:id])
+      @jobs_with_status << job_with_status
+    }
+    render json: @jobs_with_status, status: 200
   end
 
   private
@@ -265,5 +265,9 @@ class DocumentsController < ApplicationController
 
     def document_params
       params.require(:document).permit(:title, :parent_id, :parent_type, :search_text, :images => [], :content => {})
+    end
+
+    def jobs_params
+      params.permit(jobs: [:signed_id, :id])
     end
 end

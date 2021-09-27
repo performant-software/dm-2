@@ -1662,49 +1662,68 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           }
         })
       );
-      const jobs = jobsQueue.map(job => ({
-        signedId: job.signedId,
+      let jobs = jobsQueue.map(job => ({
+        signed_id: job.signedId,
         id: job.id,
       }));
-      await Promise.all(
-        jobs.map(async job => {
-          const { id, signedId } = job;
-          try {
-            const response = await retryFetch(fetchWithTimeout)(`/jobs/${id}`, {
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'access-token': localStorage.getItem('access-token'),
-                'token-type': localStorage.getItem('token-type'),
-                'client': localStorage.getItem('client'),
-                'expiry': localStorage.getItem('expiry'),
-                'uid': localStorage.getItem('uid')
-              },
-              method: 'GET',
-              retryDelay: defaultRequestTimeout / 5,
-              retries: 20,
-              retryOn: [202],
+      try {
+        const response = await retryFetch(fetchWithTimeout)(`/jobs`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            jobs
+          }),
+          retryDelay: defaultRequestTimeout / 5,
+          retries: 20,
+          retryOn: async (attempt, error, response) => {
+            const finishedStatuses = ['complete', 'failed', 'interrupted'];
+            const res = await response.json();
+            if (attempt > 20) {
+              res
+                .filter(job => !finishedStatuses.includes(job.status))
+                .forEach(job => {
+                  dispatch({
+                    type: IMAGE_UPLOAD_ERRORED,
+                    signedId: job.signed_id,
+                    error: 'Request timed out',
+                  });
+                });
+              return false;
+            }
+            res.forEach(job => {
+              if (job.status === 'complete') {
+                dispatch({
+                  type: IMAGE_UPLOAD_COMPLETE,
+                  signedId: job.signed_id,
+                });
+              } else if (job.status === 'failed' || job.status === 'interrupted') {
+                dispatch({
+                  type: IMAGE_UPLOAD_ERRORED,
+                  signedId: job.signed_id,
+                  error: job.status,
+                });
+              }
             })
-            if (!response.ok) {
-              throw Error(response.statusText);
+            const unfinished = res.some(job => !finishedStatuses.includes(job.status));
+            if (error !== null || response.status >= 400 || unfinished) {
+              return true;
             }
-            dispatch({
-              type: IMAGE_UPLOAD_COMPLETE,
-              signedId: job.signedId,
-            });
-          } catch (error) {
-            let errMsg = error.message;
-            if (error.name === 'AbortError') {
-              errMsg = 'Upload error';
-            }
-            dispatch({
-              type: IMAGE_UPLOAD_ERRORED,
-              signedId,
-              error: errMsg,
-            });
-          }
+          },
         })
-      );
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+      } catch (error) {
+        console.error(error);
+      }
       if (parentType === 'Project') // refresh project if documents added to its table of contents
         dispatch(loadProject(getState().project.id));
     } catch (error) {

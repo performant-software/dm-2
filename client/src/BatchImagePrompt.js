@@ -85,7 +85,7 @@ const TableRow = ({ upload, mode }) => {
             style={{ height: '12px' }}
           /></td>
           <td style={statusTdStyle}>
-            Finalizing
+            Processing
           </td>
         </tr>
       );
