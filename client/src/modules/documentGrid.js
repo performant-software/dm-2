@@ -1580,7 +1580,7 @@ function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filena
   }
 }
 
-function createFolderForBatch({ projectId, newFolderName }) {
+async function createFolderForBatch({ projectId, newFolderName }) {
   return fetchWithTimeout('/document_folders', {
     headers: {
       'Accept': 'application/json',
