@@ -268,6 +268,6 @@ class DocumentsController < ApplicationController
     end
 
     def jobs_params
-      params.permit(jobs: [:signed_id, :id], :project_id)
+      params.permit(jobs: [:signed_id, :id])
     end
 end
