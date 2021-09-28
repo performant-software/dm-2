@@ -1611,10 +1611,10 @@ async function createFolderForBatch({ projectId, newFolderName }) {
 function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
   return async function(dispatch, getState) {
     try {
-      const jobsQueue = await Promise.all(
+      const jobsQueue = await Promise.allSettled(
         signedIds.map(async signedId => {
           try {
-            const response = await fetchWithTimeout(`/images/${signedId}`, {
+            const response = await retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
               headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -1626,6 +1626,7 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
               },
               method: 'GET',
               retryDelay: defaultRequestTimeout,
+              retries: 3,
             })
             if (!response.ok) {
               throw Error(response.statusText);
@@ -1662,10 +1663,12 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           }
         })
       );
-      let jobs = jobsQueue.map(job => ({
-        signed_id: job.signedId,
-        id: job.id,
-      }));
+      let jobs = jobsQueue
+        .filter(jobPromise => jobPromise.status === 'fulfilled')
+        .map(job => ({
+          signed_id: job.value.signedId,
+          id: job.value.id,
+        }));
       try {
         const response = await retryFetch(fetchWithTimeout)(`/jobs`, {
           headers: {
