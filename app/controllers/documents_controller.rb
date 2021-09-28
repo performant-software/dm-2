@@ -11,7 +11,7 @@ class DocumentsController < ApplicationController
     :delete_layer,
     :rename_layer
   ]
-  before_action only: [:create] do
+  before_action only: [:create, :create_batch] do
     @project = Project.find(params[:project_id])
   end
   before_action only: [:show] do
@@ -268,6 +268,6 @@ class DocumentsController < ApplicationController
     end
 
     def jobs_params
-      params.permit(jobs: [:signed_id, :id])
+      params.permit(jobs: [:signed_id, :id], :project_id)
     end
 end
