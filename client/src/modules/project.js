@@ -39,6 +39,7 @@ export const IMAGE_UPLOAD_COMPLETE = 'project/IMAGE_UPLOAD_COMPLETE';
 export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
 export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
 export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
+export const KILL_UPLOADING = 'project/KILL_UPLOADING';
 export const ADD_FOLDER_DATA = 'project/ADD_FOLDER_DATA';
 export const SHOW_CLOSE_DIALOG = 'project/SHOW_CLOSE_DIALOG';
 export const HIDE_CLOSE_DIALOG = 'project/HIDE_CLOSE_DIALOG';
@@ -70,6 +71,7 @@ const initialState = {
   uploading: false,
   folderData: [],
   closeDialogShown: false,
+  uploadError: null,
 };
 
 export default function(state = initialState, action) {
@@ -210,12 +212,21 @@ export default function(state = initialState, action) {
         uploading: false,
         uploads: [],
         folderData: [],
+        uploadError: null,
       };
 
     case SET_UPLOADING_TRUE:
       return {
         ...state,
         uploading: true,
+        uploadError: null,
+      };
+
+    case KILL_UPLOADING:
+      return {
+        ...state,
+        uploading: false,
+        uploadError: action.err,
       };
     
     case IMAGE_UPLOAD_STARTED:
@@ -721,6 +732,15 @@ export function startUploading() {
   return function(dispatch) {
     dispatch({
       type: SET_UPLOADING_TRUE,
+    });
+  }
+}
+
+export function killUploading(err) {
+  return function(dispatch) {
+    dispatch({
+      type: KILL_UPLOADING,
+      err,
     });
   }
 }

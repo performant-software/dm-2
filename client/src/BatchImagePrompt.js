@@ -14,6 +14,7 @@ import {
   getFolderData,
   hideBatchImagePrompt,
   hideCloseDialog,
+  killUploading,
   showCloseDialog,
   startUploading,
 } from './modules/project';
@@ -331,16 +332,16 @@ class BatchImagePrompt extends Component {
   }
 
   renderMultipleUploadButton({ projectId }) {
-    const { createBatchImages, uploading, startUploading } = this.props;
+    const { createBatchImages, uploading, startUploading, killUploading, uploadError } = this.props;
     const { folderId, newFolderName, inFolder, existingFolder } = this.state;
-    const uploadsNotDone = this.props.uploads.some(
+    const uploadsNotDone = this.props.uploads && this.props.uploads.length > 0 && this.props.uploads.some(
       (upload) => upload.state !== 'finished' && upload.state !== 'error'
     );
     const folderChoiceValid = 
       !inFolder || 
       (existingFolder === false && newFolderName !== '') ||
       (existingFolder === true && folderId !== '');
-    return (
+    return !uploadError ? (
       <DirectUploadProvider
         multiple
         onSuccess={(signedIds) => {
@@ -393,7 +394,10 @@ class BatchImagePrompt extends Component {
                         }
                       }
                       if (batchSize <= 150 && filesAreValidFormat) {
-                        handleUpload(files);
+                        handleUpload(files).catch(err => {
+                          console.error(err);
+                          killUploading(err);
+                        });
                         startUploading();
                         this.setState((prevState) => ({ ...prevState, invalidFiles: null }));
                       } else if (batchSize > 150) {
@@ -444,7 +448,7 @@ class BatchImagePrompt extends Component {
           </>
         )}
       />
-    );
+    ) : (<></>);
   }
 
   render() {
@@ -456,6 +460,7 @@ class BatchImagePrompt extends Component {
       showCloseDialog,
       uploading,
       uploads,
+      uploadError,
     } = this.props;
     const projectId = batchImagePromptShown;
 
@@ -497,7 +502,7 @@ class BatchImagePrompt extends Component {
       >
         {(showInitStuff || this.state.invalidFiles) && (
           <div style={{ marginBottom: '32px' }}>
-          {showInitStuff && (
+            {showInitStuff && !uploadError && (
               <>
                 <p>
                   Here you can upload
@@ -509,6 +514,15 @@ class BatchImagePrompt extends Component {
                 <p>
                   Note that this can be an intensive process that consumes a lot of memory, 
                   and you should not leave the page until the process completes.
+                </p>
+              </>
+            )}
+            {uploadError && (
+              <>
+                <p style={{ color: red900 }}>Error: {uploadError.toString()}</p>
+                <p style={{ color: red900 }}>
+                  Please try again. If a specific file caused an error,
+                  it may need to be uploaded separately.
                 </p>
               </>
             )}
@@ -539,7 +553,7 @@ class BatchImagePrompt extends Component {
             <p>You may now safely close this dialog window and/or page.</p>
           </>)}
         </div>
-        {showInitStuff && this.renderFolderChoice()}
+        {showInitStuff && !uploadError && this.renderFolderChoice()}
         {this.renderMultipleUploadButton({ projectId })}
         <CloseDialog 
           closeAction={() => {
@@ -564,6 +578,7 @@ const mapStateToProps = (state) => ({
   contentsChildren: state.project.contentsChildren,
   folderData: state.project.folderData,
   closeDialogShown: state.project.closeDialogShown,
+  uploadError: state.project.uploadError,
 });
 
 const mapDispatchToProps = (dispatch) =>
@@ -571,6 +586,7 @@ const mapDispatchToProps = (dispatch) =>
     {
       hideBatchImagePrompt,
       startUploading,
+      killUploading,
       createBatchImages,
       getFolderData,
       showCloseDialog,
