@@ -5,6 +5,7 @@ import {
   IMAGE_UPLOAD_STARTED,
   IMAGE_UPLOAD_COMPLETE,
   IMAGE_UPLOAD_ERRORED,
+  IMAGE_UPLOAD_TIMEOUT,
   IMAGE_UPLOAD_TO_RAILS_SUCCESS,
   IMAGE_UPLOAD_DOC_CREATED,
 } from './project';
@@ -1684,16 +1685,20 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
           body: JSON.stringify({
             jobs
           }),
-          retryDelay: defaultRequestTimeout / 5,
-          retries: 20,
+          retryDelay: defaultRequestTimeout / 4,
+          retries: 35,
           retryOn: async (attempt, error, response) => {
             const finishedStatuses = ['complete', 'failed', 'interrupted'];
             const res = await response.json();
-            if (attempt > 20) {
+            if (attempt > 35) {
               res
-                .filter(job => job.status !== 'complete')
                 .forEach(job => {
-                  if (job.status === 'failed' || job.status === 'interrupted') {
+                  if (job.status === 'complete') {
+                    dispatch({
+                      type: IMAGE_UPLOAD_COMPLETE,
+                      signedId: job.signed_id,
+                    });
+                  } else if (job.status === 'failed' || job.status === 'interrupted') {
                     dispatch({
                       type: IMAGE_UPLOAD_ERRORED,
                       signedId: job.signed_id,
@@ -1701,9 +1706,9 @@ function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
                     });
                   } else {
                     dispatch({
-                      type: IMAGE_UPLOAD_ERRORED,
+                      type: IMAGE_UPLOAD_TIMEOUT,
                       signedId: job.signed_id,
-                      error: 'Request timed out',
+                      error: 'Queued and processing',
                     });
                   }
                 });

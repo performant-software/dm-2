@@ -20,7 +20,7 @@ import {
 } from './modules/project';
 import { createBatchImages } from './modules/documentGrid';
 import { DirectUploadProvider } from 'react-activestorage-provider';
-import { red400, red900, green400, lightBlue400 } from 'material-ui/styles/colors';
+import { red400, red900, green400, lightBlue400, yellow400 } from 'material-ui/styles/colors';
 import MenuItem from 'material-ui/MenuItem/MenuItem';
 
 const TableRow = ({ upload, mode }) => {
@@ -124,10 +124,29 @@ const TableRow = ({ upload, mode }) => {
           </td>
         </tr>
       );
+    case 'timeout':
+      return (
+        <tr key={id} style={progressTrStyle}>
+          <td style={nameTdStyle}>
+            {name}
+          </td>
+          <td style={progressTdStyle}>
+            <LinearProgress
+              mode={'determinate'}
+              value={100}
+              color={yellow400}
+              style={{ height: '12px' }}
+            />
+          </td>
+          <td style={statusTdStyle}>
+            {upload.error.toString()}
+          </td>
+        </tr>
+      );
     default:
       return (
         <tr key={id} style={progressTrStyle}>
-          <td><strong>{name}</strong></td>
+        <td style={nameTdStyle}>{name}</td>
           <td style={progressTdStyle}><LinearProgress
             mode="determinate"
             value={100}
@@ -335,7 +354,7 @@ class BatchImagePrompt extends Component {
     const { createBatchImages, uploading, startUploading, killUploading, uploadError } = this.props;
     const { folderId, newFolderName, inFolder, existingFolder } = this.state;
     const uploadsNotDone = this.props.uploads && this.props.uploads.length > 0 && this.props.uploads.some(
-      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+      (upload) => !['timeout', 'finished', 'error'].includes(upload.state)
     );
     const folderChoiceValid = 
       !inFolder || 
@@ -465,7 +484,7 @@ class BatchImagePrompt extends Component {
     const projectId = batchImagePromptShown;
 
     const uploadsNotDone = uploads.some(
-      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+      (upload) => !['timeout', 'finished', 'error'].includes(upload.state)
     );
 
     const showInitStuff = !uploading && !(this.props.uploads && this.props.uploads.length > 0);
@@ -507,7 +526,7 @@ class BatchImagePrompt extends Component {
                 <p>
                   Here you can upload
                   {' '}
-                  <strong>up to 50 images or a total of 150 MB</strong>
+                  <strong>up to 50 images (JPG or PNG) or a total of 150 MB</strong>
                   {' '}
                   in batch, and optionally into a folder.
                 </p>
@@ -551,6 +570,16 @@ class BatchImagePrompt extends Component {
           {uploads && !uploading && uploads.length > 0 && !uploadsNotDone && (<>
             <p>Upload complete!</p>
             <p>You may now safely close this dialog window and/or page.</p>
+            {uploads.some(upload => upload.state === 'timeout') && (
+              <p style={{ fontWeight: 'bold' }}>
+                Note: Since
+                {' '}
+                {uploads.filter(upload => upload.state === 'timeout').length}
+                {' '}
+                uploads are still processing in the background, you may wish to close this page entirely 
+                and check back in a few minutes to ensure that all images were succesfully processed.
+              </p>
+            )}
           </>)}
         </div>
         {showInitStuff && !uploadError && this.renderFolderChoice()}

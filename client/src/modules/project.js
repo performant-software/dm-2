@@ -37,6 +37,7 @@ export const SHOW_BATCH_IMAGE_PROMPT = 'project/SHOW_BATCH_IMAGE_PROMPT';
 export const IMAGE_UPLOAD_STARTED = 'project/IMAGE_UPLOAD_STARTED';
 export const IMAGE_UPLOAD_COMPLETE = 'project/IMAGE_UPLOAD_COMPLETE';
 export const IMAGE_UPLOAD_ERRORED = 'project/IMAGE_UPLOAD_ERRORED';
+export const IMAGE_UPLOAD_TIMEOUT = 'project/IMAGE_UPLOAD_TIMEOUT';
 export const IMAGE_UPLOAD_TO_RAILS_SUCCESS = 'project/IMAGE_UPLOAD_TO_RAILS_SUCCESS';
 export const SET_UPLOADING_TRUE = 'project/SET_UPLOADING_TRUE';
 export const KILL_UPLOADING = 'project/KILL_UPLOADING';
@@ -264,7 +265,7 @@ export default function(state = initialState, action) {
         ...upload,
         state: upload.signedId === action.signedId ? 'finished' : upload.state,
       }));
-      const stillUploadingComplete = newUploads.some(upload => upload.state !== 'finished' && upload.state !== 'error');
+      const stillUploadingComplete = newUploads.some(upload => !['timeout', 'finished', 'error'].includes(upload.state));
       return {
         ...state,
         uploads: newUploads,
@@ -277,11 +278,24 @@ export default function(state = initialState, action) {
         state: upload.signedId === action.signedId ? 'error' : upload.state,
         error: upload.signedId === action.signedId ? action.error : upload.error,
       }));
-      const stillUploadingErrored = uploadsWithError.some(upload => upload.state !== 'finished' && upload.state !== 'error');
+      const stillUploadingErrored = uploadsWithError.some(upload => !['timeout', 'finished', 'error'].includes(upload.state));
       return {
         ...state,
         uploads: uploadsWithError,
         uploading: stillUploadingErrored,
+      };
+
+    case IMAGE_UPLOAD_TIMEOUT:
+      const uploadsWithTimeout = state.uploads.map((upload) => ({
+        ...upload,
+        state: upload.signedId === action.signedId ? 'timeout' : upload.state,
+        error: upload.signedId === action.signedId ? action.error : upload.error,
+      }));
+      const stillUploadingTimeout = uploadsWithTimeout.some(upload => !['timeout', 'finished', 'error'].includes(upload.state));
+      return {
+        ...state,
+        uploads: uploadsWithTimeout,
+        uploading: stillUploadingTimeout,
       };
 
     case ADD_FOLDER_DATA:
