@@ -526,7 +526,7 @@ class BatchImagePrompt extends Component {
                 <p>
                   Here you can upload
                   {' '}
-                  <strong>up to 50 images (JPG or PNG) or a total of 150 MB</strong>
+                  <strong>up to 50 JPG or PNG images (but no more than 150 MB at once)</strong>
                   {' '}
                   in batch, and optionally into a folder.
                 </p>
