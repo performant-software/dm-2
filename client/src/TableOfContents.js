@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 
 import CreateNewFolder from 'material-ui/svg-icons/file/create-new-folder';
 import { white } from 'material-ui/styles/colors'
-import { openDocumentPopover, closeDocumentPopover, toggleSidebar } from './modules/project';
+import { openDocumentPopover, closeDocumentPopover, toggleSidebar, showBatchImagePrompt } from './modules/project';
 import { createTextDocument, createCanvasDocument } from './modules/documentGrid';
 import { createFolder } from './modules/folders';
 import AddDocumentButton from './AddDocumentButton';
@@ -26,16 +26,22 @@ class TableOfContents extends Component {
               <Toolbar noGutter={true} style={{marginLeft: 10, background: white}}>
                 <ToolbarGroup >
                   <AddDocumentButton 
-                    label='New Item' 
-                    documentPopoverOpen={this.props.documentPopoverOpen} 
-                    openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')} 
-                    closeDocumentPopover={this.props.closeDocumentPopover} 
-                    textClick={() => {this.props.createTextDocument(projectId, 'Project');}} 
-                    imageClick={() => {this.props.createCanvasDocument(projectId, 'Project');}} 
-                    idString='tableOfContents' 
+                    label="New Item"
+                    documentPopoverOpen={this.props.documentPopoverOpen}
+                    openDocumentPopover={() => this.props.openDocumentPopover('tableOfContents')}
+                    closeDocumentPopover={this.props.closeDocumentPopover}
+                    textClick={() => {this.props.createTextDocument(projectId, 'Project');}}
+                    imageClick={() => {
+                      this.props.createCanvasDocument({
+                        parentId: projectId,
+                        parentType: 'Project',
+                      });
+                    }}
+                    batchImageClick={() => this.props.showBatchImagePrompt({ projectId })}
+                    idString='tableOfContents'
                   />
                   <FlatButton
-                    label={'New Folder'}
+                    label="New Folder"
                     icon={<CreateNewFolder />}
                     onClick={() => {this.props.createFolder(projectId, 'Project');}}
                   />
@@ -43,7 +49,7 @@ class TableOfContents extends Component {
                       onClick={this.props.checkInAllClick}
                       style={{ width: '44px', height: '44px', marginLeft: '6px' }}
                       iconStyle={{ width: '20px', height: '20px' }}
-                      tooltip="Check In All Documents"
+                      tooltip="Check in all documents"
                     >
                       <MoveToInbox />
                     </IconButton>
@@ -52,7 +58,7 @@ class TableOfContents extends Component {
                       onClick={this.props.settingsClick}
                       style={{ width: '44px', height: '44px', marginLeft: '6px' }}
                       iconStyle={{ width: '20px', height: '20px' }}
-                      tooltip="Project Settings"
+                      tooltip="Project settings"
                     >
                       <Settings />
                     </IconButton>
@@ -87,7 +93,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   createTextDocument,
   createCanvasDocument,
   createFolder,
-  toggleSidebar
+  toggleSidebar,
+  showBatchImagePrompt,
 }, dispatch);
 
 export default connect(

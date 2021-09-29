@@ -23,13 +23,18 @@ Rails.application.routes.draw do
   patch '/documents/:id/lock' => 'documents#lock'
   patch '/documents/:id/move' => 'documents#move'
   patch '/document_folders/:id/move' => 'document_folders#move'
+  patch '/document_folders/:id/move_many' => 'document_folders#move_many'
   post '/document_folders/:id/add_tree' => 'document_folders#add_tree'
   get '/projects/:id/search' => 'projects#search'
+  patch '/projects/:id/move_many' => 'projects#move_many'
   post '/projects/:id/check_in' => 'projects#check_in'
   patch '/links/:id/move' => 'links#move'
   patch '/documents/:id/move_layer' => 'documents#move_layer'
   patch '/documents/:id/delete_layer' => 'documents#delete_layer'
   patch '/documents/:id/rename_layer' => 'documents#rename_layer'
+  get '/images/:signed_id' => 'documents#get_image_by_signed_id'
+  post '/documents/create_batch' => 'documents#create_batch'
+  post '/jobs' => 'documents#get_jobs_by_id'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?

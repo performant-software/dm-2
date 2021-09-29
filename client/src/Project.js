@@ -5,7 +5,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings, checkInAll } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
-import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar } from './modules/documentGrid';
+import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar, fetchLock } from './modules/documentGrid';
 import { selectHighlight } from './modules/textEditor';
 import Dialog from 'material-ui/Dialog';
 import Snackbar from 'material-ui/Snackbar';
@@ -16,6 +16,8 @@ import TableOfContents from './TableOfContents';
 import DocumentViewer from './DocumentViewer';
 import LinkInspectorPopupLayer from './LinkInspectorPopupLayer';
 import SearchResultsPopupLayer from './SearchResultsPopupLayer';
+import BatchImagePrompt from './BatchImagePrompt';
+import { Beforeunload } from 'react-beforeunload';
 
 const rolloverTimeout = 500
 
@@ -119,6 +121,15 @@ class Project extends Component {
     }
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.currentUser !== this.props.currentUser && this.props.match.params.slug !== 'new') {
+      this.props.loadProject(this.props.match.params.slug, this.props.projectTitle);
+      this.props.openDocumentIds.forEach((id) => {
+        this.props.fetchLock(id);
+      });
+    }
+  }
+
   renderDeleteDialog() {
     const { deleteDialogTitle, closeDeleteDialog, deleteDialogSubmit, deleteDialogOpen, deleteDialogBody, confirmDeleteDialog } = this.props;
 
@@ -156,6 +167,7 @@ class Project extends Component {
         />
         { this.renderDeleteDialog() }
         <ProjectSettingsDialog />
+        <BatchImagePrompt />
       </div>
     );
   }
@@ -165,11 +177,13 @@ class Project extends Component {
   }
 
   renderDocumentViewer = (document,index) => {
+    const { projectId, writeEnabled } = this.props;
     const key = `${document.id}-${document.timeOpened}`;
     return (
       <DocumentViewer
         key={key}
         index={index}
+        projectId={projectId}
         document_id={document.id}
         timeOpened={document.timeOpened}
         resourceName={document.title}
@@ -180,7 +194,7 @@ class Project extends Component {
         image_thumbnail_urls={document.image_thumbnail_urls}
         image_urls={document.image_urls}
         linkInspectorAnchorClick={() => {this.setFocusHighlight(document.id, undefined, key);}}
-        writeEnabled={this.props.writeEnabled}
+        writeEnabled={writeEnabled}
         locked={document.locked}
         lockedByUserName={document.locked_by_user_name}
         lockedByMe={document.locked_by_me}
@@ -238,7 +252,22 @@ class Project extends Component {
   }
 
   render() {
-    const { title, projectId, loading, adminEnabled, sidebarWidth, contentsChildren, openDocumentIds, writeEnabled } = this.props
+    const {
+      title,
+      projectId,
+      loading,
+      adminEnabled,
+      sidebarWidth,
+      contentsChildren,
+      openDocumentIds,
+      writeEnabled,
+      uploads,
+      uploading,
+      batchImagePromptShown,
+    } = this.props;
+    const uploadsNotDone = uploads.some(
+      (upload) => upload.state !== 'finished' && upload.state !== 'error'
+    );
     return (
       <div>
         <Navigation
@@ -259,6 +288,17 @@ class Project extends Component {
         { this.renderDialogLayers() }
         { this.renderDocumentGrid() }
         { this.renderSnackbar() }
+        {(loading || 
+          (
+            uploads && 
+            uploads.length > 0 && 
+            uploadsNotDone
+          ) ||
+          uploading ||
+          batchImagePromptShown)
+          && (
+          <Beforeunload onBeforeunload={(event) => event.preventDefault()} />
+        )}
       </div>
     );
   }
@@ -274,6 +314,9 @@ const mapStateToProps = state => ({
   contentsChildren:   state.project.contentsChildren,
   sidebarWidth:       state.project.sidebarWidth,
   sidebarIsDragging:  state.project.sidebarIsDragging,
+  uploads:            state.project.uploads,
+  uploading:          state.project.uploading,
+  batchImagePromptShown: state.project.batchImagePromptShown,
   writeEnabled:       state.project.currentUserPermissions.write,
   adminEnabled:       state.project.currentUserPermissions.admin,
   openDocuments:      state.documentGrid.openDocuments,
@@ -305,7 +348,8 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   checkInAll,
   updateSnackBar,
   hideSettings,
-  selectHighlight
+  selectHighlight,
+  fetchLock,
 }, dispatch);
 
 export default connect(

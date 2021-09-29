@@ -20,6 +20,7 @@ import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 import DocumentStatusBar from './DocumentStatusBar';
+import { Popover } from 'material-ui';
 
 const DocumentInner = function(props) {
   switch (props.document_kind) {
@@ -87,6 +88,8 @@ class DocumentViewer extends Component {
       resourceName: this.props.resourceName,
       lastSaved: '',
       doneSaving: true,
+      cornerIconTooltipOpen: false,
+      cornerIconTooltipAnchor: null,
     }
   }
 
@@ -95,7 +98,6 @@ class DocumentViewer extends Component {
       this.setState({
         resourceName: this.props.resourceName,
       });
-      this.props.updateDocument(this.props.document_id, {title: this.props.resourceName}, {refreshLists: true});
     }
   }
 
@@ -119,10 +121,14 @@ class DocumentViewer extends Component {
     })
     window.clearTimeout(this.titleChangeTimeout);
     this.titleChangeTimeout = window.setTimeout(() => {
-      this.props.updateDocument(this.props.document_id, {title: newValue}, {refreshLists: true});
+      this.props.updateDocument(this.props.document_id, {title: newValue}, {
+        refreshLists: true,
+        refreshDocumentContent: true,
+        timeOpened: this.props.timeOpened,
+      });
       this.setLastSaved(new Date().toLocaleString('en-US'));
       this.setSaving({ doneSaving: true })
-    }, this.titleChangeDelayMs);;
+    }, this.titleChangeDelayMs);
   }
 
   onToggleHighlights() {
@@ -145,6 +151,29 @@ class DocumentViewer extends Component {
     this.setState({ doneSaving });
   }
 
+
+  onTooltipOpen (e) {
+    e.persist();
+    const cornerIconTooltipAnchor = e.currentTarget;
+    e.preventDefault();
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        cornerIconTooltipOpen: true,
+        cornerIconTooltipAnchor,
+      }
+    });
+  }
+
+  onTooltipClose () {
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        cornerIconTooltipOpen: false,
+      }
+    });
+  }
+
   renderTitleBar() {
     const iconStyle = {
       padding: '0',
@@ -158,9 +187,27 @@ class DocumentViewer extends Component {
       this.props.connectDragSource(
         <div style={{ width: '100%', flexShrink: '0', cursor: '-webkit-grab' }}>
           <div style={{ display: 'flex', padding: '10px 10px 0 10px', backgroundColor: this.props.document_kind === 'canvas' ? grey800 : grey100, borderRadius: '2px' }}>
-            <IconButton tooltip='Show link inspector' style={buttonStyle} iconStyle={iconStyle} onClick={this.props.linkInspectorAnchorClick}>
+            <IconButton
+              style={buttonStyle}
+              iconStyle={iconStyle}
+              onClick={this.props.linkInspectorAnchorClick}
+              onMouseOver={this.onTooltipOpen.bind(this)}
+              onMouseOut={this.onTooltipClose.bind(this)}
+            >
               <Description color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
+            <Popover
+              open={this.state.cornerIconTooltipOpen}
+              anchorEl={this.state.cornerIconTooltipAnchor}
+              zDepth={5}
+              className="tooltip-popover"
+              anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+              targetOrigin={{horizontal: 'middle', vertical: 'top'}}
+              useLayerForClickAway={false}
+              autoCloseWhenOffScreen={false}
+            >
+              Show link inspector
+            </Popover>
             <TextField
               id={`text-document-title-${this.props.document_id}`}
               style={{ flexGrow: '1', height: '24px', fontWeight: 'bold', fontSize: '1.2em', margin: '0 0 10px 4px', cursor: 'text' }}
@@ -183,7 +230,13 @@ class DocumentViewer extends Component {
                 }
               </IconButton>
             }
-            <IconButton tooltip='Close document' onClick={this.onCloseDocument.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
+            <IconButton
+              tooltip="Close document"
+              tooltipPosition="bottom-left"
+              onClick={this.onCloseDocument.bind(this)}
+              style={buttonStyle}
+              iconStyle={iconStyle}
+            >
               <Close color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
             </IconButton>
           </div>

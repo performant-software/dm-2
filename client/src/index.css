@@ -22,6 +22,45 @@ body {
   display: flex;
 }
 
+.link-tooltip {
+  position: absolute;
+  z-index: 10000;
+  max-width: 250px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: white;
+  border: 1px solid silver;
+  border-radius: 2px;
+  padding: 5px 10px;
+  margin-bottom: 7px;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  box-shadow: 0px 2px 5px #616161;
+}
+.link-tooltip a {
+  text-decoration: none;
+}
+.link-tooltip a:visited {
+  color: blue;
+}
+
+.image-tooltip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.image-tooltip span {
+  font-size: 14px;
+  color: blue;
+  cursor: pointer;
+}
+
+.image-tooltip-div {
+  border-right: 1px solid gray;
+  padding-right: 6px;
+  margin-right: 6px;
+}
+
 .tooltip-popover {
   font-family: Roboto, sans-serif;
   font-size: 10px;
@@ -32,6 +71,10 @@ body {
   opacity: 0.9 !important;
   box-shadow: none !important;
   margin-top: 6px !important;
+}
+
+.extra-margin-tooltip {
+  margin-top: 17px !important;
 }
 
 .tooltip-above {

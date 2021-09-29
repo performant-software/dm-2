@@ -1,7 +1,29 @@
-import {TEXT_RESOURCE_TYPE, CANVAS_RESOURCE_TYPE, loadProject} from './project';
-import {addLink, selectSidebarTarget, closeSidebarTarget, refreshTarget, closeDocumentTargets, refreshTargetByDocumentID, closeTarget} from './annotationViewer';
-import {updateEditorState, selectHighlight, setHighlightSelectMode} from './textEditor';
-import {deleteFolder} from './folders';
+import {
+  TEXT_RESOURCE_TYPE,
+  CANVAS_RESOURCE_TYPE,
+  loadProject,
+  IMAGE_UPLOAD_STARTED,
+  IMAGE_UPLOAD_COMPLETE,
+  IMAGE_UPLOAD_ERRORED,
+  IMAGE_UPLOAD_TIMEOUT,
+  IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+  IMAGE_UPLOAD_DOC_CREATED,
+} from './project';
+import {
+  addLink,
+  selectSidebarTarget,
+  closeSidebarTarget,
+  refreshTarget,
+  closeDocumentTargets,
+  refreshTargetByDocumentID,
+  closeTarget
+} from './annotationViewer';
+import {
+  updateEditorState,
+  selectHighlight,
+  setHighlightSelectMode
+} from './textEditor';
+import { deleteFolder } from './folders';
 import {
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
@@ -9,6 +31,9 @@ import {
   RENAME_LAYER_SUCCESS,
   TOGGLE_EDIT_LAYER_NAME,
 } from './canvasEditor';
+import fetchWithTimeout from './fetch';
+import retryFetch from 'fetch-retry';
+import { defaultRequestTimeout } from './constants';
 
 export const DEFAULT_LAYOUT = 'default';
 export const TEXT_HIGHLIGHT_DELETE = 'TEXT_HIGHLIGHT_DELETE';
@@ -59,6 +84,9 @@ export const REFRESH_DOCUMENTS = 'document_grid/REFRESH_DOCUMENTS';
 export const GET_CURRENT_DOC_CONTENT = 'document_grid/GET_CURRENT_DOC_CONTENT';
 export const GET_CURRENT_DOC_CONTENT_SUCCESS = 'document_grid/GET_CURRENT_DOC_CONTENT_SUCCESS';
 export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CONTENT_ERRORED';
+export const FETCH_LOCK_SUCCESS = 'document_grid/FETCH_LOCK_SUCCESS';
+export const FETCH_LOCK_ERRORED = 'document_grid/FETCH_LOCK_ERRORED';
+export const FROM_IMAGE_SUCCESS = 'document_grid/FROM_IMAGE_SUCCESS';
 
 
 export const layoutOptions = [
@@ -130,9 +158,16 @@ export default function(state = initialState, action) {
         loading: false
       }
 
+    case FROM_IMAGE_SUCCESS:
+      return {
+        ...state,
+        loading: false
+      }
+
     case OPEN_DOCUMENT_ERRORED:
     case PATCH_ERRORED:
     case POST_ERRORED:
+    case MOVE_DOCUMENT_ERRORED:
     case DELETE_ERRORED:
       console.log('document error');
       console.log(action.type);
@@ -307,6 +342,7 @@ export default function(state = initialState, action) {
         loading: false
       }
 
+    case MOVE_DOCUMENT_SUCCESS:
     case DELETE_HIGHLIGHT_SUCCESS:
       return {
         ...state,
@@ -350,6 +386,28 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: openDocumentsMoveCopy
+      };
+
+    case FETCH_LOCK_SUCCESS:
+      const {
+        documentId,
+        locked,
+        locked_by_me,
+        locked_by_user_name,
+       } = action;
+      const openDocumentsFetchUpdated = state.openDocuments.map((doc) => {
+        if (+doc.id === +documentId) {
+          return {
+            ...doc,
+            locked,
+            locked_by_me,
+            locked_by_user_name,
+          };
+        } else return doc;
+      });
+      return {
+        ...state,
+        openDocuments: openDocumentsFetchUpdated
       };
 
     default:
@@ -817,13 +875,16 @@ export function updateDocument(documentId, attributes, options) {
   }
 }
 
-export function setDocumentThumbnail(documentId, image_url) {
+export function setDocumentThumbnail({
+    documentId,
+    image_url,
+  }) {
   return function(dispatch, getState) {
     dispatch({
       type: UPDATE_DOCUMENT
     });
 
-    fetch(`/documents/${documentId}/set_thumbnail`, {
+    fetchWithTimeout(`/documents/${documentId}/set_thumbnail`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -836,11 +897,16 @@ export function setDocumentThumbnail(documentId, image_url) {
       method: 'POST',
       body: JSON.stringify({
         image_url
-      })
+      }),
+      retryDelay: 12000,
     })
     .then(response => {
       if (!response.ok) {
-        throw Error(response.statusText);
+        if (response.status === 408) {
+          throw Error('Unable to set thumbnail');
+        } else {
+          throw Error(response.statusText);
+        }
       }
       return response;
     })
@@ -863,9 +929,11 @@ export function setDocumentThumbnail(documentId, image_url) {
         }
       });
     })
-    .catch(() => dispatch({
-      type: PATCH_ERRORED
-    }));
+    .catch(() => {
+      dispatch({
+        type: PATCH_ERRORED
+      });
+    });
   }
 }
 
@@ -919,7 +987,7 @@ export function setHighlightThumbnail(highlightId, image_url, coords, svg_string
   }
 }
 
-export function createCanvasDocument(parentId, parentType, callback) {
+export function createCanvasDocument({ parentId, parentType, callback }) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -1205,7 +1273,10 @@ export function moveLayer({ documentId, origin, direction, editorKey }) {
         } else {
           imageUrlForThumbnail = firstTileSource;
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+        dispatch(setDocumentThumbnail({
+          documentId,
+          image_url: imageUrlForThumbnail,
+        }));
       }
       dispatch({
         type: REPLACE_DOCUMENT,
@@ -1284,7 +1355,10 @@ export function deleteLayer({ documentId, layer, editorKey }) {
         } else {
           imageUrlForThumbnail = firstTileSource;
         }
-        dispatch(setDocumentThumbnail(documentId, imageUrlForThumbnail));
+        dispatch(setDocumentThumbnail({
+          documentId,
+          image_url: imageUrlForThumbnail
+        }));
       }
       dispatch({
         type: REPLACE_DOCUMENT,
@@ -1406,5 +1480,321 @@ export function refreshCurrentDocContent(documentId) {
     .catch(() => dispatch({
       type: GET_CURRENT_DOC_CONTENT_ERRORED
     }));
+  };
+}
+
+export function fetchLock(documentId) {
+  return function(dispatch) {
+    fetch(`/documents/${documentId}`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(document => dispatch({
+      type: FETCH_LOCK_SUCCESS,
+      documentId,
+      locked: document.locked,
+      locked_by_me: document.locked_by_me,
+      locked_by_user_name: document.locked_by_user_name,
+    }))
+    .catch(() => dispatch({
+      type: FETCH_LOCK_ERRORED
+    }));
+  };
+}
+
+function createCanvasDocWithImage ({ parentId, parentType, signedId, url, filename }) {
+  return async function(dispatch, getState) {
+    dispatch({
+      type: NEW_DOCUMENT
+    });
+    try {
+      const response = await fetchWithTimeout('/documents/create_batch', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': localStorage.getItem('access-token'),
+          'token-type': localStorage.getItem('token-type'),
+          'client': localStorage.getItem('client'),
+          'expiry': localStorage.getItem('expiry'),
+          'uid': localStorage.getItem('uid')
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          title: 'Loading',
+          project_id: getState().project.id,
+          document_kind: CANVAS_RESOURCE_TYPE,
+          content: {
+            tileSources: [
+              {
+                type: 'image',
+                url,
+                name: filename,
+              }
+            ]
+          },
+          parent_id: parentId,
+          parent_type: parentType,
+          locked: false,
+          images: [signedId],
+          mode: 'batch',
+        }),
+      })
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      const queuedJob = await response.json();
+      dispatch({
+        type: FROM_IMAGE_SUCCESS,
+      });
+      dispatch({
+        type: IMAGE_UPLOAD_DOC_CREATED,
+        signedId,
+      });
+      return queuedJob;
+    }
+    catch(error) {
+      let errMsg = error.message;
+      if (error.name === 'AbortError') {
+        errMsg = 'Upload failed';
+      }
+      dispatch({
+        type: IMAGE_UPLOAD_ERRORED,
+        signedId,
+        error: errMsg,
+      });
+      dispatch({
+       type: POST_ERRORED
+      });
+    }
+  }
+}
+
+async function createFolderForBatch({ projectId, newFolderName }) {
+  return fetchWithTimeout('/document_folders', {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'access-token': localStorage.getItem('access-token'),
+      'token-type': localStorage.getItem('token-type'),
+      'client': localStorage.getItem('client'),
+      'expiry': localStorage.getItem('expiry'),
+      'uid': localStorage.getItem('uid')
+    },
+    method: 'POST',
+    body: JSON.stringify({
+      title: newFolderName,
+      project_id: projectId,
+      parent_id: projectId,
+      parent_type: 'Project'
+    }),
+    retryDelay: defaultRequestTimeout,
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw Error(response.statusText);
+    }
+    return response.json();
+  })
+}
+
+function createMultipleCanvasDocs({ parentId, parentType, signedIds }) {
+  return async function(dispatch, getState) {
+    try {
+      const jobsQueue = await Promise.allSettled(
+        signedIds.map(async signedId => {
+          try {
+            const response = await retryFetch(fetchWithTimeout)(`/images/${signedId}`, {
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'access-token': localStorage.getItem('access-token'),
+                'token-type': localStorage.getItem('token-type'),
+                'client': localStorage.getItem('client'),
+                'expiry': localStorage.getItem('expiry'),
+                'uid': localStorage.getItem('uid')
+              },
+              method: 'GET',
+              retryDelay: defaultRequestTimeout,
+              retries: 3,
+            })
+            if (!response.ok) {
+              throw Error(response.statusText);
+            }
+            const image = await response.json();
+            const filename = image.blob.filename.substring(
+              0, image.blob.filename.lastIndexOf('.')
+            );
+            dispatch({
+              type: IMAGE_UPLOAD_TO_RAILS_SUCCESS,
+              signedId,
+              image: image.blob,
+            });
+            const queuedJob = await dispatch(createCanvasDocWithImage({
+              parentId,
+              parentType,
+              signedId,
+              filename,
+              url: image.url,
+            }));
+            return Promise.resolve({ ...queuedJob, signedId });
+          } 
+          catch (error) {
+            let errMsg = error.message;
+            if (error.name === 'AbortError') {
+              errMsg = 'Upload failed';
+            }
+            dispatch({
+              type: IMAGE_UPLOAD_ERRORED,
+              signedId,
+              error: errMsg,
+            });
+            return Promise.reject(error);
+          }
+        })
+      );
+      let jobs = jobsQueue
+        .filter(jobPromise => jobPromise.status === 'fulfilled')
+        .map(job => ({
+          signed_id: job.value.signedId,
+          id: job.value.id,
+        }));
+      try {
+        const response = await retryFetch(fetchWithTimeout)(`/jobs`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            jobs
+          }),
+          retryDelay: defaultRequestTimeout / 4,
+          retries: 35,
+          retryOn: async (attempt, error, response) => {
+            const finishedStatuses = ['complete', 'failed', 'interrupted'];
+            const res = await response.json();
+            if (attempt > 35) {
+              res
+                .forEach(job => {
+                  if (job.status === 'complete') {
+                    dispatch({
+                      type: IMAGE_UPLOAD_COMPLETE,
+                      signedId: job.signed_id,
+                    });
+                  } else if (job.status === 'failed' || job.status === 'interrupted') {
+                    dispatch({
+                      type: IMAGE_UPLOAD_ERRORED,
+                      signedId: job.signed_id,
+                      error: job.status,
+                    });
+                  } else {
+                    dispatch({
+                      type: IMAGE_UPLOAD_TIMEOUT,
+                      signedId: job.signed_id,
+                      error: 'Queued and processing',
+                    });
+                  }
+                });
+              return false;
+            }
+            res.forEach(job => {
+              if (job.status === 'complete') {
+                dispatch({
+                  type: IMAGE_UPLOAD_COMPLETE,
+                  signedId: job.signed_id,
+                });
+              } else if (job.status === 'failed' || job.status === 'interrupted') {
+                dispatch({
+                  type: IMAGE_UPLOAD_ERRORED,
+                  signedId: job.signed_id,
+                  error: job.status,
+                });
+              }
+            })
+            const unfinished = res.some(job => !finishedStatuses.includes(job.status));
+            if (error !== null || response.status >= 400 || unfinished) {
+              return true;
+            }
+          },
+        })
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+      if (parentType === 'Project') // refresh project if documents added to its table of contents
+        dispatch(loadProject(getState().project.id));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+}
+
+export function createBatchImages ({
+  projectId,
+  signedIds,
+  inFolder,
+  existingFolder,
+  folderId,
+  newFolderName,
+}) {
+  return async function(dispatch) {
+    dispatch({
+      type: IMAGE_UPLOAD_STARTED,
+      signedIds,
+    });
+    let parentId = projectId;
+    let parentType = 'Project';
+    try { 
+      if (inFolder) {
+        if (existingFolder && folderId) {
+          parentType = 'DocumentFolder';
+          parentId = parseInt(folderId, 10);
+          await dispatch(createMultipleCanvasDocs({
+            parentId,
+            parentType,
+            signedIds,
+          }));
+        } else if (!existingFolder && newFolderName) {
+          parentType = 'DocumentFolder';
+          const folder = await createFolderForBatch({
+            projectId,
+            newFolderName,
+          });
+          await dispatch(createMultipleCanvasDocs({
+            parentId: folder.id,
+            parentType,
+            signedIds,
+            }));
+          dispatch(loadProject(projectId));
+        }
+      } else {
+        await dispatch(createMultipleCanvasDocs({
+          parentId,
+          parentType,
+          signedIds,
+        }));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 }

@@ -56,7 +56,7 @@ class Highlight < Linkable
   end
 
   def download_to_file(uri)
-    stream = open(uri, "rb")
+    stream = URI.open(uri)
     return stream if stream.respond_to?(:path) # Already file-like
   
     # Workaround when open(uri) doesn't return File
@@ -133,6 +133,7 @@ class Highlight < Linkable
       document_kind: self.document_kind,
       document_title: self.document_title,
       excerpt: self.excerpt,
+      tite: self.title,
       color: self.color,
       thumbnail_url: self.thumbnail_url
     }

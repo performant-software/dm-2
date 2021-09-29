@@ -11,13 +11,13 @@ class DocumentsController < ApplicationController
     :delete_layer,
     :rename_layer
   ]
-  before_action only: [:create] do
+  before_action only: [:create, :create_batch] do
     @project = Project.find(params[:project_id])
   end
   before_action only: [:show] do
     validate_user_read(@project)
   end
-  before_action only: [:create, :lock] do
+  before_action only: [:create, :lock, :create_batch] do
     validate_user_write(@project)
   end
   before_action only: [:move] do
@@ -34,10 +34,23 @@ class DocumentsController < ApplicationController
 
   # POST /documents
   def create
+    lock = params.fetch(:locked, true)
     @document = Document.new(new_document_params)
-    @document.adjust_lock( current_user, true )
+    if !params[:mode].nil? && params[:mode] == 'batch'
+      @document.import_mode = true
+    end
+    @document.adjust_lock( current_user, lock )
 
-    if @document.save
+    if !params[:images].nil? && params[:images].length() > 0
+      @document.images.attach(params[:images])
+      if @document.valid_images? && @document.images[0]
+        image = @document.images[0]
+        imagetitle, _, _ = image.filename.to_s.rpartition('.')
+        @document.update(title: imagetitle)
+      end
+    end
+
+    if @document.save!
       render json: @document, status: :created, location: @document
     else
       render json: @document.errors, status: :unprocessable_entity
@@ -83,6 +96,11 @@ class DocumentsController < ApplicationController
     destination_id = p[:destination_id].nil? ? @document.project_id : p[:destination_id]
     destination_type =  p[:destination_id].nil? ? "Project" : "DocumentFolder"
     @document.move_to(p[:position],destination_id,destination_type)
+    if @document.save
+      render json: @document, status: 200
+    else
+      render json: @document.errors, status: 500
+    end
   end
   
   # PUT /documents/1/add_images
@@ -189,8 +207,44 @@ class DocumentsController < ApplicationController
 
   # POST /documents/1/set_thumbnail
   def set_thumbnail
-    @document.add_thumbnail( params['image_url'] )
-    render json: @document
+    if @document.add_thumbnail( params['image_url'] )
+      render json: @document
+    else
+      render status: 408
+    end
+  end
+
+  # GET /image/1
+  def get_image_by_signed_id
+    @blob = ActiveStorage::Blob.find_signed(params['signed_id'])
+    @blobject = { :blob => @blob, :url => (url_for @blob) }
+    render json: @blobject
+  end
+
+  # POST /documents/create_batch
+  def create_batch
+    job_id = BatchWorker.perform_async(new_document_params.to_h, params[:images], current_user.id)
+    @job = { id: job_id }
+    if @job
+      render json: @job, status: 202
+    else
+      render status: 500
+    end
+  end
+
+  # POST /jobs
+  #   :jobs - The array of jobs to check
+  #     [:id] - The ID of the job
+  #     [:signed_id] - The signed ID of the associated image
+  def get_jobs_by_id
+    @jobs = jobs_params[:jobs].to_a
+    @jobs_with_status = []
+    @jobs.each { |job|
+      job_with_status = job.to_h
+      job_with_status[:status] = Sidekiq::Status::status(job[:id])
+      @jobs_with_status << job_with_status
+    }
+    render json: @jobs_with_status, status: 200
   end
 
   private
@@ -211,5 +265,9 @@ class DocumentsController < ApplicationController
 
     def document_params
       params.require(:document).permit(:title, :parent_id, :parent_type, :search_text, :images => [], :content => {})
+    end
+
+    def jobs_params
+      params.permit(jobs: [:signed_id, :id])
     end
 end

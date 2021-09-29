@@ -5,7 +5,7 @@ git_source(:github) do |repo_name|
   "https://github.com/#{repo_name}.git"
 end
 
-ruby '2.5.7'
+ruby '2.7.4'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 5.2.0'
@@ -18,26 +18,20 @@ gem 'foreman'
 gem 'devise', '~> 4.7.1'
 
 # needed for nokogiri
-gem 'pkg-config', "~> 1.1"
-
-# Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
-# gem 'jbuilder', '~> 2.5'
-# Use Redis adapter to run Action Cable in production
-# gem 'redis', '~> 4.0'
-# Use ActiveModel has_secure_password
-# gem 'bcrypt', '~> 3.1.7'
-
-# Use Capistrano for deployment
-# gem 'capistrano-rails', group: :development
+gem 'pkg-config', '~> 1.1'
 
 gem 'devise_token_auth', '~> 1.1.5'
 gem 'active_model_serializers'
-gem 'bootsnap', require: false
+gem 'bootsnap', '~> 1.7.7', require: false
 gem 'image_processing', '~> 1.2'
-gem 'aws-sdk-s3', '~> 1.48.0', require: false
+gem 'aws-sdk-s3', '~> 1.48.0'
 gem 'rack-cors', :require => 'rack/cors'
 gem 'pg_search'
 gem 'figaro'
+gem 'open-uri'
+gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: '0a6c2e8e81560311569d49d06c0e32abd0effcd5'
+gem 'sidekiq', '~>6.2'
+gem 'sidekiq-status'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

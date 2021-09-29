@@ -1,14 +1,32 @@
 {
   "name": "dm-2",
-  "description": "",
+  "description": "Digital Mappa 2",
   "scripts": {
-    "postdeploy": "bundle exec rake db:migrate && bundle exec rake db:seed"
+    "postdeploy": "bundle exec rake db:migrate"
   },
   "repository": "https://github.com/performant-software/dm-2",
   "env": {
+    "EMAIL_PORT": {
+      "required": false
+    },
+    "EMAIL_SERVER": {
+      "required": false
+    },
+    "EMAIL_USERNAME": {
+      "required": false
+    },
+    "EMAIL_PASSWORD": {
+      "required": false
+    },
+    "HOSTNAME": {
+      "required": true
+    },
     "LANG": {
       "required": true,
       "value": "en_US.UTF-8"
+    },
+    "PROTOCOL": {
+      "required": false
     },
     "RACK_ENV": {
       "required": true,
@@ -29,12 +47,6 @@
     "SECRET_KEY_BASE": {
       "required": true
     },
-    "HOSTNAME": {
-      "required": true
-    },
-    "PROTOCOL": {
-      "required": false
-    },
     "ACTIVE_STORAGE_SERVICE": {
       "required": false
     },
@@ -49,25 +61,38 @@
     },
     "AWS_BUCKET": {
       "required": false
+    },
+    "REDIS_PROVIDER": {
+      "required": true,
+      "value": "REDIS_URL"
+    },
+    "MALLOC_ARENA_MAX": {
+      "required": true,
+      "value": 2
     }
   },
   "formation": {
     "web": {
       "quantity": 1
+    },
+    "worker": {
+      "quantity": 1
     }
   },
   "addons": [
-    "heroku-postgresql"
+    "heroku-postgresql",
+    "heroku-redis"
   ],
   "buildpacks": [
-    {
-      "url": "heroku/ruby"
-    },
     {
       "url": "heroku/nodejs"
     },
     {
+      "url": "heroku/ruby"
+    },
+    {
       "url": "https://github.com/heroku/heroku-buildpack-activestorage-preview"
     }
-  ]
+  ],
+  "stack": "heroku-20"
 }

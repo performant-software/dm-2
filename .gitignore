@@ -15,13 +15,17 @@
 /storage/*
 .env
 /ttl
+.DS_Store
 
 .byebug_history
 .vscode
 .idea
-.ruby-version
 convert/node_modules
 
 latest.dump
+dump.rdb
 # Ignore application configuration
 /config/application.yml
+
+# OS files
+.DS_Store

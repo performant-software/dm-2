@@ -149,15 +149,19 @@ class Document < Linkable
   end
 
   def download_to_file(uri)
-    stream = open(uri, "rb")
-    return stream if stream.respond_to?(:path) # Already file-like
-  
-    # Workaround when open(uri) doesn't return File
-    Tempfile.new.tap do |file|
-      file.binmode
-      IO.copy_stream(stream, file)
-      stream.close
-      file.rewind
+    begin
+      stream = URI.open(uri, :read_timeout => 10)
+      return stream if stream.respond_to?(:path) # Already file-like
+    
+      # Workaround when open(uri) doesn't return File
+      Tempfile.new.tap do |file|
+        file.binmode
+        IO.copy_stream(stream, file)
+        stream.close
+        file.rewind
+      end
+    rescue Net::ReadTimeout
+      return 'failed'
     end
   end
   
@@ -171,16 +175,21 @@ class Document < Linkable
       with_jpg = image_url.sub('.png', '.jpg')
       opened = download_to_file(with_jpg)
     end
-    processed = ImageProcessing::MiniMagick.source(opened)
-      .resize_to_fill(80, 80)
-      .convert('png')
-      .call
+    if opened != 'failed'
+      processed = ImageProcessing::MiniMagick.source(opened)
+        .resize_to_fill(80, 80)
+        .convert('png')
+        .call
 
-    self.highlights.each{|highlight|
-      highlight.set_thumbnail(image_url, nil)
-    }
+      self.highlights.each{|highlight|
+        highlight.set_thumbnail(image_url, nil)
+      }
 
-    self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+      self.thumbnail.attach(io: processed, filename: "thumbnail-for-document-#{self.id}.png")
+      return true
+    else
+      return false
+    end
   end
 
   def highlight_map
@@ -222,6 +231,25 @@ class Document < Linkable
     all_links.map { |link| self.to_link_obj(link) }.compact
   end
 
+  def thumbnail_url
+    require 'aws-sdk-s3'
+    if self.thumbnail.attached?
+      url_for(self.thumbnail)
+    elsif self.images.attached?
+      begin
+        if !self.images[0].nil? && self.images[0].variable?
+          rails_representation_path(self.images[0].variant(combine_options: { resize: '80x80^', gravity: 'center', extent: '80x80' }).processed)
+        else
+          return nil
+        end
+      rescue Aws::S3::Errors::ServiceError, Errno::ENOENT
+        return nil
+      end
+    else
+      return nil
+    end
+  end
+  
   def to_obj
     {
       id: self.id, 

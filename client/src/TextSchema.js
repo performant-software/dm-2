@@ -104,19 +104,24 @@ export const nodes = {
     inline: true,
     attrs: {
       src: {},
+      width: {default: "unset"},
       alt: {default: null},
       title: {default: null}
     },
     group: "inline",
     draggable: true,
-    parseDOM: [{tag: "img[src]", getAttrs(dom) {
+    parseDOM: [{tag: "img[src][width]", getAttrs(dom) {
       return {
         src: dom.getAttribute("src"),
         title: dom.getAttribute("title"),
-        alt: dom.getAttribute("alt")
+        alt: dom.getAttribute("alt"),
+        width: dom.getAttribute("width")
       }
     }}],
-    toDOM(node) { return ["img", node.attrs] }
+    toDOM(node) { 
+      const attrs = {style: `width: ${node.attrs.width}`}
+      return ["img", { ...node.attrs, ...attrs }] 
+    }
   },
 
   // :: NodeSpec A hard line break, represented in the DOM as `<br>`.

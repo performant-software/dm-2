@@ -1,5 +1,5 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in]
+  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in, :move_many]
   before_action :validate_user_approved, only: [:create]
 
   before_action only: [:update, :destroy] do

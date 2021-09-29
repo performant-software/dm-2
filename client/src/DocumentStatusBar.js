@@ -153,7 +153,11 @@ class DocumentStatusBar extends Component {
         onClick={() => {
           this.props.openDeleteDialog(
             'Destroying "' + this.props.resourceName + '"',
-            'Deleting this document will destroy all its associated highlights and links, as well as the content of the document itself.',
+            (<p>
+              Deleting this document will destroy <strong>all its associated highlights
+              and links, and any child annotations original to the document</strong>,
+              in addition to the content of the document itself.
+            </p>),
             'Destroy document',
             { documentId: this.props.document_id },
             DOCUMENT_DELETE

@@ -1,0 +1,14 @@
+.DS_Store
+.git
+.dockerignore
+.vscode
+.env
+
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/storage/*
+
+/convert/node_modules
+/client/node_modules

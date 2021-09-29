@@ -34,6 +34,7 @@ import EllipsisIcon from 'material-ui/svg-icons/navigation/more-horiz';
 import BorderColor from 'material-ui/svg-icons/editor/border-color';
 import CropFree from 'material-ui/svg-icons/image/crop-free';
 import ViewColumn from 'material-ui/svg-icons/action/view-column';
+import InsertImage from 'material-ui/svg-icons/editor/insert-photo';
 import { Hr, Table } from 'react-bootstrap-icons';
 import PageMargins from './icons/PageMargins';
 import { Schema, DOMSerializer } from 'prosemirror-model';
@@ -95,6 +96,9 @@ import {
 
 import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
+import LinkTooltip from './TextLinkTooltipPlugin';
+import ImageTooltip from './TextImageTooltipPlugin';
+import { DirectUploadProvider } from 'react-activestorage-provider';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
@@ -103,6 +107,7 @@ const lineHeights = [1, 1.15, 1.5, 2];
 const buttonWidth = 48;
 
 const validURLRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})).?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
+const validImageRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})).?)(?::\d{2,5})?(?:[/?#]\S*)?\.(?:jpg|gif|png)$/i
 
 class TextResource extends Component {
 
@@ -113,8 +118,10 @@ class TextResource extends Component {
     this.props.setTextHighlightColor(this.getInstanceKey(), yellow500);
     this.scheduledContentUpdate = null;
 
+    this.editorViewWrapper = React.createRef();
+
     this.tools = [
-      { name: 'highlight-color', width: buttonWidth },
+      { name: 'highlight-color', width: buttonWidth, text: 'Change highlight color' },
       { name: 'highlight', width: buttonWidth, text: 'Highlight selected text' },
       { name: 'highlight-select', width: buttonWidth, text: 'Select a highlight' },
       { name: 'text-color', width: buttonWidth, text: 'Change text color' },
@@ -125,6 +132,7 @@ class TextResource extends Component {
       { name: 'font-family', width: 148 },
       { name: 'font-size', width: 72 },
       { name: 'link', width: buttonWidth, text: 'Hyperlink' },
+      { name: 'image', width: buttonWidth, text: 'Insert image' },
       { name: 'blockquote', width: buttonWidth, text: 'Blockquote' },
       { name: 'hr', width: buttonWidth, text: 'Horizontal rule' },
       { name: 'table', width: buttonWidth, text: 'Insert/edit table' },
@@ -158,6 +166,16 @@ class TextResource extends Component {
       linkDialogBuffer: "",
       linkDialogBufferInvalid: false,
       createHyperlink: null,
+    }
+
+    this.initialImageDialogState = {
+      imageDialogOpen: false,
+      imageDialogBuffer: '',
+      imageDialogBufferInvalid: false,
+      createImage: null,
+      uploadedImage: null,
+      uploadingImage: false,
+      imageUploadText: '',
     }
 
     this.initialTableDialogState = {
@@ -209,12 +227,16 @@ class TextResource extends Component {
       ...this.initialLinkDialogState,
       ...this.initialTableDialogState,
       ...this.initialMarginDialogState,
+      ...this.initialImageDialogState,
     };
   }
   
   componentDidUpdate(prevProps, prevState) {
     if (this.state.targetHighlights !== prevState.targetHighlights) {
       this.createEditorState();
+    }
+    if (this.props.index !== prevProps.index && this.state.currentScrollTop && this.editorViewWrapper.current) {
+      this.editorViewWrapper.current.scrollTo(0, this.state.currentScrollTop);
     }
     if (this.props.content !== prevProps.content) {
       this.createEditorState();
@@ -273,6 +295,8 @@ class TextResource extends Component {
               }
             }.bind(this)}
             toggleColorPicker={() => {toggleTextColorPicker(instanceKey);}}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
           />
         );
 
@@ -381,6 +405,20 @@ class TextResource extends Component {
             disabled={loading}
           >
             <InsertLink />
+          </IconButton>
+        );
+
+      case 'image':
+        return (
+          <IconButton
+            key={toolName}
+            onMouseDown={this.onImage.bind(this)}
+            onMouseOver={this.onTooltipOpen.bind(this, toolName)}
+            onMouseOut={this.onTooltipClose.bind(this, toolName)}
+            tooltip={!this.state.hiddenTools.includes(toolName) ? text : undefined}
+            disabled={loading}
+          >
+            <InsertImage />
           </IconButton>
         );
 
@@ -539,7 +577,7 @@ class TextResource extends Component {
         open={this.state.tooltipOpen[toolName]}
         anchorEl={this.state.tooltipAnchor[toolName]}
         zDepth={5}
-        className="tooltip-popover"
+        className={`tooltip-popover ${toolName === 'highlight-color' ? 'extra-margin-tooltip' : ''}`}
         anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
         targetOrigin={{horizontal: 'middle', vertical: 'top'}}
         useLayerForClickAway={false}
@@ -595,7 +633,22 @@ class TextResource extends Component {
       this.setState({ toolbarWidth: node.offsetWidth });
     }
   }
-
+  
+  mergeRefs (...refs) {
+    const filteredRefs = refs.filter(Boolean);
+    if (!filteredRefs.length) return null;
+    if (filteredRefs.length === 1) return filteredRefs[0];
+    return inst => {
+      for (const ref of filteredRefs) {
+        if (typeof ref === 'function') {
+          ref(inst);
+        } else if (ref) {
+          ref.current = inst;
+        }
+      }
+    };
+  };
+  
   onScrollChange (node) {
     if (node !== null && node.scrollTop !== this.state.currentScrollTop) {
       this.setState({ currentScrollTop: node.scrollTop });
@@ -728,6 +781,18 @@ class TextResource extends Component {
 
     plugins.push(highlightTargetPlugin);
 
+    const linkPreviewPlugin = new Plugin({
+      view(editorView) { return new LinkTooltip(editorView) }
+    });
+
+    plugins.push(linkPreviewPlugin);
+
+    const imageResizePlugin = new Plugin({
+      view(editorView) { return new ImageTooltip(editorView) }
+    });
+    
+    if(this.isEditable()) plugins.push(imageResizePlugin);
+
     // create a new editor state
     const doc = dmSchema.nodeFromJSON(this.props.content);
     const editorState = EditorState.create({
@@ -740,7 +805,7 @@ class TextResource extends Component {
   }
 
   toSearchText(document) {
-    return document.textBetween(0,document.textContent.length+1, ' ');
+    return document.textBetween(0,document.nodeSize - 2, ' ');
   }
 
   onHighlight = (e) => {
@@ -882,9 +947,21 @@ class TextResource extends Component {
       const editorState = this.getEditorState();
       const cmd = addMark( markType, { href: url } );
       cmd( editorState, this.state.editorView.dispatch );
+      this.state.editorView.focus();
     }
     this.setState( {...this.state, linkDialogOpen: true, createHyperlink } );
-    this.state.editorView.focus();
+  }
+
+  onImage = (e) => {
+    e.preventDefault();
+    const createImage = (url) => {
+      const imageNodeType = this.state.documentSchema.nodes.image;
+      const editorState = this.getEditorState();
+      const cmd = replaceNodeWith(imageNodeType, { src: url });
+      cmd( editorState, this.state.editorView.dispatch );
+      this.state.editorView.focus();
+    }
+    this.setState( {...this.state, imageDialogOpen: true, createImage } );
   }
 
   onOrderedList(e) {
@@ -1547,6 +1624,7 @@ class TextResource extends Component {
                 }
               </>
             )}
+            {this.renderTooltipFromHidden({ toolName: 'highlight-color', text: 'Change highlight color' })}
             {this.renderTooltipFromHidden({ toolName: 'font-family', text: 'Font' })}
             {this.renderTooltipFromHidden({ toolName: 'font-size', text: 'Font size (pt)' })}
           </ToolbarGroup>
@@ -1602,6 +1680,135 @@ class TextResource extends Component {
             errorText={ this.state.linkDialogBufferInvalid ? "Please enter a valid URL." : "" }
             floatingLabelText={"Enter a website URL."}
             onChange={(event, newValue) => {this.setState( { ...this.state, linkDialogBuffer: newValue}) }}
+          />
+        </Dialog>
+    );
+  }
+
+  onCancelImageDialog = () => {
+    // discard the buffer state and close dialog
+    this.setState({...this.state, ...this.initialImageDialogState});
+  }
+
+  onSubmitImageDialog = () => {
+    // call the callback if it is valid, otherwise, set error state and stay open
+    const url = this.state.imageDialogBuffer;
+    if( url && url.length > 0 && (validImageRegex.test( url ) || this.state.uploadedImage) ) {
+      this.state.createImage( url );
+      this.setState({
+        ...this.state,
+        ...this.initialImageDialogState
+      });
+    } else {
+      this.setState({ ...this.state, imageDialogBufferInvalid: true });
+    }
+  }
+
+  renderImageDialog() {
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.onCancelImageDialog}
+        disabled={this.state.uploadingImage}
+      />,
+      <FlatButton
+        label="Insert"
+        primary={true}
+        onClick={this.onSubmitImageDialog}
+        disabled={this.state.uploadingImage}
+      />,
+    ];
+
+    return (
+      <Dialog
+          title="Insert Image"
+          actions={actions}
+          modal={true}
+          open={this.state.imageDialogOpen}
+          onRequestClose={this.onCancelImageDialog}
+        >
+          <DirectUploadProvider
+            onSuccess={async signedIds => {
+              this.setState({ uploadedImage: true });
+              try { 
+                const response = await fetch(`/images/${signedIds[0]}`, {
+                  headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'access-token': localStorage.getItem('access-token'),
+                    'token-type': localStorage.getItem('token-type'),
+                    'client': localStorage.getItem('client'),
+                    'expiry': localStorage.getItem('expiry'),
+                    'uid': localStorage.getItem('uid')
+                  },
+                  method: 'GET',
+                })
+                if (!response.ok) {
+                  throw Error(response.statusText);
+                }
+                const finishedUpload = await response.json();
+                this.setState({ imageDialogBuffer: finishedUpload.url });
+                this.setState({ imageUploadText: 'Image upload complete, you may now click "Insert" below.' });
+                this.setState({ uploadingImage: false });
+              } catch (error) {
+                this.setState({ imageUploadText: error.message });
+                this.setState({ uploadingImage: false });
+              }
+            }}
+            render={({ handleUpload, uploads, ready }) => (
+              <div>
+                <input
+                  type="file"
+                  disabled={!ready}
+                  onChange={e => {
+                    this.setState({ uploadingImage: true });
+                    handleUpload(e.currentTarget.files);
+                  }}
+                />
+                {uploads.map(upload => {
+                  switch (upload.state) {
+                    case 'waiting':
+                      return <p key={upload.id}>Waiting to upload {upload.file.name}</p>
+                    case 'uploading':
+                      const { progress } = upload;
+                      const progressString = parseFloat(progress).toFixed(2).toString();
+                      return (
+                        <p key={upload.id}>
+                          Uploading {upload.file.name}: {progressString}%
+                        </p>
+                      )
+                    case 'error':
+                      return (
+                        <p key={upload.id}>
+                          Error uploading {upload.file.name}: {upload.error}
+                        </p>
+                      )
+                    case 'finished':
+                      return (
+                        <p key={upload.id}>Finished uploading {upload.file.name}</p>
+                      )
+                    default:
+                      return (
+                        <p key={upload.id}>{upload.file.name} status unknown</p>
+                      )
+                  }
+                })}
+                {this.state.imageUploadText !== '' && (
+                  <p>{this.state.imageUploadText}</p>
+                )}
+                {this.state.imageUploadText === '' && (
+                  <p>or</p>
+                )}
+              </div>
+            )}
+          />          
+          <TextField
+            value={this.state.imageDialogBuffer}
+            errorText={ this.state.imageDialogBufferInvalid ? "Please enter a valid image URL." : "" }
+            floatingLabelText={"Enter an image URL."}
+            onChange={(event, newValue) => {this.setState( { imageDialogBuffer: newValue }) }}
+            disabled={this.state.uploadedImage || this.state.uploadingImage}
           />
         </Dialog>
     );
@@ -1788,7 +1995,7 @@ class TextResource extends Component {
       <div style={{flexGrow: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         { this.props.writeEnabled ? this.renderToolbar() : "" }
         <div
-          ref={this.onScrollChange.bind(this)}
+          ref={this.mergeRefs(this.editorViewWrapper, this.onScrollChange.bind(this))}
           className="editorview-wrapper" 
           style={{
             overflowY: (this.props.loading && this.isEditable()) ? 'hidden' : 'scroll',
@@ -1818,6 +2025,7 @@ class TextResource extends Component {
             columnCount={columnCount}
           />
           { this.renderLinkDialog() }
+          { this.renderImageDialog() }
           { this.renderTableDialog() }
           { this.renderMarginDialog() }
         </div>

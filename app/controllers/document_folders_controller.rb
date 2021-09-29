@@ -1,5 +1,5 @@
 class DocumentFoldersController < ApplicationController
-  before_action :set_document_folder, only: [:show, :update, :move, :destroy]
+  before_action :set_document_folder, only: [:show, :update, :move, :destroy, :move_many]
   before_action only: [:create] do
     @project = Project.find(params[:project_id])
   end

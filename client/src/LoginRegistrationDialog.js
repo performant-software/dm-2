@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import { withRouter } from 'react-router';
 import Dialog from 'material-ui/Dialog';
 import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
@@ -30,6 +31,7 @@ class LoginRegistrationDialog extends Component {
     let showEmailField = false;
     let showPasswordField = false;
     let showPasswordConfirmationField = false;
+    const { location } = this.props;
 
     if (this.props.registrationShown) {
       title = 'Register new user';
@@ -109,7 +111,9 @@ class LoginRegistrationDialog extends Component {
             })
             .then(() => {
               this.props.hideLogin();
-              this.props.load();
+              if (location && location.pathname === '/') {
+                this.props.load();
+              }
             })
             .catch(this.props.userAuthErrored);
           }}
@@ -265,4 +269,4 @@ const mapDispatchToProps = dispatch => bindActionCreators({
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(LoginRegistrationDialog);
+)(withRouter(props => <LoginRegistrationDialog {...props} />));
