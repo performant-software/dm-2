@@ -54,9 +54,11 @@ heroku buildpacks:add --index 1 heroku/nodejs
 
 ### Provision resources
 
-You will need to provision Heroku Postgres, Heroku Redis, and SendGrid (or another email provider) using the Heroku Resources section.
+This app requires at least 1x worker dyno and 1x web dyno.
 
-You will also need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket. See https://aws.amazon.com/ for more information.
+You will also need to provision Heroku Postgres, Heroku Redis, and SendGrid (or another email provider) using the Heroku Resources section.
+
+Finally, you will need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket. See https://aws.amazon.com/ for more information.
 
 ### Configuration variables
 
