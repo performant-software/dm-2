@@ -11,7 +11,6 @@ import { RadioButton, RadioButtonGroup } from 'material-ui/RadioButton';
 import TextField from 'material-ui/TextField';
 import CloudUpload from 'material-ui/svg-icons/file/cloud-upload';
 import {
-  getFolderData,
   hideBatchImagePrompt,
   hideCloseDialog,
   killUploading,
@@ -617,7 +616,6 @@ const mapDispatchToProps = (dispatch) =>
       startUploading,
       killUploading,
       createBatchImages,
-      getFolderData,
       showCloseDialog,
       hideCloseDialog,
     },

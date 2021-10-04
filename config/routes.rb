@@ -22,6 +22,7 @@ Rails.application.routes.draw do
   put '/documents/:id/add_images' => 'documents#add_images'
   patch '/documents/:id/lock' => 'documents#lock'
   patch '/documents/:id/move' => 'documents#move'
+  post '/document_folders/get_many' => 'document_folders#get_many'
   patch '/document_folders/:id/move' => 'document_folders#move'
   patch '/document_folders/:id/move_many' => 'document_folders#move_many'
   post '/document_folders/:id/add_tree' => 'document_folders#add_tree'
