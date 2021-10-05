@@ -299,14 +299,9 @@ export default function(state = initialState, action) {
       };
 
     case ADD_FOLDER_DATA:
-      const folder = action.folder;
-      const newFolderData = state.folderData.slice(0);
-      if (!newFolderData.some(datum => datum.id === folder.id)) {
-        newFolderData.push(folder);
-      }
       return {
         ...state,
-        folderData: newFolderData,
+        folderData: action.folders,
       }
       
     case SHOW_CLOSE_DIALOG:
@@ -760,29 +755,43 @@ export function killUploading(err) {
 }
 
 function getFolderDataFromIds({ folderIds }) {
-  return function(dispatch) {
-    folderIds.forEach(folderId => {
-      fetch(`/document_folders/${folderId}`, {
-        headers: {
-          'access-token': localStorage.getItem('access-token'),
-          'token-type': localStorage.getItem('token-type'),
-          'client': localStorage.getItem('client'),
-          'expiry': localStorage.getItem('expiry'),
-          'uid': localStorage.getItem('uid')
-        }
+  return function(dispatch, getState) {
+    const { id } = getState().project;
+    fetch('/document_folders/get_many', {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        folder_ids: folderIds,
+        project_id: id,
       })
-      .then(response => {
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json()
+    })
+    .then(folders => {
+      dispatch({
+        type: ADD_FOLDER_DATA,
+        folders: folders.map(folder => ({
+          id: folder[0],
+          title: folder[1],
+          parent_type: folder[2],
+          parent_id: folder[3],
+        }))
       })
-      .then(folder => {
-        dispatch({
-          type: ADD_FOLDER_DATA,
-          folder,
-        })
-      })
+    })
+    .catch(error => {
+      console.error(error);
     });
   }
 }

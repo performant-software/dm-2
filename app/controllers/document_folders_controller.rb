@@ -1,6 +1,6 @@
 class DocumentFoldersController < ApplicationController
   before_action :set_document_folder, only: [:show, :update, :move, :destroy, :move_many]
-  before_action only: [:create] do
+  before_action only: [:create, :get_many] do
     @project = Project.find(params[:project_id])
   end
   before_action only: [:add_tree] do 
@@ -13,7 +13,7 @@ class DocumentFoldersController < ApplicationController
     end
     validate_user_write(@project)
   end
-  before_action only: [:show] do
+  before_action only: [:show, :get_many] do
     validate_user_read(@project)
   end
   before_action only: [:create, :update, :destroy, :set_thumbnail] do
@@ -28,6 +28,13 @@ class DocumentFoldersController < ApplicationController
   # GET /document_folders/1
   def show
     render json: @document_folder
+  end
+
+  # POST /document_folders/get_many
+  def get_many
+    @ids = get_many_params[:folder_ids]
+    @folders = DocumentFolder.where(id: @ids).pluck(:id, :title, :parent_type, :parent_id)
+    render json: @folders, status: 200
   end
 
   # POST /document_folders
@@ -95,5 +102,9 @@ class DocumentFoldersController < ApplicationController
     # Only allow a trusted parameter "white list" through.
     def document_folder_params
       params.require(:document_folder).permit(:project_id, :title, :parent_id, :parent_type )
+    end
+
+    def get_many_params
+      params.permit(:project_id, :folder_ids => [])
     end
 end
