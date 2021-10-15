@@ -28,6 +28,9 @@ export const DELETE_USER_SUCCESS = 'home/DELETE_USER_SUCCESS';
 export const CONFIRM_USER_SUCCESS = 'home/CONFIRM_USER_SUCCESS';
 export const CONFIRM_USER_ERRORED = 'home/CONFIRM_USER_ERRORED';
 export const CONFIRM_USER_SUCCESS_DIALOG_CLOSED = 'home/CONFIRM_USER_SUCCESS_DIALOG_CLOSED';
+export const RESEND_CONFIRMATION_STARTED = 'home/RESEND_CONFIRMATION_STARTED';
+export const RESEND_CONFIRMATION_SUCCESS = 'home/RESEND_CONFIRMATION_SUCCESS';
+export const RESEND_CONFIRMATION_ERRORED = 'home/RESEND_CONFIRMATION_ERRORED';
 
 const initialState = {
   projects: [],
@@ -50,6 +53,9 @@ const initialState = {
   confirmUserSuccessDialogShown: false,
   confirmUserErrored: false,
   confirmUserErroredDialogShown: false,
+  confirmationEmailResent: false,
+  confirmationEmailErrored: false,
+  confirmationResendButtonDisabled: false,
 };
 
 export default function(state = initialState, action) {
@@ -90,7 +96,8 @@ export default function(state = initialState, action) {
         userEmail: '',
         userName: '',
         userPassword: '',
-        userPasswordConfirmation: ''
+        userPasswordConfirmation: '',
+        confirmationEmailResent: false,
       }
 
     case REGISTRATION_SHOWN:
@@ -240,6 +247,33 @@ export default function(state = initialState, action) {
         confirmUserSuccessDialogShown: true,
         confirmUserErrored: true,
       };
+
+    case RESEND_CONFIRMATION_STARTED:
+      return {
+        ...state,
+        confirmationResendButtonDisabled: true,
+        confirmationEmailErrored: false,
+        confirmationEmailResent: false,
+        confirmationEmailErrorMsg: '',
+      }
+
+    case RESEND_CONFIRMATION_SUCCESS:
+      return {
+        ...state,
+        confirmationEmailResent: true,
+        confirmationEmailErrored: false,
+        confirmationResendButtonDisabled: true,
+        confirmationEmailErrorMsg: '',
+      };
+    
+    case RESEND_CONFIRMATION_ERRORED:
+      return {
+        ...state,
+        confirmationEmailErrored: true,
+        confirmationEmailErrorMsg: action.error,
+        confirmationEmailResent: false,
+        confirmationResendButtonDisabled: false,
+      }
       
     default:
       return state;
@@ -554,9 +588,51 @@ export function confirmUser(token) {
         throw Error(res);
       }
     })
-    .catch((err) => {
+    .catch((error) => {
       dispatch({
         type: CONFIRM_USER_ERRORED,
+        error
+      });
+    })
+  }
+}
+
+export function resendConfirmationEmail() {
+  return function(dispatch, getState) {
+    dispatch({
+      type: RESEND_CONFIRMATION_STARTED,
+    })
+    fetch('/auth/confirmation', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      },
+      body: JSON.stringify({
+        email: getState().home.userEmail
+      }),
+    })
+    .then(response => {
+      if (!response.ok) {
+        const { errors } = response.json();
+        if (errors && errors.length > 0) {
+          throw Error(errors[0]);
+        }
+        throw Error(response.statusText);
+      }
+      dispatch({
+        type: RESEND_CONFIRMATION_SUCCESS,
+      });
+      return response;
+    })
+    .catch(err => {
+      dispatch({
+        type: RESEND_CONFIRMATION_ERRORED,
         err
       });
     })
