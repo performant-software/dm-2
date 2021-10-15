@@ -56,6 +56,7 @@ const initialState = {
   confirmationEmailResent: false,
   confirmationEmailErrored: false,
   confirmationResendButtonDisabled: false,
+  confirmationEmailErrorMsg: '',
 };
 
 export default function(state = initialState, action) {
