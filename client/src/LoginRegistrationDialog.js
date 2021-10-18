@@ -5,7 +5,7 @@ import { withRouter } from 'react-router';
 import Dialog from 'material-ui/Dialog';
 import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
-import { red500, blue900 } from 'material-ui/styles/colors';
+import { red500, green400, blue900 } from 'material-ui/styles/colors';
 import { registerUser, signInUser } from './modules/redux-token-auth-config';
 import {
   load,
@@ -19,6 +19,7 @@ import {
   userPasswordConfirmationChanged,
   userAuthErrored,
   closeConfirmDialog,
+  resendConfirmationEmail,
 } from './modules/home';
 
 class LoginRegistrationDialog extends Component {
@@ -145,7 +146,28 @@ class LoginRegistrationDialog extends Component {
               <p>
                 {Array.isArray(this.props.userAuthError.response.data.errors)
                   && this.props.userAuthError.response.data.errors.length > 0 
-                  && this.props.userAuthError.response.data.errors[0].toString()}
+                  && this.props.userAuthError.response.data.errors[0].toString().includes('confirmation email was sent')
+                  && (
+                    <>
+                      {`${this.props.userAuthError.response.data.errors[0].toString()}.`}
+                      {' '}
+                      <FlatButton
+                        label="Resend confirmation email"
+                        onClick={this.props.resendConfirmationEmail.bind(this)}
+                        disabled={this.props.confirmationResendButtonDisabled}
+                      />
+                      {this.props.confirmationEmailResent && (
+                        <span style={{ color: green400 }}>Sent!</span>
+                      )}
+                      {this.props.confirmationEmailErrored && (
+                        <span style={{ color: red500 }}>
+                          There was an error resending the email.
+                          {' '}
+                          {this.props.confirmationEmailErrorMsg.toString()}
+                        </span>
+                      )}
+                    </>
+                  )}
                 {!Array.isArray(this.props.userAuthError.response.data.errors)
                   && Array.isArray(this.props.userAuthError.response.data.errors.full_messages)
                   && this.props.userAuthError.response.data.errors.full_messages.length > 0
@@ -248,6 +270,10 @@ const mapStateToProps = state => ({
   userAuthError: state.home.userAuthError,
   confirmUserSuccessDialogShown: state.home.confirmUserSuccessDialogShown,
   confirmUserErrored: state.home.confirmUserErrored,
+  confirmationEmailResent: state.home.confirmationEmailResent,
+  confirmationEmailErrored: state.home.confirmationEmailErrored,
+  confirmationResendButtonDisabled: state.home.confirmationResendButtonDisabled,
+  confirmationEmailErrorMsg: state.home.confirmationEmailErrorMsg,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -264,6 +290,7 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   signInUser,
   userAuthErrored,
   closeConfirmDialog,
+  resendConfirmationEmail,
 }, dispatch);
 
 export default connect(

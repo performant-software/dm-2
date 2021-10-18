@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   resources :projects
   mount_devise_token_auth_for 'User', at: '/auth', controllers: {
     registrations: 'registrations',
+    confirmations:  'confirmations'
   }
 
   devise_scope :user do
