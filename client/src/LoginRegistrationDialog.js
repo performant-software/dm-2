@@ -199,7 +199,10 @@ class LoginRegistrationDialog extends Component {
                 </p>
                 <p>
                   Once an administrator approves your account, you may start using this
-                  <i>Digital Mappa</i> instance in accordance with the permissions set by this
+                  {' '}
+                  <i>Digital Mappa</i>
+                  {' '}
+                  instance in accordance with the permissions set by this
                   instance's administrator. To access any non-public projects on this DM instance,
                   you will still need to be added to a specific project by its project
                   administrator.
