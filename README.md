@@ -1,11 +1,11 @@
-Digital Mappa v2.0 
+Digital Mappa 2
 ============================================
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
-Digital Mappa v2.0 (DM2 for short) is a freely available online environment for creating projects out of digital images and texts. The premise of DM2 is simple and powerful: if you have a collection of digital images and/or texts, you should be able to produce an online resource that links together specific moments on these images and texts together, annotate these moments as much as you want, collaborate with others on this work, have the content you produce be searchable, and publish this work to others or the public as you wish. And you should be able to do this with little technical expertise.
+Digital Mappa 2 (DM2 for short) is a freely available online environment for creating projects out of digital images and texts. The premise of DM2 is simple and powerful: if you have a collection of digital images and/or texts, you should be able to produce an online resource that links together specific moments on these images and texts together, annotate these moments as much as you want, collaborate with others on this work, have the content you produce be searchable, and publish this work to others or the public as you wish. And you should be able to do this with little technical expertise.
 
-DM2 was developed under the direction of Martin Foys and his team at the University of Wisconsin-Madison and Dot Porter at the Schoenberg Institute for Manuscript Studies. Funding was provided through a grant from the National Endowment for the Humanities and through funding from UW Madison. Performant Software Solutions LLC (www.performantsoftware.com) performed the software development, with Andy Stuhl and Nick Laiacona being the primary contributors to the 2.0 release. 
+DM2 was developed under the direction of Martin Foys and his team at the University of Wisconsin-Madison and Dot Porter at the Schoenberg Institute for Manuscript Studies. Funding was provided through a grant from the National Endowment for the Humanities and through funding from UW Madison. Performant Software Solutions LLC (www.performantsoftware.com) performed the software development, with Andy Stuhl, Nick Laiacona, Derek Leadbetter, and Ben Silverman as primary contributors.
 
 DM2 design was inspired by the DM project (https://github.com/performant-software/DM) developed originally at Drew University by Martin Foys and others.
 
@@ -29,7 +29,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
 Technical overview
 ---------------
 
-DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses Active Storage for image uploads and ImageMagick for image processing. It is primarily built to use the SendGrid service for outbound SMTP and Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
+DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses Active Storage for image uploads and ImageMagick for image processing. It is primarily built to use Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
 
 
 Heroku installation
@@ -56,7 +56,9 @@ heroku buildpacks:add --index 1 heroku/nodejs
 
 This app requires at least 1x worker dyno and 1x web dyno.
 
-You will also need to provision Heroku Postgres, Heroku Redis, and SendGrid (or another email provider) using the Heroku Resources section.
+You will also need to provision Heroku Postgres, and Heroku Redis using the Heroku Resources section.
+
+Next, you will need to provision an email provider. Heroku provides many options as add-ons, but you may also simply provision an external email service and fill in the appropriate config variables in the next step. For example, the official Digital Mappa instances use the external service Postmark.
 
 Finally, you will need to provision an Amazon S3 bucket to store the uploaded image files and configure access using Amazon IAM. Once a S3 bucket has been created you will need to set Cross-origin resource sharing (CORS) in the permissions tab of the S3 bucket. See https://aws.amazon.com/ for more information.
 
@@ -104,6 +106,15 @@ Set the `HOSTNAME` and `PROTOCOL` environment variables to the hostname and prot
 
 The `EMAIL_FROM` environment variable is used for sending emails. This should be set to the email address you would like to appear in the "From" field in registration confirmation emails. 
 
+If you are using Postmark for emails, you must configure a Postmark transactional stream, go to its Settings, and choose "authenticate with an SMTP Token". You will use that token and the provided secret key as a username and password for the following environment variables:
+
+```env
+EMAIL_PORT=587
+EMAIL_SERVER=smtp.postmarkapp.com
+EMAIL_USERNAME=POSTMARK_SMTP_TOKEN
+EMAIL_PASSWORD=POSTMARK_SMTP_SECRET_KEY
+```
+
 If you are using SendGrid for emails, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `EMAIL_PASSWORD` environment variable, and set the `EMAIL_USERNAME` environment variable to `apikey`. The other defaults for SendGrid are port 587 and server `smtp.sendgrid.net`.
 
 ```env
@@ -113,7 +124,7 @@ EMAIL_USERNAME=apikey
 EMAIL_PASSWORD=SG.abcdefghijklmnopqrstuvwxyz
 ```
 
-If you are not using SendGrid, these variables will need to be updated for whatever service you intend to use for outbound SMTP.
+If you are not using Postmark or SendGrid, these variables will need to be updated for whatever service you intend to use for outbound SMTP.
 
 By default, the production environment will use AWS as the Active Storage service. This will require the following environment variables to be set:
 
@@ -161,7 +172,7 @@ Next, there are slightly different instructions depending on whether you intend 
 
 #### Development environment
 
-Edit `.env` as necessary. The sample values are all standard for a development environment, except for those left blank. `SECRET_KEY_BASE` should be a secure encryption key; `EMAIL_PASSWORD` should be a SendGrid API Key (if using SendGrid, otherwise the other email related fields will also need to be changed to reflect your chosen SMTP server). For more information about these variables, see above section on [configuration variables](#configuration-variables).
+Edit `.env` as necessary. The sample values are all standard for a development environment, except for those left blank. `SECRET_KEY_BASE` should be a secure encryption key; variables beginning with `EMAIL_` should be configured to reflect your chosen SMTP server. For more information about these variables, see above section on [configuration variables](#configuration-variables).
 
 Then, use Docker Compose to build the necessary Docker images:
 ```sh
