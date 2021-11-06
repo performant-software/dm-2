@@ -115,7 +115,7 @@ EMAIL_USERNAME=POSTMARK_SMTP_TOKEN
 EMAIL_PASSWORD=POSTMARK_SMTP_SECRET_KEY
 ```
 
-If you are using SendGrid for emails, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `EMAIL_PASSWORD` environment variable, and set the `EMAIL_USERNAME` environment variable to `apikey`. The other defaults for SendGrid are port 587 and server `smtp.sendgrid.net`.
+If you are using SendGrid for emails, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `EMAIL_PASSWORD` environment variable, and set the `EMAIL_USERNAME` environment variable to `apikey`. The other defaults for SendGrid are port 587 and server `smtp.sendgrid.net`. Note: some users have reported issues with SendGrid's spam filters trapping email notifications and not sending them forward. Using Postmark is therefore recommended.
 
 ```env
 EMAIL_PORT=587
