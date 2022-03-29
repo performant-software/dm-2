@@ -115,19 +115,6 @@ EMAIL_USERNAME=POSTMARK_SMTP_TOKEN
 EMAIL_PASSWORD=POSTMARK_SMTP_SECRET_KEY
 ```
 
-User authentication issues caused by the upgrade should be covered by the migration scripts listed in the migration guide (specifically, UserConfirmationMigrationHelper.confirm_approved_users!). In the users table, you'd want the result to be that all non-spam users should be approved (approved is true) and confirmed (confirmed_at has a date).
-
-This would need to be done in the Rails console (rails c) rather than directly in Postgres. If for some reason users weren't approved before running that script, use this Rails script to ensure all are approved and confirmed:
-
-```env
-users = User.all
-users.each {|user|
-  user.update({approved: true})
-  user.confirm
-  user.save
-}
-```
-
 If you are using SendGrid for emails, you must go to your provisioned SendGrid account from the Heroku dashboard, and find the "Settings" > "API Keys" section of the SendGrid service. Click the "Create API Key" button, copy the created key to the `EMAIL_PASSWORD` environment variable, and set the `EMAIL_USERNAME` environment variable to `apikey`. The other defaults for SendGrid are port 587 and server `smtp.sendgrid.net`. Note: some users have reported issues with SendGrid's spam filters trapping email notifications and not sending them forward. Using Postmark is therefore recommended.
 
 ```env
