@@ -180,7 +180,7 @@ export const marks = {
   },
 
   fontFamily: {
-    attrs: {fontFamily: {default: '12pt'}},
+    attrs: {fontFamily: {default: 'sans-serif'}},
     toDOM(mark) {
         let fontFamily=mark.attrs.fontFamily; 
         return ["span", { style: `font-family:${fontFamily}` }, 0] 
