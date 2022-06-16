@@ -11,7 +11,7 @@
     "jsdom": "^11.8.0",
     "material-ui": "^0.20.2",
     "openseadragon": "^2.4.2",
-    "openseadragon-fabricjs-overlay": "git://github.com/performant-software/OpenseadragonFabricjsOverlay.git",
+    "openseadragon-fabricjs-overlay": "https://github.com/performant-software/OpenseadragonFabricjsOverlay",
     "prosemirror-commands": "^1.3.0",
     "prosemirror-example-setup": "^1.2.0",
     "prosemirror-keymap": "^1.2.0",
