@@ -747,8 +747,9 @@ class TextResource extends Component {
           if (selectedHighlight) {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
-                if (mark.type.name === this.state.documentSchema.marks.highlight.name && mark.attrs.highlightUid === selectedHighlight)
-                  decorations.push(Decoration.node(position, position + node.nodeSize, {class: 'selected'}));
+                if (mark.type.name === this.state.documentSchema.marks.highlight.name && mark.attrs.highlightUid === selectedHighlight) {
+                  decorations.push(Decoration.inline(position, position + node.nodeSize, {class: 'selected'}));
+                }
               });
             });
           }
@@ -769,7 +770,7 @@ class TextResource extends Component {
             state.doc.descendants((node, position) => {
               node.marks.forEach(mark => {
                 if (mark.type.name === this.state.documentSchema.marks.highlight.name && targetHighlights.includes(mark.attrs.highlightUid)) {
-                  decorations.push(Decoration.node(position, position + node.nodeSize, {class: 'targeted'}));
+                  decorations.push(Decoration.inline(position, position + node.nodeSize, {class: 'targeted'}));
                 }
               });
             });
