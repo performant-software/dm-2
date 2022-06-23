@@ -5,7 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "fabric": "^2.7.0",
-    "jsdom": "^14.0.0",
+    "jsdom": "^16.5.0",
     "mongodb": "^3.1.13",
     "pg": "^7.7.1",
     "pg-native": "^3.0.0",
