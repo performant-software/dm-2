@@ -23,15 +23,15 @@ gem 'pkg-config', '~> 1.1'
 gem 'devise_token_auth', '~> 1.1.5'
 gem 'active_model_serializers'
 gem 'bootsnap', '~> 1.7.7', require: false
-gem 'image_processing', '~> 1.2'
+gem 'image_processing', '~> 1.12'
 gem 'aws-sdk-s3', '~> 1.48.0'
 gem 'rack-cors', :require => 'rack/cors'
 gem 'pg_search'
 gem 'figaro'
 gem 'open-uri'
 gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: '0a6c2e8e81560311569d49d06c0e32abd0effcd5'
-gem 'sidekiq', '~>6.2'
-gem 'sidekiq-status'
+gem 'sidekiq', '~>6.5.1'
+gem 'sidekiq-status', '~>2.1.1'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
