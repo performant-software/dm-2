@@ -8,7 +8,7 @@
     "deep-equal": "^2.0.5",
     "fetch-retry": "^4.1.1",
     "history": "^4.7.2",
-    "jsdom": "^11.8.0",
+    "jsdom": "^16.7.0",
     "material-ui": "^0.20.2",
     "openseadragon": "^2.4.2",
     "openseadragon-fabricjs-overlay": "https://github.com/performant-software/OpenseadragonFabricjsOverlay",
@@ -66,5 +66,9 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "volta": {
+    "node": "16.16.0",
+    "yarn": "1.22.19"
+  }
 }
