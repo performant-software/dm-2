@@ -256,7 +256,7 @@ docker-compose down
 
 #### Requirements
 
-- Ruby 2.7.4
+- Ruby 2.7.6
 - Bundler 2.2.26+
 - PostgreSQL 11.12+
 - Node.js 16.x
