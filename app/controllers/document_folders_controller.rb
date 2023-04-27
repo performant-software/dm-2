@@ -74,7 +74,10 @@ class DocumentFoldersController < ApplicationController
   # PATCH/PUT /document_folders/1/move
   def move
     p = document_folder_move_params
-    @document_folder.move_to(p[:position],p[:destination_id])
+    # if destination id is nil, that means we are moving it into/within the project root
+    destination_id = p[:destination_id].nil? ? @document_folder.project_id : p[:destination_id]
+    destination_type =  p[:destination_id].nil? ? "Project" : "DocumentFolder"
+    @document_folder.move_to(p[:position], destination_id, destination_type)
   end
 
   # DELETE /document_folders/1
