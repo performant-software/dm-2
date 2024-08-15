@@ -94,5 +94,5 @@
       "url": "https://github.com/heroku/heroku-buildpack-activestorage-preview"
     }
   ],
-  "stack": "heroku-20"
+  "stack": "heroku-22"
 }
