@@ -831,6 +831,13 @@
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/@csstools/normalize.css/-/normalize.css-9.0.1.tgz#c27b391d8457d1e893f1eddeaf5e5412d12ffbb5"
 
+"@docflow/react-activestorage-provider@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@docflow/react-activestorage-provider/-/react-activestorage-provider-1.0.1.tgz#cf059bfeca135a95f53a9618b9c22e19319d3e0e"
+  integrity sha512-MYVIEezerHq+STliFKxaxsG4lXt9wve3XIelie4KNMhmue6OjdIJxnXaDwwHB3VtXNjrWBEFiyRvq4jbediAUw==
+  dependencies:
+    "@rails/activestorage" "^7.1.3-2"
+
 "@hapi/address@2.x.x":
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/@hapi/address/-/address-2.1.2.tgz#1c794cd6dbf2354d1eb1ef10e0303f573e1c7222"
@@ -1010,6 +1017,13 @@
 "@nodelib/fs.stat@^1.1.2":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
+
+"@rails/activestorage@^7.1.3-2":
+  version "7.2.0"
+  resolved "https://registry.yarnpkg.com/@rails/activestorage/-/activestorage-7.2.0.tgz#bc03b52a687ba2bb9d2e6381f25795cda037494e"
+  integrity sha512-jXK9tKDZn/j+ZeJuFdrtyrLNLWjzYRyp+mejWTfSp+egAp1okXsdfFNe8jqqgwcP8gytqJSPwo0sZwQVdQpuIA==
+  dependencies:
+    spark-md5 "^3.0.1"
 
 "@svgr/babel-plugin-add-jsx-attribute@^4.2.0":
   version "4.2.0"
@@ -1437,12 +1451,6 @@ acorn@^8.2.4:
   version "8.7.1"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.7.1.tgz#0197122c843d1bf6d0a5e83220a788f278f63c30"
   integrity sha512-Xx54uLJQZ19lKygFXOWsscKUbsBZW0CPykPhVQdhIeIwrbPmJzqeASDInc8nKBnp/JT6igTs82qPXz069H8I/A==
-
-activestorage@^5.2.0:
-  version "5.2.3"
-  resolved "https://registry.yarnpkg.com/activestorage/-/activestorage-5.2.3.tgz#04df0a194d15f7a04abbba313f584fbea2c5a66f"
-  dependencies:
-    spark-md5 "^3.0.0"
 
 address@1.1.2, address@^1.0.1:
   version "1.1.2"
@@ -7772,13 +7780,6 @@ rc@^1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-activestorage-provider@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/react-activestorage-provider/-/react-activestorage-provider-0.6.0.tgz#08461db7b4520f8158a1f69c82a5fe76a35ebd3c"
-  dependencies:
-    "@babel/runtime" "^7.1.2"
-    activestorage "^5.2.0"
-
 react-app-polyfill@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/react-app-polyfill/-/react-app-polyfill-1.0.4.tgz#4dd2636846b585c2d842b1e44e1bc29044345874"
@@ -8040,9 +8041,10 @@ react@^15.6.1:
     object-assign "^4.1.0"
     prop-types "^15.5.10"
 
-react@^16.4.1:
-  version "16.11.0"
-  resolved "https://registry.yarnpkg.com/react/-/react-16.11.0.tgz#d294545fe62299ccee83363599bf904e4a07fdbb"
+react@^16.14.0:
+  version "16.14.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-16.14.0.tgz#94d776ddd0aaa37da3eda8fc5b6b18a4c9a3114d"
+  integrity sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -8836,9 +8838,10 @@ source-map@^0.5.0, source-map@^0.5.3, source-map@^0.5.6:
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
 
-spark-md5@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/spark-md5/-/spark-md5-3.0.0.tgz#3722227c54e2faf24b1dc6d933cc144e6f71bfef"
+spark-md5@^3.0.1:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/spark-md5/-/spark-md5-3.0.2.tgz#7952c4a30784347abcee73268e473b9c0167e3fc"
+  integrity sha512-wcFzz9cDfbuqe0FZzfi2or1sgyIrsDwmPwfZC4hiNidPdPINjeUwNfv5kldczoEAcjl9Y1L3SM7Uz2PUEQzxQw==
 
 spdx-correct@^3.0.0:
   version "3.1.0"

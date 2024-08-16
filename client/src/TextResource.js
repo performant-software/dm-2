@@ -98,7 +98,7 @@ import ProseMirrorEditorView from './ProseMirrorEditorView';
 import Checkbox from 'material-ui/Checkbox';
 import LinkTooltip from './TextLinkTooltipPlugin';
 import ImageTooltip from './TextImageTooltipPlugin';
-import { DirectUploadProvider } from 'react-activestorage-provider';
+import { DirectUploadProvider } from '@docflow/react-activestorage-provider';
 
 const fontFamilies = ['sans-serif', 'serif', 'monospace', 'cursive'];
 
