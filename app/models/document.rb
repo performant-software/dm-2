@@ -239,7 +239,7 @@ class Document < Linkable
       begin
         if !self.images[0].nil? && self.images[0].variable?
           begin
-            rails_representation_path(self.images[0].variant(combine_options: { resize: '80x80^', gravity: 'center', extent: '80x80' }).processed)
+            rails_representation_path(self.images[0].variant(resize: '80x80^', gravity: 'center', extent: '80x80').processed)
           rescue ActiveStorage::FileNotFoundError
             return nil
           end
