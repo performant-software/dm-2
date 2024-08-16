@@ -2,7 +2,7 @@ require 'sidekiq'
 require 'sidekiq-status'
 
 SIDEKIQ_REDIS_CONFIGURATION = {
-  url: ENV[ENV["REDIS_PROVIDER"]].presence || '',
+  url: ENV[ENV["REDIS_PROVIDER"] || "REDIS_URL"].presence || '',
   ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE }, # we must trust Heroku and AWS here
 }
 
