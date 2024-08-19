@@ -18,7 +18,7 @@ import {
   startUploading,
 } from './modules/project';
 import { createBatchImages } from './modules/documentGrid';
-import { DirectUploadProvider } from 'react-activestorage-provider';
+import { DirectUploadProvider } from '@docflow/react-activestorage-provider';
 import { red400, red900, green400, lightBlue400, yellow400 } from 'material-ui/styles/colors';
 import MenuItem from 'material-ui/MenuItem/MenuItem';
 

@@ -5,10 +5,10 @@ git_source(:github) do |repo_name|
   "https://github.com/#{repo_name}.git"
 end
 
-ruby '2.7.6'
+ruby '3.3.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 5.2.0'
+gem 'rails', '~> 6.1'
 # Use postgresql as the database for Active Record
 gem 'pg', '>= 0.18', '< 2.0'
 # Use Puma as the app server
@@ -47,3 +47,10 @@ end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+
+gem 'webrick', '~> 1.8'
+gem 'base64', '~> 0.2.0'
+gem 'mutex_m', '~> 0.2.0'
+gem 'bigdecimal', '~> 3.1'
+gem 'psych', '< 4'
+gem "dotenv-rails", "~> 2.8"

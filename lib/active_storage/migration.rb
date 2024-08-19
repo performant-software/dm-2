@@ -1,12 +1,5 @@
-require 'active_storage/as_download_patch'
-
 module ActiveStorage
   class Migration
-
-    def initialize
-      ActiveStorage::Blob.send(:include, ActiveStorage::AsDownloadPatch)
-    end
-
     def migrate(from, to)
       config_file = Pathname.new(Rails.root.join('config/storage.yml'))
       configs = YAML.load(ERB.new(config_file.read).result) || {}
