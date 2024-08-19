@@ -42,7 +42,7 @@ To install DM2 on Heroku, use the "Deploy to Heroku" button above.
 You may also create a new app and point it at this repository using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
 
 ```sh
-heroku create --stack heroku-22
+heroku create --stack heroku-24
 ```
 
 You will need to activate both the Ruby and Node.JS buildpacks. This can be done from the Heroku CLI:
@@ -256,9 +256,9 @@ docker-compose down
 
 #### Requirements
 
-- Ruby 2.7.6
-- Bundler 2.2.26+
-- PostgreSQL 11.12+
+- Ruby 3.3.2
+- Bundler 2.5.9+
+- PostgreSQL 16+
 - Node.js 16.x
 - Yarn 1.x
 - Redis 6+
