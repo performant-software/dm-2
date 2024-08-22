@@ -145,6 +145,13 @@ class CanvasResource extends Component {
     const key = this.getInstanceKey();
     setCanvasHighlightColor(key, initialColor);
 
+    // Handle iOS bug with "canvas area exceeds the maximum limit": set { useCanvas: false } if on
+    // iOS and at least one of the tile sources is an image (i.e. not IIIF) 
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const containsImageFile = content &&
+      content.tileSources &&
+      content.tileSources.some((source) => source.type === "image");
+
     const viewer = this.osdViewer = OpenSeadragon({
       id: this.osdId,
       prefixUrl: '/images/',
@@ -158,6 +165,7 @@ class CanvasResource extends Component {
       showSequenceControl: false,
       preserveViewport: true,
       preserveImageSizeOnResize: true,
+      useCanvas: !(iOS && containsImageFile),
     });
     const hasLayers = this.hasLayers();
 
