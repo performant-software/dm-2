@@ -147,7 +147,21 @@ class CanvasResource extends Component {
 
     // Handle iOS bug with "canvas area exceeds the maximum limit": set { useCanvas: false } if on
     // iOS and at least one of the tile sources is an image (i.e. not IIIF) 
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const iOS = 
+      // userAgent detection (does not work on iPad)
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      // navigator.platform detection (soon to be deprecated)
+      [
+          "iPad Simulator",
+          "iPhone Simulator",
+          "iPod Simulator",
+          "iPad",
+          "iPhone",
+          "iPod",
+      ].includes(navigator.platform) ||
+      // iPad on iOS 13 detection
+      (navigator.userAgent.includes("Mac") &&
+          ("ontouchend" in document || navigator.maxTouchPoints > 0));
     const containsImageFile = content &&
       content.tileSources &&
       content.tileSources.some((source) => source.type === "image");
