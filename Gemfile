@@ -29,7 +29,7 @@ gem 'rack-cors', :require => 'rack/cors'
 gem 'pg_search'
 gem 'figaro'
 gem 'open-uri'
-gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: '0a6c2e8e81560311569d49d06c0e32abd0effcd5'
+gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: 'bef6903146426e01175887eb92a75bf9bac4c3cb'
 gem 'sidekiq', '~>6.5.1'
 gem 'sidekiq-status', '~>2.1.1'
 
@@ -54,3 +54,4 @@ gem 'mutex_m', '~> 0.2.0'
 gem 'bigdecimal', '~> 3.1'
 gem 'psych', '< 4'
 gem "dotenv-rails", "~> 2.8"
+gem "rubyzip", "~> 2.3"
