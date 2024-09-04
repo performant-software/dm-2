@@ -13,6 +13,7 @@ module Storyblok::Richtext
           tag: 'a',
           attrs: {
             class: classname,
+            id: "highlight-#{highlight_uid}",
             href: "##{highlight_uid}",
           }
         }]

@@ -39,12 +39,12 @@ module Exportable
   end
 
   def html_filename(path)
-    Pathname.new(path)
+    path = Pathname.new(path)
     dir, base = path.split
     # use parameterize on basename to produce well-formed URLs
     base = Pathname.new(base.to_s.parameterize)
     path = dir.join(base)
-    path = "#{path.to_s}.html"
+    "#{path.to_s}.html"
   end
 
   def write_zip_entries(entries, path, zipfile, depth)
@@ -64,7 +64,8 @@ module Exportable
       end
       if not child.instance_of? DocumentFolder
         # create an html file for all non-folder items
-        zipfile_path = html_filename(zipfile_pth)
+        zipfile_path = html_filename(zipfile_path)
+
         zipfile.get_output_stream(zipfile_path) { |html_outfile|
           html_outfile.write('<head><style type="text/css">body { font-family: Roboto, sans-serif; }</style></head>')
           html_outfile.write("<body>")
@@ -103,13 +104,15 @@ module Exportable
 
           # add highlights to footer
           if child.highlight_map.present?
-            styles = []
+            styles = ["li:target { border: 1px solid blue; }"]
             html_outfile.write("<footer><ol>")
             child.highlight_map.each do |highlight|
               # list of links on highlight
-              html_outfile.write("<li id=\"#{highlight[0]}\">#{highlight[1].title || highlight[1].excerpt}")
+              uuid, hl = highlight
+              html_outfile.write("<li id=\"#{uuid}\">")
+              html_outfile.write("<a href=\"#highlight-#{uuid}\" class=\"#{uuid}\">#{hl.title || hl.excerpt}</a>")
               html_outfile.write("<ol>")
-              highlight[1].links_to.each do |link|
+              hl.links_to.each do |link|
                 if link[:document_id].present?
                   html_outfile.write("<li><a href=\"#{get_path(link[:document_id], depth)}\">#{link[:title]}</a></li>")
                 else
@@ -119,7 +122,7 @@ module Exportable
               html_outfile.write("</ol>")
               html_outfile.write("</li>")
               # add style
-              styles << "a[class*=\"#{highlight[0]}\"] { color: black; background-color: #{highlight[1].color}; }"
+              styles << "a[class*=\"#{uuid}\"] { color: black; background-color: #{hl.color}; }"
             end
             html_outfile.write("</ol></footer>")
             html_outfile.write("<style type=\"text/css\">#{styles.join("\n")}</style>")
