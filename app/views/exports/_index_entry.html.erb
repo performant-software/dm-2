@@ -1,0 +1,15 @@
+<li>
+  <% if child[:children] %>
+    <details>
+      <summary><%= child[:title] %></summary>
+      <ol>
+        <% child[:children].each do |subchild| %>
+          <%= render partial: 'exports/index_entry', 
+              locals: { child: subchild } %>
+        <% end %>
+      </ol>
+    </details>
+  <% else %>
+    <a href="<%= child[:href] %>"><%= child[:title] %></a>
+  <% end %>
+</li>

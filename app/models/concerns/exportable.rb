@@ -14,46 +14,57 @@ module Exportable
   extend ActiveSupport::Concern
 
   def sanitize_filename(filename)
-    filename.gsub(/[\x00\/\\:\*\?\"<>\|]/, "_")
+    filename.gsub(/[\x00\/\\:\*\?\"<>\|]/, "_").strip
   end
 
-  def recursively_deflate_folder(folder, zipfile, zipfile_path, index_html, depth)
+  def recursively_deflate_folder(folder, zipfile_path, zipfile, depth)
     zipfile.mkdir(zipfile_path)
     subdir = folder.contents_children
-    self.write_zip_entries(subdir, zipfile_path, zipfile, index_html, depth + 1)
+    self.write_zip_entries(subdir, zipfile_path, zipfile, depth + 1)
   end
 
   def get_path(document_id, current_depth)
+    # get a relative URL to a document by id, taking into account the current location
     document = Document.find(document_id)
-    filename = sanitize_filename(document.title).strip.parameterize
+    filename = sanitize_filename(document.title).parameterize
     path_segments = ["#{filename}.html"]
     while document[:parent_type] != "Project"
+      # back out from the target document until we hit the project root
       document = document.parent
-      path_segments.unshift(sanitize_filename(document[:title]).strip)
+      path_segments.unshift(sanitize_filename(document[:title]))
     end
-    back_out = current_depth > 0 ? Array.new(current_depth, "..").join("/") + "/" : ""
-    path = back_out + path_segments.join("/")
+    to_project_root = current_depth > 0 ? Array.new(current_depth, "..").join("/") + "/" : ""
+    path = to_project_root + path_segments.join("/")
     return path
   end
 
-  def write_zip_entries(entries, path, zipfile, index_html, depth)
+  def html_filename(path)
+    Pathname.new(path)
+    dir, base = path.split
+    # use parameterize on basename to produce well-formed URLs
+    base = Pathname.new(base.to_s.parameterize)
+    path = dir.join(base)
+    path = "#{path.to_s}.html"
+  end
+
+  def write_zip_entries(entries, path, zipfile, depth)
     entries.each do |child|
-      name = sanitize_filename(child.title).strip
+      name = sanitize_filename(child.title)
       zipfile_path = path == '' ? name : File.join(path, name)
-      if child.instance_of? DocumentFolder or child.contents_children.length() > 0
-        index_html.write("<li><details><summary>#{child.title}</summary>")
-        index_html.write("<ol>")
-        self.recursively_deflate_folder(child, zipfile, zipfile_path, index_html, depth)
-        index_html.write("</ol></details></li>")
+      if child.instance_of? DocumentFolder
+        # create folder AND index entry for folder item
+        @index_cursor.push({ title: child.title, children: [] })
+        old_index_cursor = @index_cursor
+        @index_cursor = @index_cursor[-1][:children]
+        self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
+        @index_cursor = old_index_cursor   
+      elsif child.contents_children.length() > 0
+        # folder, but no index entry, should be created for non-folder item with children
+        self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
       end
       if not child.instance_of? DocumentFolder
-        # use parameterize on basename to produce well-formed URLs
-        zipfile_path = Pathname.new(zipfile_path)
-        dir, base = zipfile_path.split
-        base = Pathname.new(base.to_s.parameterize)
-        zipfile_path = dir.join(base)
-        zipfile_path = "#{zipfile_path.to_s}.html"
-
+        # create an html file for all non-folder items
+        zipfile_path = html_filename(zipfile_pth)
         zipfile.get_output_stream(zipfile_path) { |html_outfile|
           html_outfile.write('<head><style type="text/css">body { font-family: Roboto, sans-serif; }</style></head>')
           html_outfile.write("<body>")
@@ -115,35 +126,38 @@ module Exportable
           end
           html_outfile.write("</body>")
         }
-        index_html.write("<li><a href=\"#{zipfile_path}\">#{child.title}</a></li>")
+        if ["DocumentFolder", "Project"].include? child.parent_type
+          # only add direct descendants of project or folder to index
+          @index_cursor.push({ title: child.title, href: zipfile_path })
+        end
       end
     end
   end
-  
-  def front_matter
-    [
-      '<style type="text/css">body { font-family: Roboto, sans-serif; }</style>',
-      "<body>",
-      "<h1>#{self.title}</h1>",
-      "<nav>",
-      "<h2>Table of Contents</h2>",
-      "<ol>",
-    ]
+
+  def render_template_to_string(template_path, data)
+    lookup_context = ActionView::LookupContext.new(ActionController::Base.view_paths)
+    context = ActionView::Base.with_empty_template_cache.new(lookup_context, data, nil)
+    renderer = ActionView::Renderer.new(lookup_context)
+    renderer.render(context, { inline: File.read(template_path) })
   end
 
   def export
-    # t = Tempfile.new("#{sanitize_filename(self.title).strip}.zip")
+    @index = { children: [], title: self.title }
+    @index_cursor = @index[:children]
+
+    # t = Tempfile.new("#{sanitize_filename(self.title)}.zip")
     # path = t.path
-    path = "/Users/ben/Downloads/#{sanitize_filename(self.title).strip}.zip"
+
+    path = "/Users/ben/Downloads/#{sanitize_filename(self.title)}-#{Time.now.to_s}.zip"
+
     Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
+      self.write_zip_entries(self.contents_children, '', zipfile, depth=0)
+      html = render_template_to_string(
+        Rails.root.join("app", "views", "exports", "index.html.erb"),
+        { index: @index },
+      )
       zipfile.get_output_stream("index.html") { |index_html|
-        for tag in self.front_matter
-          index_html.write(tag)
-        end
-        self.write_zip_entries(self.contents_children, '', zipfile, index_html, depth=0)
-        index_html.write("</ol>")
-        index_html.write("</nav>")
-        index_html.write("</body>")
+        index_html.write(html)
       }
     end
   end
