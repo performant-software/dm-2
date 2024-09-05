@@ -1,0 +1,50 @@
+<style type="text/css">
+  body {
+    font-family: Roboto, sans-serif;
+  }
+  li:target,
+  a.dm-highlight:target {
+    box-shadow: 0 0px 8px blue, 0 0px 8px blue, 0 0px 8px blue;
+  }
+  <% @highlights.each do |uuid, hl| %>
+    a[class*="<%= uuid %>"] {
+      color: black;
+      background-color: <%= hl.color %>;
+    }
+  <% end %>
+</style>
+<body>
+  <main>
+    <% @images.each do |image| %>
+      <%= image %>
+      <br />
+    <% end %>
+    <%= @content %>
+  </main>
+  <% if @highlights %>
+    <footer>
+      <ol>
+        <% @highlights.each do |uuid, hl| %>
+          <li id="<%= uuid %>">
+            <a href="#highlight-<%= uuid %>" class="<%= uuid %>"><%= hl.title || hl.excerpt %></a>
+            <% if hl.links_to %>
+              <ol>
+                <% hl.links_to.each do |link| %>
+                  <li>
+                    <% if link[:document_id].present? %>
+                      <a href="<%= ExportHelper.get_path(link[:document_id], @depth) %>">
+                        <%= link[:title] %>
+                      </a>
+                    <% else %>
+                        <%= link[:title] %>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ol>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    </footer>
+  <% end %>
+</body>

@@ -13,29 +13,10 @@ require 'storyblok_richtext/nodes/paragraph'
 module Exportable
   extend ActiveSupport::Concern
 
-  def sanitize_filename(filename)
-    filename.gsub(/[\x00\/\\:\*\?\"<>\|]/, "_").strip
-  end
-
   def recursively_deflate_folder(folder, zipfile_path, zipfile, depth)
     zipfile.mkdir(zipfile_path)
     subdir = folder.contents_children
     self.write_zip_entries(subdir, zipfile_path, zipfile, depth + 1)
-  end
-
-  def get_path(document_id, current_depth)
-    # get a relative URL to a document by id, taking into account the current location
-    document = Document.find(document_id)
-    filename = sanitize_filename(document.title).parameterize
-    path_segments = ["#{filename}.html"]
-    while document[:parent_type] != "Project"
-      # back out from the target document until we hit the project root
-      document = document.parent
-      path_segments.unshift(sanitize_filename(document[:title]))
-    end
-    to_project_root = current_depth > 0 ? Array.new(current_depth, "..").join("/") + "/" : ""
-    path = to_project_root + path_segments.join("/")
-    return path
   end
 
   def html_filename(path)
@@ -49,7 +30,7 @@ module Exportable
 
   def write_zip_entries(entries, path, zipfile, depth)
     entries.each do |child|
-      name = sanitize_filename(child.title)
+      name = ExportHelper.sanitize_filename(child.title)
       zipfile_path = path == '' ? name : File.join(path, name)
       if child.instance_of? DocumentFolder
         # create folder AND index entry for folder item
@@ -66,68 +47,35 @@ module Exportable
         # create an html file for all non-folder items
         zipfile_path = html_filename(zipfile_path)
 
+        if child.document_kind == "text"
+          # text page
+          # TODO: handle multicolumn layout
+          # render text documents from prosemirror/storyblok to html
+          renderer = Storyblok::Richtext::HtmlRenderer.new
+          renderer.add_mark(Storyblok::Richtext::Marks::Color)
+          renderer.add_mark(Storyblok::Richtext::Marks::Em)
+          renderer.add_mark(Storyblok::Richtext::Marks::FontFamily)
+          renderer.add_mark(Storyblok::Richtext::Marks::FontSize)
+          renderer.add_mark(Storyblok::Richtext::Marks::Highlight)
+          renderer.add_mark(Storyblok::Richtext::Marks::Strikethrough)
+          renderer.add_mark(Storyblok::Richtext::Marks::TextStyle)
+          renderer.add_node(Storyblok::Richtext::Nodes::Image)
+          renderer.add_node(Storyblok::Richtext::Nodes::Paragraph)
+
+          content = renderer.render(child[:content])
+        end
+
+        html = render_template_to_string(
+          Rails.root.join("app", "views", "exports", "page.html.erb"),
+          {
+            highlights: child.highlight_map,
+            images: child.image_urls,
+            content: (content || "").html_safe,
+            depth: depth,
+          },
+        )
         zipfile.get_output_stream(zipfile_path) { |html_outfile|
-          html_outfile.write('<head><style type="text/css">body { font-family: Roboto, sans-serif; }</style></head>')
-          html_outfile.write("<body>")
-          if child.document_kind == "canvas"
-            # images page
-            if child[:content] && child[:content]["tileSources"]
-              for img_url in child.image_urls
-                html_outfile.write("#{img_url}<br />")
-              end
-            else
-              for img_url in child.image_urls
-                html_outfile.write("<img src=\"#{img_url}\" /><br />")
-              end
-            end
-          elsif child.document_kind == "text"
-            # text page
-            # TODO: handle multicolumn layout
-            # render text documents from prosemirror/storyblok to html
-            renderer = Storyblok::Richtext::HtmlRenderer.new
-            renderer.add_mark(Storyblok::Richtext::Marks::Color)
-            renderer.add_mark(Storyblok::Richtext::Marks::Em)
-            renderer.add_mark(Storyblok::Richtext::Marks::FontFamily)
-            renderer.add_mark(Storyblok::Richtext::Marks::FontSize)
-            renderer.add_mark(Storyblok::Richtext::Marks::Highlight)
-            renderer.add_mark(Storyblok::Richtext::Marks::Strikethrough)
-            renderer.add_mark(Storyblok::Richtext::Marks::TextStyle)
-            renderer.add_node(Storyblok::Richtext::Nodes::Image)
-            renderer.add_node(Storyblok::Richtext::Nodes::Paragraph)
-
-            html = renderer.render(child[:content])
-            html_outfile.write(html)
-          else
-            # TODO: determine if there are any of these
-            html_outfile.write(child.document_kind)
-          end
-
-          # add highlights to footer
-          if child.highlight_map.present?
-            styles = ["li:target { border: 1px solid blue; }"]
-            html_outfile.write("<footer><ol>")
-            child.highlight_map.each do |highlight|
-              # list of links on highlight
-              uuid, hl = highlight
-              html_outfile.write("<li id=\"#{uuid}\">")
-              html_outfile.write("<a href=\"#highlight-#{uuid}\" class=\"#{uuid}\">#{hl.title || hl.excerpt}</a>")
-              html_outfile.write("<ol>")
-              hl.links_to.each do |link|
-                if link[:document_id].present?
-                  html_outfile.write("<li><a href=\"#{get_path(link[:document_id], depth)}\">#{link[:title]}</a></li>")
-                else
-                  html_outfile.write("<li>#{link[:title]}</li>")  
-                end
-              end
-              html_outfile.write("</ol>")
-              html_outfile.write("</li>")
-              # add style
-              styles << "a[class*=\"#{uuid}\"] { color: black; background-color: #{hl.color}; }"
-            end
-            html_outfile.write("</ol></footer>")
-            html_outfile.write("<style type=\"text/css\">#{styles.join("\n")}</style>")
-          end
-          html_outfile.write("</body>")
+          html_outfile.write(html)
         }
         if ["DocumentFolder", "Project"].include? child.parent_type
           # only add direct descendants of project or folder to index
@@ -148,10 +96,10 @@ module Exportable
     @index = { children: [], title: self.title }
     @index_cursor = @index[:children]
 
-    # t = Tempfile.new("#{sanitize_filename(self.title)}.zip")
+    # t = Tempfile.new("#{ExportHelper.sanitize_filename(self.title)}.zip")
     # path = t.path
 
-    path = "/Users/ben/Downloads/#{sanitize_filename(self.title)}-#{Time.now.to_s}.zip"
+    path = "/Users/ben/Downloads/#{ExportHelper.sanitize_filename(self.title)}-#{Time.now.to_s}.zip"
 
     Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
       self.write_zip_entries(self.contents_children, '', zipfile, depth=0)
