@@ -34,7 +34,7 @@ module Exportable
 
   def write_zip_entries(entries, path, zipfile, depth)
     entries.each do |child|
-      name = ExportHelper.sanitize_filename(child.title)
+      name = ExportHelper.sanitize_filename(child.title).parameterize
       zipfile_path = path == '' ? name : File.join(path, name)
       if child.instance_of? DocumentFolder
         # create folder AND index entry for folder item
@@ -42,7 +42,7 @@ module Exportable
         old_index_cursor = @index_cursor
         @index_cursor = @index_cursor[-1][:children]
         self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
-        @index_cursor = old_index_cursor   
+        @index_cursor = old_index_cursor
       elsif child.contents_children.length() > 0
         # folder, but no index entry, should be created for non-folder item with children
         self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)

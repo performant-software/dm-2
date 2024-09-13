@@ -10,7 +10,7 @@ module ExportHelper
     while document[:parent_type] != "Project"
       # back out from the target document until we hit the project root
       document = document.parent
-      path_segments.unshift(self.sanitize_filename(document[:title]))
+      path_segments.unshift(self.sanitize_filename(document[:title]).parameterize)
     end
     to_project_root = current_depth > 0 ? Array.new(current_depth, "..").join("/") + "/" : ""
     path = to_project_root + path_segments.join("/")
