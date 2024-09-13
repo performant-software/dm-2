@@ -25,24 +25,28 @@
     <footer>
       <ol>
         <% @highlights.each do |uuid, hl| %>
-          <li id="<%= uuid %>">
-            <a href="#highlight-<%= uuid %>" class="<%= uuid %>"><%= hl.title || hl.excerpt %></a>
-            <% if hl.links_to %>
-              <ol>
-                <% hl.links_to.each do |link| %>
-                  <li>
-                    <% if link[:document_id].present? %>
-                      <a href="<%= ExportHelper.get_path(link[:document_id], @depth) %>">
-                        <%= link[:title] %>
-                      </a>
-                    <% else %>
-                        <%= link[:title] %>
-                    <% end %>
-                  </li>
-                <% end %>
-              </ol>
-            <% end %>
-          </li>
+          <!-- only display highlight footnote if it appears in page content -->
+          <!-- (or this is an image document) -->
+          <% if @document_kind == "canvas" or @content.include? uuid %>
+            <li id="<%= uuid %>">
+              <a href="#highlight-<%= uuid %>" class="<%= uuid %>"><%= hl.title || hl.excerpt %></a>
+              <% if hl.links_to %>
+                <ol>
+                  <% hl.links_to.each do |link| %>
+                    <li>
+                      <% if link[:document_id].present? %>
+                        <a href="<%= ExportHelper.get_path(link[:document_id], @depth) %>">
+                          <%= link[:title] %>
+                        </a>
+                      <% else %>
+                          <%= link[:title] %>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ol>
+              <% end %>
+            </li>
+          <% end %>
         <% end %>
       </ol>
     </footer>

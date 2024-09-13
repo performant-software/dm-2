@@ -79,6 +79,7 @@ module Exportable
             highlights: child.highlight_map,
             images: child.image_urls,
             content: (content || "").html_safe,
+            document_kind: child.document_kind,
             depth: depth,
           },
         )
