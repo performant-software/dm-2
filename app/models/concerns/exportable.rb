@@ -9,6 +9,10 @@ require 'storyblok_richtext/marks/strikethrough'
 require 'storyblok_richtext/marks/text_style'
 require 'storyblok_richtext/nodes/image'
 require 'storyblok_richtext/nodes/paragraph'
+require 'storyblok_richtext/nodes/table'
+require 'storyblok_richtext/nodes/table_cell'
+require 'storyblok_richtext/nodes/table_header'
+require 'storyblok_richtext/nodes/table_row'
 
 module Exportable
   extend ActiveSupport::Concern
@@ -61,6 +65,10 @@ module Exportable
           renderer.add_mark(Storyblok::Richtext::Marks::TextStyle)
           renderer.add_node(Storyblok::Richtext::Nodes::Image)
           renderer.add_node(Storyblok::Richtext::Nodes::Paragraph)
+          renderer.add_node(Storyblok::Richtext::Nodes::Table)
+          renderer.add_node(Storyblok::Richtext::Nodes::TableCell)
+          renderer.add_node(Storyblok::Richtext::Nodes::TableHeader)
+          renderer.add_node(Storyblok::Richtext::Nodes::TableRow)
 
           content = renderer.render(child[:content])
         end
