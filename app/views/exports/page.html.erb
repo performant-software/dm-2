@@ -6,6 +6,9 @@
   a.dm-highlight:target {
     box-shadow: 0 0px 8px blue, 0 0px 8px blue, 0 0px 8px blue;
   }
+  img {
+    max-width: 100%;
+  }
   <% @highlights.each do |uuid, hl| %>
     a[class*="<%= uuid %>"] {
       color: black;
@@ -14,9 +17,11 @@
   <% end %>
 </style>
 <body>
+  <h1><%= @title %></h1>
   <main>
     <% @images.each do |image| %>
-      <%= image %>
+      <h2><%= image[:name] %></h2>
+      <img src="<%= image[:url] %>" />
       <br />
     <% end %>
     <%= @content %>
@@ -35,11 +40,11 @@
                   <% hl.links_to.each do |link| %>
                     <li>
                       <% if link[:document_id].present? %>
-                        <a href="<%= ExportHelper.get_path(link[:document_id], @depth) %>">
-                          <%= link[:title] %>
+                        <a href="<%= ExportHelper.get_path(link, @depth) %>">
+                          <%= link[:title] or link[:excerpt] or link[:document_title] %>
                         </a>
                       <% else %>
-                          <%= link[:title] %>
+                          <%= link[:title] or link[:excerpt] or link[:document_title] %>
                       <% end %>
                     </li>
                   <% end %>

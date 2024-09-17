@@ -32,6 +32,80 @@ module Exportable
     "#{path.to_s}.html"
   end
 
+  def download_images(doc, zipfile, images_path)
+    # download all images and store in zip file;
+    # return a list of hashes of their relative urls and names
+    images = []
+    doc_images = doc.image_urls
+    doc_images = doc.content["tileSources"] if doc.content["tileSources"].present?
+    if doc_images.present? and doc_images.length > 0
+      begin
+        # make the images directory
+        zipfile.mkdir(images_path)
+      rescue Errno::EEXIST
+        # ignore error if it already exists
+      end
+    end
+    dupe_filename_count = 0
+    doc_images.each { |tileSource|
+      # try to get url and name for every image
+      name = nil
+      if tileSource.is_a?(String)
+        url = tileSource
+      else
+        url = tileSource["url"]
+        name = tileSource["name"]
+      end
+      if url.present?
+        if name.nil? && !doc.content["iiifTileNames"].nil? && doc.content["iiifTileNames"].length > 0
+          # get name from iiifTileNames, if possible
+          doc.content["iiifTileNames"].each {|tile_name_obj|
+            if tile_name_obj["url"] == url && tile_name_obj.has_key?("name")
+              name = tile_name_obj["name"]
+            end
+          }
+        elsif name.nil?
+          # otherwise just use filename without extension
+          name = url.rpartition('/').last.rpartition('.').first.sub("%20", " ")
+        end
+        begin
+          # attempt to open url
+          stream = URI.open(url, :read_timeout => 10)
+          if stream.content_type.include? "json"
+            # get max resolution from iiif json
+            url.sub!("/info.json", "")
+            url = "#{url}/full/max/0/default.jpg"
+          end
+
+          # download file and construct local file path
+          file = DownloadHelper.download_to_file(url)
+          filename = "#{name}.#{url.rpartition('.').last}"
+          path = "#{images_path}/#{filename.parameterize}"
+          begin
+            # add to zip
+            zipfile.add(path, file.path)
+          rescue Zip::EntryExistsError
+            # handle duplicate filenames by adding numbers to the end
+            while not zipfile.find_entry(path).nil?
+              dupe_filename_count += 1
+              path_parts = path.rpartition(".")
+              new_filename = path_parts.first + "-" + dupe_filename_count.to_s
+              path = "#{new_filename}.#{path_parts.last}"
+            end
+            zipfile.add(path, file.path)
+          end
+          # have to "commit" so that tempfile is zipped before it is deleted
+          zipfile.commit
+          # add to array of hashes
+          images.push({ url: "images/#{path.rpartition('/').last.parameterize}", name: name })
+        rescue Net::ReadTimeout, OpenURI::HTTPError
+          @errors.push("Error: Failed to download image #{url}, to be stored in #{images_path}")
+        end
+      end
+    }
+    return images
+  end
+
   def write_zip_entries(entries, path, zipfile, depth)
     entries.each do |child|
       name = ExportHelper.sanitize_filename(child.title).parameterize
@@ -48,12 +122,14 @@ module Exportable
         self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
       end
       if not child.instance_of? DocumentFolder
+        # prepare a path for images in case there are any
+        images_path = Pathname.new(zipfile_path).split()[0].to_s + "/images"
         # create an html file for all non-folder items
         zipfile_path = html_filename(zipfile_path)
 
         if child.document_kind == "text"
           # text page
-          # TODO: handle multicolumn layout
+          # TODO: handle multicolumn layout?
           # render text documents from prosemirror/storyblok to html
           renderer = Storyblok::Richtext::HtmlRenderer.new
           renderer.add_mark(Storyblok::Richtext::Marks::Color)
@@ -71,16 +147,18 @@ module Exportable
           renderer.add_node(Storyblok::Richtext::Nodes::TableRow)
 
           content = renderer.render(child[:content])
+        else
+          images = download_images(child, zipfile, images_path)
         end
-
         html = render_template_to_string(
           Rails.root.join("app", "views", "exports", "page.html.erb"),
           {
             highlights: child.highlight_map,
-            images: child.image_urls,
+            images: (images || []),
             content: (content || "").html_safe,
             document_kind: child.document_kind,
             depth: depth,
+            title: child.title,
           },
         )
         zipfile.get_output_stream(zipfile_path) { |html_outfile|
@@ -104,6 +182,7 @@ module Exportable
   def export
     @index = { children: [], title: self.title }
     @index_cursor = @index[:children]
+    @errors = []
 
     # t = Tempfile.new("#{ExportHelper.sanitize_filename(self.title)}.zip")
     # path = t.path
@@ -119,6 +198,12 @@ module Exportable
       zipfile.get_output_stream("index.html") { |index_html|
         index_html.write(html)
       }
+      if @errors.length > 0
+        # output to error log if there are any errors
+        zipfile.get_output_stream("error_log.txt") { |errlog_txt|
+          errlog_txt.write(@errors.join("\r\n"))
+        }
+      end
     end
   end
 end
