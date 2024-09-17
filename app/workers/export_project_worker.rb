@@ -14,8 +14,16 @@ require 'storyblok_richtext/nodes/table_cell'
 require 'storyblok_richtext/nodes/table_header'
 require 'storyblok_richtext/nodes/table_row'
 
-module Exportable
-  extend ActiveSupport::Concern
+class ExportProjectWorker
+  include Sidekiq::Worker
+  include Sidekiq::Status::Worker
+
+  def perform(project_id)
+    @project = Project.find(project_id.to_i)
+    if @project.present?
+      self.export
+    end
+  end
 
   def recursively_deflate_folder(folder, zipfile_path, zipfile, depth)
     zipfile.mkdir(zipfile_path)
@@ -79,8 +87,8 @@ module Exportable
 
           # download file and construct local file path
           file = DownloadHelper.download_to_file(url)
-          filename = "#{name}.#{url.rpartition('.').last}"
-          path = "#{images_path}/#{filename.parameterize}"
+          filename = "#{name.parameterize}.#{url.rpartition('.').last}"
+          path = "#{images_path}/#{filename}"
           begin
             # add to zip
             zipfile.add(path, file.path)
@@ -96,8 +104,12 @@ module Exportable
           end
           # have to "commit" so that tempfile is zipped before it is deleted
           zipfile.commit
+          # parameterize final filename
+          filename = path.rpartition("/").last
+          fn_parts = filename.rpartition(".")
+          filename = [fn_parts.first.parameterize, *fn_parts[1..-1]].join("")
           # add to array of hashes
-          images.push({ url: "images/#{path.rpartition('/').last.parameterize}", name: name })
+          images.push({ url: "images/#{filename}", name: name })
         rescue Net::ReadTimeout, OpenURI::HTTPError
           @errors.push("Error: Failed to download image #{url}, to be stored in #{images_path}")
         end
@@ -180,17 +192,18 @@ module Exportable
   end
 
   def export
-    @index = { children: [], title: self.title }
+    @index = { children: [], title: @project.title }
     @index_cursor = @index[:children]
     @errors = []
 
-    # t = Tempfile.new("#{ExportHelper.sanitize_filename(self.title)}.zip")
-    # path = t.path
+    # create tempfile
+    filename = "#{ExportHelper.sanitize_filename(@project.title)}.zip"
+    tempfile = Tempfile.new(filename)
+    path = tempfile.path
 
-    path = "/Users/ben/Downloads/#{ExportHelper.sanitize_filename(self.title)}-#{Time.now.to_s}.zip"
-
+    # write entries to zip
     Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
-      self.write_zip_entries(self.contents_children, '', zipfile, depth=0)
+      self.write_zip_entries(@project.contents_children, '', zipfile, depth=0)
       html = render_template_to_string(
         Rails.root.join("app", "views", "exports", "index.html.erb"),
         { index: @index },
@@ -205,5 +218,9 @@ module Exportable
         }
       end
     end
+
+    # create blob and upload to storage
+    blob = ActiveStorage::Blob.create_and_upload!(io: tempfile, filename: filename)
+
   end
 end

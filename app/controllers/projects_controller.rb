@@ -1,8 +1,8 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in, :move_many]
+  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in, :move_many, :create_export]
   before_action :validate_user_approved, only: [:create]
 
-  before_action only: [:update, :destroy] do
+  before_action only: [:update, :destroy, :create_export] do
     validate_user_admin(@project)
   end
 
@@ -69,6 +69,17 @@ class ProjectsController < ApplicationController
   def check_in
     checked_in_doc_ids = @project.check_in_all(current_user)
     render json: { checked_in_docs: checked_in_doc_ids }
+  end
+
+  # POST /projects/1/create_export
+  def create_export
+    job_id = ExportProjectWorker.perform_async(@project.id)
+    @job = { id: job_id }
+    if @job
+      render json: @job, status: 202
+    else
+      render status: 500
+    end
   end
 
   private

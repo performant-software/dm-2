@@ -11,7 +11,6 @@ class Project < ApplicationRecord
   before_destroy :destroyer
 
   include TreeNode
-  include Exportable
 
   def destroyer
     self.contents_children.each { |child|
@@ -67,9 +66,5 @@ class Project < ApplicationRecord
     self.document_folders.each { |folder |
       folder.migrate_to_position!
     }
-  end
-  
-  def export_html_zip
-    self.export
   end
 end
