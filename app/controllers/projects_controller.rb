@@ -1,5 +1,5 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in, :move_many, :create_export]
+  before_action :set_project, only: [:show, :update, :destroy, :search, :check_in, :move_many, :create_export, :exports]
   before_action :validate_user_approved, only: [:create]
 
   before_action only: [:update, :destroy, :create_export] do
@@ -69,6 +69,63 @@ class ProjectsController < ApplicationController
   def check_in
     checked_in_doc_ids = @project.check_in_all(current_user)
     render json: { checked_in_docs: checked_in_doc_ids }
+  end
+
+  # GET /projects/1/exports
+  def exports
+    # completed exports
+    @exports = @project.exports.collect do |exp|
+      {
+        :id => exp.id,
+        :updated_at => exp.created_at,
+        :status => "Complete",
+        :url => Rails.application.routes.url_helpers.rails_blob_url(exp),
+      }
+    end
+    # queued exports
+    queues = Sidekiq::Queue.all
+    queues.each do |queue|
+      queue.each do |job|
+        if job.klass == "ExportProjectWorker" and job.args[0].to_i == @project.id
+          @exports.push({
+            :id => job.jid,
+            :status => "Queued",
+            :updated_at => job.created_at,
+          })
+        end
+      end
+    end
+    # in progress exports
+    worker_set = Sidekiq::WorkSet.new
+    worker_set.each do |_, _, worker|
+      if worker.is_a? Hash and worker["payload"]["class"] == "ExportProjectWorker" and worker["payload"]["args"][0].to_i == @project.id
+        exp = {
+          :id => worker["payload"]["jid"],
+          :updated_at => Time.at(worker["payload"]["created_at"]),
+          :status => "In progress",
+        }
+        status = Sidekiq::Status.get_all worker["payload"]["jid"]
+        if status
+          exp[:status] = "In progress (#{status['pct_complete']}%)"
+          exp[:updated_at] = Time.at(status["update_time"].to_f)
+        end
+        @exports.push(exp)
+      end
+    end
+    # errored exports
+    dead_set = Sidekiq::DeadSet.new
+    dead_set.each do |job|
+      if job.klass == "ExportProjectWorker" and job.args[0].to_i == @project.id
+        @exports.push({
+          :id => job.jid,
+          :status => "Failed",
+          :updated_at => job.created_at,
+          :error_message => job.item["error_message"],
+          :error_class => job.item["error_class"],
+        })
+      end
+    end
+    render json: @exports.sort_by { |hsh| hsh[:updated_at] }.reverse, status: 200
   end
 
   # POST /projects/1/create_export
