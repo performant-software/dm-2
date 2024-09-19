@@ -2,6 +2,7 @@ class Project < ApplicationRecord
   belongs_to :owner, class_name: 'User', optional: true
   has_many :documents, as: :parent
   has_many :document_folders, as: :parent
+  has_many_attached :exports
   has_many :user_project_permissions, dependent: :destroy
   has_many :users, through: :user_project_permissions
   
