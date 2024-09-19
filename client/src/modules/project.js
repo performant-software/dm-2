@@ -45,6 +45,12 @@ export const ADD_FOLDER_DATA = 'project/ADD_FOLDER_DATA';
 export const SHOW_CLOSE_DIALOG = 'project/SHOW_CLOSE_DIALOG';
 export const HIDE_CLOSE_DIALOG = 'project/HIDE_CLOSE_DIALOG';
 export const IMAGE_UPLOAD_DOC_CREATED = 'project/IMAGE_UPLOAD_DOC_CREATED';
+export const GET_EXPORTS_LOADING = 'project/GET_EXPORTS_LOADING';
+export const GET_EXPORTS_SUCCESS = 'project/GET_EXPORTS_SUCCESS';
+export const GET_EXPORTS_ERRORED = 'project/GET_EXPORTS_ERRORED';
+export const CREATE_EXPORT_LOADING = 'project/CREATE_EXPORT_LOADING';
+export const CREATE_EXPORT_SUCCESS = 'project/CREATE_EXPORT_SUCCESS';
+export const CREATE_EXPORT_ERRORED = 'project/CREATE_EXPORT_ERRORED';
 
 const sidebarOpenWidth = 490
 
@@ -73,6 +79,10 @@ const initialState = {
   folderData: [],
   closeDialogShown: false,
   uploadError: null,
+  exports: {},
+  exportsError: null,
+  exportsLoading: false,
+  exportJobId: null,
 };
 
 export default function(state = initialState, action) {
@@ -315,6 +325,51 @@ export default function(state = initialState, action) {
         ...state,
         closeDialogShown: false,
       }
+
+    case GET_EXPORTS_LOADING:
+      return {
+        ...state,
+        exportsError: null,
+        exportsLoading: true,
+      }
+
+    case GET_EXPORTS_SUCCESS:
+      return {
+        ...state,
+        exports: action.exports,
+        exportsError: null,
+        exportsLoading: false,
+      }
+
+    case GET_EXPORTS_ERRORED:
+      return {
+        ...state,
+        exportsError: action.error,
+        exportsLoading: false,
+      }
+
+    case CREATE_EXPORT_LOADING:
+      return {
+        ...state,
+        exportsError: null,
+        exportsLoading: true,
+      }
+
+    case CREATE_EXPORT_SUCCESS:
+      return {
+        ...state,
+        exportJobId: action.jobId,
+        exportsError: null,
+        exportsLoading: false,
+      }
+
+    case CREATE_EXPORT_ERRORED:
+      return {
+        ...state,
+        exportsError: action.error,
+        exportsLoading: false,
+      }
+    
     default:
       return state;
   }
@@ -366,7 +421,8 @@ export function loadProject(projectId, title) {
           userProjectPermissions: project['user_project_permissions'],
           public: project.public,
           currentUserPermissions: project['current_user_permissions']
-        })      
+        });
+        dispatch(loadExports(project.id));
       }
     })
     .catch(() => dispatch({
@@ -846,5 +902,80 @@ export function hideCloseDialog() {
     dispatch({
       type: HIDE_CLOSE_DIALOG,
     })
+  }
+}
+
+export function loadExports(projectId) {
+  return function(dispatch) {
+    dispatch({
+      type: GET_EXPORTS_LOADING
+    });
+
+    fetch(`projects/${projectId}/exports`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid')
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response;
+    })
+    .then(response => response.json())
+    .then(data => {
+      dispatch({
+        type: GET_EXPORTS_SUCCESS,
+        exports: data,
+      });
+    })
+    .catch(() => dispatch({
+      type: GET_EXPORTS_ERRORED
+    }));
+  };
+}
+
+export function createExport() {
+  return function(dispatch, getState) {
+    const { id } = getState().project;
+    dispatch({
+      type: CREATE_EXPORT_LOADING
+    });
+
+    fetch(`/projects/${id}/create_export`, {
+      headers: {
+        'access-token': localStorage.getItem('access-token'),
+        'token-type': localStorage.getItem('token-type'),
+        'client': localStorage.getItem('client'),
+        'expiry': localStorage.getItem('expiry'),
+        'uid': localStorage.getItem('uid'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
+    })
+    .then((job) => {
+      setTimeout(() => {
+        dispatch(loadExports(id));
+      }, 1000);
+      dispatch({
+        type: CREATE_EXPORT_SUCCESS,
+        jobId: job.id,
+      });
+    })
+    .catch((err) => dispatch({
+      type: CREATE_EXPORT_ERRORED,
+      error: err,
+    }));
   }
 }
