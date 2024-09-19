@@ -87,6 +87,10 @@ class ExportProjectWorker
 
           # download file and construct local file path
           file = DownloadHelper.download_to_file(url)
+          if file == "failed"
+            @errors.push("Error: Failed to download image #{url}, to be stored in #{images_path}")
+            next
+          end
           filename = "#{name.parameterize}.#{url.rpartition('.').last}"
           path = "#{images_path}/#{filename}"
           begin
