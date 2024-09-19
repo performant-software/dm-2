@@ -210,26 +210,31 @@ class ExportProjectWorker
     tempfile = Tempfile.new(filename)
     path = tempfile.path
 
-    # write entries to zip
-    Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
-      self.write_zip_entries(@project.contents_children, '', zipfile, depth=0)
-      html = render_template_to_string(
-        Rails.root.join("app", "views", "exports", "index.html.erb"),
-        { index: @index },
-      )
-      zipfile.get_output_stream("index.html") { |index_html|
-        index_html.write(html)
-      }
-      if @errors.length > 0
-        # output to error log if there are any errors
-        zipfile.get_output_stream("error_log.txt") { |errlog_txt|
-          errlog_txt.write(@errors.join("\r\n"))
+    begin
+      Zip::OutputStream.open(tempfile) { |zos| }
+      # write entries to zip
+      Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
+        self.write_zip_entries(@project.contents_children, '', zipfile, depth=0)
+        html = render_template_to_string(
+          Rails.root.join("app", "views", "exports", "index.html.erb"),
+          { index: @index },
+        )
+        zipfile.get_output_stream("index.html") { |index_html|
+          index_html.write(html)
         }
+        if @errors.length > 0
+          # output to error log if there are any errors
+          zipfile.get_output_stream("error_log.txt") { |errlog_txt|
+            errlog_txt.write(@errors.join("\r\n"))
+          }
+        end
       end
+      zip_data = File.open(tempfile.path)
+      # attach to project (create blob and upload to storage)
+      @project.exports.attach(io: zip_data, filename: filename, content_type: 'application/zip')
+    ensure
+      tempfile.close
+      tempfile.unlink
     end
-
-    # create blob and upload to storage
-    blob = ActiveStorage::Blob.create_and_upload!(io: tempfile, filename: filename)
-
   end
 end
