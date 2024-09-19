@@ -14,6 +14,14 @@ require 'storyblok_richtext/nodes/table_cell'
 require 'storyblok_richtext/nodes/table_header'
 require 'storyblok_richtext/nodes/table_row'
 
+class ViewContext < ActionView::Base
+  # required to prevent template cache bug; see
+  # https://github.com/rails/rails/issues/40613#issuecomment-900192395
+  def compiled_method_container
+    self.class
+  end
+end
+
 class ExportProjectWorker
   include Sidekiq::Worker
   include Sidekiq::Status::Worker
@@ -193,7 +201,7 @@ class ExportProjectWorker
 
   def render_template_to_string(template_path, data)
     lookup_context = ActionView::LookupContext.new(ActionController::Base.view_paths)
-    context = ActionView::Base.with_empty_template_cache.new(lookup_context, data, nil)
+    context = ViewContext.new(lookup_context, data, nil)
     renderer = ActionView::Renderer.new(lookup_context)
     renderer.render(context, { inline: File.read(template_path) })
   end
