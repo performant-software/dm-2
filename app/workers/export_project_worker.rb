@@ -17,6 +17,7 @@ require 'storyblok_richtext/nodes/table_row'
 class ExportProjectWorker
   include Sidekiq::Worker
   include Sidekiq::Status::Worker
+  sidekiq_options :retry => 0
 
   def perform(project_id)
     @project = Project.find(project_id.to_i)
@@ -127,14 +128,14 @@ class ExportProjectWorker
       name = ExportHelper.sanitize_filename(child.title).parameterize
       zipfile_path = path == '' ? name : File.join(path, name)
       if child.instance_of? DocumentFolder
-        # create folder AND index entry for folder item
+        # folder item: create filesystem folder AND index entry
         @index_cursor.push({ title: child.title, children: [] })
         old_index_cursor = @index_cursor
         @index_cursor = @index_cursor[-1][:children]
         self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
         @index_cursor = old_index_cursor
       elsif child.contents_children.length() > 0
-        # folder, but no index entry, should be created for non-folder item with children
+        # non-folder item w/ children: create filesystem folder, but no index entry
         self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
       end
       if not child.instance_of? DocumentFolder
@@ -177,6 +178,8 @@ class ExportProjectWorker
             title: child.title,
           },
         )
+        @current += 1
+        at @current
         zipfile.get_output_stream(zipfile_path) { |html_outfile|
           html_outfile.write(html)
         }
@@ -199,6 +202,8 @@ class ExportProjectWorker
     @index = { children: [], title: @project.title }
     @index_cursor = @index[:children]
     @errors = []
+    total Document.where(:project_id => @project.id).count
+    @current = 0
 
     # create tempfile
     filename = "#{ExportHelper.sanitize_filename(@project.title)}.zip"
