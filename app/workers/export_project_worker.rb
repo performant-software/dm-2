@@ -34,7 +34,118 @@ class ExportProjectWorker
     end
   end
 
+  def export
+    # main export function: set up, create zipfile, write entries, attach zipfile
+    @index = { children: [], title: @project.title }
+    @index_cursor = @index[:children]
+    @errors = []
+    total Document.where(:project_id => @project.id).count
+    @current = 0
+
+    # create tempfile
+    filename = "#{ExportHelper.sanitize_filename(@project.title)}.zip"
+    tempfile = Tempfile.new(filename)
+    path = tempfile.path
+
+    begin
+      Zip::OutputStream.open(tempfile) { |zos| }
+      # write entries to zip
+      Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
+        self.write_zip_entries(@project.contents_children, '', zipfile, depth=0)
+        html = render_template_to_string(
+          Rails.root.join("app", "views", "exports", "index.html.erb"),
+          { index: @index },
+        )
+        zipfile.get_output_stream("index.html") { |index_html|
+          index_html.write(html)
+        }
+        if @errors.length > 0
+          # output to error log if there are any errors
+          zipfile.get_output_stream("error_log.txt") { |errlog_txt|
+            errlog_txt.write(@errors.join("\r\n"))
+          }
+        end
+      end
+      zip_data = File.open(tempfile.path)
+      # attach to project (create blob and upload to storage)
+      @project.exports.attach(io: zip_data, filename: filename, content_type: 'application/zip')
+    ensure
+      tempfile.close
+      tempfile.unlink
+    end
+  end
+
+  def write_zip_entries(entries, path, zipfile, depth)
+    # handle each entry in @project.contents_children
+    entries.each do |child|
+      name = ExportHelper.sanitize_filename(child.title).parameterize
+      zipfile_path = path == '' ? name : File.join(path, name)
+      if child.instance_of? DocumentFolder
+        # folder item: create filesystem folder AND index entry
+        @index_cursor.push({ title: child.title, children: [] })
+        old_index_cursor = @index_cursor
+        @index_cursor = @index_cursor[-1][:children]
+        self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
+        @index_cursor = old_index_cursor
+      elsif child.contents_children.length() > 0
+        # non-folder item w/ children: create filesystem folder, but no index entry
+        self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
+      end
+      if not child.instance_of? DocumentFolder
+        # prepare a path for images in case there are any
+        images_path = Pathname.new(zipfile_path).split()[0].to_s + "/images"
+        # create an html file for all non-folder items
+        zipfile_path = html_filename(zipfile_path)
+
+        if child.document_kind == "text"
+          # text page
+          # TODO: handle multicolumn layout?
+          # render text documents from prosemirror/storyblok to html
+          renderer = Storyblok::Richtext::HtmlRenderer.new
+          renderer.add_mark(Storyblok::Richtext::Marks::Color)
+          renderer.add_mark(Storyblok::Richtext::Marks::Em)
+          renderer.add_mark(Storyblok::Richtext::Marks::FontFamily)
+          renderer.add_mark(Storyblok::Richtext::Marks::FontSize)
+          renderer.add_mark(Storyblok::Richtext::Marks::Highlight)
+          renderer.add_mark(Storyblok::Richtext::Marks::Strikethrough)
+          renderer.add_mark(Storyblok::Richtext::Marks::TextStyle)
+          renderer.add_node(Storyblok::Richtext::Nodes::Image)
+          renderer.add_node(Storyblok::Richtext::Nodes::Paragraph)
+          renderer.add_node(Storyblok::Richtext::Nodes::Table)
+          renderer.add_node(Storyblok::Richtext::Nodes::TableCell)
+          renderer.add_node(Storyblok::Richtext::Nodes::TableHeader)
+          renderer.add_node(Storyblok::Richtext::Nodes::TableRow)
+
+          content = renderer.render(child[:content])
+        else
+          images = download_images(child, zipfile, images_path)
+        end
+        html = render_template_to_string(
+          Rails.root.join("app", "views", "exports", "page.html.erb"),
+          {
+            highlights: child.highlight_map,
+            images: (images || []),
+            content: (content || "").html_safe,
+            document_kind: child.document_kind,
+            depth: depth,
+            title: child.title,
+          },
+        )
+        @current += 1
+        at @current
+        zipfile.get_output_stream(zipfile_path) { |html_outfile|
+          html_outfile.write(html)
+        }
+        if ["DocumentFolder", "Project"].include? child.parent_type
+          # only add direct descendants of project or folder to index
+          @index_cursor.push({ title: child.title, href: zipfile_path })
+        end
+      end
+    end
+  end
+
   def recursively_deflate_folder(folder, zipfile_path, zipfile, depth)
+    # from rubyzip docs https://github.com/rubyzip/rubyzip
     zipfile.mkdir(zipfile_path)
     subdir = folder.contents_children
     self.write_zip_entries(subdir, zipfile_path, zipfile, depth + 1)
@@ -131,118 +242,11 @@ class ExportProjectWorker
     return images
   end
 
-  def write_zip_entries(entries, path, zipfile, depth)
-    entries.each do |child|
-      name = ExportHelper.sanitize_filename(child.title).parameterize
-      zipfile_path = path == '' ? name : File.join(path, name)
-      if child.instance_of? DocumentFolder
-        # folder item: create filesystem folder AND index entry
-        @index_cursor.push({ title: child.title, children: [] })
-        old_index_cursor = @index_cursor
-        @index_cursor = @index_cursor[-1][:children]
-        self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
-        @index_cursor = old_index_cursor
-      elsif child.contents_children.length() > 0
-        # non-folder item w/ children: create filesystem folder, but no index entry
-        self.recursively_deflate_folder(child, zipfile_path, zipfile, depth)
-      end
-      if not child.instance_of? DocumentFolder
-        # prepare a path for images in case there are any
-        images_path = Pathname.new(zipfile_path).split()[0].to_s + "/images"
-        # create an html file for all non-folder items
-        zipfile_path = html_filename(zipfile_path)
-
-        if child.document_kind == "text"
-          # text page
-          # TODO: handle multicolumn layout?
-          # render text documents from prosemirror/storyblok to html
-          renderer = Storyblok::Richtext::HtmlRenderer.new
-          renderer.add_mark(Storyblok::Richtext::Marks::Color)
-          renderer.add_mark(Storyblok::Richtext::Marks::Em)
-          renderer.add_mark(Storyblok::Richtext::Marks::FontFamily)
-          renderer.add_mark(Storyblok::Richtext::Marks::FontSize)
-          renderer.add_mark(Storyblok::Richtext::Marks::Highlight)
-          renderer.add_mark(Storyblok::Richtext::Marks::Strikethrough)
-          renderer.add_mark(Storyblok::Richtext::Marks::TextStyle)
-          renderer.add_node(Storyblok::Richtext::Nodes::Image)
-          renderer.add_node(Storyblok::Richtext::Nodes::Paragraph)
-          renderer.add_node(Storyblok::Richtext::Nodes::Table)
-          renderer.add_node(Storyblok::Richtext::Nodes::TableCell)
-          renderer.add_node(Storyblok::Richtext::Nodes::TableHeader)
-          renderer.add_node(Storyblok::Richtext::Nodes::TableRow)
-
-          content = renderer.render(child[:content])
-        else
-          images = download_images(child, zipfile, images_path)
-        end
-        html = render_template_to_string(
-          Rails.root.join("app", "views", "exports", "page.html.erb"),
-          {
-            highlights: child.highlight_map,
-            images: (images || []),
-            content: (content || "").html_safe,
-            document_kind: child.document_kind,
-            depth: depth,
-            title: child.title,
-          },
-        )
-        @current += 1
-        at @current
-        zipfile.get_output_stream(zipfile_path) { |html_outfile|
-          html_outfile.write(html)
-        }
-        if ["DocumentFolder", "Project"].include? child.parent_type
-          # only add direct descendants of project or folder to index
-          @index_cursor.push({ title: child.title, href: zipfile_path })
-        end
-      end
-    end
-  end
-
   def render_template_to_string(template_path, data)
+    # helper function to render a template to string outside of controller
     lookup_context = ActionView::LookupContext.new(ActionController::Base.view_paths)
     context = ViewContext.new(lookup_context, data, nil)
     renderer = ActionView::Renderer.new(lookup_context)
     renderer.render(context, { inline: File.read(template_path) })
-  end
-
-  def export
-    @index = { children: [], title: @project.title }
-    @index_cursor = @index[:children]
-    @errors = []
-    total Document.where(:project_id => @project.id).count
-    @current = 0
-
-    # create tempfile
-    filename = "#{ExportHelper.sanitize_filename(@project.title)}.zip"
-    tempfile = Tempfile.new(filename)
-    path = tempfile.path
-
-    begin
-      Zip::OutputStream.open(tempfile) { |zos| }
-      # write entries to zip
-      Zip::File.open(path, ::Zip::File::CREATE) do |zipfile|
-        self.write_zip_entries(@project.contents_children, '', zipfile, depth=0)
-        html = render_template_to_string(
-          Rails.root.join("app", "views", "exports", "index.html.erb"),
-          { index: @index },
-        )
-        zipfile.get_output_stream("index.html") { |index_html|
-          index_html.write(html)
-        }
-        if @errors.length > 0
-          # output to error log if there are any errors
-          zipfile.get_output_stream("error_log.txt") { |errlog_txt|
-            errlog_txt.write(@errors.join("\r\n"))
-          }
-        end
-      end
-      zip_data = File.open(tempfile.path)
-      # attach to project (create blob and upload to storage)
-      @project.exports.attach(io: zip_data, filename: filename, content_type: 'application/zip')
-    ensure
-      tempfile.close
-      tempfile.unlink
-    end
   end
 end
