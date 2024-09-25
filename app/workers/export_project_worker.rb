@@ -119,12 +119,14 @@ class ExportProjectWorker
           content = renderer.render(child[:content])
         else
           images = download_images(child, zipfile, images_path)
+          svg_highlights = ExportHelper.fabric_to_svg(child.highlight_map)
         end
         html = render_template_to_string(
           Rails.root.join("app", "views", "exports", "page.html.erb"),
           {
             highlights: child.highlight_map,
             images: (images || []),
+            svg_highlights: (svg_highlights || []),
             content: (content || "").html_safe,
             document_kind: child.document_kind,
             depth: depth,
@@ -205,12 +207,16 @@ class ExportProjectWorker
             url = "#{url}/full/max/0/default.jpg"
           end
 
-          # download file and construct local file path
+          # download file
           file = DownloadHelper.download_to_file(url)
           if file == "failed"
             @errors.push("Error: Failed to download image #{url}, to be stored in #{images_path}")
             next
           end
+          # determine dimensions and get scale factor for svg display
+          image_dims = MiniMagick::Image.open(file.path)
+          scale_factor = 2000.0 / image_dims[:width]
+          # construct local file path
           filename = "#{name.parameterize}.#{url.rpartition('.').last}"
           path = "#{images_path}/#{filename}"
           begin
@@ -233,7 +239,11 @@ class ExportProjectWorker
           fn_parts = filename.rpartition(".")
           filename = [fn_parts.first.parameterize, *fn_parts[1..-1]].join("")
           # add to array of hashes
-          images.push({ url: "images/#{filename}", name: name })
+          images.push({
+            url: "images/#{filename}",
+            name: name,
+            height: image_dims[:height] * scale_factor,
+          })
         rescue Net::ReadTimeout, OpenURI::HTTPError
           @errors.push("Error: Failed to download image #{url}, to be stored in #{images_path}")
         end
