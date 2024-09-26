@@ -101,4 +101,13 @@ module ExportHelper
     end
     return svgs
   end
+
+  def self.get_link_label(link)
+    label = link[:document_title]
+    if link[:excerpt] and link[:excerpt].length > 0
+      label = "<span>#{link[:title] ? link[:title] : link[:excerpt]}</span>"
+      label += " in <em>#{link[:document_title]}</em>"
+    end
+    label
+  end
 end

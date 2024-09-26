@@ -63,10 +63,10 @@
                     <li>
                       <% if link[:document_id].present? %>
                         <a href="<%= ExportHelper.get_path(link, @depth) %>">
-                          <%= link[:title] or link[:excerpt] or link[:document_title] %>
+                          <%= ExportHelper.get_link_label(link).html_safe %>
                         </a>
                       <% else %>
-                          <%= link[:title] or link[:excerpt] or link[:document_title] %>
+                          <%= ExportHelper.get_link_label(link).html_safe %>
                       <% end %>
                     </li>
                   <% end %>
