@@ -339,6 +339,7 @@ export default function(state = initialState, action) {
         exports: action.exports,
         exportsError: null,
         exportsLoading: false,
+        exportJobId: null,
       }
 
     case GET_EXPORTS_ERRORED:
@@ -967,7 +968,7 @@ export function createExport() {
     .then((job) => {
       setTimeout(() => {
         dispatch(loadExports(id));
-      }, 1000);
+      }, 3000);
       dispatch({
         type: CREATE_EXPORT_SUCCESS,
         jobId: job.id,
