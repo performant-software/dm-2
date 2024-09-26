@@ -120,11 +120,14 @@ class ExportProjectWorker
         else
           images = download_images(child, zipfile, images_path)
           svg_highlights = ExportHelper.fabric_to_svg(child.highlight_map)
+          content = nil
         end
         html = render_template_to_string(
           Rails.root.join("app", "views", "exports", "page.html.erb"),
           {
-            highlights: child.highlight_map,
+            highlights: ExportHelper.order_highlights(
+              child.highlight_map, child.document_kind, content,
+            ),
             images: (images || []),
             svg_highlights: (svg_highlights || []),
             content: (content || "").html_safe,

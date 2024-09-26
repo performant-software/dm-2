@@ -67,7 +67,7 @@ module ExportHelper
   def self.fabric_to_svg(highlights)
     # convert image annotation highlights (fabric objects) to svgs
     svgs = []
-    highlights.each do |uid, hl|
+    self.order_highlights(highlights, "canvas", nil).each do |uid, hl|
       svg_hash = JSON.parse(hl[:target])
       elm = "#{svg_hash['type']}"
       if svg_hash["path"]
@@ -100,6 +100,26 @@ module ExportHelper
       svgs.push("<a id=\"highlight-#{uid}\" href=\"##{uid}\">#{svg_elm}</a>")
     end
     return svgs
+  end
+
+  def self.order_highlights(highlights, document_kind, content_html)
+    if !content_html.present? and document_kind == "text"
+      highlights
+    elsif content_html.present?
+      # text type document: order by position in text
+      highlights.sort_by { |uid, hl| content_html.index(uid) || Float::INFINITY }
+    elsif document_kind == "canvas"
+      # canvas type document: order highlights by position on page (top to bottom, LTR)
+      highlights.sort_by { |uid, hl|
+        drawing = JSON.parse(hl[:target])
+        # divide page vertically into 50px blocks; consider all within 50px range to have equal y
+        y = (drawing["top"] / 50).floor()
+        # then sort by x, unmodified
+        x = drawing["left"]
+        puts "#{hl[:title]}: #{([y, x]).to_s}"
+        [y, x]
+      }
+    end
   end
 
   def self.get_link_label(link)
