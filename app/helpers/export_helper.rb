@@ -116,7 +116,6 @@ module ExportHelper
         y = (drawing["top"] / 50).floor()
         # then sort by x, unmodified
         x = drawing["left"]
-        puts "#{hl[:title]}: #{([y, x]).to_s}"
         [y, x]
       }
     end
