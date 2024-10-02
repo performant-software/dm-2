@@ -2,7 +2,7 @@
   "name": "dm-2",
   "description": "Digital Mappa 2",
   "scripts": {
-    "postdeploy": "bundle exec rake db:migrate"
+    "postdeploy": "bundle exec rake db:migrate:with_data"
   },
   "repository": "https://github.com/performant-software/dm-2",
   "env": {
