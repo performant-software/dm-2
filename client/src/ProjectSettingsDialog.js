@@ -18,7 +18,26 @@ import MenuItem from 'material-ui/MenuItem';
 import Toggle from 'material-ui/Toggle';
 import Checkbox from 'material-ui/Checkbox';
 import { red100, red200, red400, red600, lightBlue100, lightBlue200, grey200, grey600 } from 'material-ui/styles/colors';
-import { hideSettings, updateProject, setNewPermissionUser, setNewPermissionLevel, createNewPermission, deletePermission, updatePermission, toggleDeleteConfirmation, deleteProject, READ_PERMISSION, WRITE_PERMISSION, ADMIN_PERMISSION } from './modules/project';
+import IconButton from 'material-ui/IconButton';
+import ErrorIcon from 'material-ui/svg-icons/alert/error';
+import CheckIcon from 'material-ui/svg-icons/navigation/check';
+import RefreshIcon from 'material-ui/svg-icons/navigation/refresh';
+import {
+  ADMIN_PERMISSION,
+  READ_PERMISSION,
+  WRITE_PERMISSION,
+  createExport,
+  createNewPermission,
+  deletePermission,
+  deleteProject,
+  hideSettings,
+  loadExports,
+  setNewPermissionLevel,
+  setNewPermissionUser,
+  toggleDeleteConfirmation,
+  updatePermission,
+  updateProject,
+} from "./modules/project";
 
 class ProjectSettingsDialog extends Component {
 
@@ -122,11 +141,13 @@ class ProjectSettingsDialog extends Component {
     return (
       <Tab label='Project'>
         <TextField
+          fullWidth
           defaultValue={title}
           floatingLabelText='Title'
           onChange={(event, newValue) => {this.scheduleProjectTitleUpdate(newValue);}}
         /><br />
         <TextField
+          fullWidth
           defaultValue={description}
           floatingLabelText='Description'
           onChange={(event, newValue) => {this.scheduleProjectDescriptionUpdate(newValue);}}
@@ -142,6 +163,101 @@ class ProjectSettingsDialog extends Component {
         />
       </Tab>
     )
+  }
+
+  renderExportsTab() {
+    const { exports, createExport } = this.props;
+    let exportsTable;
+    if (exports && exports.length) {
+      const exportRows = exports.map((exp) => {
+        let updatedAt = exp.updated_at;
+        if (typeof updatedAt !== 'string') updatedAt *= 1000;
+        updatedAt = new Date(updatedAt);
+        let exportLink = "-";
+        if (exp.url) {
+          exportLink = <a href={exp.url}>Download</a>;
+        }
+        let status = exp.status;
+        if (exp.error_class) {
+          status = <>
+            {exp.status}
+            <IconButton 
+              tooltip={`${exp.error_class}`}
+              tooltipPosition="right"
+              onClick={() => {}}
+              disableFocusRipple
+              disableTouchRipple
+            >
+              <ErrorIcon />
+            </IconButton>
+          </>
+        }
+        return (
+          <TableRow key={exp.id}>
+            <TableRowColumn>{updatedAt.toLocaleString()}</TableRowColumn>
+            <TableRowColumn style={{
+              overflow: "visible", display: "flex", alignItems: "center"
+            }}>
+              {status}
+            </TableRowColumn>
+            <TableRowColumn>{exportLink}</TableRowColumn>
+          </TableRow>
+        )
+      });
+      exportsTable = (
+        <Table selectable={false}>
+          <TableHeader displaySelectAll={false} adjustForCheckbox={false}>
+            <TableRow>
+              <TableHeaderColumn>Date</TableHeaderColumn>
+              <TableHeaderColumn style={{ display: "flex", alignItems: "center" }}>
+                <span>Status</span>
+                <IconButton
+                  iconStyle={{ width: 18, height: 18 }}
+                  style={{ width: 36, height: 36, padding: 4 }}
+                  onClick={() => { this.props.loadExports(this.props.id) }}
+                  disabled={this.props.exportsLoading}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </TableHeaderColumn>
+              <TableHeaderColumn>Actions</TableHeaderColumn>
+            </TableRow>
+          </TableHeader>
+          <TableBody displayRowCheckbox={false}>
+            {exportRows}
+          </TableBody>
+        </Table>
+      )
+    }
+    let createStatus;
+    if (this.props.exportJobId) {
+      createStatus = (
+      <>
+        <CheckIcon />
+        <span>Initiated successfully</span>
+      </>
+      )
+    }
+    return (
+      <Tab label='Exports'>
+        {exportsTable}
+        <p>
+          Initiate an export for archival purposes. This will create a .zip file with simple 
+          HTML representations of this project's contents, preserving all text, images, and
+          annotations. It may take some time to produce; check back here for its status.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <FlatButton
+            label='Initiate export'
+            onClick={() => {this.props.createExport()}}
+            backgroundColor={lightBlue100}
+            hoverColor={lightBlue200}
+            disabled={!!this.props.exportsLoading || !!this.props.exportJobId}
+          />
+          {createStatus}
+        </div>
+      </Tab>
+    );
   }
 
   renderDeleteTab() {
@@ -185,11 +301,20 @@ class ProjectSettingsDialog extends Component {
             onClick={hideSettings}
           />
         ]}
-        contentStyle={{ width: '90%', maxWidth: '1000px' }}
+        contentStyle={{
+          width: '90%',
+          maxWidth: '1000px',
+          position: 'absolute',
+          left: '50%',
+          top: '65px',
+          transform: 'translate(-50%, 0)',
+          transition: 'top 0.5s ease',
+         }}
       >
         <Tabs tabItemContainerStyle={{ background: grey600 }}>
           { this.renderProjectTab() }
           { this.renderCollaboratorsTab() }
+          { this.renderExportsTab() }
           { this.renderDeleteTab() }
         </Tabs>
       </Dialog>
@@ -227,7 +352,10 @@ const mapStateToProps = state => ({
   newPermissionLevel: state.project.newPermissionLevel,
   newPermissionError: state.project.newPermissionError,
   newPermissionLoading: state.project.newPermissionLoading,
-  deleteConfirmed: state.project.deleteConfirmed
+  deleteConfirmed: state.project.deleteConfirmed,
+  exports: state.project.exports,
+  exportsLoading: state.project.exportsLoading,
+  exportJobId: state.project.exportJobId,
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
@@ -239,7 +367,9 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   deletePermission,
   updatePermission,
   toggleDeleteConfirmation,
-  deleteProject
+  deleteProject,
+  createExport,
+  loadExports,
 }, dispatch);
 
 export default connect(
