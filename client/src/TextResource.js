@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { v4 as uuidv4 } from 'uuid';
 
 import { yellow500 } from 'material-ui/styles/colors';
 import DropDownMenu from 'material-ui/DropDownMenu';
@@ -814,7 +815,7 @@ class TextResource extends Component {
     const markType = this.state.documentSchema.marks.highlight;
     const { document_id } = this.props;
     const editorState = this.getEditorState();
-    const cmd = addMark( markType, {highlightUid: `dm_text_highlight_${Date.now()}`, documentId: document_id });
+    const cmd = addMark( markType, {highlightUid: `dm_text_highlight_${uuidv4()}`, documentId: document_id });
     cmd( editorState, this.state.editorView.dispatch );
     this.state.editorView.focus();
   }
@@ -1259,7 +1260,7 @@ class TextResource extends Component {
     });
     pastedMarks.forEach((mark, index) => {
       let markEntry = Object.assign({}, mark.attrs);
-      mark.attrs['highlightUid'] = markEntry['newHighlightUid'] = `dm_text_highlight_${Date.now()}_${index}`;
+      mark.attrs['highlightUid'] = markEntry['newHighlightUid'] = `dm_text_highlight_${uuidv4()}_${index}`;
       mark.attrs['documentId'] = this.props.document_id;
       this.highlightsToDuplicate.push(markEntry);
     });

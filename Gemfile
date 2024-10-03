@@ -53,4 +53,6 @@ gem 'base64', '~> 0.2.0'
 gem 'mutex_m', '~> 0.2.0'
 gem 'bigdecimal', '~> 3.1'
 gem 'psych', '< 4'
-gem "dotenv-rails", "~> 2.8"
+gem 'dotenv-rails', '~> 2.8'
+# pinned to < 9.3 until https://github.com/ilyakatz/data-migrate/issues/302 resolved
+gem 'data_migrate', '~> 9.2', '< 9.3'
