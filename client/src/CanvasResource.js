@@ -45,6 +45,7 @@ import HighlightColorSelect from './HighlightColorSelect';
 import AddImageLayer from './AddImageLayer';
 import TextField from 'material-ui/TextField';
 import deepEqual from 'deep-equal';
+import { v4 as uuidv4 } from 'uuid';
 
 // overlay these modules
 openSeaDragonFabricOverlay(OpenSeadragon, fabric);
@@ -375,7 +376,7 @@ class CanvasResource extends Component {
     overlay.fabricCanvas().on('path:created', event => {
       if (event.path) {
         let path = event.path;
-        const highlightUid = `dm_canvas_highlight_${Date.now()}`;
+        const highlightUid = `dm_canvas_highlight_${uuidv4()}`;
         path._highlightUid = highlightUid;
         path.perPixelTargetFind = true;
         this.overlay.fabricCanvas().setActiveObject(path);
@@ -822,7 +823,7 @@ class CanvasResource extends Component {
     this.lineInProgress.perPixelTargetFind = true;
     this.lineInProgress.selectable = true;
     this.lockCanvasObject(this.lineInProgress, true);
-    const highlightUid = `dm_canvas_highlight_${Date.now()}`;
+    const highlightUid = `dm_canvas_highlight_${uuidv4()}`;
     this.lineInProgress['_highlightUid'] = highlightUid;
 
     this.props.setSaving({ doneSaving: false });
@@ -849,7 +850,7 @@ class CanvasResource extends Component {
   }
 
   addShape(fabricObject) {
-    const highlightUid = `dm_canvas_highlight_${Date.now()}`;
+    const highlightUid = `dm_canvas_highlight_${uuidv4()}`;
     const { highlightColors } = this.props;
     const instanceKey = this.getInstanceKey();
     fabricObject['_highlightUid'] = highlightUid;

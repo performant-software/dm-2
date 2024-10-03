@@ -44,6 +44,9 @@ ActiveRecord::Schema.define(version: 2024_08_16_194856) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "data_migrations", primary_key: "version", id: :string, force: :cascade do |t|
+  end
+
   create_table "document_folders", force: :cascade do |t|
     t.string "title"
     t.string "parent_type"
