@@ -2,6 +2,13 @@
   body {
     font-family: Roboto, sans-serif;
   }
+  main {
+    margin-top: <%= @style[:margin_top] %>px;
+    margin-right: <%= @style[:margin_right] %>px;
+    margin-bottom: <%= @style[:margin_bottom] %>px;
+    margin-left: <%= @style[:margin_left] %>px;
+    column-count: <%= @style[:column_count] || '1' %>;
+  }
   li:target,
   a.dm-highlight:target {
     box-shadow: 0 0px 8px blue, 0 0px 8px blue, 0 0px 8px blue;

@@ -99,7 +99,6 @@ class ExportProjectWorker
 
         if child.document_kind == "text"
           # text page
-          # TODO: handle multicolumn layout?
           # render text documents from prosemirror/storyblok to html
           renderer = Storyblok::Richtext::HtmlRenderer.new
           renderer.add_mark(Storyblok::Richtext::Marks::Color)
@@ -134,6 +133,14 @@ class ExportProjectWorker
             document_kind: child.document_kind,
             depth: depth,
             title: child.title,
+            # handle multicolumn layout and margins
+            style: {
+              column_count: child[:content]["columnCount"].present? ? child[:content]["columnCount"] : 1,
+              margin_top: child[:content]["marginTop"].present? ? child[:content]["marginTop"] : 0,
+              margin_right: child[:content]["marginRight"].present? ? child[:content]["marginRight"] : 0,
+              margin_bottom: child[:content]["marginBottom"].present? ? child[:content]["marginBottom"] : 0,
+              margin_left: child[:content]["marginLeft"].present? ? child[:content]["marginLeft"] : 0,
+            }
           },
         )
         @current += 1
