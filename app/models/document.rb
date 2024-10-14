@@ -148,32 +148,15 @@ class Document < Linkable
     nil
   end
 
-  def download_to_file(uri)
-    begin
-      stream = URI.open(uri, :read_timeout => 10)
-      return stream if stream.respond_to?(:path) # Already file-like
-    
-      # Workaround when open(uri) doesn't return File
-      Tempfile.new.tap do |file|
-        file.binmode
-        IO.copy_stream(stream, file)
-        stream.close
-        file.rewind
-      end
-    rescue Net::ReadTimeout
-      return 'failed'
-    end
-  end
-  
   def add_thumbnail( image_url )
     begin
       # Try with PNG
-      opened = download_to_file(image_url)
+      opened = DownloadHelper.download_to_file(image_url)
     rescue OpenURI::HTTPError
       # Only JPG is required for IIIF level 1 compliance,
       # so if we get back a 400 error, use JPG for thumbnail
       with_jpg = image_url.sub('.png', '.jpg')
-      opened = download_to_file(with_jpg)
+      opened = DownloadHelper.download_to_file(with_jpg)
     end
     if opened != 'failed'
       processed = ImageProcessing::MiniMagick.source(opened)
