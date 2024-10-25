@@ -13,7 +13,7 @@ import Close from 'material-ui/svg-icons/navigation/close';
 import Visibility from 'material-ui/svg-icons/action/visibility';
 import VisibilityOff from 'material-ui/svg-icons/action/visibility-off';
 import Description from 'material-ui/svg-icons/action/description';
-import { grey100, grey800, grey900 } from 'material-ui/styles/colors';
+import { grey100, grey200, grey300, grey800, grey900, white } from 'material-ui/styles/colors';
 import { updateDocument, closeDocument, moveDocumentWindow, layoutOptions } from './modules/documentGrid';
 import { toggleCanvasHighlights } from './modules/canvasEditor';
 import { toggleTextHighlights } from './modules/textEditor';
@@ -287,7 +287,7 @@ class DocumentViewer extends Component {
               useLayerForClickAway={true}
               autoCloseWhenOffScreen={true}
               onRequestClose={this.onShareClose.bind(this)}
-              style={{ padding: '5px 0 5px 10px' }}
+              style={{ padding: '5px 0 5px 10px', backgroundColor: grey200 }}
             >
               <div style={{
                 display: 'flex',
@@ -300,12 +300,24 @@ class DocumentViewer extends Component {
                   value={this.state.documentURL}
                   onFocus={this.copyDocumentURL.bind(this)}
                   onClick={this.copyDocumentURL.bind(this)}
+                  inputStyle={{
+                    backgroundColor: white,
+                    height: '40px',
+                    marginTop: '5px',
+                    padding: '0 5px',
+                  }}
+                  underlineStyle={{
+                    marginBottom: '-5px',
+                    padding: '0 5px',
+                  }}
+                  style={{ margin: '0 10px 0 0' }}
                 />
                 <RaisedButton
                   icon={this.state.hasCopiedURL ? <Check2 /> : null}
                   label={this.state.hasCopiedURL ? "Copied" : "Copy link"}
                   style={{marginRight: '10px'}}
                   onClick={this.copyDocumentURL.bind(this)}
+                  backgroundColor={this.state.hasCopiedURL ? grey300 : white}
                 />
               </div>
             </Popover>
