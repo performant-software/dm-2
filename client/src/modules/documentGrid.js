@@ -1875,14 +1875,16 @@ export function openInitialDocs(docIds) {
               return response;
             })
             .then(response => response.json())
-            .then(document => {
-              return document;
+            .then(parentDoc => {
+              return parentDoc;
             })
-            .then(document => {
+            .then(parentDoc => {
+              const parentLink = document.links_to.find((link) => link.document_id === parentDoc.id);
+              const firstTarget = parentLink && parentLink.highlight_uid;
               dispatch({
                 type: OPEN_DOCUMENT_SUCCESS,
-                document,
-                firstTarget: null,
+                document: parentDoc,
+                firstTarget,
                 documentPosition: idx - 1 >= 0 ? idx - 1 : 0,
               });
               return Promise.resolve();
