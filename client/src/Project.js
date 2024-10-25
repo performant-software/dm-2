@@ -5,7 +5,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import { DragDropContext } from 'react-dnd';
 import { loadProject, updateProject, showSettings, hideSettings, checkInAll } from './modules/project';
 import { selectTarget, closeTarget, closeTargetRollover, promoteTarget } from './modules/annotationViewer';
-import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, updateSnackBar, fetchLock } from './modules/documentGrid';
+import { closeDeleteDialog, confirmDeleteDialog, layoutOptions, openDocument, openInitialDocs, updateSnackBar, fetchLock } from './modules/documentGrid';
 import { selectHighlight } from './modules/textEditor';
 import Dialog from 'material-ui/Dialog';
 import Snackbar from 'material-ui/Snackbar';
@@ -118,6 +118,11 @@ class Project extends Component {
     window.hideRollover = this.hideRollover.bind(this);
     if (this.props.match.params.slug !== 'new') {
       this.props.loadProject(this.props.match.params.slug, this.props.projectTitle)
+      // open documents included in query params
+      const queryParams = new URLSearchParams(this.props.location.search);
+      if (queryParams) {
+        this.props.openInitialDocs(queryParams.getAll("document"));
+      }
     }
   }
 
@@ -126,6 +131,17 @@ class Project extends Component {
       this.props.loadProject(this.props.match.params.slug, this.props.projectTitle);
       this.props.openDocumentIds.forEach((id) => {
         this.props.fetchLock(id);
+      });
+    }
+    if (prevProps.openDocuments !== this.props.openDocuments && !this.props.loadingInitialDocs) {
+      // update query params when opening or closing a document
+      const queryParams = new URLSearchParams();
+      this.props.openDocuments.forEach((doc) => {
+        queryParams.append("document", doc.id.toString());
+      });
+      this.props.history.replace({
+        pathname: this.props.location.pathname,
+        search: `?${queryParams.toString()}`,
       });
     }
   }
@@ -325,6 +341,7 @@ const mapStateToProps = state => ({
   deleteDialogTitle:  state.documentGrid.deleteDialogTitle,
   deleteDialogBody:   state.documentGrid.deleteDialogBody,
   deleteDialogSubmit: state.documentGrid.deleteDialogSubmit,
+  loadingInitialDocs: state.documentGrid.loadingInitialDocs,
   snackBarOpen:       state.documentGrid.snackBarOpen,
   snackBarMessage:    state.documentGrid.snackBarMessage,
   currentLayout:      layoutOptions[state.documentGrid.currentLayout],
@@ -336,20 +353,22 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => bindActionCreators({
-  loadProject,
-  updateProject,
-  selectTarget,
+  checkInAll,
+  closeDeleteDialog,
   closeTarget,
   closeTargetRollover,
-  promoteTarget,
-  closeDeleteDialog,
   confirmDeleteDialog,
-  showSettings,
-  checkInAll,
-  updateSnackBar,
-  hideSettings,
-  selectHighlight,
   fetchLock,
+  hideSettings,
+  loadProject,
+  openDocument,
+  openInitialDocs,
+  promoteTarget,
+  selectHighlight,
+  selectTarget,
+  showSettings,
+  updateProject,
+  updateSnackBar,
 }, dispatch);
 
 export default connect(

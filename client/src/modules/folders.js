@@ -110,7 +110,7 @@ export function createFolder(parentId, parentType, title = 'New Folder') {
 }
 
 export function openFolder(id) {
-  return function(dispatch) {
+  return function(dispatch, getState) {
     dispatch({
       type: FOLDER_OPENED,
       id
@@ -132,11 +132,20 @@ export function openFolder(id) {
       return response;
     })
     .then(response => response.json())
-    .then(folder => dispatch({
-      type: OPEN_SUCCESS,
-      id,
-      contentsChildren: folder.contents_children
-    }))
+    .then(folder => {
+        dispatch({
+        type: OPEN_SUCCESS,
+        id,
+        contentsChildren: folder.contents_children
+      });
+      if (folder.parent_type === "DocumentFolder") {
+        // open all parent folders up to root if not open
+        const { openFolderContents } = getState().folders;
+        if (!Object.hasOwn(openFolderContents, folder.parent_id)) {
+          dispatch(openFolder(folder.parent_id));
+        }
+      }
+    })
     .catch(() => dispatch({
       type: OPEN_ERRORED
     }));
