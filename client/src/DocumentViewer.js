@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router';
 import {
 	DragSource,
 	DropTarget
@@ -20,7 +21,8 @@ import { closeDocumentTargets } from './modules/annotationViewer';
 import TextResource from './TextResource';
 import CanvasResource from './CanvasResource';
 import DocumentStatusBar from './DocumentStatusBar';
-import { Popover } from 'material-ui';
+import { Popover, RaisedButton } from 'material-ui';
+import { BoxArrowUp, Check2 } from 'react-bootstrap-icons';
 
 const DocumentInner = function(props) {
   switch (props.document_kind) {
@@ -90,6 +92,10 @@ class DocumentViewer extends Component {
       doneSaving: true,
       cornerIconTooltipOpen: false,
       cornerIconTooltipAnchor: null,
+      sharePanelOpen: false,
+      sharePanelAnchor: null,
+      documentURL: '',
+      hasCopiedURL: false,
     }
   }
 
@@ -103,6 +109,7 @@ class DocumentViewer extends Component {
 
   componentDidMount() {
     this.props.connectDragPreview(new Image());
+    this.getDocumentURL(this.props.document_id);
   }
 
   isEditable = () => {
@@ -174,6 +181,50 @@ class DocumentViewer extends Component {
     });
   }
 
+  onShareOpen (e) {
+    e.persist();
+    const sharePanelAnchor = e.currentTarget;
+    e.preventDefault();
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        sharePanelOpen: true,
+        sharePanelAnchor,
+      }
+    });
+  }
+
+  onShareClose () {
+    this.setState((prevState) => {
+      return {
+        ...prevState,
+        sharePanelOpen: false,
+        hasCopiedURL: false,
+      }
+    });
+  }
+
+  getDocumentURL(docId) {
+    const loc = window.location.href.replace(window.location.search, "");
+    this.setState((prevState) => ({
+      ...prevState,
+      documentURL: `${loc}?document=${docId}`
+    }));
+  }
+
+  copyDocumentURL(e) {
+    if (e.currentTarget.nodeName === "INPUT") {
+      e.currentTarget.select();
+    } else {
+      e.currentTarget.parentNode.parentNode.querySelector("#document-link").select();
+    }
+    navigator.clipboard.writeText(this.state.documentURL);
+    this.setState((prevState) => ({
+      ...prevState,
+      hasCopiedURL: true,
+    }));
+  }
+
   renderTitleBar() {
     const iconStyle = {
       padding: '0',
@@ -218,8 +269,48 @@ class DocumentViewer extends Component {
               onChange={this.onChangeTitle}
               disabled={!this.isEditable()}
             />
+            <IconButton
+              tooltip="Share document"
+              onClick={this.onShareOpen.bind(this)}
+              style={buttonStyle}
+              iconStyle={{ width: '16px', height: '16px' }}
+            >
+              <BoxArrowUp color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'} />
+            </IconButton>
+            <Popover
+              open={this.state.sharePanelOpen}
+              anchorEl={this.state.sharePanelAnchor}
+              zDepth={5}
+              className="share-panel"
+              anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}
+              targetOrigin={{horizontal: 'right', vertical: 'top'}}
+              useLayerForClickAway={true}
+              autoCloseWhenOffScreen={true}
+              onRequestClose={this.onShareClose.bind(this)}
+              style={{ padding: '5px 0 5px 10px' }}
+            >
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+                flexFlow: 'row nowrap',
+                alignItems: 'center',
+              }}>
+                <TextField
+                  id="document-link"
+                  value={this.state.documentURL}
+                  onFocus={this.copyDocumentURL.bind(this)}
+                  onClick={this.copyDocumentURL.bind(this)}
+                />
+                <RaisedButton
+                  icon={this.state.hasCopiedURL ? <Check2 /> : null}
+                  label={this.state.hasCopiedURL ? "Copied" : "Copy link"}
+                  style={{marginRight: '10px'}}
+                  onClick={this.copyDocumentURL.bind(this)}
+                />
+              </div>
+            </Popover>
             { !this.isEditable() &&
-              <IconButton tooltip='Toggle highlights' onClick={this.onToggleHighlights.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
+              <IconButton tooltip='Toggle highlights' tooltipStyles={{ marginLeft: '-10px' }} onClick={this.onToggleHighlights.bind(this)} style={buttonStyle} iconStyle={iconStyle}>
                 { highlightsHidden 
                   ? <VisibilityOff
                       color={this.props.document_kind === 'canvas' ? '#FFF' : '#000'}
@@ -349,4 +440,5 @@ const mapDispatchToProps = (dispatch, props) => bindActionCreators({
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(DocumentViewer);
+)(withRouter((props) => <DocumentViewer {...props} />));
+
