@@ -7,7 +7,7 @@ class Highlight < Linkable
 
   def links_to
     all_links = self.highlights_links.sort_by{ |hll| hll.position }.map{ |hll| Link.where(:id => hll.link_id).first }
-    result = all_links.map { |link| self.to_link_obj(link) }.compact
+    result = all_links.map { |link| self.to_link_obj(link) unless link.nil? }.compact
     result.each {|r| 
       if r[:highlight_id]
         hl = Highlight.where(:id => r[:highlight_id]).first
@@ -55,19 +55,6 @@ class Highlight < Linkable
     end
   end
 
-  def download_to_file(uri)
-    stream = URI.open(uri)
-    return stream if stream.respond_to?(:path) # Already file-like
-  
-    # Workaround when open(uri) doesn't return File
-    Tempfile.new.tap do |file|
-      file.binmode
-      IO.copy_stream(stream, file)
-      stream.close
-      file.rewind
-    end
-  end
-
   def set_thumbnail( image_url, thumb_rect )
     if !thumb_rect.nil?
       pad_factor = 0.06
@@ -98,12 +85,12 @@ class Highlight < Linkable
     else
       begin
         # Try with PNG
-        opened = download_to_file(image_url)
+        opened = DownloadHelper.download_to_file(image_url)
       rescue OpenURI::HTTPError
         # Only JPG is required for IIIF level 1 compliance,
         # so if we get back a 400 error, use JPG for thumbnail
         with_jpg = image_url.sub('.png', '.jpg')
-        opened = download_to_file(with_jpg)
+        opened = DownloadHelper.download_to_file(with_jpg)
       end
       io = ImageProcessing::MiniMagick.source(opened)
         .resize_to_fill(80, 80)

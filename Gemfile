@@ -29,7 +29,7 @@ gem 'rack-cors', :require => 'rack/cors'
 gem 'pg_search'
 gem 'figaro'
 gem 'open-uri'
-gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: '0a6c2e8e81560311569d49d06c0e32abd0effcd5'
+gem 'storyblok-richtext-renderer', github: 'performant-software/storyblok-ruby-richtext-renderer', ref: 'bef6903146426e01175887eb92a75bf9bac4c3cb'
 gem 'sidekiq', '~>6.5.1'
 gem 'sidekiq-status', '~>2.1.1'
 
@@ -39,7 +39,7 @@ group :development, :test do
 end
 
 group :development do
-  gem 'listen', '>= 3.0.5', '< 3.2'
+  gem 'listen', '>= 3.3.0', '< 4.0'
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
   gem 'spring-watcher-listen', '~> 2.0.0'
@@ -56,3 +56,4 @@ gem 'psych', '< 4'
 gem 'dotenv-rails', '~> 2.8'
 # pinned to < 9.3 until https://github.com/ilyakatz/data-migrate/issues/302 resolved
 gem 'data_migrate', '~> 9.2', '< 9.3'
+gem 'rubyzip', '~> 2.3'

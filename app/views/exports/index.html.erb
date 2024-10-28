@@ -1,0 +1,17 @@
+<style type="text/css">
+  body {
+    font-family: Roboto, sans-serif;
+  }
+</style>
+<body>
+  <h1><%= @index[:title] %></h1>
+  <nav>
+    <h2>Table of Contents</h2>
+    <ol>
+      <% @index[:children].each do |child| %>
+        <%= render partial: 'exports/index_entry', 
+          locals: { child: child } %>
+      <% end %>
+    </ol>
+  </nav>
+</body>

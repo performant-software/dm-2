@@ -38,6 +38,8 @@ Rails.application.routes.draw do
   post '/documents/create_batch' => 'documents#create_batch'
   post '/jobs' => 'documents#get_jobs_by_id'
   post '/rails/active_storage/direct_uploads' => 'direct_uploads#create'
+  post '/projects/:id/create_export' => 'projects#create_export'
+  get '/projects/:id/exports' => 'projects#exports'
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?
