@@ -23,7 +23,7 @@ import {
   selectHighlight,
   setHighlightSelectMode
 } from './textEditor';
-import { deleteFolder } from './folders';
+import { deleteFolder, openFolder } from './folders';
 import {
   setAddTileSourceMode,
   UPLOAD_SOURCE_TYPE,
@@ -87,6 +87,9 @@ export const GET_CURRENT_DOC_CONTENT_ERRORED = 'document_grid/GET_CURRENT_DOC_CO
 export const FETCH_LOCK_SUCCESS = 'document_grid/FETCH_LOCK_SUCCESS';
 export const FETCH_LOCK_ERRORED = 'document_grid/FETCH_LOCK_ERRORED';
 export const FROM_IMAGE_SUCCESS = 'document_grid/FROM_IMAGE_SUCCESS';
+export const OPEN_INITIAL_DOCS_STARTED = 'document_grid/OPEN_INITIAL_DOCS_STARTED';
+export const OPEN_INITIAL_DOCS_SUCCESS = 'document_grid/OPEN_INITIAL_DOCS_SUCCESS';
+export const OPEN_INITIAL_DOCS_ERRORED = 'document_grid/OPEN_INITIAL_DOCS_ERRORED';
 
 
 export const layoutOptions = [
@@ -112,7 +115,8 @@ const initialState = {
   deleteDialogKind: null,
   snackBarOpen: false,
   snackBarMessage: null,
-  currentLayout: 2
+  currentLayout: 2,
+  loadingInitialDocs: false,
 };
 
 export default function(state = initialState, action) {
@@ -408,6 +412,20 @@ export default function(state = initialState, action) {
       return {
         ...state,
         openDocuments: openDocumentsFetchUpdated
+      };
+
+    case OPEN_INITIAL_DOCS_STARTED:
+      return {
+        ...state,
+        loadingInitialDocs: true,
+      };
+
+    case OPEN_INITIAL_DOCS_ERRORED:
+    case OPEN_INITIAL_DOCS_SUCCESS:
+      return {
+        ...state,
+        loadingInitialDocs: false,
+        loading: false,
       };
 
     default:
@@ -1797,4 +1815,105 @@ export function createBatchImages ({
       console.error(error);
     }
   };
+}
+
+export function openInitialDocs(docIds) {
+  return async function(dispatch, getState) {
+    if (docIds.length > 0) {
+      dispatch({
+        type: OPEN_INITIAL_DOCS_STARTED,
+      });
+      await Promise.all(docIds.map(async (documentId, idx) => {
+        return fetch(`/documents/${documentId}`, {
+          headers: {
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response;
+        })
+        .then(response => response.json())
+        .then(document => {
+          return document;
+        })
+        .then(async document => {
+          dispatch({
+            type: OPEN_DOCUMENT_SUCCESS,
+            document,
+            firstTarget: null,
+            documentPosition: idx,
+          });
+          if (document.parent_type === "DocumentFolder") {
+            // open parent folder if not open
+            const { openFolderContents } = getState().folders;
+            if (!Object.hasOwn(openFolderContents, document.parent_id)) {
+              dispatch(openFolder(document.parent_id));
+            }
+          } else if (document.parent_type === "Document" && !docIds.includes(document.parent_id.toString())) {
+            // if document is an annotation (parent is a document),
+            // open parent document at position 0
+            await fetch(`/documents/${document.parent_id}`, {
+              headers: {
+                'access-token': localStorage.getItem('access-token'),
+                'token-type': localStorage.getItem('token-type'),
+                'client': localStorage.getItem('client'),
+                'expiry': localStorage.getItem('expiry'),
+                'uid': localStorage.getItem('uid')
+              }
+            })
+            .then(response => {
+              if (!response.ok) {
+                throw Error(response.statusText);
+              }
+              return response;
+            })
+            .then(response => response.json())
+            .then(parentDoc => {
+              return parentDoc;
+            })
+            .then(parentDoc => {
+              const parentLink = document.links_to.find((link) => link.document_id === parentDoc.id);
+              const firstTarget = parentLink && parentLink.highlight_uid;
+              dispatch({
+                type: OPEN_DOCUMENT_SUCCESS,
+                document: parentDoc,
+                firstTarget,
+                documentPosition: idx - 1 >= 0 ? idx - 1 : 0,
+              });
+              return Promise.resolve();
+            })
+            .catch(() => {
+              dispatch({
+                type: OPEN_DOCUMENT_ERRORED
+              });
+              dispatch({
+                type: OPEN_INITIAL_DOCS_ERRORED,
+              });
+              return Promise.reject();
+            });
+          }
+          return Promise.resolve();
+        })
+        .catch(() => {
+          dispatch({
+            type: OPEN_DOCUMENT_ERRORED
+          });
+          dispatch({
+            type: OPEN_INITIAL_DOCS_ERRORED,
+          });
+          return Promise.reject();
+        });
+      }));
+      dispatch({
+        type: OPEN_INITIAL_DOCS_SUCCESS,
+      });
+    }
+  }
 }
