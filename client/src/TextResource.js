@@ -609,7 +609,6 @@ class TextResource extends Component {
         tooltipOpen: { ...prevState.tooltipOpen, [toolName]: false },
       }
     });
-    this.state.editorView.focus();
   }
 
   onToolbarWidthChange(node) {
