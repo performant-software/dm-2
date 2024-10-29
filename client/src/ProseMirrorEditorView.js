@@ -7,7 +7,7 @@ export default class ProseMirrorEditorView extends Component {
   
   focus() {
     if (this.props.editorView) {
-      this.propse.editorView.focus();
+      this.props.editorView.focus();
     }
   }
 
