@@ -10,9 +10,7 @@ const supportedTextStyles = {
 // The textStyle ProseMirror MarkSpec
 export const textStyle = {
     attrs: textStyleMarkAttributes(),
-    parseDOM: [{tag: "span", getAttrs(dom) {
-      return cssToMarkAttr( dom.getAttribute("style") )
-    }}], 
+    parseDOM: [{getAttrs: (dom) => cssToMarkAttr( dom.getAttribute("style") )}], 
     toDOM(mark) {
       return ["span", { style: markAttrsToCSS( mark.attrs ) }, 0] 
     }
