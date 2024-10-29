@@ -1,5 +1,4 @@
 import {Schema} from "prosemirror-model"
-import {textStyle} from "./TextStyleMarkSpec"
 
 const blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
       preDOM = ["pre", ["code", 0]], brDOM = ["br"]
@@ -206,8 +205,6 @@ export const marks = {
         return ["span", { style: `color:${color}` }, 0] 
     }
   },
-
-  textStyle: textStyle,
 
   // :: MarkSpec A strong mark. Rendered as `<strong>`, parse rules
   // also match `<b>` and `font-weight: bold`.
