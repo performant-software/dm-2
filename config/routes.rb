@@ -43,6 +43,9 @@ Rails.application.routes.draw do
   post '/projects/:id/create_export' => 'projects#create_export'
   get '/projects/:id/exports' => 'projects#exports'
   match '/robots.txt', to: RobotsGenerator, via: :all
+  if ENV['AWS_ACCESS_KEY_ID'].present?
+    get 'sitemap.xml.gz', to: redirect("https://#{ENV['AWS_BUCKET']}.s3.#{ENV['AWS_REGION']}.amazonaws.com/sitemaps/sitemap.xml.gz")
+  end
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?

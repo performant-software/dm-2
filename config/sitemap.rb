@@ -1,7 +1,9 @@
+# Sitemap config
 SitemapGenerator::Sitemap.default_host = "#{ENV['PROTOCOL'] || 'http'}://#{ENV['HOSTNAME']}"
+SitemapGenerator::Sitemap.sitemaps_host = "#{ENV['PROTOCOL'] || 'http'}://#{ENV['HOSTNAME']}"
 
 # Set the sitemap storage details
-if ENV.key? 'AWS_ACCESS_KEY_ID'
+if ENV['AWS_ACCESS_KEY_ID'].present?
   SitemapGenerator::Sitemap.sitemaps_path = 'sitemaps/'
   SitemapGenerator::Sitemap.adapter = SitemapGenerator::AwsSdkAdapter.new(ENV['AWS_BUCKET'],
     acl: 'public-read', # Optional. This is the default.
