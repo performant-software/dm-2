@@ -204,8 +204,17 @@ class DocumentViewer extends Component {
     });
   }
 
-  getDocumentURL(docId) {
-    const loc = window.location.href.replace(window.location.search, "");
+  async getDocumentURL(docId) {
+    let loc = window.location.href.replace(window.location.search, "");
+    // eslint-disable-next-line no-restricted-globals
+    const isInIframe = (parent !== window);
+    const clipboardWrite = await navigator.permissions.query({ name: 'clipboard-write' });
+    if (isInIframe && clipboardWrite.state === "granted") {
+      // if in iframe, use parent URL to build document URL
+      // (check that clipboard write permission is granted to ensure iframe parent URL
+      // only used here when intentionally enabled)
+      loc = document.referrer;
+    }
     this.setState((prevState) => ({
       ...prevState,
       documentURL: `${loc}?document=${docId}`
