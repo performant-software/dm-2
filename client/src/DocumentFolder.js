@@ -48,7 +48,7 @@ class DocumentFolder extends Component {
           <TextField
             autoComplete='off'
             inputStyle={{ color: grey900, height: 'auto' }}
-            className="folder-name-textfield"
+            className={this.props.writeEnabled ? "folder-name-textfield" : "folder-name"}
             multiLine={true}
             id={'folderTitleField-' + this.props.item.id}
             defaultValue={this.props.item.document_title}

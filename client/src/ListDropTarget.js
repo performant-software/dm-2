@@ -12,12 +12,9 @@ import { loadProject } from './modules/project';
 import DocumentFolder from './DocumentFolder';
 import {NativeTypes} from 'react-dnd-html5-backend';
 import { parseIIIFManifest } from './modules/iiif';
-import Popover from 'material-ui/Popover';
-import Menu from 'material-ui/Menu';
-import MenuItem from 'material-ui/MenuItem';
 
 const ListTargetInner = props => {
-  const { isFolder, isOver, itemType, inContents, writeEnabled, adminEnabled, openDocumentIds, item, openFolderContents, allDraggable, targetParentId, buoyancyTarget } = props;
+  const { isFolder, isOver, itemType, inContents, writeEnabled, adminEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
   if (isFolder) {
     let contents = openFolderContents[item.id];
     return <DocumentFolder
