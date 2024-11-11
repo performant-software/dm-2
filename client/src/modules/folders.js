@@ -70,7 +70,7 @@ export default function(state = initialState, action) {
   }
 }
 
-export function createFolder(parentId, parentType, title = 'New Folder') {
+export function createFolder(parentId, parentType, title = 'New Folder', position = 0) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_FOLDER
@@ -97,6 +97,44 @@ export function createFolder(parentId, parentType, title = 'New Folder') {
     .then(response => {
       if (!response.ok) {
         throw Error(response.statusText);
+      }
+      return response.json();
+    })
+    .then(async folder => {
+      // move folder into position if specified
+      if (position && position !== 0) {
+        let moveBody = {
+          document_folder: {
+            position,
+          }
+        };
+        if (parentType !== "Project") {
+          moveBody.document_folder.destination_id = parentId;
+        }
+        fetch(`/document_folders/${folder.id}/move`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
+          method: 'PATCH',
+          body: JSON.stringify(moveBody)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return;
+        })
+        .then(() => {
+          if (parentType === "DocumentFolder") {
+            dispatch(openFolder(parentId));
+          }
+        });
       }
     })
     .then(() => dispatch(loadProject(getState().project.id)))

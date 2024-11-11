@@ -285,3 +285,24 @@ body {
   background: rgba(200, 200, 255, 0.4);
   pointer-events: none;
 }
+
+button.add-button {
+  margin-left: 10;
+  height: auto !important;
+  padding: 12px 0 !important;
+  line-height: 1 !important;
+  svg {
+    margin: 0 !important;
+  }
+  div {
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    span {
+      padding: 0 !important;
+      font-size: 12px !important;
+    }
+  }
+}

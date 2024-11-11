@@ -3,15 +3,21 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { DropTarget } from 'react-dnd';
 import { openFolder, closeFolder, moveFolder, addTree } from './modules/folders';
+import { openDocumentPopover, closeDocumentPopover, showBatchImagePrompt } from './modules/project';
+import { createTextDocument, createCanvasDocument } from './modules/documentGrid';
+import { createFolder } from './modules/folders';
 import { addLink, moveLink } from './modules/annotationViewer';
 import { moveDocument } from './modules/documentGrid';
 import { loadProject } from './modules/project';
 import DocumentFolder from './DocumentFolder';
 import {NativeTypes} from 'react-dnd-html5-backend';
 import { parseIIIFManifest } from './modules/iiif';
+import Popover from 'material-ui/Popover';
+import Menu from 'material-ui/Menu';
+import MenuItem from 'material-ui/MenuItem';
 
 const ListTargetInner = props => {
-  const { isFolder, isOver, writeEnabled, adminEnabled, openDocumentIds, item, openFolderContents, allDraggable } = props;
+  const { isFolder, isOver, itemType, inContents, writeEnabled, adminEnabled, openDocumentIds, item, openFolderContents, allDraggable, targetParentId, buoyancyTarget } = props;
   if (isFolder) {
     let contents = openFolderContents[item.id];
     return <DocumentFolder
@@ -29,9 +35,11 @@ const ListTargetInner = props => {
     />
   }
   else {
+    const isNewItem = ['newDocument', 'newFolder'].includes(itemType);
+    const shouldShowOver = isOver && !(!inContents && isNewItem);
     return (
       <div style={{ width: 'auto', height: '8px', margin: '0 8px' }}>
-        <div style={{ width: 'auto', height: '0', marginTop: '4px', borderTop: isOver ? '2px solid #666' : 'none'}}></div>
+        <div style={{ width: 'auto', height: '0', marginTop: '4px', borderTop: shouldShowOver ? '2px solid #666' : 'none'}}></div>
       </div>
     );
   }
@@ -115,12 +123,14 @@ function handleDMItemDrop(props,monitorItem) {
 const listDropTarget = {
   canDrop(props, monitor) {
     const monitorItem = monitor.getItem();
+    const itemType = monitor.getItemType();
     if (
       (props.item && monitorItem.isFolder && (monitorItem.id === props.item.id 
         || (monitorItem.descendant_folder_ids && monitorItem.descendant_folder_ids.includes(props.item.id))
       )) 
       || (monitorItem.isLinkItem && props.inContents)
       || (monitorItem.files && !props.inContents)
+      || (!props.inContents && ['newDocument', 'newFolder'].includes(itemType))
     ) {
       return false;
     }
@@ -128,12 +138,35 @@ const listDropTarget = {
   },
 
   drop(props, monitor) {
+    const {
+      buoyancyTarget,
+      createCanvasDocument,
+      createFolder,
+      createTextDocument,
+      targetParentId,
+      targetParentType,
+    } = props;
+
     if (!monitor.didDrop()) {
       const monitorItem = monitor.getItem();
-      if( monitorItem.files ) {
-        handleFileSystemDrop(props,monitorItem)
-      } else {
-        handleDMItemDrop(props,monitorItem)
+      const itemType = monitor.getItemType();
+      if (monitorItem.files) {
+        handleFileSystemDrop(props ,monitorItem)
+      } else if (itemType === "contentsSummary") {
+        handleDMItemDrop(props, monitorItem)
+      } else if (itemType === "newDocument") {
+        if(monitorItem.addType === "image") {
+          createCanvasDocument({
+            parentId: targetParentId,
+            parentType: targetParentType,
+            position: buoyancyTarget + 1,
+          });
+        }
+        else {
+          createTextDocument(targetParentId, targetParentType, buoyancyTarget + 1);
+        }
+      } else if (itemType === "newFolder") {
+        createFolder(targetParentId, targetParentType, "New Folder", buoyancyTarget + 1);
       }
     }
   }
@@ -142,7 +175,8 @@ const listDropTarget = {
 function collect(connect, monitor) {
   return {
     connectDropTarget: connect.dropTarget(),
-    isOver: monitor.isOver()
+    isOver: monitor.isOver(),
+    itemType: monitor.getItemType(),
   };
 }
 
@@ -168,9 +202,14 @@ class ListDropTarget extends Component {
   }
 }
 
-ListDropTarget = DropTarget(['contentsSummary', NativeTypes.FILE], listDropTarget, collect)(ListDropTarget);
+ListDropTarget = DropTarget(
+  ['contentsSummary', 'newFolder', 'newDocument', NativeTypes.FILE],
+  listDropTarget,
+  collect,
+)(ListDropTarget);
 
 const mapStateToProps = state => ({
+  documentPopoverOpenFor: state.project.documentPopoverOpenFor,
   openFolderContents: state.folders.openFolderContents,
   projectId: state.project.id,
   addedLink: state.annotationViewer.addedLink,
@@ -184,7 +223,13 @@ const mapDispatchToProps = dispatch => bindActionCreators({
   addLink,
   moveLink,
   loadProject,
-  addTree
+  addTree,
+  openDocumentPopover,
+  closeDocumentPopover,
+  createTextDocument,
+  createCanvasDocument,
+  createFolder,
+  showBatchImagePrompt,
 }, dispatch);
 
 export default connect(

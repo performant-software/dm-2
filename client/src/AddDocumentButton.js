@@ -1,45 +1,59 @@
 import React, { Component } from 'react';
+import { DragSource } from 'react-dnd';
 import FlatButton from 'material-ui/FlatButton';
-import NoteAdd from 'material-ui/svg-icons/action/note-add';
-import Popover from 'material-ui/Popover';
-import Menu from 'material-ui/Menu';
-import MenuItem from 'material-ui/MenuItem';
 
-export default class AddDocumentButton extends Component {
+class AddDocumentButton extends Component {
+  componentDidMount() {
+    // use a static image for drag preview
+    const { addType, connectDragPreview } = this.props;
+    let dragIcon = new Image();
+    if (addType === 'text') {
+      dragIcon.src = '/dragging-add-doc.png';
+    } else {
+      dragIcon.src = '/dragging-add-img.png';
+    }
+    connectDragPreview(dragIcon);
+  }
+
   render() {
-    const buttonId = `addNewDocumentButton-${this.props.idString}`;
-    return (
+    if (this.props.addType === "batch") {
+      // image batch should not be draggable, as it already has a folder
+      // selector in its modal
+      return (
+        <div>
+          <FlatButton
+            label={this.props.label}
+            className="add-button"
+            icon={this.props.icon}
+            onClick={this.props.onClick}
+          />
+        </div>
+      );
+    }
+    // connect all others to drag and drop
+    return this.props.connectDragSource(
       <div>
         <FlatButton
           label={this.props.label}
-          style={{marginLeft: 10}}
-          icon={<NoteAdd />}
-          onClick={this.props.openDocumentPopover}
-          id={buttonId}
+          className="add-button"
+          icon={this.props.icon}
+          onClick={this.props.onClick}
         />
-        <Popover
-          open={this.props.documentPopoverOpen}
-          anchorEl={document.getElementById(buttonId)}
-          anchorOrigin={{horizontal: 'right', vertical: 'top'}}
-          targetOrigin={{horizontal: 'left', vertical: 'top'}}
-          onRequestClose={this.props.closeDocumentPopover}
-         >
-          <Menu>
-            <MenuItem primaryText='Text' onClick={() => {
-              this.props.textClick();
-              this.props.closeDocumentPopover();
-            }} />
-            <MenuItem primaryText='Image' onClick={() => {
-              this.props.imageClick();
-              this.props.closeDocumentPopover();
-            }} />
-            <MenuItem primaryText='Images (batch)' onClick={() => {
-              this.props.batchImageClick();
-              this.props.closeDocumentPopover();
-            }} />
-          </Menu>
-        </Popover>
       </div>
     );
   }
 }
+
+function collectDrag(connect, monitor) {
+  return {
+    connectDragSource: connect.dragSource(),
+    connectDragPreview: connect.dragPreview(),
+    isDragging: monitor.isDragging()
+  };
+}
+
+export default DragSource(
+  'newDocument',
+  { beginDrag: (props) => ({ addType: props.addType }) },
+  collectDrag
+)(AddDocumentButton);
