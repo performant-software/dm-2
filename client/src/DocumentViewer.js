@@ -107,9 +107,9 @@ class DocumentViewer extends Component {
     }
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     this.props.connectDragPreview(new Image());
-    this.getDocumentURL(this.props.document_id);
+    await this.getDocumentURL(this.props.document_id.toString());
   }
 
   isEditable = () => {

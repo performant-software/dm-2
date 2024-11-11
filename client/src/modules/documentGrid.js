@@ -1844,7 +1844,7 @@ export function openInitialDocs(docIds) {
           return document;
         })
         .then(async document => {
-          dispatch({
+          await dispatch({
             type: OPEN_DOCUMENT_SUCCESS,
             document,
             firstTarget: null,
