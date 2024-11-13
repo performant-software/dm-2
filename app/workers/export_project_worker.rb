@@ -315,9 +315,10 @@ class ExportProjectWorker
     }
     manifest_yml = Tempfile.new("manifest.yml")
     File.write(manifest_yml.path, manifest.to_yaml)
+    dbname = ENV["DATABASE_URL"] ? ENV["DATABASE_URL"].split('/')[-1] : Project.connection.current_database
     TableSaw.configure({
       manifest: manifest_yml.path,
-      dbname: Project.connection.current_database,
+      dbname: dbname,
     })
     ::ActiveRecord::Base.establish_connection(TableSaw.configuration.connection)
     TableSaw::DependencyGraph::Build.new(TableSaw::Manifest.instance).call
