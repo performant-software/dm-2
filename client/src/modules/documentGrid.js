@@ -687,7 +687,7 @@ export function duplicateHighlights(highlights, document_id) {
 }
 
 
-export function createTextDocument(parentId, parentType, callback) {
+export function createTextDocument(parentId, parentType, position, callback) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -736,13 +736,48 @@ export function createTextDocument(parentId, parentType, callback) {
     })
     .then(response => response.json())
     .then(document => {
+      if (position && position !== 0) {
+        let moveBody = {
+          document: {
+            position,
+          }
+        };
+        if (parentType !== "Project") {
+          moveBody.document.destination_id = parentId;
+        }
+        fetch(`/documents/${document.id}/move`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
+          method: 'PATCH',
+          body: JSON.stringify(moveBody)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response;
+        })
+      }
+      return document;
+    })
+    .then(document => {
       dispatch({
         type: POST_SUCCESS,
         document,
         documentPosition: getState().documentGrid.openDocuments.length
       });
-      if (parentType === 'Project') // refresh project if document has been added to its table of contents
+      if (parentType === 'Project') { // refresh project if document has been added to its table of contents
         dispatch(loadProject(getState().project.id));
+      } else if (parentType === 'DocumentFolder') {
+        dispatch(openFolder(parentId));
+      }
       return document;
     })
     .then(document => {
@@ -756,9 +791,9 @@ export function createTextDocument(parentId, parentType, callback) {
   }
 }
 
-export function createTextDocumentWithLink(origin, parentId = null, parentType = null) {
+export function createTextDocumentWithLink(origin, parentId = null, parentType = null, position = 0) {
   return function(dispatch) {
-    dispatch(createTextDocument(parentId, parentType, document => {
+    dispatch(createTextDocument(parentId, parentType, position, document => {
       dispatch(addLink(origin, {
         linkable_id: document.id,
         linkable_type: 'Document'
@@ -872,6 +907,8 @@ export function updateDocument(documentId, attributes, options) {
       if (options && options.refreshLists) {
         if (getState().project.contentsChildren.map(child => child.document_id).includes(documentId)) {
           dispatch(loadProject(getState().project.id));
+        } else if (document.parent_type === 'DocumentFolder') {
+          dispatch(openFolder(document.parent_id));
         }
         const sidebarTarget = getState().annotationViewer.sidebarTarget;
         if (sidebarTarget && (sidebarTarget.document_id === documentId || sidebarTarget.links_to.map(link => link.document_id).includes(documentId))) {
@@ -1005,7 +1042,7 @@ export function setHighlightThumbnail(highlightId, image_url, coords, svg_string
   }
 }
 
-export function createCanvasDocument({ parentId, parentType, callback }) {
+export function createCanvasDocument({ parentId, parentType, position, callback }) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_DOCUMENT
@@ -1039,14 +1076,49 @@ export function createCanvasDocument({ parentId, parentType, callback }) {
     })
     .then(response => response.json())
     .then(document => {
+      if (position && position !== 0) {
+        let moveBody = {
+          document: {
+            position,
+          }
+        };
+        if (parentType !== "Project") {
+          moveBody.document.destination_id = parentId;
+        }
+        fetch(`/documents/${document.id}/move`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
+          method: 'PATCH',
+          body: JSON.stringify(moveBody)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response;
+        })
+      }
+      return document;
+    })
+    .then(document => {
       dispatch({
         type: POST_SUCCESS,
         document,
         documentPosition: getState().documentGrid.openDocuments.length
       });
       dispatch(setAddTileSourceMode(document.id, UPLOAD_SOURCE_TYPE));
-      if (parentType === 'Project') // refresh project if document has been added to its table of contents
+      if (parentType === 'Project') { // refresh project if document has been added to its table of contents
         dispatch(loadProject(getState().project.id));
+      } else if (document.parent_type === 'DocumentFolder') {
+        dispatch(openFolder(document.parent_id));
+      }
       return document;
     })
     .then(document => {

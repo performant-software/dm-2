@@ -114,21 +114,26 @@ body {
   margin-top: -4px !important;
 }
 
-.folder-name-textfield {
+[class^="folder-name"] {
   flex-grow: 1;
   height: auto !important;
   margin-top: -3px;
   margin-bottom: -10px;
   word-wrap: normal;
-  cursor: text !important;
+  textarea {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+}
+[class^="folder-name"],
+[class^="folder-name"] textarea {
+  cursor: pointer !important;
   color: #212121 !important;
 }
 
+.folder-name-textfield,
 .folder-name-textfield textarea {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
   cursor: text !important;
-  color: #212121 !important;
 }
 
 .dm-highlight .selected {
@@ -284,4 +289,25 @@ body {
   left: 0; right: 0; top: 0; bottom: 0;
   background: rgba(200, 200, 255, 0.4);
   pointer-events: none;
+}
+
+button.add-button {
+  margin-left: 10;
+  height: auto !important;
+  padding: 12px 0 !important;
+  line-height: 1 !important;
+  svg {
+    margin: 0 !important;
+  }
+  div {
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    span {
+      padding: 0 !important;
+      font-size: 12px !important;
+    }
+  }
 }
