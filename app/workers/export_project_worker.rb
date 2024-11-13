@@ -320,7 +320,6 @@ class ExportProjectWorker
       manifest: manifest_yml.path,
       dbname: dbname,
     })
-    ::ActiveRecord::Base.establish_connection(TableSaw.configuration.connection)
     TableSaw::DependencyGraph::Build.new(TableSaw::Manifest.instance).call
   end
 end
