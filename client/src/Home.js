@@ -25,7 +25,7 @@ class Home extends Component {
   render() {
     return (
       <div style={{height: '100%', width: '100%', position: 'absolute'}}>
-        <Navigation title='DM 2.0' isHome={true} isLoading={this.props.loading} />
+        <Navigation title='DM 3.0' isHome={true} isLoading={this.props.loading} />
         <Paper style={{ minWidth: '300px', maxWidth: '60%', maxHeight: '72%', margin: '112px auto 32px auto', overflowY: 'scroll' }} zDepth={2}>
           <List style={{ padding: '0' }}>
             {this.props.projects.map(project => (

@@ -609,7 +609,6 @@ class TextResource extends Component {
         tooltipOpen: { ...prevState.tooltipOpen, [toolName]: false },
       }
     });
-    this.state.editorView.focus();
   }
 
   onToolbarWidthChange(node) {
@@ -1004,9 +1003,9 @@ class TextResource extends Component {
 
   onFontSizeChange(e,i,fontSize) {
     e.preventDefault();
-    const textStyleMarkType = this.state.documentSchema.marks.textStyle;
+    const fontSizeMarkType = this.state.documentSchema.marks.fontSize;
     const editorState = this.getEditorState();
-    const cmd = fontSize ? addMark( textStyleMarkType, { fontSize } ) : removeMark( textStyleMarkType );
+    const cmd = fontSize ? addMark( fontSizeMarkType, { fontSize } ) : removeMark( fontSizeMarkType );
     cmd( editorState, this.state.editorView.dispatch );
     this.state.editorView.focus();
   }
@@ -1285,13 +1284,14 @@ class TextResource extends Component {
     let alteredHighlights = [];
     let effectedMarks = [];
     const editorState = this.getEditorState();
+    if (steps.length > 0 && steps.every((step) => step instanceof AddMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name)) {
+      // on highlight, will create 1 AddMarkStep per line break / element crossing
+      // save one new highlight for the entire range
+      this.createHighlight(steps[0].mark, tx.curSelection.content(), serializer);
+    }
     steps.forEach(step => {
-      // save new highlight
-      if (step instanceof AddMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name) {
-        this.createHighlight(step.mark, tx.curSelection.content(), serializer);
-      }
       // process highlights that have been removed or altered by a text content change or a mark toggle
-      else if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name)) {
+      if (step instanceof ReplaceStep || (step instanceof RemoveMarkStep && step.mark.type.name === this.state.documentSchema.marks.highlight.name)) {
         // TODO: handle case where the space between two highlights is eliminated
         // pad the range where we look for effected highlights in order to accommodate edge cases with cursor at beginning or end of highlight
         let from = Math.max(step.from - 1, 0), to = step.to;

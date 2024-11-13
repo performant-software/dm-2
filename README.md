@@ -1,13 +1,13 @@
-Digital Mappa 2
+Digital Mappa 3
 ============================================
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
-Digital Mappa 2 (DM2 for short) is a freely available online environment for creating projects out of digital images and texts. The premise of DM2 is simple and powerful: if you have a collection of digital images and/or texts, you should be able to produce an online resource that links together specific moments on these images and texts together, annotate these moments as much as you want, collaborate with others on this work, have the content you produce be searchable, and publish this work to others or the public as you wish. And you should be able to do this with little technical expertise.
+Digital Mappa 3 (DM3 for short) is a freely available online environment for creating projects out of digital images and texts. The premise of DM3 is simple and powerful: if you have a collection of digital images and/or texts, you should be able to produce an online resource that links together specific moments on these images and texts together, annotate these moments as much as you want, collaborate with others on this work, have the content you produce be searchable, and publish this work to others or the public as you wish. And you should be able to do this with little technical expertise.
 
-DM2 was developed under the direction of Martin Foys and his team at the University of Wisconsin-Madison and Dot Porter at the Schoenberg Institute for Manuscript Studies. Funding was provided through a grant from the National Endowment for the Humanities and through funding from UW Madison. Performant Software Solutions LLC (www.performantsoftware.com) performed the software development, with Andy Stuhl, Nick Laiacona, Derek Leadbetter, and Ben Silverman as primary contributors.
+DM3 was developed under the direction of Martin Foys and his team at the University of Wisconsin-Madison and Dot Porter at the Schoenberg Institute for Manuscript Studies. Funding was provided through a grant from the National Endowment for the Humanities and through funding from UW Madison. Performant Software Solutions LLC (www.performantsoftware.com) performed the software development, with Andy Stuhl, Nick Laiacona, Derek Leadbetter, and Ben Silverman as primary contributors.
 
-DM2 design was inspired by the DM project (https://github.com/performant-software/DM) developed originally at Drew University by Martin Foys and others.
+DM3 design was inspired by the DM project (https://github.com/performant-software/DM) developed originally at Drew University by Martin Foys and others.
 
 - [Technical overview](#technical-overview)
 - [Heroku installation](#heroku-installation)
@@ -29,7 +29,7 @@ DM2 design was inspired by the DM project (https://github.com/performant-softwar
 Technical overview
 ---------------
 
-DM2 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses Active Storage for image uploads and ImageMagick for image processing. It is primarily built to use Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM2 GitHub repo](https://github.com/performant-software/dm-2).
+DM3 is a single page React application backed by a Ruby on Rails server running a Postgres database. It uses Active Storage for image uploads and ImageMagick for image processing. It is primarily built to use Amazon S3 for image storage. It has been developed within the Heroku (heroku.com) environment but has no Heroku specific dependencies. Issues are tracked and releases are issued on the [DM3 GitHub repo](https://github.com/performant-software/dm-2).
 
 
 Heroku installation
@@ -37,7 +37,7 @@ Heroku installation
 
 ### Create app
 
-To install DM2 on Heroku, use the "Deploy to Heroku" button above.
+To install DM3 on Heroku, use the "Deploy to Heroku" button above.
 
 You may also create a new app and point it at this repository using the following command with the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli):
 
@@ -100,7 +100,7 @@ REDIS_PROVIDER=REDIS_URL
 PROTOCOL=https
 ```
 
-The `SECRET_KEY_BASE` environment variable is used to encrypt the passwords on your DM2 instance, so it is important to keep it secure and unguessable. Here's a good site for generating a secret key: https://www.grc.com/passwords.htm
+The `SECRET_KEY_BASE` environment variable is used to encrypt the passwords on your DM3 instance, so it is important to keep it secure and unguessable. Here's a good site for generating a secret key: https://www.grc.com/passwords.htm
 
 Set the `HOSTNAME` and `PROTOCOL` environment variables to the hostname and protocol of your Heroku application. For example, if your application is hosted at `https://my-project.herokuapp.com`, you would set the `HOSTNAME` variable to `my-project.herokuapp.com`, and the `PROTOCOL` variable to `https`.
 
@@ -145,7 +145,7 @@ Once these things are done, migrate the database using the following command:
 heroku run rails db:migrate
 ```
 
-DM2 should now be up and running on your Heroku instance! 
+DM3 should now be up and running on your Heroku instance! 
 
 The first user account created is automatically given admin powers. Thereafter, that user can grant other users access and privileges using the Admin menu in the top right corner of the interface. 
 
@@ -155,7 +155,7 @@ Local installation
 
 ### With Docker Compose
 
-DM2 can be installed quickly using Docker Compose. The only requirements are [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) themselves.
+DM3 can be installed quickly using Docker Compose. The only requirements are [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) themselves.
 
 First, clone the repo from GitHub, `cd` into the repo directory, and copy the sample environment variables into `.env` and `config/application.yml`.
 
@@ -168,7 +168,7 @@ cp config/application.sample.yml config/application.yml
 
 **Note**: In `.env`, when using Docker Compose, you must comment out the `REDIS_URL` environment variable.
 
-Next, there are slightly different instructions depending on whether you intend to run DM2 in a production or development environment.
+Next, there are slightly different instructions depending on whether you intend to run DM3 in a production or development environment.
 
 #### Development environment
 
@@ -265,7 +265,7 @@ docker-compose down
 
 #### Setup
 
-DM2 is a Ruby on Rails 5.x/React application. Setting up PostgresSQL, Ruby, Bundler, Node.JS, Redis, and Yarn are beyond the scope of this README, but plenty of information is available online about these tools.
+DM3 is a Ruby on Rails 5.x/React application. Setting up PostgresSQL, Ruby, Bundler, Node.JS, Redis, and Yarn are beyond the scope of this README, but plenty of information is available online about these tools.
 
 Ensure that both PostgreSQL and Redis services are running.
 
@@ -290,7 +290,7 @@ cd client
 yarn
 ```
 
-4) Create a database for the application. The default database is called "dm2_staging" with no username or password. You can configure this in the config/database.yml file. Once the database is created, run:
+4) Create a database for the application. The default database is called "DM3_staging" with no username or password. You can configure this in the config/database.yml file. Once the database is created, run:
 
 ```sh
 rails db:migrate
@@ -347,4 +347,4 @@ To convert an existing application to use a different file storage service, a ra
 Upgrade from 0.x
 -------------
 
-In order to upgrade from 0.x to 1.0, please read the [upgrade guide in the DM2 wiki](https://github.com/performant-software/dm-2/wiki/v0.x-to-v1.0-upgrade-guide).
+In order to upgrade from 0.x to 1.0, please read the [upgrade guide in the DM3 wiki](https://github.com/performant-software/dm-2/wiki/v0.x-to-v1.0-upgrade-guide).

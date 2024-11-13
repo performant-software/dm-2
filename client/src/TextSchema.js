@@ -1,5 +1,4 @@
 import {Schema} from "prosemirror-model"
-import {textStyle} from "./TextStyleMarkSpec"
 
 const blockquoteDOM = ["blockquote", 0], hrDOM = ["hr"],
       preDOM = ["pre", ["code", 0]], brDOM = ["br"]
@@ -173,6 +172,10 @@ export const marks = {
 
   fontSize: {
     attrs: {fontSize: {default: '12pt'}},
+    parseDOM: [{
+      style: "font-size",
+      getAttrs: (styleValue) => ({ fontSize: styleValue }),
+    }],
     toDOM(mark) {
         let fontSize=mark.attrs.fontSize; 
         return ["span", { style: `font-size:${fontSize}` }, 0] 
@@ -181,6 +184,10 @@ export const marks = {
 
   fontFamily: {
     attrs: {fontFamily: {default: 'sans-serif'}},
+    parseDOM: [{
+      style: "font-family",
+      getAttrs: (styleValue) => ({ fontFamily: styleValue }),
+    }],
     toDOM(mark) {
         let fontFamily=mark.attrs.fontFamily; 
         return ["span", { style: `font-family:${fontFamily}` }, 0] 
@@ -189,13 +196,15 @@ export const marks = {
 
   color: {
     attrs: {color: {default: 'black'}},
+    parseDOM: [{
+      style: "color",
+      getAttrs: (styleValue) => ({ color: styleValue }),
+    }],
     toDOM(mark) {
         let color=mark.attrs.color; 
         return ["span", { style: `color:${color}` }, 0] 
     }
   },
-
-  textStyle: textStyle,
 
   // :: MarkSpec A strong mark. Rendered as `<strong>`, parse rules
   // also match `<b>` and `font-weight: bold`.

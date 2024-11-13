@@ -91,7 +91,7 @@ class Summary extends Component {
           <Avatar
             src={document_kind === CANVAS_RESOURCE_TYPE ? thumbnail_url : null}
             icon={document_kind === TEXT_RESOURCE_TYPE ? <TextFields /> : null}
-            style={this.props.isDraggable && !linkItem ? {
+            style={!linkItem ? {
               left: '8px',
               borderRadius: '0'
             } : {
@@ -102,20 +102,20 @@ class Summary extends Component {
         leftIcon={document_kind === 'folder' ? (this.props.isOpen ? <ArrowDown /> : <ArrowRight />) : null}
         rightIcon={ this.renderRightIcon() }
         rightIconButton={ this.renderRightButton() }
-        style={this.props.isDraggable && !linkItem ? {
+        style={!linkItem ? {
           borderStyle: 'solid',
           borderWidth: this.props.borderBold ? '2px' : '1px',
           borderColor: grey400,
-          margin: '0 8px',
+          margin: this.props.isDraggable ? '0 8px' : '12px 8px',
           color: this.props.isOpen ? white : black,
           backgroundColor: this.props.isOpen && document_kind !== 'folder' ? grey800 : this.state.backgroundColor,
-          cursor: this.props.isDragging ? '-webkit-grabbing' : '-webkit-grab',
+          cursor: this.props.isDragging ? '-webkit-grabbing' : ((this.props.isDraggable && '-webkit-grab') || 'pointer'),
           maxWidth: `${this.props.sidebarWidth - 20}px`
         } : {
           color: this.props.isOpen ? white : black,
           backgroundColor: this.props.isOpen && document_kind !== 'folder' ? grey800 : this.state.backgroundColor,
         }}
-        innerDivStyle={this.props.isDraggable && !linkItem ? {
+        innerDivStyle={!linkItem ? {
           paddingLeft: '64px'
         } : null}
         onClick={event => {

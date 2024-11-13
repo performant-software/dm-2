@@ -70,7 +70,7 @@ export default function(state = initialState, action) {
   }
 }
 
-export function createFolder(parentId, parentType, title = 'New Folder') {
+export function createFolder(parentId, parentType, title = 'New Folder', position = 0) {
   return function(dispatch, getState) {
     dispatch({
       type: NEW_FOLDER
@@ -98,6 +98,44 @@ export function createFolder(parentId, parentType, title = 'New Folder') {
       if (!response.ok) {
         throw Error(response.statusText);
       }
+      return response.json();
+    })
+    .then(async folder => {
+      // move folder into position if specified
+      if (position && position !== 0) {
+        let moveBody = {
+          document_folder: {
+            position,
+          }
+        };
+        if (parentType !== "Project") {
+          moveBody.document_folder.destination_id = parentId;
+        }
+        fetch(`/document_folders/${folder.id}/move`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'access-token': localStorage.getItem('access-token'),
+            'token-type': localStorage.getItem('token-type'),
+            'client': localStorage.getItem('client'),
+            'expiry': localStorage.getItem('expiry'),
+            'uid': localStorage.getItem('uid')
+          },
+          method: 'PATCH',
+          body: JSON.stringify(moveBody)
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return;
+        })
+        .then(() => {
+          if (parentType === "DocumentFolder") {
+            dispatch(openFolder(parentId));
+          }
+        });
+      }
     })
     .then(() => dispatch(loadProject(getState().project.id)))
     .then(() => dispatch({
@@ -110,7 +148,7 @@ export function createFolder(parentId, parentType, title = 'New Folder') {
 }
 
 export function openFolder(id) {
-  return function(dispatch) {
+  return function(dispatch, getState) {
     dispatch({
       type: FOLDER_OPENED,
       id
@@ -132,11 +170,20 @@ export function openFolder(id) {
       return response;
     })
     .then(response => response.json())
-    .then(folder => dispatch({
-      type: OPEN_SUCCESS,
-      id,
-      contentsChildren: folder.contents_children
-    }))
+    .then(folder => {
+        dispatch({
+        type: OPEN_SUCCESS,
+        id,
+        contentsChildren: folder.contents_children
+      });
+      if (folder.parent_type === "DocumentFolder") {
+        // open all parent folders up to root if not open
+        const { openFolderContents } = getState().folders;
+        if (!Object.hasOwn(openFolderContents, folder.parent_id)) {
+          dispatch(openFolder(folder.parent_id));
+        }
+      }
+    })
     .catch(() => dispatch({
       type: OPEN_ERRORED
     }));

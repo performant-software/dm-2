@@ -1,3 +1,5 @@
+require 'robots_generator'
+
 Rails.application.routes.draw do
   resources :user_project_permissions, except: :index
   resources :document_folders, except: :index
@@ -40,6 +42,10 @@ Rails.application.routes.draw do
   post '/rails/active_storage/direct_uploads' => 'direct_uploads#create'
   post '/projects/:id/create_export' => 'projects#create_export'
   get '/projects/:id/exports' => 'projects#exports'
+  match '/robots.txt', to: RobotsGenerator, via: :all
+  if ENV['AWS_ACCESS_KEY_ID'].present?
+    get 'sitemap.xml.gz', to: redirect("https://#{ENV['AWS_BUCKET']}.s3.#{ENV['AWS_REGION']}.amazonaws.com/sitemaps/sitemap.xml.gz")
+  end
 
   get '*path', to: "application#fallback_index_html", constraints: ->(request) do
     !request.xhr? && request.format.html?
