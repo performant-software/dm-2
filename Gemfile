@@ -57,4 +57,5 @@ gem 'dotenv-rails', '~> 2.8'
 # pinned to < 9.3 until https://github.com/ilyakatz/data-migrate/issues/302 resolved
 gem 'data_migrate', '~> 9.2', '< 9.3'
 gem 'rubyzip', '~> 2.3'
+gem 'table_saw'
 gem 'sitemap_generator'

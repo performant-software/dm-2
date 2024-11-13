@@ -13,6 +13,8 @@ require 'storyblok_richtext/nodes/table'
 require 'storyblok_richtext/nodes/table_cell'
 require 'storyblok_richtext/nodes/table_header'
 require 'storyblok_richtext/nodes/table_row'
+require 'table_saw'
+require 'table_saw/create_dump_file'
 
 class ViewContext < ActionView::Base
   # required to prevent template cache bug; see
@@ -65,6 +67,15 @@ class ExportProjectWorker
             errlog_txt.write(@errors.join("\r\n"))
           }
         end
+        # prep sql dump
+        records = self.get_sql_records()
+        sqldump_outfile = Tempfile.new("sql.dump")
+        TableSaw::CreateDumpFile.new(
+          records, output: sqldump_outfile.path, format: { "type" => "copy" }
+        ).call
+        # write sql dump to zip
+        zipfile.add("sql.dump", sqldump_outfile.path)
+        zipfile.commit
       end
       zip_data = File.open(tempfile.path)
       # attach to project (create blob and upload to storage)
@@ -268,5 +279,47 @@ class ExportProjectWorker
     context = ViewContext.new(lookup_context, data, nil)
     renderer = ActionView::Renderer.new(lookup_context)
     renderer.render(context, { inline: File.read(template_path) })
+  end
+
+  def get_sql_records
+    manifest = {
+      "variables" => { "project_id" => @project.id },
+      "tables" => [
+        {
+          "table" => "projects",
+          "query" => "select * from projects where id = %{project_id}",
+          "has_many" => ["document_folders", "documents"]
+        },
+        {
+          "table" => "document_folders",
+          "query" => "select * from document_folders where project_id = %{project_id}",
+        },
+        {
+          "table" => "documents",
+          "query" => "select * from documents where project_id = %{project_id}",
+          "has_many" => ["documents_links", "highlights"]
+        },
+        {
+          "table" => "documents_links",
+          "query" => "select * from documents_links where document_id in (select id from documents where project_id = %{project_id})",
+        },
+        {
+          "table" => "highlights",
+          "query" => "select * from highlights where document_id in (select id from documents where project_id = %{project_id})",
+        },
+        {
+          "table" => "links",
+          "query" => "select * from links where id in (select link_id from documents_links where document_id in (select id from documents where project_id = %{project_id}))",
+        },
+      ],
+    }
+    manifest_yml = Tempfile.new("manifest.yml")
+    File.write(manifest_yml.path, manifest.to_yaml)
+    TableSaw.configure({
+      manifest: manifest_yml.path,
+      dbname: Project.connection.current_database,
+    })
+    ::ActiveRecord::Base.establish_connection(TableSaw.configuration.connection)
+    TableSaw::DependencyGraph::Build.new(TableSaw::Manifest.instance).call
   end
 end
