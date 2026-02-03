@@ -152,12 +152,14 @@ The first user account created is automatically given admin powers. Thereafter, 
 Local installation
 -------------
 
+### Minimum System / VM Spec ###
+It doesn't take much to get started. 2 cores / 4gb ram / 10gb storage. Less ram will cause docker compose build errors.
 
 ### With Docker Compose
 
-DM3 can be installed quickly using Docker Compose. The only requirements are [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) themselves.
+DM3 can be installed quickly using Docker Compose. The only requirements are [GIT](https://git-scm.com/install/) and [Docker](https://docs.docker.com/engine/install/#installation-procedures-for-supported-platforms). Current (02/01/2026) Docker install instructions for all platforms include the 'docker-compose-plugin', but in case they change it is required.
 
-First, clone the repo from GitHub, `cd` into the repo directory, and copy the sample environment variables into `.env` and `config/application.yml`.
+Once you have GIT and Docker CE installed, clone the repo from GitHub, `cd` into the repo directory, and copy the sample environment variables into `.env` and `config/application.yml`.
 
 ```sh
 git clone https://github.com/performant-software/dm-2.git
@@ -194,7 +196,7 @@ If you wish to mount the code directory from your local filesystem onto the Dock
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
-After boot completes, the app should be up and running on `localhost:3000`.
+After boot completes, the app should be up and running on `localhost:3001`.
 
 You may stop the application at any time by opening another shell in the same `dm-2` directory and running:
 ```sh
